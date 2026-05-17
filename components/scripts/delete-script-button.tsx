@@ -55,7 +55,7 @@ export function DeleteScriptButton({ scriptId, scriptTitle }: { scriptId: string
       ) : (
         <div className="space-y-2 rounded-2xl border border-amber-200 bg-amber-50 p-3">
           <p className="text-xs leading-5 text-amber-900">
-            「{scriptTitle}」を削除すると、関連する保存済み結果と見本音声キャッシュもまとめて消えます。
+            「{scriptTitle}」を削除すると、関連する保存済み結果とお手本ボイスもまとめて消えます。
           </p>
           <div className="flex flex-wrap gap-2">
             <button

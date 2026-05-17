@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const parsed = speakScriptRequestSchema.safeParse(payload);
 
     if (!parsed.success) {
-      return jsonError(parsed.error.issues[0]?.message ?? "見本音声の入力を確認してください。", 400);
+      return jsonError(parsed.error.issues[0]?.message ?? "お手本ボイスの入力を確認してください。", 400);
     }
 
     const result = await speakScript(supabase, user.id, parsed.data);
@@ -34,6 +34,6 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (error) {
-    return jsonError(getErrorMessage(error, "見本音声を生成できませんでした。"), getErrorStatus(error, 500));
+    return jsonError(getErrorMessage(error, "お手本ボイスを生成できませんでした。"), getErrorStatus(error, 500));
   }
 }

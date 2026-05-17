@@ -47,7 +47,7 @@ async function parseRouteIds(params: RouteParams["params"]) {
 
   if (!parsedSavedAudioId.success) {
     return {
-      error: jsonError(parsedSavedAudioId.error.issues[0]?.message ?? "保存済み見本音声 ID を確認してください。", 400)
+      error: jsonError(parsedSavedAudioId.error.issues[0]?.message ?? "保存済みお手本ボイス ID を確認してください。", 400)
     };
   }
 
@@ -73,7 +73,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const parsedBody = patchSavedModelAudioRequestSchema.safeParse(payload);
 
     if (!parsedBody.success) {
-      return jsonError(parsedBody.error.issues[0]?.message ?? "保存済み見本音声の更新内容を確認してください。", 400);
+      return jsonError(parsedBody.error.issues[0]?.message ?? "保存済みお手本ボイスの更新内容を確認してください。", 400);
     }
 
     const supabase = createSupabaseRouteClient();
@@ -96,7 +96,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return jsonOk({ savedModelAudio });
   } catch (error) {
-    return jsonAudioLibraryError(error, "保存済み見本音声を更新できませんでした。");
+    return jsonAudioLibraryError(error, "保存済みお手本ボイスを更新できませんでした。");
   }
 }
 
@@ -118,6 +118,6 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     return jsonOk({ deleted: true, savedModelAudio });
   } catch (error) {
-    return jsonAudioLibraryError(error, "見本音声の保存を解除できませんでした。");
+    return jsonAudioLibraryError(error, "お手本ボイスの保存を解除できませんでした。");
   }
 }

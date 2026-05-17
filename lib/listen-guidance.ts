@@ -81,12 +81,12 @@ export function getListenPracticeGuidance(input: {
       tone: hasConfirmedListen ? "steady" : "info",
       actionKind: hasConfirmedListen ? "record" : "listen",
       actionLabelJa: hasConfirmedListen
-        ? "listen は足りたので record に進む"
+        ? "お手本は足りたので録音へ進む"
         : input.hasAudio
-          ? "まず 1 回だけ Listen する"
-          : "見本音声を生成して 1 回だけ Listen する",
+          ? "まず 1 回だけお手本を聞く"
+          : "お手本ボイスを作って 1 回だけ聞く",
       summaryJa: hasConfirmedListen
-        ? "見本音声を 1 回確認できたので、これ以上聞き込むより今の感覚のまま 1 本目を録るのが最短です。"
+        ? "お手本を 1 回確認できたので、これ以上聞き込むより今の感覚のまま 1 本目を録るのが最短です。"
         : "まだ保存済み結果がないので、最初は script 全体のテンポを合わせてから 1 本目の録音に進むのが最短です。",
       reasonJa: hasConfirmedListen
         ? "listen で全体の流れは確認できたので、次は最初の結果を作る段階です。"
@@ -104,17 +104,17 @@ export function getListenPracticeGuidance(input: {
       tone: hasConfirmedListen ? "focus" : "alert",
       actionKind: hasConfirmedListen ? "record" : "listen",
       actionLabelJa: hasConfirmedListen
-        ? "listen は足りたので崩れた箇所を意識して record に進む"
+        ? "お手本は足りたので崩れた箇所を意識して録音へ進む"
         : input.hasAudio
-          ? "崩れた箇所を 1 回で Listen する"
-          : "見本音声を生成して崩れた箇所を Listen する",
+          ? "崩れた箇所を 1 回だけ聞く"
+          : "お手本ボイスを作って崩れた箇所を聞く",
       summaryJa: hasConfirmedListen
         ? focusLabel
           ? `${focusLabel} を耳で合わせ直せたので、聞き直しを増やすより今の感覚のまま次の 1 本に進むほうが自然です。`
           : "listen で感覚を戻せたので、これ以上聞き直すより次の 1 本に進むほうが自然です。"
         : focusLabel
-          ? `${focusLabel} がベスト結果より崩れているので、録る前に listen で先にリズムを戻すのが安全です。`
-          : "直近の結果はベスト結果より落ちているので、録る前に listen で先にリズムを戻すのが安全です。",
+          ? `${focusLabel} がベスト結果より崩れているので、録る前にお手本で先にリズムを戻すのが安全です。`
+          : "直近の結果はベスト結果より落ちているので、録る前にお手本で先にリズムを戻すのが安全です。",
       reasonJa: hasConfirmedListen
         ? focusLabel
           ? `${focusLabel} はベスト結果との差として目立っていましたが、listen はもう足りています。`
@@ -135,10 +135,10 @@ export function getListenPracticeGuidance(input: {
       tone: "focus",
       actionKind: hasConfirmedListen ? "record" : "listen",
       actionLabelJa: hasConfirmedListen
-        ? "focus を保ったまま record に進む"
+        ? "重点を保ったまま録音へ進む"
         : input.hasAudio
-          ? "focus を 1 回で Listen する"
-          : "見本音声を生成して focus を Listen する",
+          ? "重点を 1 回だけ聞く"
+          : "お手本ボイスを作って重点を聞く",
       summaryJa: hasConfirmedListen
         ? focusLabel
           ? `${focusLabel} を 1 回聞けたので、聞き直しを増やさずその focus のまま record に進むと意識点を広げすぎずに済みます。`
@@ -147,7 +147,7 @@ export function getListenPracticeGuidance(input: {
           ? `${focusLabel} を含むフレーズだけを 1 回合わせてから record に進むと、意識点を広げすぎずに済みます。`
           : "この listen は 1 回で十分です。すぐ次の record に移るほうが練習効率が上がります。",
       reasonJa: hasConfirmedListen
-        ? latestTake?.coachNextStepJa ?? "listen で focus は確認できたので、次はそのまま発話に戻す段階です。"
+        ? latestTake?.coachNextStepJa ?? "お手本で重点は確認できたので、次はそのまま発話に戻す段階です。"
         : latestTake?.coachNextStepJa ?? "直前の結果の重点をそのまま次の 1 本に持ち込めます。",
       focusWords: focus.words,
       focusReasonJa: focus.reasonJa,
@@ -160,8 +160,8 @@ export function getListenPracticeGuidance(input: {
   return {
     tone: "steady",
     actionKind: "record",
-    actionLabelJa: input.hasAudio ? "聞きすぎず次の record に進む" : "必要なら見本音声を作ってすぐ record に進む",
-    summaryJa: "大きな弱点は見えていないので、listen は短く済ませて今の感覚のまま次の 1 本に進む段階です。",
+    actionLabelJa: input.hasAudio ? "聞きすぎず次の録音へ進む" : "必要ならお手本を作ってすぐ録音へ進む",
+    summaryJa: "大きな弱点は見えていないので、お手本は短く済ませて今の感覚のまま次の 1 本に進む段階です。",
     reasonJa: latestTake?.coachNextStepJa ?? "いまは細かく聞き込むより、同じ感覚で 1 本重ねる価値があります。",
     focusWords: focus.words,
     focusReasonJa: focus.reasonJa,

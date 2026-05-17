@@ -57,8 +57,8 @@ export function analyzeScriptPracticeReadiness(scriptContent: string, targetSeco
   if (wordCount === 0) {
     return {
       tone: "empty",
-      labelJa: "入力待ち",
-      summaryJa: "台本を入れると、1分の話しやすさをここで確認できます。",
+      labelJa: "未入力",
+      summaryJa: "台本を入れると、練習の目安を確認できます。",
       wordCount,
       sentenceCount: 0,
       chunkCount: 0,
@@ -174,7 +174,7 @@ function getReadinessTone(input: {
 
 function getReadinessLabel(tone: ScriptPracticeReadinessTone, isShortForMinute: boolean) {
   if (tone === "empty") {
-    return "入力待ち";
+    return "未入力";
   }
 
   if (tone === "alert") {

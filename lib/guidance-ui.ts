@@ -22,11 +22,11 @@ export function getGuidanceToneClasses(tone: GuidanceTone) {
 
 export function getGuidanceActionBadgeLabel(actionKind: GuidanceActionKind) {
   if (actionKind === "listen") {
-    return "まず listen";
+    return "まず聞く";
   }
 
   if (actionKind === "record") {
-    return "次は record";
+    return "次は録る";
   }
 
   if (actionKind === "retry_saved_evaluate") {
@@ -38,7 +38,7 @@ export function getGuidanceActionBadgeLabel(actionKind: GuidanceActionKind) {
   }
 
   if (actionKind === "fallback") {
-    return "補助 transcript を入力";
+    return "開発用入力を使う";
   }
 
   return "設定を確認";
@@ -46,11 +46,11 @@ export function getGuidanceActionBadgeLabel(actionKind: GuidanceActionKind) {
 
 export function getGuidancePrimaryButtonLabel(actionKind: GuidanceActionKind) {
   if (actionKind === "listen") {
-    return "listen してから進む";
+    return "聞いてから進む";
   }
 
   if (actionKind === "record") {
-    return "record に進む";
+    return "録音へ進む";
   }
 
   if (actionKind === "retry_saved_evaluate") {
@@ -62,7 +62,7 @@ export function getGuidancePrimaryButtonLabel(actionKind: GuidanceActionKind) {
   }
 
   if (actionKind === "fallback") {
-    return "補助 transcript を入力する";
+    return "開発用入力を使う";
   }
 
   return "設定を確認する";

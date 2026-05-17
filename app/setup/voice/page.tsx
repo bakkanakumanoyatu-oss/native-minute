@@ -28,7 +28,7 @@ function getProviderFallbackSteps(requirements: VoiceProviderRequirements) {
 
 function getProviderRequirementSummary(requirements: VoiceProviderRequirements) {
   if (requirements.requiresConsentRecording && requirements.requiresSampleAudio) {
-    return `${requirements.voiceLabel} では、同意録音と見本音声 sample の両方が必要です。どちらもこの画面で app-owned storage に保存してから provider に渡します。`;
+    return `${requirements.voiceLabel} では、同意録音とお手本ボイス用の録音が必要です。どちらもこの画面で app-owned storage に保存してから provider に渡します。`;
   }
 
   if (requirements.requiresConsentRecording) {
@@ -36,7 +36,7 @@ function getProviderRequirementSummary(requirements: VoiceProviderRequirements) 
   }
 
   if (requirements.requiresSampleAudio) {
-    return `${requirements.voiceLabel} では、見本音声 sample が必要です。voice 作成前に app-owned storage へ保存した参照を使います。`;
+    return `${requirements.voiceLabel} では、お手本ボイス用の録音が必要です。voice 作成前に app-owned storage へ保存した参照を使います。`;
   }
 
   return null;
@@ -83,7 +83,7 @@ function getProviderReadinessSummary(input: {
   }
 
   if (input.provider === "elevenlabs") {
-    return "ElevenLabs の見本音声生成と voice clone の前提はそろっています。次に失敗した場合だけ、sample upload / voice clone / protected replay のどこで止まったかを見ます。";
+    return "ElevenLabs のお手本ボイス作成と voice clone の前提はそろっています。次に失敗した場合だけ、sample upload / voice clone / protected replay のどこで止まったかを見ます。";
   }
 
   if (input.providerReadiness === "ready") {
@@ -181,7 +181,7 @@ export default async function VoiceSetupPage({
         />
         <StateActionSection
           eyebrow="Other actions"
-          title="補助導線"
+          title="設定・管理"
           actions={[
             { label: "home", href: "/" }
           ]}
@@ -234,13 +234,13 @@ export default async function VoiceSetupPage({
   return (
     <section className="space-y-6">
       <div className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.94))] p-6 shadow-soft sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Settings</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">見本音声の準備</h1>
+        <p className="text-sm font-semibold text-[var(--accent-strong)]">声の準備</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">自分の声でお手本ボイスを作る</h1>
         <p className="mt-4 max-w-3xl text-base leading-7 text-ink-700">
-          普段は Home や Practice から練習を始めます。この画面は、listen で見本音声を作れないときだけ、同意と voice を短く整えるための設定です。
+          ここでは、お手本ボイスに使う自分の声を準備します。普段の練習では必要な時だけここに戻ります。
         </p>
         <details className="mt-4 max-w-3xl rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm leading-6 text-ink-700">
-          <summary className="cursor-pointer font-semibold text-ink-800">provider 前提を確認する</summary>
+          <summary className="cursor-pointer font-semibold text-ink-800">詳しい設定を見る</summary>
           <div className="mt-3 space-y-2">
             {providerRequirementSummary ? <p>{providerRequirementSummary}</p> : null}
             {state.providerRequirements.entitlementSensitive ? (
@@ -255,14 +255,14 @@ export default async function VoiceSetupPage({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section data-testid="voice-setup-state" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">Current step</h2>
+          <h2 className="text-lg font-semibold text-ink-900">今やること</h2>
           <dl className="mt-4 space-y-3 text-sm leading-6 text-ink-700">
             <div>
               <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">同意</dt>
               <dd>{state.consent ? "完了" : "未完了"}</dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">現在の voice</dt>
+              <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">お手本ボイスの声</dt>
               <dd>{state.defaultVoice ? state.defaultVoice.label : "未作成"}</dd>
             </div>
           </dl>
@@ -273,7 +273,7 @@ export default async function VoiceSetupPage({
           ) : null}
           <p className="mt-4 text-sm leading-6 text-ink-600">{readyStateSummary}</p>
           <details className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-            <summary className="cursor-pointer font-semibold text-ink-800">Details / provider readiness</summary>
+            <summary className="cursor-pointer font-semibold text-ink-800">詳しい状態を見る</summary>
             <dl className="mt-3 space-y-2">
               <div>
                 <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">voice provider</dt>
@@ -316,7 +316,7 @@ export default async function VoiceSetupPage({
         </section>
 
         <section data-testid="voice-setup-next-step" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">Next action</h2>
+          <h2 className="text-lg font-semibold text-ink-900">次にやること</h2>
           <p className="mt-3 text-sm leading-6 text-ink-600">{readyNextSummary}</p>
         </section>
       </div>
@@ -339,7 +339,7 @@ export default async function VoiceSetupPage({
           />
           <StateActionSection
             eyebrow="Other actions"
-            title="補助導線"
+            title="設定・管理"
             summary="ログイン状態や main loop 側を確認したいときだけ使います。"
             actions={[
               { label: "login", href: buildLoginHref("/setup/voice", "login_required", "/setup/voice") },
@@ -349,14 +349,14 @@ export default async function VoiceSetupPage({
         </div>
       ) : !state.consent ? (
         <section data-testid="voice-consent-section" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">1. 同意を記録する</h2>
-          <p className="mt-2 text-sm leading-6 text-ink-600">voice を作る前に、まず同意を記録します。必要なら同意録音もここで先に保存します。</p>
+          <h2 className="text-lg font-semibold text-ink-900">1. 自分の声を使う準備</h2>
+          <p className="mt-2 text-sm leading-6 text-ink-600">お手本ボイスを作るための同意を保存します。必要な場合は、自分の声の録音ファイルもここで選びます。</p>
           <div className="mt-6">
             <VoiceConsentForm requirements={state.providerRequirements} />
           </div>
           <div className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-            <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next action</p>
-            <p className="mt-2">同意を保存すると、この画面でそのまま voice 作成に進めます。まだ main loop へは戻らず、voice を 1 つ作るところまで進めれば十分です。</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-ink-500">次にやること</p>
+            <p className="mt-2">同意を保存すると、この画面でそのままお手本ボイス用の声を作れます。</p>
             {state.providerRequirements.entitlementSensitive ? (
               <details className="mt-2 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-xs leading-5 text-ink-600">
                 <summary className="cursor-pointer font-semibold text-ink-800">provider 権限で止まる場合</summary>
@@ -368,7 +368,7 @@ export default async function VoiceSetupPage({
           </div>
           <StateActionSection
             eyebrow="Other actions"
-            title="補助導線"
+            title="設定・管理"
             summary="voice を作る前でも script 一覧や home は確認できますが、listen に進むには先に同意が必要です。"
             actions={[
               { label: "scripts", href: "/scripts" },
@@ -380,14 +380,14 @@ export default async function VoiceSetupPage({
 
       {state.providerSupported && state.consent && !state.defaultVoice ? (
         <section data-testid="voice-create-section" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">2. voice を作成する</h2>
-          <p className="mt-2 text-sm leading-6 text-ink-600">listen 画面で使う voice を 1 つ作成します。</p>
+          <h2 className="text-lg font-semibold text-ink-900">2. お手本ボイス用の声を作る</h2>
+          <p className="mt-2 text-sm leading-6 text-ink-600">録音した自分の声を使って、聞く画面で使う声を作ります。</p>
           <div className="mt-6">
             <CreateVoiceForm consentId={state.consent.id} requirements={state.providerRequirements} />
           </div>
           <div className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-            <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next action</p>
-            <p className="mt-2">voice を作成すると、この画面の `見本確認に進める状態` に切り替わります。次は候補の script で listen に進めば main loop に入れます。</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-ink-500">次にやること</p>
+            <p className="mt-2">声を作成すると、次はお手本を聞いてまねる画面へ進めます。</p>
             {state.providerRequirements.entitlementSensitive ? (
               <details className="mt-2 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-xs leading-5 text-ink-600">
                 <summary className="cursor-pointer font-semibold text-ink-800">provider 権限で止まる場合</summary>
@@ -407,7 +407,7 @@ export default async function VoiceSetupPage({
           </div>
           <StateActionSection
             eyebrow="Other actions"
-            title="補助導線"
+            title="設定・管理"
             summary="script を先に確認したいときだけ使います。listen に進むには voice 作成まで終えておく必要があります。"
             actions={[
               { label: "scripts", href: "/scripts" },
@@ -451,7 +451,7 @@ export default async function VoiceSetupPage({
             <ol className="mt-4 space-y-3 text-sm leading-6 text-ink-700">
               <li className="flex gap-3">
                 <span className="mt-[2px] inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-ink-50 text-xs font-semibold text-ink-700">1</span>
-                <span>sample download / sample reject と出たら、見本音声 sample を再アップロードして形式・長さ・内容を見直す。</span>
+                <span>sample download / sample reject と出たら、お手本ボイス用の録音を再アップロードして形式・長さ・内容を見直す。</span>
               </li>
               <li className="flex gap-3">
                 <span className="mt-[2px] inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-ink-50 text-xs font-semibold text-ink-700">2</span>
@@ -468,7 +468,7 @@ export default async function VoiceSetupPage({
 
       {state.providerSupported && state.defaultVoice ? (
         <section data-testid="voice-ready-block" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">見本確認に進める状態</h2>
+          <h2 className="text-lg font-semibold text-ink-900">お手本を聞けます</h2>
           <p className="mt-2 text-sm leading-6 text-ink-600">
             現在の voice は <span className="font-semibold text-ink-900">{state.defaultVoice.label}</span> です。
           </p>

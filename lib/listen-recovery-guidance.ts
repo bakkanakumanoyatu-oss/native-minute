@@ -58,8 +58,8 @@ function isElevenLabsAccountOrLimitMessage(text: string) {
 function isScriptAudioStorageMessage(text: string) {
   return includesAny(text, [
     "script-audios",
-    "見本音声の保存",
-    "見本音声の読み込み",
+    "お手本ボイスの保存",
+    "お手本ボイスの読み込み",
     "保存権限",
     "参照権限",
     "storage policy",
@@ -83,7 +83,7 @@ export function getListenRecoveryGuidance(input: {
       tone: "alert",
       actionKind: "settings",
       titleJa: "voice 設定を確認する",
-      summaryJa: "見本音声を作れないため、listen より先に voice provider の設定を直す必要があります。",
+      summaryJa: "お手本ボイスを作れないため、聞いてまねる前に voice provider の設定を直す必要があります。",
       reasonJa: input.message ?? "voice provider が現在は利用できません。",
       primaryActionLabelJa: "voice 設定へ進む",
       executionCueJa: getActionExecutionCue("settings", []),
@@ -99,8 +99,8 @@ export function getListenRecoveryGuidance(input: {
       tone: "focus",
       actionKind: "settings",
       titleJa: "voice の同意を完了する",
-      summaryJa: "見本音声を生成する前に、まず `/setup/voice` で consent を完了する必要があります。",
-      reasonJa: input.message ?? "consent がないと見本確認を始められません。",
+      summaryJa: "お手本ボイスを作る前に、まず `/setup/voice` で consent を完了する必要があります。",
+      reasonJa: input.message ?? "consent がないとお手本を聞けません。",
       primaryActionLabelJa: "voice 設定へ進む",
       executionCueJa: getActionExecutionCue("settings", []),
       followupCueJa: baseGuidance.executionCueJa,
@@ -115,8 +115,8 @@ export function getListenRecoveryGuidance(input: {
       tone: "focus",
       actionKind: "settings",
       titleJa: "voice を作成する",
-      summaryJa: "consent は済んでいますが、見本音声を作る voice がまだないため、先に voice を作る必要があります。",
-      reasonJa: input.message ?? "voice がないと見本音声を生成できません。",
+      summaryJa: "consent は済んでいますが、お手本ボイスを作る voice がまだないため、先に voice を作る必要があります。",
+      reasonJa: input.message ?? "voice がないとお手本ボイスを作れません。",
       primaryActionLabelJa: "voice を作成する",
       executionCueJa: getActionExecutionCue("settings", []),
       followupCueJa: baseGuidance.executionCueJa,
@@ -149,11 +149,11 @@ export function getListenRecoveryGuidance(input: {
       actionKind: "listen",
       titleJa: "再生方法を立て直す",
       summaryJa: input.hasAudio
-        ? "見本音声自体はあるので、まず見本音声の更新かブラウザ再読込で再生を立て直すのが自然です。"
-        : "再生を続ける前に、まず見本音声をもう一度生成して再生を立て直す必要があります。",
-      reasonJa: input.message ?? "ブラウザで見本音声を再生できませんでした。",
-      primaryActionLabelJa: "見本音声を更新する",
-      executionCueJa: "ブラウザ再生を確認し、難しければ見本音声を更新して 1 回だけ聞き直します。",
+        ? "お手本ボイス自体はあるので、まずお手本の更新かブラウザ再読込で再生を立て直すのが自然です。"
+        : "再生を続ける前に、まずお手本ボイスをもう一度作って再生を立て直す必要があります。",
+      reasonJa: input.message ?? "ブラウザでお手本を再生できませんでした。",
+      primaryActionLabelJa: "お手本を更新する",
+      executionCueJa: "ブラウザ再生を確認し、難しければお手本を更新して 1 回だけ聞き直します。",
       followupCueJa: baseGuidance.followupCueJa,
       focusWords: baseGuidance.focusWords,
       focusReasonJa: baseGuidance.focusReasonJa,
@@ -168,8 +168,8 @@ export function getListenRecoveryGuidance(input: {
       titleJa: "再生を安定させる",
       summaryJa: "一時的に再生が不安定なので、聞き続けるより一度立て直してから短く聞き直すほうが自然です。",
       reasonJa: input.message ?? "再生が途中で止まるか、読み込みが不安定です。",
-      primaryActionLabelJa: "見本音声を更新する",
-      executionCueJa: "いったん再生を止めて状態を戻し、必要なら見本音声を更新してから 1 回だけ聞き直します。",
+      primaryActionLabelJa: "お手本を更新する",
+      executionCueJa: "いったん再生を止めて状態を戻し、必要ならお手本を更新してから 1 回だけ聞き直します。",
       followupCueJa: baseGuidance.followupCueJa,
       focusWords: baseGuidance.focusWords,
       focusReasonJa: baseGuidance.focusReasonJa,
@@ -182,7 +182,7 @@ export function getListenRecoveryGuidance(input: {
       tone: "alert",
       actionKind: "settings",
       titleJa: "ElevenLabs voice を作り直す",
-      summaryJa: "ElevenLabs 側で保存済み voice が見つからないため、この voice では新しい見本音声を作れません。",
+      summaryJa: "ElevenLabs 側で保存済み voice が見つからないため、この voice では新しいお手本ボイスを作れません。",
       reasonJa: input.message ?? "ElevenLabs 側で voice が見つかりませんでした。",
       primaryActionLabelJa: "voice 設定へ進む",
       executionCueJa: "先に /setup/voice で voice を作り直します。急ぐ場合は mock provider に戻して main loop を続けます。",
@@ -213,9 +213,9 @@ export function getListenRecoveryGuidance(input: {
     return {
       tone: "alert",
       actionKind: "listen",
-      titleJa: "見本音声の保存・再生準備を確認する",
+      titleJa: "お手本ボイスの保存・再生準備を確認する",
       summaryJa: "provider の合成後、app-owned storage または protected replay の準備で止まっています。provider voice を作り直す前に storage 側を確認します。",
-      reasonJa: input.message ?? "見本音声の保存または読み込みに失敗しました。",
+      reasonJa: input.message ?? "お手本ボイスの保存または読み込みに失敗しました。",
       primaryActionLabelJa: "もう一度生成する",
       executionCueJa: "一時的な保存失敗かを 1 回だけ確認し、続く場合は script-audios bucket / storage policy / replay route を確認します。",
       followupCueJa: baseGuidance.followupCueJa,
@@ -231,13 +231,13 @@ export function getListenRecoveryGuidance(input: {
   return {
     tone: needsSettings ? "alert" : "focus",
     actionKind,
-    titleJa: needsSettings ? "voice 設定を確認してからやり直す" : input.hasAudio ? "見本音声の再生成を試す" : "見本音声を生成し直す",
+    titleJa: needsSettings ? "voice 設定を確認してからやり直す" : input.hasAudio ? "お手本の作り直しを試す" : "お手本ボイスを作り直す",
     summaryJa: needsSettings
-      ? "見本音声の生成が設定側で止まっているため、再試行より先に `/setup/voice` と provider 状態の確認が必要です。"
+      ? "お手本ボイスの作成が設定側で止まっているため、再試行より先に `/setup/voice` と provider 状態の確認が必要です。"
       : input.hasAudio
-        ? "再生成だけ失敗しているので、今の音声を使うか、少し待ってからもう一度 listen を更新するのが自然です。"
-        : "見本音声の生成に失敗したので、少し待ってからもう一度生成し、listen を再開するのが自然です。",
-    reasonJa: input.message ?? "見本音声の生成に失敗しました。",
+        ? "作り直しだけ失敗しているので、今のお手本を使うか、少し待ってからもう一度更新するのが自然です。"
+        : "お手本ボイスの作成に失敗したので、少し待ってからもう一度作り、練習を再開するのが自然です。",
+    reasonJa: input.message ?? "お手本ボイスの作成に失敗しました。",
     primaryActionLabelJa: needsSettings ? "voice 設定へ進む" : "もう一度生成する",
     executionCueJa: getActionExecutionCue(actionKind, baseGuidance.focusWords),
     followupCueJa: baseGuidance.followupCueJa,

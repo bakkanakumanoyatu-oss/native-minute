@@ -127,7 +127,7 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
           type="checkbox"
           className="mt-1 size-4 rounded border-[var(--line)]"
         />
-        <span>見本音声生成のために、自分用の voice を作成することに同意します。</span>
+        <span>お手本ボイスを作るために、自分の声を使うことに同意します。</span>
       </label>
 
       <label className="block space-y-2">
@@ -153,7 +153,7 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-ink-700">同意録音ファイル ({requiresRecording ? "必須" : "任意"})</span>
+        <span className="text-sm font-medium text-ink-700">自分の声の同意録音 ({requiresRecording ? "必須" : "任意"})</span>
         <input
           data-testid="voice-consent-file"
           type="file"
@@ -169,26 +169,27 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
         disabled={loading || !accepted}
         className="inline-flex items-center justify-center rounded-2xl bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "記録中..." : "同意を記録して voice 作成へ"}
+        {loading ? "記録中..." : "同意を保存して次へ"}
       </button>
 
-      <p className="text-xs leading-5 text-ink-500">
-        {requiresRecording
-          ? `${voiceLabel} では、同意者名・言語・同意録音をそろえて先に app-owned storage へ保存し、その参照で同意を記録します。`
-          : requirements.requiresSampleAudio
-            ? `${voiceLabel} では provider-side の同意録音 endpoint は使いません。この画面では app 内の同意だけを記録し、次の voice 作成で sample audio を使います。`
-            : "通常の mock フローでは checkbox だけでも進めます。"}
-      </p>
-      {requirements.provider === "elevenlabs" ? (
-        <p className="text-xs leading-5 text-ink-500">
-          ElevenLabs の voice clone 後も、listen で使うのは app-owned replay へ保存された見本音声です。普段の練習では provider を意識しなくて大丈夫です。
+      <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-xs leading-5 text-ink-600">
+        <summary className="cursor-pointer font-semibold text-ink-800">詳しい補足を見る</summary>
+        <p className="mt-3">
+          {requiresRecording
+            ? `${voiceLabel} では、同意者名・言語・同意録音が必要です。`
+            : requirements.requiresSampleAudio
+              ? "この画面では同意だけ保存し、次のステップで自分の声の録音を使います。"
+              : "通常はチェックだけでも進めます。"}
         </p>
-      ) : null}
-      {requirements.entitlementSensitive ? (
-        <p className="text-xs leading-5 text-ink-500">
-          同意登録や voice 作成で {voiceLabel} 側の権限不足に当たる場合があります。そのときは upload や auth ではなく、provider 側の entitlement を確認してください。
-        </p>
-      ) : null}
+        {requirements.provider === "elevenlabs" ? (
+          <p className="mt-2">普段の練習では provider 名を意識しなくて大丈夫です。</p>
+        ) : null}
+        {requirements.entitlementSensitive ? (
+          <p className="mt-2">
+            同意登録や声の作成で {voiceLabel} 側の権限不足に当たる場合があります。
+          </p>
+        ) : null}
+      </details>
 
       {message ? (
         <button

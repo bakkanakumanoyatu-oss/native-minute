@@ -111,7 +111,7 @@ export function getProgressPracticeGuidance(item: ScriptProgressItem): PracticeG
       summaryJa: "まだ保存済み結果がないので、比較より先に 1 本目の結果を作るのが最短です。",
       reasonJa: "最初の 1 本ができると、weak words と coach feedback が次の練習材料になります。",
       checklistJa: [
-        "見本音声を 1 回だけ聞いて、全体のテンポを確認する",
+        "お手本を 1 回だけ聞いて、全体のテンポを確認する",
         "1 分に近い長さで最後まで言い切る",
         "結果確認で weak words を確認してから次の 1 本に進む"
       ],
@@ -135,16 +135,16 @@ export function getProgressPracticeGuidance(item: ScriptProgressItem): PracticeG
     return {
       tone: "alert",
       actionKind: "listen",
-      actionLabelJa: "まず Listen を挟む",
+      actionLabelJa: "まずお手本を挟む",
       summaryJa: focusLabel
-        ? `${focusLabel} がベスト結果より崩れているので、先に見本音声でリズムを戻してから録り直すのが安全です。`
-        : "直近の結果はベスト結果より落ちているので、先に見本音声でテンポを戻してから録り直すのが安全です。",
+        ? `${focusLabel} がベスト結果より崩れているので、先にお手本でリズムを戻してから録り直すのが安全です。`
+        : "直近の結果はベスト結果より落ちているので、先にお手本でテンポを戻してから録り直すのが安全です。",
       reasonJa:
         diffFromBest.regressedWeakWords.length > 0
           ? `ベスト結果では弱くなかった ${formatWordList(diffFromBest.regressedWeakWords) ?? "いくつかの単語"} が今回の重点です。`
           : `ベスト結果との差は総合 ${diffFromBest.scoreDelta} なので、勢いで録り直すより一度 listen したほうが戻しやすいです。`,
       checklistJa: [
-        "見本音声を 1 回聞いて、語尾とリズムの落ち方を確認する",
+        "お手本を 1 回聞いて、語尾とリズムの落ち方を確認する",
         focusLabel ? `${focusLabel} をフレーズごとに小さく口慣らしする` : "coach feedback の next step を 1 回読み直す",
         "そのまま 1 本だけ録り直して比較する"
       ],
@@ -161,7 +161,7 @@ export function getProgressPracticeGuidance(item: ScriptProgressItem): PracticeG
     return {
       tone: "focus",
       actionKind: "record",
-      actionLabelJa: "このまま record をやり直す",
+      actionLabelJa: "このまま録り直す",
       summaryJa: focusLabel
         ? `次は ${focusLabel} を意識して 1 本だけ録ると、改善点を絞って練習できます。`
         : "今の弱点は絞れているので、そのまま 1 本だけ録り直すのが効果的です。",
@@ -183,14 +183,14 @@ export function getProgressPracticeGuidance(item: ScriptProgressItem): PracticeG
   return {
     tone: "steady",
     actionKind: "record",
-    actionLabelJa: item.improvementTrend === "up" ? "この調子で record を続ける" : "安定したまま 1 本追加する",
+      actionLabelJa: item.improvementTrend === "up" ? "この調子で録音を続ける" : "安定したまま 1 本追加する",
     summaryJa:
       item.improvementTrend === "up"
         ? "弱い単語が少なく、直近の流れも良いので、同じ感覚でもう 1 本重ねる価値があります。"
         : "大きな弱点は見えていないので、今のペースを保ったまま 1 本追加して安定性を確認できます。",
     reasonJa: latest.coach.nextStepJa,
     checklistJa: [
-      "見本音声は必要なときだけ短く聞く",
+      "お手本は必要なときだけ短く聞く",
       "今のテンポを崩さず 1 本だけ追加する",
         "ベスト結果を更新できたかだけを確認する"
     ],
@@ -217,7 +217,7 @@ export function getReviewPracticeGuidance(input: ReviewGuidanceInput): PracticeG
       summaryJa: "この結果は短めなので、単語より先に 1 分近い長さまで戻すことが優先です。",
       reasonJa: shortRecordingPrompt,
       checklistJa: [
-        "見本音声を 1 回聞いて、どこで早く切れているか確認する",
+        "お手本を 1 回聞いて、どこで早く切れているか確認する",
         focusLabel ? `${focusLabel} を急がずに含む形で通し読みする` : "語尾まで言い切ることを優先して通し読みする",
         "短さを解消するつもりで 1 本だけ録り直す"
       ],
@@ -234,17 +234,17 @@ export function getReviewPracticeGuidance(input: ReviewGuidanceInput): PracticeG
     return {
       tone: "alert",
       actionKind: "listen",
-      actionLabelJa: "ベスト結果を聞き直すつもりで Listen",
+      actionLabelJa: "ベスト結果を聞き直すつもりでお手本へ",
       summaryJa: focusLabel
         ? `${focusLabel} がベスト結果より崩れているので、先に聞き直してから録るほうが戻しやすいです。`
-        : "ベスト結果との差があるので、先に見本音声でリズムを戻してから録るほうが戻しやすいです。",
+        : "ベスト結果との差があるので、先にお手本でリズムを戻してから録るほうが戻しやすいです。",
       reasonJa:
         input.comparison.diff.regressedWeakWords.length > 0
           ? `特に ${formatWordList(input.comparison.diff.regressedWeakWords) ?? "一部の単語"} はベスト結果より後退しています。`
           : `ベスト結果との差は総合 ${input.comparison.diff.scoreDelta} で、今は耳を合わせ直す段階です。`,
       checklistJa: [
         "保存済み録音を短く聞き返し、崩れた箇所を確認する",
-        "見本音声を 1 回聞いてテンポをそろえる",
+        "お手本を 1 回聞いてテンポをそろえる",
         "そのあと 1 本だけ録り直して差分を見る"
       ],
       focusWords,

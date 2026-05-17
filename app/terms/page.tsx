@@ -17,7 +17,7 @@ export default function TermsPage() {
       <LegalSection
         title="サービスの位置づけ"
         items={[
-          "Native Minute は英語練習を補助するアプリです。発音能力、語学力、試験結果を完全または公式に判定するものではありません。",
+          "Native Minute は英語練習を支援するアプリです。発音能力、語学力、試験結果を完全または公式に判定するものではありません。",
           "v1 beta は無料公開を前提にしています。ただし provider 側の障害、rate limit、quota、メンテナンスにより一時的に使えない場合があります。",
           "score や coaching は練習の目安です。録音環境、マイク、発話内容、provider の状態によって結果が変わることがあります。"
         ]}
@@ -38,7 +38,7 @@ export default function TermsPage() {
         title="provider と結果の変動"
         summary="v1 の provider 役割は、ElevenLabs が voice clone / model audio generation、OpenAI が transcription / script generation / coaching、Azure が pronunciation evaluator です。"
         items={[
-          "provider failure、rate limit、billing/quota、地域や network の状態により、見本音声生成、文字起こし、発音評価が失敗することがあります。",
+          "provider failure、rate limit、billing/quota、地域や network の状態により、お手本ボイス生成、文字起こし、発音評価が失敗することがあります。",
           "同じ録音でも、provider や録音環境の変化により score や weak words が変わることがあります。",
           "失敗時は画面上の recovery message に従い、必要に応じて録り直し、時間を置いて retry、または support に連絡してください。"
         ]}

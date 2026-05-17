@@ -169,31 +169,31 @@ export function ListenPanel({
 
   const playbackStateLabel =
     playbackStatus === "empty"
-      ? "未生成"
+      ? "まだありません"
       : playbackStatus === "saved"
-        ? "cache 保存済み音声"
+        ? "保存済みのお手本"
         : playbackStatus === "generated_cached"
-          ? "キャッシュ再利用"
-          : "新規生成";
+          ? "保存済みのお手本"
+          : "新しいお手本";
 
   const playbackStateDescription =
     playbackStatus === "empty"
-      ? "生成するとここで再生できます。"
+      ? "お手本ボイスを作ると、ここで再生できます。"
       : playbackStatus === "saved"
-        ? "cache 上の見本音声です。Audio Library の保存とは別です。"
+        ? "前に作ったお手本を使えます。"
         : playbackStatus === "generated_cached"
-          ? "新規合成せず、cache を再利用しました。Audio Library の保存とは別です。"
-          : "新しく作った見本音声です。";
+          ? "前に作ったお手本を使えます。"
+          : "新しく作ったお手本です。";
   const updateMeaning =
     playbackStatus === "saved" || playbackStatus === "generated_cached"
-      ? "同じ voice と script のまま更新すると、この cache 音声を再利用することがあります。意味の確認はここで行い、進む・更新する・設定を見直す判断は下の `次に押す操作` / `違和感があるときの判断` で決めます。"
+      ? "同じ声と台本のまま作り直すと、前に作ったお手本を使うことがあります。違和感がなければ、そのまま練習へ戻れます。"
       : playbackStatus === "generated_fresh"
-        ? "いまの音声は直前に新しく作成されました。次回の更新では、同じ voice と script ならこの音声が保存済みとして再利用されることがあります。意味の確認はここで行い、次の判断は下の `次に押す操作` で決めます。"
-        : "初回生成では、新規作成か cache 音声の再利用のどちらかになります。意味の確認はここで行い、次の判断は下の `次の一手` と `次に押す操作` で進めます。";
+        ? "いまのお手本は新しく作りました。違和感がなければ、そのまま練習へ戻れます。"
+        : "初回はお手本ボイスを作ります。聞いたら、英文を見ながらまねます。";
   const qualityConcernRecommendedNow =
     playbackStatus === "saved" || playbackStatus === "generated_cached"
-      ? "voice 自体の違和感が強いなら voice 設定の見直しを優先し、軽ければ今の音声で進みます。同じ voice のまま更新は、一時的かだけを確かめたいときに 1 回だけ使います。"
-      : "まず同じ voice のまま 1 回だけ更新して様子を見て、違和感が軽ければ今の音声で進みます。更新後も気になるなら voice 設定を見直します。";
+        ? "声そのものに違和感が強いなら設定を見直し、軽ければ今のお手本で進みます。同じ声のまま作り直すのは、一時的かを確かめたいときだけで十分です。"
+        : "まず同じ声のまま 1 回だけ作り直して様子を見ます。軽ければ今のお手本で進み、まだ気になるなら声の設定を見直します。";
 
   const showsReusableAudio = playbackStatus === "saved" || playbackStatus === "generated_cached";
   const selectedVoiceStyleOption = VOICE_STYLE_PRESET_OPTIONS.find((option) => option.id === voiceStylePreset);
@@ -207,8 +207,8 @@ export function ListenPanel({
   const isPreparingPlayback = Boolean(audioUrl && !resolvedAudioUrl && !playbackIssue);
   const activeOperationLabel = loading
     ? audioUrl
-      ? "見本音声を更新中"
-      : "見本音声を生成中"
+      ? "お手本ボイスを更新中"
+      : "お手本ボイスを作成中"
     : isPreparingPlayback
       ? "再生準備中"
       : null;
@@ -235,19 +235,19 @@ export function ListenPanel({
     ? playbackIssue.message
     : loading
       ? audioUrl
-        ? "更新リクエストを送っています。初回や dev server の起動直後は少し時間がかかることがあります。"
-        : "見本音声を作っています。初回や dev server の起動直後は少し時間がかかることがあります。"
+        ? "更新リクエストを送っています。少し時間がかかることがあります。"
+        : "お手本ボイスを作っています。少し時間がかかることがあります。"
     : isPreparingPlayback
-      ? "生成済みの音声をこの画面で再生できるように準備しています。少し待つとプレーヤーが表示されます。"
+      ? "お手本をこの画面で再生できるように準備しています。少し待つとプレーヤーが表示されます。"
     : hasQualityConcern
       ? "音は聞こえています。今は違和感があるときの 3 択から、進む・更新する・設定を見直す、のどれにするか決める段階です。"
       : isPlaying
-        ? "見本音声を再生しています。focus words だけを短く確認して、聞きすぎずに次へ進めます。"
+        ? "お手本を再生しています。短く聞いて、すぐ声に出してまねます。"
       : hasConfirmedListen
-        ? `見本音声は ${confirmationLabel} を目安に確認できています。見本確認は足りたので、必要ならそのまま record に進めます。`
+          ? `お手本は ${confirmationLabel} を目安に確認できています。英文を声に出してまねます。`
       : audioUrl
-        ? `音声は用意できています。まず ${confirmationLabel} を目安に短く聞ければ、見本確認は十分です。`
-        : "まず見本音声を生成すると、この画面で再生を確認できます。";
+        ? `お手本は用意できています。まず ${confirmationLabel} を目安に短く聞きます。`
+        : "まずお手本ボイスを作ると、この画面で再生できます。";
   const audioPlaybackUrl = resolvedAudioUrl;
   const listenGuidance = getListenPracticeGuidance({
     hasAudio: Boolean(audioUrl),
@@ -272,7 +272,7 @@ export function ListenPanel({
       : hasQualityConcern && Boolean(audioUrl)
         ? getListenRecoveryGuidance({
             kind: "quality_concern",
-            message: "音は聞こえていますが、voice や聞こえ方に違和感があります。",
+            message: "音は聞こえていますが、声や聞こえ方に違和感があります。",
             hasAudio: true,
             practiceContext
           })
@@ -281,36 +281,31 @@ export function ListenPanel({
   const normalDecisionActions: DecisionAction[] =
     audioUrl && hasConfirmedListen && !recoveryGuidance
       ? compactActions([
-          nextRecordHref
-            ? {
-                id: "proceed-record",
-                label: "今の音声で record に進む",
-                description:
-                  playbackStatus === "saved" || playbackStatus === "generated_cached"
-                    ? "この cache 音声で十分なら、更新せずここで record に進めます。"
-                    : "違和感がなければ、listen はここで十分です。",
-                tone: "primary",
-                emphasized: true,
-                href: nextRecordHref
-              }
-            : null,
           {
             id: "replay-once",
             label: "もう一度聞く",
-            description: `迷うなら ${confirmationLabel} を目安に 1 回だけ聞き直して判断します。`,
-            tone: "secondary",
+            description: `迷うなら ${confirmationLabel} だけ聞き直して、すぐ声に出します。`,
+            tone: "primary",
+            emphasized: true,
             disabled: loading,
             onClick: () => {
               void handleReplay();
             }
           },
           {
+            id: "return-practice",
+            label: "英文を見てまねる",
+            description: "下の練習エリアで声に出します。録音はそのあとです。",
+            tone: "secondary",
+            disabled: loading,
+            onClick: () => {
+              document.getElementById("listen-practice-area")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          },
+          {
             id: "open-quality-concern",
-            label: "音声に違和感がある",
-            description:
-              playbackStatus === "saved" || playbackStatus === "generated_cached"
-                ? "違和感があるときの判断を開いて、同じ音声の再利用か voice 設定の見直しかを選びます。"
-                : "違和感があるときの判断を開いて、更新か voice 設定の見直しかを選びます。",
+            label: "声に違和感がある",
+            description: "作り直すか、声の設定を見直すかを選びます。",
             tone: "secondary",
             disabled: loading,
             onClick: () => setHasQualityConcern(true)
@@ -324,25 +319,27 @@ export function ListenPanel({
             ? [
                 nextRecordHref
                   ? {
-                      id: "proceed-current-audio",
-                      label: "今の音声で record に進む",
-                      description: "更新しても同じ音声に戻りうるので、違和感が軽ければ今の音声のまま練習を続けられます。",
+                      id: "return-practice-area",
+                      label: "今のお手本でまねる",
+                      description: "違和感が軽ければ、練習エリアに戻って声に出します。",
                       tone: "primary" as const,
                       emphasized: true,
-                      href: nextRecordHref
+                      onClick: () => {
+                        document.getElementById("listen-practice-area")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }
                     }
                   : null,
                 {
                   id: "return-setup-voice",
-                  label: "voice 設定を見直す",
-                  description: "voice 自体の印象が違うなら、更新を重ねるより設定から見直します。",
+                  label: "声の設定を見直す",
+                  description: "声そのものの印象が違うなら、作り直しより設定から見直します。",
                   tone: "secondary" as const,
                   href: setupVoiceHref
                 },
                 canGenerateAudio ? {
                   id: "retry-same-voice",
                   label: recoveryGuidance.primaryActionLabelJa,
-                  description: "同じ voice のまま一度だけ更新して、違和感が一時的か確かめます。",
+                  description: "同じ声のまま一度だけ作り直して、違和感が一時的か確かめます。",
                   tone: "secondary" as const,
                   disabled: loading,
                   onClick: () => {
@@ -353,17 +350,19 @@ export function ListenPanel({
             : [
                 nextRecordHref
                   ? {
-                      id: "proceed-current-audio",
-                      label: "今の音声で record に進む",
-                      description: "違和感が軽ければ、今の音声のまま練習を続けられます。",
+                      id: "return-practice-area",
+                      label: "今のお手本でまねる",
+                      description: "違和感が軽ければ、今のお手本のまま練習を続けます。",
                       tone: "secondary" as const,
-                      href: nextRecordHref
+                      onClick: () => {
+                        document.getElementById("listen-practice-area")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }
                     }
                   : null,
                 canGenerateAudio ? {
                   id: "retry-same-voice",
                   label: recoveryGuidance.primaryActionLabelJa,
-                  description: "同じ voice のまま一度だけ更新して、違和感が一時的か確かめます。",
+                  description: "同じ声のまま一度だけ作り直して、違和感が一時的か確かめます。",
                   tone: "primary" as const,
                   emphasized: true,
                   disabled: loading,
@@ -373,8 +372,8 @@ export function ListenPanel({
                 } : null,
                 {
                   id: "return-setup-voice",
-                  label: "voice 設定を見直す",
-                  description: "更新しても違和感が残ると感じたら、設定から見直します。",
+                  label: "声の設定を見直す",
+                  description: "作り直しても違和感が残るなら、設定から見直します。",
                   tone: "secondary" as const,
                   href: setupVoiceHref
                 }
@@ -424,7 +423,7 @@ export function ListenPanel({
         setIsPlaying(false);
         setPlaybackIssue({
           kind: "playback_failed",
-          message: "見本音声の取得に失敗しました。ログイン状態を保ったままページを再読込するか、見本音声を更新してからもう一度お試しください。"
+          message: "お手本の取得に失敗しました。ログイン状態を保ったままページを再読込するか、お手本ボイスを更新してからもう一度お試しください。"
         });
         setShowPlaybackFallback(true);
         setMessage(null);
@@ -451,14 +450,14 @@ export function ListenPanel({
 
   async function handleGenerate() {
     if (!canGenerateAudio) {
-      setMessage(generateBlockedSummary ?? "いまは見本音声を更新できません。先に設定を整える必要があります。");
+      setMessage(generateBlockedSummary ?? "いまはお手本ボイスを更新できません。先に設定を整える必要があります。");
       setMessageKind("info");
       return;
     }
     const retryingQualityConcern = hasQualityConcern;
     setLoading(true);
     setMessageKind("info");
-    setMessage(audioUrl ? "見本音声を更新しています。少し待ってください。" : "見本音声を生成しています。少し待ってください。");
+    setMessage(audioUrl ? "お手本ボイスを更新しています。少し待ってください。" : "お手本ボイスを作っています。少し待ってください。");
     setPlaybackIssue(null);
     setIsPlaying(false);
     setHasConfirmedListen(false);
@@ -483,7 +482,7 @@ export function ListenPanel({
 
       if (!response.ok || !payload.ok || !payload.data) {
         setIsPlaying(false);
-        setMessage(payload.message ?? "見本音声を生成できませんでした。");
+        setMessage(payload.message ?? "お手本ボイスを作れませんでした。");
         setMessageKind("error");
         return;
       }
@@ -494,12 +493,12 @@ export function ListenPanel({
       setAudioVoiceStylePreset(voiceStylePreset);
       setMessage(
         retryingQualityConcern && payload.data.cached
-          ? "同じ voice と script のため、cache 上の見本音声を再利用しました。違和感が続く場合は voice 設定を見直してください。"
+          ? "前に作ったお手本を使いました。違和感が続く場合は声の設定を見直してください。"
           : retryingQualityConcern
-            ? "同じ voice のまま見本音声を更新しました。違和感が残るかを 1 回だけ確認してから次を決めてください。"
+            ? "同じ声のままお手本ボイスを作り直しました。違和感が残るかを1回だけ確認してから次を決めてください。"
           : payload.data.cached
-            ? "cache 上の見本音声を再利用しました。"
-            : "見本音声を生成しました。"
+            ? "前に作ったお手本を使いました。"
+            : "お手本ボイスを作りました。"
       );
       setMessageKind("info");
       setPlaybackIssue(null);
@@ -519,7 +518,7 @@ export function ListenPanel({
   async function handleReplay() {
     if (!audioPlaybackUrl) {
       setIsPlaying(false);
-      setMessage("見本音声を準備しています。数秒待ってからもう一度お試しください。");
+      setMessage("お手本を準備しています。数秒待ってからもう一度お試しください。");
       setMessageKind("info");
       return;
     }
@@ -535,13 +534,13 @@ export function ListenPanel({
     } catch {
       setIsPlaying(false);
       if (hasConfirmedListen) {
-        setMessage("再確認の再生は失敗しましたが、見本確認は済んでいます。そのまま record に進むか、違和感があるときの判断を開いて次を決められます。");
+        setMessage("再確認の再生は失敗しましたが、お手本は確認済みです。練習エリアに戻るか、違和感がある時の判断を開けます。");
         setMessageKind("info");
         return;
       }
       setPlaybackIssue({
         kind: "playback_failed",
-        message: "ブラウザで見本音声を再生できませんでした。ページを再読込するか、見本音声を更新してからもう一度お試しください。"
+        message: "ブラウザでお手本を再生できませんでした。ページを再読込するか、お手本ボイスを更新してからもう一度お試しください。"
       });
       setShowPlaybackFallback(true);
     }
@@ -550,29 +549,29 @@ export function ListenPanel({
   return (
     <div className="space-y-4" aria-busy={loading || isPreparingPlayback}>
       <div data-testid="listen-voice-status" className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-        {voiceLabel ? `現在の voice: ${voiceLabel}` : "現在の voice を使います。"}
+        {voiceLabel ? `お手本の声: ${voiceLabel}` : "設定済みの声を使います。"}
         <br />
-        {showsReusableAudio ? "この script と voice の組み合わせには cache 上の見本音声があります。" : "まだ cache 上の見本音声はありません。"}
+        {showsReusableAudio ? "前に作ったお手本があります。" : "まだお手本はありません。"}
       </div>
 
       <div data-testid="listen-playback-status" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-4 text-sm leading-6 text-ink-700">
-        <p className="text-xs uppercase tracking-[0.18em] text-ink-500">音声状態</p>
+        <p className="text-xs font-semibold text-ink-500">お手本ボイス</p>
         <p className="mt-2 font-semibold text-ink-900">{playbackStateLabel}</p>
         <p className="mt-2">{playbackStateDescription}</p>
         <details className="mt-3 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3">
-          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">更新の意味</summary>
+          <summary className="cursor-pointer text-xs font-semibold text-ink-500">作り直しの補足</summary>
           <p className="mt-2 text-sm leading-6 text-ink-600">{updateMeaning}</p>
         </details>
       </div>
 
       {canGenerateAudio ? (
         <div data-testid="listen-style-preset" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-4 text-sm leading-6 text-ink-700">
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">生成 style</p>
+          <p className="text-xs font-semibold text-ink-500">声の雰囲気</p>
           <p className="mt-2 font-semibold text-ink-900">{selectedVoiceStyleOption?.label ?? voiceStylePreset}</p>
           <p className="mt-2 text-ink-600">
             {hasPendingVoiceStyleChange
-              ? `今の見本は ${audioVoiceStyleOption?.label ?? audioVoiceStylePreset}。更新すると ${selectedVoiceStyleOption?.label ?? voiceStylePreset} で作ります。`
-              : "見本音声の話し方を選びます。聞く速さだけなら、下の再生速度を使います。"}
+              ? `今のお手本は ${audioVoiceStyleOption?.label ?? audioVoiceStylePreset}。更新すると ${selectedVoiceStyleOption?.label ?? voiceStylePreset} で作ります。`
+              : "お手本ボイスの話し方を選びます。聞く速さだけなら、下の再生速度を使います。"}
           </p>
           <div className="mt-4 grid gap-2 sm:grid-cols-4">
             {VOICE_STYLE_PRESET_OPTIONS.map((option) => {
@@ -604,41 +603,41 @@ export function ListenPanel({
         data-testid="listen-current-step"
         className={`rounded-2xl border px-4 py-4 text-sm leading-6 ${getGuidanceToneClasses(recoveryGuidance?.tone ?? listenGuidance.tone)}`}
       >
-        <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Current step</p>
+        <p className="text-xs font-semibold text-ink-500">今やること</p>
         <p className="mt-2 font-semibold text-ink-900">{playbackHealthLabel}</p>
         <p className="mt-2 text-ink-700">{playbackHealthDescription}</p>
       </div>
 
       {showNextAction ? (
         <section data-testid="listen-next-action" className={`rounded-2xl border px-4 py-4 ${getGuidanceToneClasses("steady")}`}>
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next action</p>
+          <p className="text-xs font-semibold text-ink-500">次にやること</p>
           <h3 className="mt-2 text-lg font-semibold text-ink-900">
-            {playbackStatus === "saved" || playbackStatus === "generated_cached" ? "cache 上の見本をこのまま使うか決める" : "聞き終えたあとの次の判断"}
+            {playbackStatus === "saved" || playbackStatus === "generated_cached" ? "このお手本でまねる" : "聞いたら声に出す"}
           </h3>
           <p className="mt-3 text-sm leading-6 text-ink-800">
             {playbackStatus === "saved" || playbackStatus === "generated_cached"
-                ? "違和感がなければ record へ。迷うならもう一度聞き、voice が気になる時だけ判断ガイドを開きます。"
-              : "違和感がなければ record へ。迷うならもう一度聞きます。"}
+                ? "違和感がなければ、下の練習エリアで英文を見ながら声に出します。"
+              : "聞いたら、下の練習エリアで英文を見ながら声に出します。"}
           </p>
           <DecisionActionGrid actions={normalDecisionActions} />
-          <p className="mt-3 text-sm leading-6 text-ink-600">迷ったら Current step と音声状態だけ見れば十分です。</p>
+          <p className="mt-3 text-sm leading-6 text-ink-600">録音は、声に出して納得してからで十分です。</p>
         </section>
       ) : null}
 
       {!canGenerateAudio && generateBlockedSummary ? (
         <div data-testid="listen-generate-blocked" className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Recovery plan</p>
+          <p className="text-xs font-semibold text-ink-500">うまくいかない時</p>
           <p className="mt-2">{generateBlockedSummary}</p>
         </div>
       ) : null}
 
       {!recoveryGuidance ? (
         <section data-testid="listen-next-step" className={`rounded-2xl border px-4 py-4 ${getGuidanceToneClasses(listenGuidance.tone)}`}>
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next step</p>
+          <p className="text-xs font-semibold text-ink-500">次にやること</p>
           <h3 className="mt-2 text-lg font-semibold text-ink-900">{listenGuidance.actionLabelJa}</h3>
           <p className="mt-2 text-xs uppercase tracking-[0.18em] text-ink-500">{getGuidanceActionBadgeLabel(listenGuidance.actionKind)}</p>
           <p className="mt-3 text-sm leading-6 text-ink-800">{listenGuidance.summaryJa}</p>
-          <p className="mt-3 text-sm leading-6 text-ink-700">この画面での実行指示: {listenGuidance.executionCueJa}</p>
+          <p className="mt-3 text-sm leading-6 text-ink-700">{listenGuidance.executionCueJa}</p>
           <details className="mt-3 rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
             <summary className="cursor-pointer text-sm font-semibold text-ink-700">練習メモを見る</summary>
             <p className="mt-3 text-sm leading-6 text-ink-600">{listenGuidance.reasonJa}</p>
@@ -664,11 +663,11 @@ export function ListenPanel({
         </section>
       ) : (
         <section data-testid="listen-recovery-guidance" className={`rounded-2xl border px-4 py-4 ${getGuidanceToneClasses(recoveryGuidance.tone)}`}>
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">{hasQualityConcern ? "違和感があるときの判断" : "Recovery plan"}</p>
+          <p className="text-xs font-semibold text-ink-500">{hasQualityConcern ? "違和感がある時" : "うまくいかない時"}</p>
           <h3 className="mt-2 text-lg font-semibold text-ink-900">{recoveryGuidance.titleJa}</h3>
           <p className="mt-2 text-xs uppercase tracking-[0.18em] text-ink-500">{getGuidanceActionBadgeLabel(recoveryGuidance.actionKind)}</p>
           <p className="mt-3 text-sm leading-6 text-ink-800">{recoveryGuidance.summaryJa}</p>
-          <p className="mt-3 text-sm leading-6 text-ink-700">この画面での実行指示: {recoveryGuidance.executionCueJa}</p>
+          <p className="mt-3 text-sm leading-6 text-ink-700">{recoveryGuidance.executionCueJa}</p>
           <details className="mt-3 rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
             <summary className="cursor-pointer text-sm font-semibold text-ink-700">復旧メモを見る</summary>
             <p className="mt-3 text-sm leading-6 text-ink-600">{recoveryGuidance.reasonJa}</p>
@@ -695,7 +694,7 @@ export function ListenPanel({
             <div className="mt-4 rounded-2xl border border-[var(--line)] bg-white px-4 py-4 text-sm leading-6 text-ink-700">
               <p className="text-xs uppercase tracking-[0.18em] text-ink-500">再生の逃がし方</p>
               <p className="mt-2">このブラウザ内の再生が不安定でも、音声ファイル自体は用意できている可能性があります。</p>
-              <p className="mt-2">まず新しいタブで 1 回だけ確認し、まだ難しければ見本音声を更新してから record に進めます。</p>
+              <p className="mt-2">まず新しいタブで 1 回だけ確認し、まだ難しければお手本ボイスを更新してから練習へ戻ります。</p>
             </div>
           ) : null}
           {qualityDecisionActions.length > 0 ? (
@@ -708,8 +707,8 @@ export function ListenPanel({
                 <p className="text-xs uppercase tracking-[0.18em] text-ink-500">判断の目安</p>
                 <p className="mt-2">
                   {playbackStatus === "saved" || playbackStatus === "generated_cached"
-                    ? "違和感が小さければ今の音声で進みます。voice 自体が違うなら先に voice 設定を見直し、一時的かだけ見たいなら同じ voice のまま試します。"
-                    : "違和感が小さければ今の音声で進みます。更新で様子を見たいなら同じ voice のまま試し、voice 自体が違うなら voice 設定を見直します。"}
+                    ? "違和感が小さければ今のお手本で進みます。声そのものが違うなら先に設定を見直し、一時的かだけ見たいなら同じ声のまま試します。"
+                    : "違和感が小さければ今のお手本で進みます。作り直しで様子を見たいなら同じ声のまま試し、声そのものが違うなら設定を見直します。"}
                 </p>
               </div>
               <DecisionActionGrid actions={qualityDecisionActions} />
@@ -743,11 +742,6 @@ export function ListenPanel({
                   新しいタブで再生する
                 </a>
               ) : null}
-              {nextRecordHref && audioUrl ? (
-                <Link href={nextRecordHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-                  今の音声で record へ進む
-                </Link>
-              ) : null}
             </div>
           )}
         </section>
@@ -766,15 +760,20 @@ export function ListenPanel({
 
       <div className="flex flex-wrap gap-3">
         {!recoveryGuidance && canGenerateAudio ? (
-          <button
-            data-testid="listen-generate-button"
-            type="button"
-            onClick={handleGenerate}
-            disabled={loading}
-            className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? (audioUrl ? "更新中..." : "生成中...") : audioUrl ? "見本音声を更新する" : "見本音声を生成する"}
-          </button>
+          <div className="flex flex-col items-start gap-2">
+            <button
+              data-testid="listen-generate-button"
+              type="button"
+              onClick={handleGenerate}
+              disabled={loading}
+              className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? (audioUrl ? "作り直し中..." : "作成中...") : audioUrl ? "お手本ボイスを作り直す" : "お手本ボイスを作る"}
+            </button>
+            <p className="rounded-full border border-[var(--line)] bg-ink-50 px-3 py-1 text-xs font-semibold text-ink-600">
+              ベータでは お手本ボイス生成は10回まで
+            </p>
+          </div>
         ) : null}
         {audioUrl ? (
           <button
@@ -795,7 +794,7 @@ export function ListenPanel({
               setShowPlaybackFallback(true);
               setAudioDurationSeconds(null);
               setHasQualityConcern(false);
-              setMessage("表示中の見本音声を閉じました。必要ならもう一度生成できます。");
+                  setMessage("表示中のお手本を閉じました。必要ならもう一度作れます。");
               setMessageKind("info");
             }}
             className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50"
@@ -814,7 +813,7 @@ export function ListenPanel({
               setPlaybackIssue(null);
               setIsPlaying(false);
               setShowPlaybackFallback(true);
-              setMessage("閉じた見本音声を戻しました。必要ならこのまま見本確認を続けられます。");
+              setMessage("閉じたお手本を戻しました。必要ならこのまま練習を続けられます。");
               setMessageKind("info");
               setRestorableAudio(null);
             }}
@@ -901,13 +900,13 @@ export function ListenPanel({
               onError={() => {
                 setIsPlaying(false);
                 if (hasConfirmedListen) {
-                  setMessage("再生に失敗しましたが、見本確認は済んでいます。今の音声で進むか、`違和感があるときの判断` を開いて次を決められます。");
+                  setMessage("再生に失敗しましたが、お手本は確認済みです。練習エリアに戻るか、違和感がある時の判断を開けます。");
                   setMessageKind("info");
                   return;
                 }
                 setPlaybackIssue({
                   kind: "playback_failed",
-                  message: "ブラウザで見本音声を再生できませんでした。ページを再読込するか、見本音声を更新してからもう一度お試しください。"
+                  message: "ブラウザでお手本を再生できませんでした。ページを再読込するか、お手本ボイスを更新してからもう一度お試しください。"
                 });
                 setShowPlaybackFallback(true);
                 setMessage(null);
@@ -915,13 +914,13 @@ export function ListenPanel({
               onStalled={() => {
                 setIsPlaying(false);
                 if (hasConfirmedListen) {
-                  setMessage("再確認の再生が不安定でしたが、見本確認は済んでいます。必要ならもう一度聞くか、そのまま次へ進めます。");
+                  setMessage("再確認の再生が不安定でしたが、お手本は確認済みです。必要ならもう一度聞くか、練習へ戻れます。");
                   setMessageKind("info");
                   return;
                 }
                 setPlaybackIssue({
                   kind: "playback_unstable",
-                  message: "見本音声の再生が途中で止まりました。少し待つか、見本音声を更新してから聞き直してください。"
+                  message: "お手本の再生が途中で止まりました。少し待つか、お手本ボイスを更新してから聞き直してください。"
                 });
                 setShowPlaybackFallback(true);
                 setMessage(null);
@@ -929,32 +928,32 @@ export function ListenPanel({
               onWaiting={() => {
                 setIsPlaying(false);
                 if (hasConfirmedListen) {
-                  setMessage("再確認の読み込みが不安定でしたが、見本確認は済んでいます。必要ならもう一度聞くか、そのまま次へ進めます。");
+                  setMessage("再確認の読み込みが不安定でしたが、お手本は確認済みです。必要ならもう一度聞くか、練習へ戻れます。");
                   setMessageKind("info");
                   return;
                 }
                 setPlaybackIssue({
                   kind: "playback_unstable",
-                  message: "見本音声の読み込みが不安定です。少し待つか、見本音声を更新してから短く聞き直してください。"
+                  message: "お手本の読み込みが不安定です。少し待つか、お手本ボイスを更新してから短く聞き直してください。"
                 });
                 setShowPlaybackFallback(true);
                 setMessage(null);
               }}
             >
-              お使いのブラウザでは音声を再生できません。見本音声を更新するか、新しいタブで再生してください。
+              お使いのブラウザでは音声を再生できません。お手本ボイスを更新するか、新しいタブで再生してください。
             </audio>
           ) : (
             <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
               <p className="text-xs uppercase tracking-[0.18em] text-ink-500">準備中</p>
-              <p className="mt-2">見本音声を再生できる状態にしています。数秒待てば、この画面のまま再生できます。</p>
+              <p className="mt-2">お手本を再生できる状態にしています。数秒待てば、この画面のまま再生できます。</p>
             </div>
           )}
           <p className="text-xs uppercase tracking-[0.18em] text-ink-500">
             {playbackStatus === "saved"
-              ? "cache 保存済み"
+              ? "保存済み"
               : playbackStatus === "generated_cached"
-                ? "キャッシュ再利用"
-                : "新規生成"}
+                ? "保存済み"
+                : "新しいお手本"}
           </p>
           <SavedModelAudioControl scriptId={scriptId} audioUrl={audioUrl} />
         </div>

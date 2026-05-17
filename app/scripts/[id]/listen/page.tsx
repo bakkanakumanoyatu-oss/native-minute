@@ -54,25 +54,25 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
     return (
       <section className="space-y-6">
         <StateStepSection
-          title="見本確認に進む script が見つからない状態"
-          summary="この listen は開けましたが、対象 script は取得できませんでした。いまは script を選び直して main loop に戻る段階です。"
+          title="練習する台本が見つからない状態"
+          summary="対象の台本を取得できませんでした。練習一覧から選び直します。"
           tone="alert"
         />
         <StateActionSection
           eyebrow="Next action"
           title="戻る先を決める"
-          summary="まず scripts に戻って対象を選び直します。"
+          summary="まず練習一覧に戻って対象を選び直します。"
           actions={[
-            { label: "scripts", href: "/scripts", tone: "primary" }
+            { label: "練習一覧", href: "/scripts", tone: "primary" }
           ]}
         />
         <StateActionSection
-          eyebrow="Other actions"
-          title="補助導線"
-          summary="新しい script を作るか、直近の流れを見たいときだけ使います。"
+          eyebrow="その他の操作"
+          title="設定・管理"
+          summary="新しい台本を作るか、直近の流れを見たいときだけ使います。"
           actions={[
-            { label: "新しい script を作る", href: "/scripts/new" },
-            { label: "progress", href: "/progress" }
+            { label: "新しい台本を作る", href: "/scripts/new" },
+            { label: "ベスト確認", href: "/progress" }
           ]}
         />
       </section>
@@ -119,35 +119,39 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
   return (
     <section className="space-y-6">
       <div data-testid="listen-practice-first-view" className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.15),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.92))] p-6 shadow-soft sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Listen</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">見本を短く聞いて、record へ</h1>
+        <p className="text-sm font-semibold text-[var(--accent-strong)]">聞いてまねる</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">お手本を聞いて、声に出す</h1>
         <p className="mt-3 text-base font-semibold text-ink-800">{script.title}</p>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-700">
-          {showCreatedHandoff ? "保存できました。次は" : "まずは"}見本音声を 1〜2 chunk だけまねます。違和感がなければ、聞き込みすぎず record に進めば十分です。
+          {showCreatedHandoff ? "保存できました。次は" : "まずは"}お手本を聞き、英文を見ながら声に出してまねます。
         </p>
+        <div className="mt-5 grid gap-3 md:grid-cols-5">
+          {["お手本を聞く", "英文を読む", "声に出す", "納得する", "録音して評価"].map((step, index) => (
+            <div key={step} className="rounded-2xl border border-white/80 bg-white/85 px-4 py-4">
+              <p className="text-xs font-semibold text-[var(--accent-strong)]">{index + 1}</p>
+              <p className="mt-2 text-sm font-semibold text-ink-900">{step}</p>
+            </div>
+          ))}
+        </div>
         <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
           <a href="#listen-panel-shell" className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-white shadow-sm sm:w-auto">
-            見本音声を聞く
+            お手本を聞く
           </a>
-          <Link href={recordHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800 sm:w-auto">
-            record へ進む
-          </Link>
         </div>
         <details className="mt-5 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3">
-          <summary className="cursor-pointer text-sm font-semibold text-ink-800">台本を見る / 直したいとき</summary>
-          <p className="mt-3 text-sm leading-6 text-ink-700">{script.content}</p>
+          <summary className="cursor-pointer text-sm font-semibold text-ink-800">台本を磨きたいとき</summary>
           <p className="mt-3 text-sm leading-6 text-ink-600">
-            台本を直したい場合は、履歴の意味を崩さないように in-place edit ではなく複製から調整します。
+            台本を直すと過去の結果と意味がずれるため、別の練習として複製して調整します。
           </p>
           <Link href={getDuplicateScriptPath(script.id)} className="mt-3 inline-flex rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-            複製して直す
+            この台本を磨く
           </Link>
         </details>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">見本音声の確認</h2>
+          <h2 className="text-lg font-semibold text-ink-900">お手本ボイス</h2>
           {listenBlockedKind ? (
             <>
               <ListenRecoverySection
@@ -160,7 +164,7 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
                       ? voiceSetup.providerMessage
                       : listenBlockedKind === "consent_required"
                         ? "まだ consent が完了していません。まず `/setup/voice` で同意を記録してください。"
-                        : "consent は完了していますが、voice がまだありません。見本音声を作る前に voice を作成してください。",
+                        : "consent は完了していますが、voice がまだありません。お手本ボイスを作る前に voice を作成してください。",
                   hasAudio: Boolean(cachedAudio),
                   practiceContext
                 })}
@@ -178,7 +182,7 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
                     practiceContext={practiceContext}
                     nextRecordHref={recordHref}
                     canGenerateAudio={false}
-                    generateBlockedSummary="保存済みの見本音声はこのまま確認できます。新しい見本音声を作るには、先に voice 設定の前提を整えてください。"
+                    generateBlockedSummary="保存済みのお手本はこのまま確認できます。新しいお手本ボイスを作るには、先に声の設定を整えてください。"
                   />
                 </div>
               ) : null}
@@ -196,11 +200,33 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
               />
             </div>
           )}
+          <section id="listen-practice-area" className="mt-6 rounded-[2rem] border border-[var(--line)] bg-ink-50 p-5">
+            <p className="text-xs font-semibold text-[var(--accent-strong)]">練習エリア</p>
+            <h2 className="mt-2 text-xl font-semibold text-ink-900">読んで、まねる</h2>
+            <div className="mt-4 rounded-[1.5rem] border border-[var(--line)] bg-white p-5">
+              <p className="text-xs font-semibold text-ink-500">英文スクリプト</p>
+              <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-ink-900">{script.content}</p>
+            </div>
+            <div className="mt-4 grid gap-3 text-sm leading-6 text-ink-700 sm:grid-cols-3">
+              <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
+                <p className="font-semibold text-ink-900">1. お手本を聞く</p>
+              </div>
+              <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
+                <p className="font-semibold text-ink-900">2. 声に出してまねる</p>
+              </div>
+              <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
+                <p className="font-semibold text-ink-900">3. 納得したら録音</p>
+              </div>
+            </div>
+            <Link href={recordHref} className="mt-5 inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-5 py-4 text-sm font-semibold text-white shadow-sm sm:w-auto">
+              録音して評価へ進む
+            </Link>
+          </section>
         </div>
 
         <div className="space-y-4">
           <div className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-ink-900">Current step</h2>
+            <h2 className="text-lg font-semibold text-ink-900">今やること</h2>
             <p className="mt-3 text-sm leading-6 text-ink-700">
               {getListenSideSummary({
                 takeCount: progressItem?.takeCount ?? 0,
@@ -213,25 +239,24 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
           </div>
 
           <div className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-ink-900">Other actions</h2>
-            <p className="mt-2 text-sm leading-6 text-ink-600">listen の判断は左側で完結できます。ここでは結果確認や script 管理など、画面外の補助導線だけをまとめています。</p>
-            <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
+            <h2 className="text-lg font-semibold text-ink-900">その他の操作</h2>
+            <div className="mt-4 grid gap-2 text-sm font-semibold">
               {latestReviewHref ? (
                 <Link href={latestReviewHref} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-ink-700">
-                  最新結果を見る
+                  直す
                 </Link>
               ) : null}
               <Link href={getDuplicateScriptPath(script.id)} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-ink-700">
-                script を複製
+                この台本を磨く
               </Link>
               <Link href="/scripts" className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-ink-700">
-                scripts
+                練習一覧
               </Link>
               <Link href={voiceSetupHref} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-ink-700">
-                voice 設定
+                声の設定
               </Link>
               <Link href="/progress" className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-ink-700">
-                progress
+                ベスト確認
               </Link>
             </div>
           </div>
@@ -239,14 +264,14 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
       </div>
 
       <details className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-        <summary className="cursor-pointer text-sm font-semibold text-ink-800">Details / 区切り・台本チェック・cache の前提を見る</summary>
+        <summary className="cursor-pointer text-sm font-semibold text-ink-800">設定・管理を見る</summary>
         <div className="mt-5 space-y-5">
           <ScriptPracticeChunks
             testId="listen-practice-chunks"
             chunks={practiceChunks}
             focusWords={practiceFocusWords}
-            summary="聞く前に、どこで区切るかだけ決めます。"
-            actionCue="まずは 1〜2 chunk だけまねてから record へ"
+            summary="まねる前に、どこで区切るかだけ決めます。"
+            actionCue="まずは 1〜2 区切りだけまねてから録音へ"
           />
 
           <SavedScriptFreezeCandidateCheck script={script} />
@@ -298,11 +323,11 @@ function getListenLoopBlockedSummary(input: {
   hasSavedAudio: boolean;
 }) {
   if (input.isBlocked && input.hasSavedAudio) {
-    return "いまは listen の前提が一部不足していますが、保存済み見本音声があるためこの script の listen は続けられます。必要なら見本確認のあと record に進み、不足前提はあとで整えられます。";
+    return "いまは聞いてまねる前提が一部不足していますが、保存済みのお手本があるためこの台本の練習は続けられます。必要ならまねたあと録音に進み、不足前提はあとで整えられます。";
   }
 
   if (input.isBlocked) {
-    return "いまは listen の前提を整えてから main loop を再開する段階です。復旧後はこの script の listen にそのまま戻れます。";
+    return "いまは聞いてまねる前提を整えてから練習を再開する段階です。復旧後はこの台本の練習にそのまま戻れます。";
   }
 
   return null;
@@ -316,32 +341,32 @@ function getListenSideSummary(input: {
   hasLatestReview: boolean;
 }) {
   if (input.isBlocked && input.hasSavedAudio) {
-    return "voice 側の前提は不足していますが、保存済み見本音声があるため listen 自体は続けられる状態です。必要なら見本を確認してから record に進み、不足前提の修正はあとで戻れます。";
+    return "voice 側の前提は不足していますが、保存済みのお手本があるため練習は続けられる状態です。必要ならお手本を確認してから録音に進み、不足前提の修正はあとで戻れます。";
   }
 
   if (input.isBlocked) {
-    return "いまは listen を通常どおり続ける前に、voice 側の不足前提を補う段階です。復旧後はこの script の listen から main loop に戻せます。";
+    return "いまは聞いてまねる練習を通常どおり続ける前に、voice 側の不足前提を補う段階です。復旧後はこの台本の練習に戻せます。";
   }
 
   if (input.takeCount === 0) {
-    return "この script はまだ未着手です。listen は最初の見本確認だけに使い、十分ならそのまま record に渡すのが最短です。";
+    return "この台本はまだ未着手です。まずお手本を聞いてまねます。納得したら録音に進むのが最短です。";
   }
 
   if (input.improvementTrend === "down") {
     return input.hasLatestReview
-      ? "直前の結果で少し崩れているので、listen で耳を合わせ直してから record に戻すと自然です。迷ったら最新結果を見返して重点だけ確認できます。"
-      : "直前の結果で少し崩れているので、listen で耳を合わせ直してから record に戻すと自然です。";
+      ? "直前の結果で少し崩れているので、お手本で耳を合わせ直してから録音に戻すと自然です。迷ったら最新結果を見返して重点だけ確認できます。"
+      : "直前の結果で少し崩れているので、お手本で耳を合わせ直してから録音に戻すと自然です。";
   }
 
   if (input.improvementTrend === "up") {
     return input.hasLatestReview
-      ? "改善傾向があるので、listen は短く済ませて record に戻る流れが自然です。必要なときだけ最新結果を見返せます。"
-      : "改善傾向があるので、listen は短く済ませて record に戻る流れが自然です。";
+      ? "改善傾向があるので、お手本は短く済ませて録音に戻る流れが自然です。必要なときだけ最新結果を見返せます。"
+      : "改善傾向があるので、お手本は短く済ませて録音に戻る流れが自然です。";
   }
 
   return input.hasLatestReview
-    ? "大きな崩れは見えていません。listen を短く挟むか、最新結果を見返してから record に戻るかをこの画面で選べます。"
-    : "大きな崩れは見えていません。listen を短く挟んだら、そのまま record に戻れば十分です。";
+    ? "大きな崩れは見えていません。お手本を短く挟むか、最新結果を見返してから録音に戻るかをこの画面で選べます。"
+    : "大きな崩れは見えていません。お手本を短く挟んだら、そのまま録音に戻れば十分です。";
 }
 
 function ListenRecoverySection({
@@ -360,15 +385,15 @@ function ListenRecoverySection({
   const nextActionSummary =
     kind === "provider_unavailable"
       ? hasSavedAudio
-        ? "保存済みの見本音声はこのまま確認できます。新しい見本音声を作る前提だけをあとで整えれば十分です。"
-        : "まず voice provider の前提を見直し、listen に戻るのは復旧後で十分です。"
+        ? "保存済みのお手本はこのまま確認できます。新しいお手本ボイスを作る前提だけをあとで整えれば十分です。"
+        : "まず声の設定を見直し、練習に戻るのは復旧後で十分です。"
       : kind === "consent_required"
         ? hasSavedAudio
-          ? "保存済みの見本音声はこのまま確認できます。listen を通常どおり続ける前に、同意だけあとで記録すれば十分です。"
-          : "まず同意を記録します。script 一覧には戻れますが、listen を続けるのは同意のあとで十分です。"
+          ? "保存済みのお手本はこのまま確認できます。通常どおり続ける前に、同意だけあとで記録すれば十分です。"
+          : "まず同意を記録します。練習一覧には戻れますが、聞いてまねる練習を続けるのは同意のあとで十分です。"
         : hasSavedAudio
-          ? "保存済みの見本音声はこのまま確認できます。listen を通常どおり続ける前に、voice を 1 つ作れば十分です。"
-          : "まず voice を 1 つ作ります。script 一覧には戻れますが、listen を続けるのは voice 作成のあとで十分です。";
+          ? "保存済みのお手本はこのまま確認できます。通常どおり続ける前に、voice を 1 つ作れば十分です。"
+          : "まず voice を 1 つ作ります。練習一覧には戻れますが、聞いてまねる練習を続けるのは voice 作成のあとで十分です。";
   const otherActions =
     kind === "provider_unavailable"
       ? [
@@ -384,18 +409,18 @@ function ListenRecoverySection({
     <>
       <div data-testid="listen-recovery-block" data-kind={kind}>
         <StateStepSection
-          title="見本確認の前に立て直しが必要な状態"
-          summary="いまは見本音声を再生する段階ではなく、listen を始める前提を整える段階です。"
+          title="お手本の前に立て直しが必要な状態"
+          summary="いまはお手本を再生する前提を整える段階です。"
           tone={guidance.tone}
         />
         <section className={`rounded-[2rem] border px-6 py-6 shadow-sm ${getGuidanceToneClasses(guidance.tone)}`}>
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Recovery plan</p>
+          <p className="text-sm font-semibold text-[var(--accent-strong)]">うまくいかない時</p>
           <h2 className="mt-2 text-2xl font-semibold text-ink-900">{guidance.titleJa}</h2>
           <p className="mt-2 text-xs uppercase tracking-[0.18em] text-ink-500">{getGuidanceActionBadgeLabel(guidance.actionKind)}</p>
           <p className="mt-3 text-sm leading-6 text-ink-800">{guidance.summaryJa}</p>
           <p className="mt-3 text-sm leading-6 text-ink-600">{guidance.reasonJa}</p>
           <p className="mt-3 text-sm leading-6 text-ink-700">この画面での実行指示: {guidance.executionCueJa}</p>
-          {guidance.followupCueJa ? <p className="mt-2 text-sm leading-6 text-ink-600">復旧後の listen / record: {guidance.followupCueJa}</p> : null}
+          {guidance.followupCueJa ? <p className="mt-2 text-sm leading-6 text-ink-600">復旧後の練習: {guidance.followupCueJa}</p> : null}
           {guidance.focusReasonJa ? <p className="mt-3 text-sm leading-6 text-ink-600">今これを優先する理由: {guidance.focusReasonJa}</p> : null}
           {guidance.focusSummaryJa ? <p className="mt-3 text-sm leading-6 text-ink-700">{guidance.focusSummaryJa}</p> : null}
           {guidance.focusWords.length > 0 ? (
@@ -414,14 +439,13 @@ function ListenRecoverySection({
           summary={nextActionSummary}
           actions={[
             { label: guidance.primaryActionLabelJa, href: ctaHref, tone: "primary" },
-            ...(hasSavedAudio ? [{ label: "保存済み見本を確認する", href: "#listen-panel-shell" }] : []),
+            ...(hasSavedAudio ? [{ label: "保存済みのお手本を確認する", href: "#listen-panel-shell" }] : []),
             ...(latestReviewHref ? [{ label: "最新結果を見る", href: latestReviewHref }] : [])
           ]}
         />
         <StateActionSection
-          eyebrow="Other actions"
-          title="補助導線"
-          summary="前提を整えたあとに main loop へ戻るための補助導線です。"
+          eyebrow="その他の操作"
+          title="設定・管理"
           actions={otherActions}
         />
       </div>

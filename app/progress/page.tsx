@@ -16,8 +16,8 @@ import { getPronunciationProviderStatus } from "@/services/pronunciation";
 import type { ProgressTakeSummary, ScriptProgressItem } from "@/services/progress";
 import { getVoiceSetupState } from "@/services/voice";
 import { getTranscriptionProviderStatus } from "@/services/transcription";
-import { TakeSummarySnapshot } from "@/components/guidance/take-summary-snapshot";
 import { StateActionSection, StateStepSection, type StateActionLink } from "@/components/guidance/state-sections";
+import { BestResultExportActions } from "@/components/export/best-result-export-actions";
 
 type ProgressAudioLibraryState = {
   savedModelAudios: SavedModelAudioRow[];
@@ -85,7 +85,7 @@ export default async function ProgressPage() {
         />
         <StateActionSection
           eyebrow="Other actions"
-          title="補助導線"
+          title="設定・管理"
           actions={[{ label: "home", href: "/" }]}
         />
       </section>
@@ -112,10 +112,8 @@ export default async function ProgressPage() {
   const candidateScript = pickScriptsLaunchCandidate(overview.scripts, canRecord)?.script ?? null;
   const latestReviewedItem = pickLatestReviewedScriptCandidate(overview.scripts);
   const recommendedItem = pickRecommendedScript(overview.scripts);
+  const overallBestItem = pickOverallBestScript(overview.scripts);
   const recommendedGuidance = recommendedItem ? getProgressPracticeGuidance(recommendedItem) : null;
-  const latestReviewedHref = latestReviewedItem?.latestTake
-    ? getScriptReviewPath(latestReviewedItem.script.id, latestReviewedItem.latestTake.id)
-    : null;
   const candidateListenVoiceSetupHref = candidateScript
     ? buildScriptListenVoiceSetupHref(candidateScript.id, "/progress")
     : voiceSetupFromProgressHref;
@@ -147,7 +145,7 @@ export default async function ProgressPage() {
         />
         <StateActionSection
           eyebrow="Other actions"
-          title="補助導線"
+          title="設定・管理"
           summary="voice 側の準備を先に整えたいときだけ使います。"
           actions={[
             { label: "voice 設定", href: voiceSetupFromProgressHref },
@@ -221,7 +219,7 @@ export default async function ProgressPage() {
         />
         <StateActionSection
           eyebrow="Other actions"
-          title="補助導線"
+          title="設定・管理"
           summary={voiceReadiness ? "voice 設定を済ませたあと、一覧や main loop に戻るときだけ使います。" : "voice 側の前提を見直したいときだけ使います。"}
           actions={[
             { label: "scripts", href: "/scripts" },
@@ -234,21 +232,36 @@ export default async function ProgressPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.94))] p-6 shadow-soft sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">progress</p>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">練習結果の振り返り</h1>
-        <p className="mt-3 text-sm leading-6 text-ink-600">
-          script ごとの最新結果とベスト結果を並べて、保存済み結果の流れと次に何を直すべきかをすぐ判断できるようにしています。
-        </p>
+      <div className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-sm">
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">PROGRESS</p>
       </div>
 
-      <section className={`rounded-[2rem] border p-6 shadow-sm ${getGuidanceToneClasses("steady")}`}>
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Current step</p>
-        <h2 className="mt-2 text-2xl font-semibold text-ink-900">振り返って、次に戻る先を決める段階</h2>
-        <p className="mt-3 text-sm leading-6 text-ink-700">
-          progress は保存済み結果を読む場です。各 script ごとに `Current step` で状況を確認し、`Next step` で重点を見たあと、`Next action` から listen / record / 結果確認 の戻り先を決められます。
-        </p>
-      </section>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <TakeSummaryCard
+          title="最新結果"
+          take={latestReviewedItem?.latestTake ?? null}
+          scriptTitle={latestReviewedItem?.script.title ?? "最新結果"}
+          href={latestReviewedItem?.latestTake ? getScriptReviewPath(latestReviewedItem.script.id, latestReviewedItem.latestTake.id) : null}
+          emptyHref={recommendedItem ? getScriptRecordPath(recommendedItem.script.id) : "/scripts"}
+          emptyListenHref={recommendedItem ? getScriptListenPath(recommendedItem.script.id) : null}
+          canRecord={canRecord}
+        />
+        <TakeSummaryCard
+          title="ベスト結果"
+          take={overallBestItem?.bestTake ?? null}
+          scriptTitle={overallBestItem?.script.title ?? "ベスト結果"}
+          href={overallBestItem?.bestTake ? getScriptReviewPath(overallBestItem.script.id, overallBestItem.bestTake.id) : null}
+          emptyHref={recommendedItem ? getScriptRecordPath(recommendedItem.script.id) : "/scripts"}
+          emptyListenHref={recommendedItem ? getScriptListenPath(recommendedItem.script.id) : null}
+          highlight
+          canRecord={canRecord}
+        />
+        <ProgressQuickNextCard
+          recommendedItem={recommendedItem}
+          recommendedGuidance={recommendedGuidance}
+          canRecord={canRecord}
+        />
+      </div>
 
       {voiceReadiness ? (
         <div className="space-y-4">
@@ -282,68 +295,16 @@ export default async function ProgressPage() {
         </div>
       ) : null}
 
-      {recommendedItem && recommendedGuidance ? (
-        <section className={`rounded-[2rem] border p-6 shadow-sm ${getGuidanceToneClasses(recommendedGuidance.tone)}`}>
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Next action</p>
-          <h2 className="mt-2 text-2xl font-semibold text-ink-900">次は「{recommendedItem.script.title}」に戻る</h2>
-          <p className="mt-3 text-sm leading-6 text-ink-700">
-            {voiceReadiness && recommendedGuidance.actionKind === "listen"
-              ? `${recommendedGuidance.summaryJa} ただし listen の前提が足りないので、まず voice 設定を整えてから戻ります。`
-              : !canRecord && recommendedGuidance.actionKind === "record"
-                ? `${recommendedGuidance.summaryJa} ただし record の前提が足りないので、まず設定を整えるか listen 側から進め直します。`
-              : recommendedGuidance.summaryJa}
-          </p>
-          <p className="mt-3 text-sm leading-6 text-ink-600">迷ったら、まずこの script を 1 本だけ進めれば progress 全体の流れを止めずに再開できます。</p>
-          {(() => {
-            const recommendedAction = getRecommendedProgressActionState({
-              recommendedItem,
-              recommendedGuidance,
-              voiceReadiness: Boolean(voiceReadiness),
-              transcriptionSupported: transcriptionStatus.supported,
-              pronunciationSupported: pronunciationStatus.supported,
-              recommendedListenVoiceSetupHref
-            });
-
-            return (
-          <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
-            <Link
-              href={recommendedAction.primaryHref}
-              className="rounded-2xl bg-[var(--accent)] px-4 py-3 text-white"
-            >
-              {recommendedAction.primaryLabel}
-            </Link>
-            <Link
-              href={recommendedAction.secondaryHref}
-              className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800"
-            >
-              {recommendedAction.secondaryLabel}
-            </Link>
-          </div>
-            );
-          })()}
-        </section>
-      ) : null}
-
-      {latestReviewedItem && latestReviewedHref ? (
-        <StateActionSection
-          eyebrow="Other actions"
-          title="直近で見ていた結果から再開する"
-          summary={`最新結果が残っているのは「${latestReviewedItem.script.title}」です。推奨の 1 本ではなく、直近の流れをそのまま拾いたいときだけ使います。`}
-          actions={[
-            { label: "最新結果を見る", href: latestReviewedHref, tone: "primary" },
-            { label: canRecord ? "record に戻る" : "listen に戻る", href: canRecord ? getScriptRecordPath(latestReviewedItem.script.id) : getScriptListenPath(latestReviewedItem.script.id) }
-          ]}
-        />
-      ) : null}
-
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="script数" value={overview.totalScripts} />
         <StatCard label="保存済み結果" value={overview.totalReviewedTakes} />
         <StatCard label="ベスト数" value={overview.bestTakeCount} />
       </div>
 
-      <div data-testid="progress-script-list" className="grid gap-4">
-        {overview.scripts.map((item) => (
+      <details className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-sm">
+        <summary className="cursor-pointer text-sm font-semibold text-ink-800">過去の記録を見る</summary>
+        <div data-testid="progress-script-list" className="mt-5 grid gap-4">
+          {overview.scripts.map((item) => (
           <article key={item.script.id} data-testid={`progress-script-card-${item.script.id}`} className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
             {(() => {
               const guidance = getProgressPracticeGuidance(item);
@@ -385,6 +346,7 @@ export default async function ProgressPage() {
               <TakeSummaryCard
                 title="最新結果"
                 take={item.latestTake}
+                scriptTitle={item.script.title}
                 href={item.latestTake ? getScriptReviewPath(item.script.id, item.latestTake.id) : null}
                 emptyHref={getScriptRecordPath(item.script.id)}
                 emptyListenHref={getScriptListenPath(item.script.id)}
@@ -393,6 +355,7 @@ export default async function ProgressPage() {
               <TakeSummaryCard
                 title="ベスト結果"
                 take={item.bestTake}
+                scriptTitle={item.script.title}
                 href={item.bestTake ? getScriptReviewPath(item.script.id, item.bestTake.id) : null}
                 emptyHref={getScriptRecordPath(item.script.id)}
                 emptyListenHref={getScriptListenPath(item.script.id)}
@@ -547,7 +510,7 @@ export default async function ProgressPage() {
 
             <section className="mt-6 rounded-[1.75rem] border border-[var(--line)] bg-white p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">Other actions</p>
-              <p className="mt-2 text-sm leading-6 text-ink-600">上の `Next action` で戻り先は決められます。ここでは script 管理や結果確認だけを補助でまとめています。</p>
+              <p className="mt-2 text-sm leading-6 text-ink-600">戻り先は上で決められます。ここでは script 管理や結果確認だけをまとめています。</p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <Link
                   href={getDuplicateScriptPath(item.script.id)}
@@ -569,8 +532,9 @@ export default async function ProgressPage() {
               );
             })()}
           </article>
-        ))}
-      </div>
+          ))}
+        </div>
+      </details>
     </section>
   );
 }
@@ -676,7 +640,7 @@ function ProgressAudioLibraryCard({
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">Audio Library</p>
           <h3 className="mt-2 text-lg font-semibold text-ink-900">残しておきたい音声</h3>
           <p className="mt-2 text-sm leading-6 text-ink-600">
-            Audio Library は自分で pin した見本音声と録音です。cache や score 上の best とは別に、あとで聞き返す入口として使います。
+            自分で残したお手本ボイスと録音です。あとで聞き返す入口として使います。
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold text-ink-700">
@@ -697,7 +661,7 @@ function ProgressAudioLibraryCard({
       ) : (
         <div className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
           <p className="text-sm leading-6 text-ink-700">
-            まだ保存済み音声はありません。見本音声は listen、残したい録音は review で保存できます。
+            まだ保存済み音声はありません。お手本ボイスは聞いてまねる画面、残したい録音は結果画面で保存できます。
           </p>
         </div>
       )}
@@ -709,7 +673,7 @@ function SavedModelAudioSummaryList({ items }: { items: SavedModelAudioRow[] }) 
   return (
     <div data-testid="progress-saved-model-audios" className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
       <div className="flex items-center justify-between gap-3">
-        <h4 className="text-sm font-semibold text-ink-900">保存済み見本音声</h4>
+        <h4 className="text-sm font-semibold text-ink-900">保存済みお手本ボイス</h4>
         <span className="text-xs font-semibold text-ink-500">{items.length}/5</span>
       </div>
       {items.length > 0 ? (
@@ -734,7 +698,7 @@ function SavedModelAudioSummaryList({ items }: { items: SavedModelAudioRow[] }) 
           ))}
         </div>
       ) : (
-        <p className="mt-3 text-sm leading-6 text-ink-600">listen で保存した見本音声がここに出ます。</p>
+        <p className="mt-3 text-sm leading-6 text-ink-600">聞いてまねる画面で保存したお手本ボイスがここに出ます。</p>
       )}
     </div>
   );
@@ -907,6 +871,21 @@ function pickRecommendedScript(items: Awaited<ReturnType<typeof getProgressOverv
   return ranked[0] ?? null;
 }
 
+function pickOverallBestScript(items: Awaited<ReturnType<typeof getProgressOverview>>["scripts"]) {
+  return [...items]
+    .filter((item) => item.bestTake)
+    .sort((left, right) => {
+      const leftScore = left.bestTake?.score ?? -1;
+      const rightScore = right.bestTake?.score ?? -1;
+
+      if (leftScore !== rightScore) {
+        return rightScore - leftScore;
+      }
+
+      return (right.bestTake?.reviewedAt ?? right.bestTake?.createdAt ?? "") > (left.bestTake?.reviewedAt ?? left.bestTake?.createdAt ?? "") ? 1 : -1;
+    })[0] ?? null;
+}
+
 function getProgressNoResultsActions(input: {
   voiceReadiness: boolean;
   canRecord: boolean;
@@ -958,49 +937,6 @@ function getProgressEvaluationRecoveryActions(recommendedItem: ScriptProgressIte
     ...(recommendedItem ? [{ label: "先に listen に戻る", href: getScriptListenPath(recommendedItem.script.id), tone: "primary" as const }] : []),
     { label: "scripts", href: "/scripts" }
   ];
-}
-
-function getRecommendedProgressActionState(input: {
-  recommendedItem: ScriptProgressItem;
-  recommendedGuidance: PracticeGuidance;
-  voiceReadiness: boolean;
-  transcriptionSupported: boolean;
-  pronunciationSupported: boolean;
-  recommendedListenVoiceSetupHref: string;
-}) {
-  if (input.voiceReadiness && input.recommendedGuidance.actionKind === "listen") {
-    return {
-      primaryHref: input.recommendedListenVoiceSetupHref,
-      primaryLabel: "voice 設定",
-      secondaryHref: input.recommendedItem.latestTake
-        ? getScriptReviewPath(input.recommendedItem.script.id, input.recommendedItem.latestTake.id)
-        : "/scripts",
-      secondaryLabel: input.recommendedItem.latestTake ? "最新結果を見る" : "scripts を開く"
-    };
-  }
-
-  if ((!input.transcriptionSupported || !input.pronunciationSupported) && input.recommendedGuidance.actionKind === "record") {
-    return {
-      primaryHref: "/scripts",
-      primaryLabel: "scripts に戻る",
-      secondaryHref: input.recommendedItem.latestTake
-        ? getScriptReviewPath(input.recommendedItem.script.id, input.recommendedItem.latestTake.id)
-        : "/scripts",
-      secondaryLabel: input.recommendedItem.latestTake ? "最新結果を見る" : "scripts を開く"
-    };
-  }
-
-  return {
-    primaryHref:
-      input.recommendedGuidance.actionKind === "listen"
-        ? getScriptListenPath(input.recommendedItem.script.id)
-        : getScriptRecordPath(input.recommendedItem.script.id),
-    primaryLabel: getGuidancePrimaryButtonLabel(input.recommendedGuidance.actionKind),
-    secondaryHref: input.recommendedItem.latestTake
-      ? getScriptReviewPath(input.recommendedItem.script.id, input.recommendedItem.latestTake.id)
-      : "/scripts",
-    secondaryLabel: input.recommendedItem.latestTake ? "最新結果を見る" : "scripts を開く"
-  };
 }
 
 function getRecommendedPriority(item: Awaited<ReturnType<typeof getProgressOverview>>["scripts"][number], guidance: PracticeGuidance) {
@@ -1068,6 +1004,43 @@ function ProgressNextActionCard({
   );
 }
 
+function ProgressQuickNextCard({
+  recommendedItem,
+  recommendedGuidance,
+  canRecord
+}: {
+  recommendedItem: ScriptProgressItem | null;
+  recommendedGuidance: PracticeGuidance | null;
+  canRecord: boolean;
+}) {
+  if (!recommendedItem || !recommendedGuidance) {
+    return (
+      <section className="rounded-[1.75rem] border border-[var(--line)] bg-white p-5">
+        <h3 className="text-lg font-semibold text-ink-900">次にやること</h3>
+        <p className="mt-3 text-sm leading-6 text-ink-700">まず練習一覧で1本選びます。</p>
+        <Link href="/scripts" className="mt-4 inline-flex rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white">
+          練習を選ぶ
+        </Link>
+      </section>
+    );
+  }
+
+  const primaryHref = recommendedGuidance.actionKind === "listen" || !canRecord
+    ? getScriptListenPath(recommendedItem.script.id)
+    : getScriptRecordPath(recommendedItem.script.id);
+
+  return (
+    <section className="rounded-[1.75rem] border border-[var(--line)] bg-white p-5">
+      <h3 className="text-lg font-semibold text-ink-900">次にやること</h3>
+      <p className="mt-2 text-sm font-semibold text-[var(--accent-strong)]">{recommendedItem.script.title}</p>
+      <p className="mt-3 text-sm leading-6 text-ink-700">{recommendedGuidance.summaryJa}</p>
+      <Link href={primaryHref} className="mt-4 inline-flex rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white">
+        {recommendedGuidance.actionKind === "listen" || !canRecord ? "見本を聞く" : "録る"}
+      </Link>
+    </section>
+  );
+}
+
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-[1.75rem] border border-[var(--line)] bg-white px-5 py-5 shadow-sm">
@@ -1093,6 +1066,7 @@ function TrendBadge({ trend }: { trend: "up" | "down" | "flat" | "insufficient_d
 function TakeSummaryCard({
   title,
   take,
+  scriptTitle,
   href,
   emptyHref = null,
   emptyListenHref = null,
@@ -1101,6 +1075,7 @@ function TakeSummaryCard({
 }: {
   title: string;
   take: ProgressTakeSummary | null;
+  scriptTitle: string;
   href: string | null;
   emptyHref?: string | null;
   emptyListenHref?: string | null;
@@ -1120,19 +1095,21 @@ function TakeSummaryCard({
             <Metric label="精度" value={take.accuracyScore} />
             <Metric label="流暢さ" value={take.fluencyScore} />
           </div>
-          <div className="mt-4">
-            <TakeSummarySnapshot
-              eyebrow={highlight ? "ベスト結果の要点" : "最新結果の要点"}
-              take={take}
-              lead={take.coach.summaryJa}
-              showScoreChip={false}
-              showStrengths
-            />
-          </div>
+          <p className="mt-4 text-sm font-semibold text-ink-900">{scriptTitle}</p>
+          <p className="mt-2 line-clamp-2 text-sm leading-6 text-ink-700">{take.coach.summaryJa}</p>
           {href ? (
             <Link href={href} className="mt-4 inline-flex rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
               結果確認
             </Link>
+          ) : null}
+          {highlight ? (
+            <BestResultExportActions
+              audioHref={`/api/takes/${take.id}/audio`}
+              title={scriptTitle}
+              score={take.score}
+              dateLabel={formatSavedAt(take.reviewedAt ?? take.createdAt)}
+              comment={take.coach.summaryJa}
+            />
           ) : null}
         </>
       ) : (

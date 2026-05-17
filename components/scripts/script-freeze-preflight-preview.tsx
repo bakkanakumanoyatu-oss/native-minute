@@ -45,7 +45,7 @@ export function ScriptFreezePreflightPreview({ title, content, targetSeconds }: 
       </div>
 
       <p className="mt-3 text-xs leading-5 text-ink-500">
-        これは表示のみです。保存、freeze、音声生成、quota 消費は行いません。
+        これは表示のみです。保存や音声生成は行いません。
       </p>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-4">
@@ -70,7 +70,7 @@ export function ScriptFreezePreflightPreview({ title, content, targetSeconds }: 
 
       {showNextAction ? (
         <p className="mt-3 text-xs leading-5 text-ink-500">
-          Next action: {freezeReadiness.nextAction}
+          次にやること: {freezeReadiness.nextAction}
         </p>
       ) : null}
     </div>

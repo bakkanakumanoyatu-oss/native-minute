@@ -17,7 +17,7 @@ export function ScriptPracticeReadinessPanel({ content, targetSeconds }: ScriptP
 
   return (
     <section data-testid="script-practice-readiness" className={`rounded-2xl border px-4 py-4 text-sm leading-6 ${toneClasses[readiness.tone]}`}>
-      <p className="text-xs uppercase tracking-[0.18em] opacity-70">1分の話しやすさ</p>
+      <p className="text-xs uppercase tracking-[0.18em] opacity-70">練習の目安</p>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-ink-900">{readiness.labelJa}</h2>

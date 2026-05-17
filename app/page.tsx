@@ -84,7 +84,7 @@ function getTodayCopy(input: {
   if (input.overview.totalScripts === 0) {
     return {
       title: "今日の1分を作る",
-      summary: "まず練習用 script を1本だけ作ります。作ったら、そのまま見本を聞いて録音へ進めます。",
+      summary: "まず練習用の台本を1本だけ作ります。作ったら、お手本を聞いてまねる練習に入ります。",
       primaryLabel: "最初の練習を作る"
     };
   }
@@ -93,8 +93,8 @@ function getTodayCopy(input: {
     return {
       title: "今日の1分を始める準備",
       summary: input.candidateScript
-        ? `「${input.candidateScript.script.title}」から始められます。見本音声の前提だけ整えたら、そのまま listen に戻ります。`
-        : "見本音声の前提だけ整えたら、練習に戻ります。",
+        ? `「${input.candidateScript.script.title}」から始められます。お手本ボイスの準備だけ整えたら、聞いてまねる画面に戻ります。`
+        : "お手本ボイスの準備だけ整えたら、練習に戻ります。",
       primaryLabel: "今日の練習を始める"
     };
   }
@@ -102,8 +102,8 @@ function getTodayCopy(input: {
   return {
     title: "今日の1分",
     summary: input.candidateScript
-      ? `迷ったら「${input.candidateScript.script.title}」から。まず見本を短く聞いて、すぐ録音へ進みます。`
-      : "まず練習する script を1本選び、見本を短く聞いて録音へ進みます。",
+      ? `迷ったら「${input.candidateScript.script.title}」から。お手本を聞いてまねて、納得したら録音します。`
+      : "まず練習する台本を1本選び、お手本を聞いてまねます。",
     primaryLabel: "今日の練習を始める"
   };
 }
@@ -112,31 +112,31 @@ function LoggedOutHome() {
   return (
     <section className="grid gap-6 lg:grid-cols-[1.35fr_0.85fr]">
       <div className="overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.16),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(239,248,246,0.92))] p-6 shadow-soft sm:p-8 lg:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Practice first</p>
+          <p className="text-sm font-semibold text-[var(--accent-strong)]">今日の1分</p>
         <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
           今日の1分を録って、次の一言だけ直す。
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-ink-600">
-          Native Minute は、固定1分 script を聞く、録る、結果を見る、もう一度練習するためのアプリです。
+          Native Minute は、固定1分の台本を「作る・聞いてまねる・録音して直す」ためのアプリです。
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/login"
             className="inline-flex w-full items-center justify-center rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--accent-strong)] sm:w-auto"
           >
-            login して今日の練習を始める
+            ログインして練習を始める
           </Link>
         </div>
       </div>
 
       <aside className="rounded-[2rem] border border-[var(--line)] bg-white p-8 shadow-soft">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-ink-500">1-minute loop</p>
-        <ul className="mt-4 space-y-3 text-sm leading-6 text-ink-700">
-          <li>1. 見本を短く聞く</li>
-          <li>2. 自分で録る</li>
-          <li>3. 日本語で直す点を見る</li>
-          <li>4. 次の1回に戻る</li>
-        </ul>
+          <p className="text-sm font-semibold text-ink-500">練習の流れ</p>
+          <ul className="mt-4 space-y-3 text-sm leading-6 text-ink-700">
+            <li>1. 作る</li>
+            <li>2. 聞いてまねる</li>
+            <li>3. 録音して評価</li>
+            <li>4. 直す / ベストを残す</li>
+          </ul>
       </aside>
     </section>
   );
@@ -171,14 +171,15 @@ export default async function HomePage() {
     <section className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-[1.35fr_0.85fr]">
         <div className="overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.18),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(238,251,248,0.9))] p-6 shadow-soft sm:p-8 lg:p-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Home</p>
+          <p className="text-sm font-semibold text-[var(--accent-strong)]">今日の1分</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">{today.title}</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-ink-600">{today.summary}</p>
 
-          <div className="mt-6 grid gap-3 rounded-[1.5rem] border border-white/70 bg-white/70 p-4 text-sm text-ink-700 shadow-sm sm:grid-cols-3">
-            <span>1. 見本を短く聞く</span>
-            <span>2. 録音する</span>
-            <span>3. 次の一言だけ直す</span>
+          <div className="mt-6 grid gap-3 rounded-[1.5rem] border border-white/70 bg-white/70 p-4 text-sm text-ink-700 shadow-sm sm:grid-cols-4">
+            <span>1. 作る</span>
+            <span>2. 聞いてまねる</span>
+            <span>3. 録音して評価</span>
+            <span>4. 直す / 残す</span>
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -193,14 +194,14 @@ export default async function HomePage() {
                 href={latestReviewHref}
                 className="inline-flex w-full items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50 sm:w-auto"
               >
-                前回の続き
+                前回の直すところ
               </Link>
             ) : (
               <Link
                 href="/scripts"
                 className="inline-flex w-full items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50 sm:w-auto"
               >
-                練習を選ぶ
+                練習一覧
               </Link>
             )}
             <Link
@@ -213,17 +214,17 @@ export default async function HomePage() {
         </div>
 
         <aside className="rounded-[2rem] border border-[var(--line)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,248,255,0.94))] p-6 shadow-soft sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-ink-500">最新結果</p>
+          <p className="text-sm font-semibold text-ink-500">最新結果</p>
           <p className="mt-4 text-sm leading-6 text-ink-700">{getLatestResultSummary(latestReviewedItem)}</p>
           <div className="mt-5 rounded-2xl border border-[var(--line)] bg-white px-4 py-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Best / progress</p>
+            <p className="text-xs font-semibold text-ink-500">ベスト</p>
             <p className="mt-2 text-sm leading-6 text-ink-700">
               {bestReviewedItem?.bestTake
                 ? `ベストは「${bestReviewedItem.script.title}」の ${bestReviewedItem.bestTake.score} 点。詳しい流れは progress で見られます。`
                 : "ベスト結果は、最初の録音が保存されるとここから追えるようになります。"}
             </p>
             <Link href="/progress" className="mt-4 inline-flex rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-              progress を見る
+              ベストを確認
             </Link>
           </div>
         </aside>
@@ -231,12 +232,12 @@ export default async function HomePage() {
 
       {!voiceReady ? (
         <div className="rounded-[2rem] border border-[var(--line)] bg-amber-50 px-5 py-4 text-sm leading-6 text-ink-700">
-          <p className="font-semibold text-ink-900">見本音声の準備がまだです</p>
+          <p className="font-semibold text-ink-900">お手本ボイスの準備がまだです</p>
           <p className="mt-1">
-            練習 script は先に作れます。見本を聞く前に、ElevenLabs など現在の voice provider 用の voice を 1 つ設定します。
+            練習台本は先に作れます。お手本を聞く前に、声を1つ設定します。
           </p>
           <Link href={candidateScript ? buildScriptListenVoiceSetupHref(candidateScript.script.id, "/") : "/setup/voice"} className="mt-3 inline-flex font-semibold text-[var(--accent-strong)]">
-            voice 設定へ
+            声の設定へ
           </Link>
         </div>
       ) : null}

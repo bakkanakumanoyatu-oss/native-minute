@@ -34,7 +34,7 @@ export default async function ScriptsLayout({ children }: { children: ReactNode 
         />
         <StateActionSection
           eyebrow="Other actions"
-          title="補助導線"
+          title="設定・管理"
           actions={[
             { label: "home", href: "/" },
             { label: "progress", href: "/progress" }

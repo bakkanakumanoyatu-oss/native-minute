@@ -286,14 +286,14 @@ export function getRecordRecoveryGuidance(input: RecordRecoveryGuidanceInput): R
     return {
       tone: "focus",
       actionKind: "fallback",
-      titleJa: "補助 transcript を入れる",
-      summaryJa: "mock transcription のままなので、開発中は補助 transcript を入れてから評価を続ける必要があります。",
+      titleJa: "開発用 transcript を入れる",
+      summaryJa: "mock transcription のままなので、開発中は transcript を入れてから評価を続ける必要があります。",
       stepsJa: [
-        "下の補助 transcript に台本どおりの文を入れる",
+        "下の開発用 transcript に台本どおりの文を入れる",
         "同じ録音を使って評価を再試行する",
         "実運用では `TRANSCRIPTION_PROVIDER=openai` を使う"
       ],
-      primaryActionLabelJa: "補助 transcript を入れる",
+      primaryActionLabelJa: "開発用 transcript を入れる",
       retryKeepsUpload: input.phase === "evaluate" && input.hasUploadedRecording,
       focusWords: [],
       focusReasonJa: null,
@@ -498,22 +498,22 @@ export function getRecordNextStepGuidance(input: RecordNextStepGuidanceInput): R
     return {
       tone: "focus",
       actionKind: "fallback",
-      titleJa: "補助 transcript を入れてから進む",
+      titleJa: "開発用 transcript を入れてから進む",
       summaryJa: latestTake
-        ? "mock transcription のままなので、開発中は補助 transcript を入れないと評価に進めません。直前の結果の重点をそのまま試せます。"
-        : "mock transcription のままなので、開発中は補助 transcript を入れないと評価に進めません。",
+        ? "mock transcription のままなので、開発中は transcript を入れないと評価に進めません。直前の結果の重点をそのまま試せます。"
+        : "mock transcription のままなので、開発中は transcript を入れないと評価に進めません。",
       stepsJa: [
-        "下の補助 transcript に台本どおりの文を入れる",
+        "下の開発用 transcript に台本どおりの文を入れる",
         latestTake?.coachNextStepJa ?? "同じ録音のまま評価に進む",
         "実運用では `TRANSCRIPTION_PROVIDER=openai` を使う"
       ],
-      primaryActionLabelJa: "補助 transcript を入力する",
+      primaryActionLabelJa: "開発用 transcript を入力する",
       retryKeepsUpload: input.hasUploadedRecording,
       focusWords,
       focusReasonJa: focus.reasonJa,
       focusSummaryJa: focus.summaryJa,
       executionCueJa: getActionExecutionCue("fallback", focusWords),
-      sourceHintJa: latestTake ? "補助 transcript を入れても、結果確認由来の focus はそのまま使えます。" : null
+      sourceHintJa: latestTake ? "開発用 transcript を入れても、結果確認由来の focus はそのまま使えます。" : null
     };
   }
 
@@ -526,7 +526,7 @@ export function getRecordNextStepGuidance(input: RecordNextStepGuidanceInput): R
         ? `この録音はすでに保存済みなので、次は再 upload せず、${focusLabel} を意識したまま評価を続ける段階です。`
         : "この録音はすでに保存済みなので、次は再 upload せず評価を続ける段階です。",
       stepsJa: [
-        latestTake?.coachNextStepJa ?? "必要なら補助 transcript を整える",
+        latestTake?.coachNextStepJa ?? "必要なら開発用 transcript を整える",
         "保存済み録音のまま評価を再試行する",
         latestVsBest?.regressedWeakWords.length ? `${formatWords(latestVsBest.regressedWeakWords) ?? "崩れた単語"} を意識して結果を見る` : "失敗した場合も Recovery plan に沿って対処する"
       ],

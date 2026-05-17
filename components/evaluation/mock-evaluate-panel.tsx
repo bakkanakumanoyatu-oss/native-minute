@@ -81,7 +81,7 @@ export function MockEvaluatePanel({ scriptId, scriptText }: { scriptId: string; 
         <h2 className="mt-2 text-xl font-semibold text-ink-900">保存済み結果を作るための開発用導線</h2>
         <p className="mt-2 text-sm leading-6 text-ink-600">
           結果確認画面は保存済み結果の表示専用です。record から文字起こし、評価、保存までを通すため、
-          ここでは音声参照を必須にしつつ、mock transcriber 用の補助 transcript も開発用に残しています。
+          ここでは音声参照を必須にしつつ、mock transcriber 用の transcript も開発用に残しています。
         </p>
         <p className="mt-4 text-xs uppercase tracking-[0.2em] text-ink-500">参照中の script</p>
         <p className="mt-2 text-sm leading-6 text-ink-700">{scriptText}</p>
@@ -113,11 +113,11 @@ export function MockEvaluatePanel({ scriptId, scriptText }: { scriptId: string; 
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-ink-700">開発用の補助 transcript</span>
+          <span className="text-sm font-medium text-ink-700">開発用 transcript</span>
           <textarea
             value={transcriptText}
             onChange={(event) => setTranscriptText(event.target.value)}
-            placeholder="mock transcriber が使う補助 transcript をここに入れます。"
+            placeholder="mock transcriber が使う transcript をここに入れます。"
             rows={7}
             className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--accent)]"
           />
@@ -137,7 +137,7 @@ export function MockEvaluatePanel({ scriptId, scriptText }: { scriptId: string; 
 
         <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
           <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next action</p>
-          <p className="mt-2">音声参照と補助 transcript を確認し、このまま評価して保存します。</p>
+          <p className="mt-2">音声参照と transcript を確認し、このまま評価して保存します。</p>
         </div>
 
         <button
@@ -150,7 +150,7 @@ export function MockEvaluatePanel({ scriptId, scriptText }: { scriptId: string; 
         </button>
 
         <p className="text-xs leading-6 text-ink-500">
-          現在の mock transcriber では、audio path / storage key に加えて補助 transcript が必要です。実音声入力へ切り替えるまでの開発用導線です。
+          現在の mock transcriber では、audio path / storage key に加えて transcript が必要です。実音声入力へ切り替えるまでの開発用導線です。
         </p>
         {message ? <p className="text-sm text-ink-600">{message}</p> : null}
       </div>

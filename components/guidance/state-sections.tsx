@@ -7,12 +7,14 @@ export type StateActionLink = {
   tone?: "primary" | "secondary";
 };
 
-function getActionClasses(tone: "primary" | "secondary", eyebrow: "Next action" | "Other actions") {
+type StateActionEyebrow = "Next action" | "Other actions" | "次にやること" | "その他の操作" | "設定・管理";
+
+function getActionClasses(tone: "primary" | "secondary", eyebrow: StateActionEyebrow) {
   if (tone === "primary") {
     return "inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white shadow-sm sm:w-auto";
   }
 
-  return eyebrow === "Other actions"
+  return eyebrow === "Other actions" || eyebrow === "その他の操作" || eyebrow === "設定・管理"
     ? "inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-medium text-ink-700 sm:w-auto"
     : "inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto";
 }
@@ -43,7 +45,7 @@ export function StateActionSection({
   summary,
   actions
 }: {
-  eyebrow: "Next action" | "Other actions";
+  eyebrow: StateActionEyebrow;
   title: string;
   summary?: string;
   actions: StateActionLink[];

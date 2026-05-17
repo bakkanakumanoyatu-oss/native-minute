@@ -24,7 +24,7 @@ export default function PrivacyPage() {
           "pronunciation scores: Azure Speech の評価結果から、総合スコア、accuracy、fluency、rhythm などを保存します。",
           "weak words: 次に直す単語や短い練習ポイントを保存します。",
           "coaching feedback: 日本語の短い summary / next step を保存します。",
-          "generated script audios: ElevenLabs で生成した見本音声を private Storage に保存し、protected replay route から再生します。",
+          "generated script audios: ElevenLabs で生成したお手本ボイスを private Storage に保存し、protected replay route から再生します。",
           "voice samples / consent recordings: voice setup でアップロードした sample と consent recording を private Storage に保存します。",
           "clone voice metadata: ElevenLabs 側の cloned voice を呼び出すための provider metadata を server-side に保存します。",
           "quota / processing metadata: provider call の安全な status、count、non-billable/cached などの metadata を保存することがあります。"

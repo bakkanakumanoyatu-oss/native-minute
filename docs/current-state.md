@@ -4,11 +4,32 @@
 1. login する。
 2. 必要なときだけ `/setup/voice` で同意と既定の voice を整える。
 3. `/scripts` で固定1分台本を作る。必要なら `/scripts/new?from=<scriptId>` で複製する。
-4. `/scripts/[id]/listen` で見本音声を生成または再利用し、見本確認をする。
-5. `/scripts/[id]/record` で実録音をアップロードする。
+4. `/scripts/[id]/listen` でお手本ボイスを生成または再利用し、英文を見ながら聞いてまねる。
+5. 納得したら `/scripts/[id]/record` で自分の声を録音する。
 6. 評価して、保存済み結果を atomic に保存する。
-7. `/scripts/[id]/review/[takeId]` で保存済み結果を確認する。
-8. `/progress` で最新結果とベスト結果の差分を見る。
+7. `/scripts/[id]/review/[takeId]` で短い評価を見て、直す / ベストを残す。
+8. `/progress` で最新結果、ベスト結果、次に戻る先を見る。
+
+## UI/UX Phase 1 の画面方針
+- ユーザー向け main loop は `作る -> 聞く -> 録る -> 直す` の4語を前面に出す。
+- `/scripts` は「今日の1分」を主役にし、最大5個の練習課題だけを見せる。
+- voice setup / provider / cache / quota / diagnostics は主導線ではなく、必要時の設定・管理や詳細に下げる。
+- review はまず score、直すところ 1〜3個、短い改善コメント、次に戻る導線だけを見せる。
+- 保存済み script には日本語訳の保存先がないため、既存 DB / API contract を変えずに表示できる日本語訳は AI draft preview 内に限る。
+
+## UI/UX Phase 1.5 の画面方針
+- `/scripts` は `練習課題 X / 5` と主 CTA を先に出し、一覧 card では title / 最初の1行 / 最新スコア / 次にやることだけを見せる。
+- `/scripts/new` はテンプレ全文や作り方ガイドを初期表示せず、選んだテンプレだけ details で本文を開く。
+- `/record` は `マイクで録音する` を primary にし、音声ファイル選択は details に下げる。
+- `/progress` は最新結果 / ベスト結果 / 次にやることを先に見せ、script ごとの履歴と詳細分析は `過去の記録を見る` に隠す。
+- Export は既存の owned take audio route からベスト録音 download と結果コピーだけを UI で出す。Brush-up 本実装は data model / provider / cache 方針が必要なため準備中表示に留める。
+
+## UI/UX Phase 1.6 の画面方針
+- ユーザー向け main loop は `作る -> 聞いてまねる -> 録音して評価 -> 直す / ベストを残す -> 必要ならブラッシュアップ` として見せる。
+- `/scripts` は「自分の練習場」として、練習課題数とカードを大きく見せ、その他の操作は控えめにする。
+- `/listen` は単なる再生画面ではなく、`お手本を聞く -> 英文を読む -> 声に出してまねる -> 納得したら録音` の練習場にする。
+- ユーザー向けの主語は `お手本` / `お手本ボイス` に寄せ、`見本音声`、`補助`、英語の route label は主導線に出さない。
+- テンプレートは実引用ではなく app original の quote-inspired 練習文にする。
 
 ## すでに通っていること
 - 主要 route handler は薄く、service に委譲している。
@@ -17,7 +38,7 @@
 - listen は `未生成 / 保存済み音声 / 新規生成 / キャッシュ再利用` を分けて表示する。
 - listen は見本音声生成時に `natural / expressive / clear / slow` の voice style preset を選べる。ElevenLabs では preset を `voice_settings` に変換し、それ以外の provider では安全に無視する。
 - listen の見本音声と review の保存済み録音は、client-side の再生速度だけを `0.75x / 0.85x / 1.0x / 1.15x` で切り替えられる。provider 再生成や `script_audios` cache 変更は伴わない。
-- `/scripts/new` では、作成中の script から word count / 1分目安 / chunk 数 / 長い塊や文 / 息継ぎポイントを表示用に判定し、長い文や息継ぎ不足を手動で直すための短い hint も出す。
+- `/scripts/new` では、手動フォームの話しやすさ診断は初期表示から外し、AI下書きの詳細確認や保存前チェックだけ details 側で見る。
 - `/scripts/new` には Script Studio Phase S2 の UI mock があり、`ScriptBrief -> mock ScriptDraft -> quality report -> freeze readiness` の流れを local helper だけで確認できる。本番AI生成、保存、freeze、音声生成にはまだ接続していない。
 - Script Studio Phase S2.5 として、generation prompt contract / output validation / freeze preflight を `lib/script-studio/generation.ts` に固定した。将来 AI が返す metrics / chunks / focusWords はそのまま信用せず、`englishScript` から quality report を再計算する。
 - Script Studio Phase S2.6 として、`lib/script-studio/generator.ts` に generation provider / pipeline boundary と deterministic mock provider を追加した。UI は provider raw output ではなく pipeline result の accepted draft / rejected candidate を見る。
@@ -129,22 +150,22 @@
 - Gate1l として、`GO WITH WARNINGS` を Web beta release candidate 判断に近づけるための owner acceptance / Azure live smoke checklist を `docs/gate1l-go-with-warnings-acceptance-azure-smoke.md` に追加し、人間確認結果を Gate1i / Gate1k / Human Check Backlog に反映した。release owner / deployer / rollback owner / incident owner / post-deploy smoke owner / provider monitoring owner / support-deletion owner は app owner。Azure pronunciation live smoke は `record -> evaluate -> review -> progress` が PASS。OpenAI Default project、OpenAI app-side cost limits / kill switch、ElevenLabs manual monitoring / cache reuse / kill switch、legal/support beta draft は WARN として release owner が small-cohort Web beta では受容した。実デプロイ、real destructive deletion は実行していない。
 - listen / record では、script content から表示用の practice chunks を導出し、意味の塊・息継ぎ・語尾まで言い切る cue を見ながら練習できる。DB schema / API contract / cache は変えない。
 - review では、weak words と practice chunks を表示用に照合し、次に練習する意味の塊を 2〜3 件以内で出す。該当 chunk が無いときは最初の chunk で区切りと語尾を整える fallback guidance を出す。
-- record は短すぎる録音を警告し、mock transcription では補助 transcript なしで進めない。
+- record は短すぎる録音を警告し、mock transcription では開発用 transcript なしで進めない。
 - 結果確認では認証付き `/api/takes/[takeId]/audio` から保存済み録音を再生できる。
-- `setup/voice` は、見本音声が必要なときだけ開く設定画面として扱い、voice 準備後に候補の script で `listen` に入るか、新規 script を作るかをその場で選べる。
+- `setup/voice` は、お手本ボイスが必要なときだけ開く設定画面として扱い、voice 準備後に候補の script で `listen` に入るか、新規 script を作るかをその場で選べる。
 - `/` は practice-first Home として、今日の練習、前回の続き、最新結果、progress への導線を先に出す。
 - `scripts` は Practice library として、まず今日の練習を 1 本選び、`listen / record / script 複製 / 最新結果` を script ごとに選べる。不足前提があるときは、先に `voice 設定` や `listen` 側へ戻す。
-- `scripts` は page 上部で `初回導線 / 再開導線` を先にまとめ、複製は card 側の補助導線へ寄せている。
+- `scripts` は page 上部で `初回導線 / 再開導線` を先にまとめ、複製は card 側のその他の操作へ寄せている。
 - `voice 設定` に戻る導線は、候補 script が見えている場面ではその script の `listen` に戻る形を優先している。
 - `scripts` と `progress` の候補 script は、最適解ではなく未着手や戻りやすさを優先して 1 本だけ出す入口候補として扱っている。
-- `setup/voice` は `?next=` が internal path のときだけ保持し、blocked state から戻る補助に使う。
+- `setup/voice` は `?next=` が internal path のときだけ保持し、blocked state から戻る設定・管理導線に使う。
 - `/api/uploads/voice-consent` を追加し、同意録音は `voice-consents` bucket の app-owned object として先に保存してから `/api/voice-consent` に参照を渡せる。
 - `setup/voice` / `scripts` / `listen` / `progress` が参照する consent と default voice は、現在の `VOICE_PROVIDER` に一致する row だけを見る。
 - `setup/voice` と voice service は、provider 名の直書きより `provider requirements` を本線にしている。`requiresConsentRecording / requiresSampleAudio / requiresProviderConsentId / entitlementSensitive` のような条件は factory から読む。
 - voice provider 本接続時も固定前提なのは、app-owned の `voice_consents / voices / script_audios` row、app-owned storage (`voice-consents / voice-samples / script-audios`)、server 側 cache key 判定、replay route 経由の protected 再生、の 4 つ。
 - progress は最新結果とベスト結果を比較し、`listen / record / 結果確認` に戻れる。画面上部でも次に戻る 1 本を決めやすくしている。
 - Azure Speech pronunciation assessment は live manual smoke で wav/PCM 録音に対して `record -> evaluate -> review -> progress` が通り、さらに OpenAI transcription + Azure pronunciation evaluator の実ブラウザ人間マイク録音でも review / progress まで確認済み。
-- core path の最小 Playwright smoke はあり、少なくとも `未ログインでは protected route に入れない`、`mock voice で setup/listen`、`listen blocked branch の provider_unavailable / consent_required / voice_required`、`provider_unavailable でも保存済み見本音声があれば listen を継続でき、audio 要素が playback-ready までロードできる分岐`、`mock listen 生成`、`mock 前提の record -> review -> progress` は自動で崩れを拾う。
+- core path の最小 Playwright smoke はあり、少なくとも `未ログインでは protected route に入れない`、`mock voice で setup/listen`、`listen blocked branch の provider_unavailable / consent_required / voice_required`、`provider_unavailable でも保存済みお手本ボイスがあれば listen を継続でき、audio 要素が playback-ready までロードできる分岐`、`mock listen 生成`、`mock 前提の record -> review -> progress` は自動で崩れを拾う。
 - `npm run e2e:auth-guard` と `npm run e2e:setup-voice` を分けて回せるので、manual smoke 前でも guard と voice setup の current flow を短く確認しやすい。
 
 ## 壊してはいけない前提
@@ -156,8 +177,8 @@
 - voice 周辺は `consent -> voices -> default voice -> script_audios` の app-owned flow を維持する。
 - provider bytes は `speakScript` 側で app-owned replay 参照へ正規化してから `script_audios` に保存する。
 - `script_audios.storage_path` は provider 直 URL ではなく、listen が認証付き replay route 経由で解決する app-owned 実体参照として扱う。
-- replay route は `script_audios.storage_path` から owned な見本音声実体を引き直して返す。
-- app-owned 見本音声 bytes の保存先は、現 repo では Supabase Storage の専用 bucket `script-audios` を本線にする。`recordings` と混ぜない。
+- replay route は `script_audios.storage_path` から owned なお手本ボイス実体を引き直して返す。
+- app-owned お手本ボイス bytes の保存先は、現 repo では Supabase Storage の専用 bucket `script-audios` を本線にする。`recordings` と混ぜない。
 - object key は `<userId>/<scriptId>/<voiceId>/<cacheKey>.<ext>` を本線にする。user prefix は coarse ownership 境界、script/voice/cacheKey は cache 実体の整理に使う。
 - storage policy は public にせず、replay route から authenticated route client で server-side download する前提に寄せる。
 - policy 側は bucket 名と user prefix までの coarse 制御に留め、script/voice/cache の owned 整合は app 側の `script_audios` lookup で担保する。
@@ -184,15 +205,15 @@
 - `progress` の `最新結果 / ベスト結果` card も、detail / status card と同じ要点 block を使って保存時刻・弱点語・coach nextStep を確認できるようにした。
 - `review` も `この結果 / 最新結果 / ベスト結果 / 次の一手` の読み方を progress 側へ寄せ、detail だけ見ても比較と次の戻り先が迷いにくいようにした。
 - `progress` の `強み・弱点語・coach` と `最新とベストの差` でも、review と同じ比較軸で読めるように current/best coach と strengths の見せ方を寄せた。
-- `listen` は voice 設定が不足しても、保存済み見本音声がある場合はそのまま確認を続けられる。
-- `record` は transcription 前提が不足しているとき、補助 transcript 入力ではなく `listen / scripts / voice 設定` 側へ戻る recovery を優先する。
+- `listen` は voice 設定が不足しても、保存済みお手本ボイスがある場合はそのまま確認を続けられる。
+- `record` は transcription 前提が不足しているとき、開発用 transcript 入力ではなく `listen / scripts / voice 設定` 側へ戻る recovery を優先する。
 - `setup/voice` は、ready state の主ボタンを 1 本に保ちつつ、復帰導線と候補 script の切り替えは ready block 側で扱うようにした。
-- `listen` / `record` / `review` は、`最新結果を見る` 補助導線と script 単位の current step を足し、履歴中の 1 件を開いたときでも通常利用へ戻りやすくした。
+- `listen` / `record` / `review` は、`最新結果を見る` などの設定・管理導線と script 単位の current step を足し、履歴中の 1 件を開いたときでも通常利用へ戻りやすくした。
 - `record` は対応形式とサイズ上限を client 側でも先に案内し、unsupported / oversize を upload 前に止めるようにした。
 - `progress` は「次に戻る 1 本」を主導線に保ち、直近で見ていた結果からの再開は `Other actions` 側に寄せた。
 - main loop 周辺の dynamic route/page は `params` を非同期解決でそろえ、`listen / record / review / 保存済み録音再生` で route 起因の 404 や再生詰まりが出にくいようにした。
 - `listen` は protected audio の blob URL 準備ができるまで空のプレーヤーを出さず、初回からこの画面だけで再生しやすいようにした。
-- 語彙は `保存済み結果 / 最新結果 / ベスト結果 / 音声状態 / 補助 transcript / 次の1本` を基準に日本語中心でそろえている。
+- 語彙は `保存済み結果 / 最新結果 / ベスト結果 / 音声状態 / 開発用 transcript / 次の1本` を基準に日本語中心でそろえている。
 
 ## 未解決論点
 - Script Studio の設計は `docs/script-studio-plan.md`、`docs/script-studio-freeze-quota-plan.md`、`docs/script-studio-voice-generation-preflight-plan.md`、`docs/script-studio-quota-event-plan.md` に固定した。Phase S1 の local contract / type / pure helper、Phase S2 の `/scripts/new` UI mock、Phase S2.5 の generation contract / validation / freeze boundary、Phase S2.6 の provider / pipeline boundary、Phase S3a の OpenAI adapter、Phase S3b の server route / service boundary、Phase S3c の `/scripts/new` draft preview 接続、Phase S3d の draft-to-form copy、Phase S3e の freeze/quota 設計、Phase S4a の表示用 freeze preflight preview、Phase S4b の saved script read-only check、Phase S4c の saved-script-only decision、Phase S4d の voice generation preflight design、Phase S4e の listen preflight-only UX copy、Phase S4f の quota event design、Phase S4g の provider/cache UI refinement、Phase S4h の quota preflight copy only、Phase S4i の copy density review、Phase S5a の quota event schema design、Phase S5b の text generation quota event write path design、Phase S5c の voice generation quota event write path design、Phase S5d の implementation readiness design、Phase S5e の text generation quota event implementation plan、Phase S5f の text generation quota event first implementation、S5f-db-smoke-plan の dev DB / mock smoke checklist、Phase S5g の voice generation quota event implementation plan、Phase S5h の quota_events voice schema extension plan、Phase S5i の voice quota schema extension first implementation、Phase S5j の speakScript non-blocking voice quota event connection、S5k-plan の text + voice DB smoke checklist consolidation は追加済み。`script_freezes` table、freeze 保存、quota enforcement、voice generation gating は未実装。

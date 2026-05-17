@@ -41,7 +41,7 @@ export default async function SettingsPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Settings</p>
         <h1 className="mt-2 text-3xl font-semibold text-ink-950 sm:text-4xl">練習の設定</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
-          普段の練習は Home から始めます。ここでは見本音声の準備や account deletion request など、必要なときだけ使う設定を確認します。
+          普段の練習は Home から始めます。ここではお手本ボイスの準備や account deletion request など、必要なときだけ使う設定を確認します。
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link href="/setup/voice" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto">

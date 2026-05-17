@@ -36,26 +36,23 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
     : undefined;
 
   return (
-    <section className="mx-auto max-w-3xl overflow-hidden rounded-[2rem] border border-[var(--line)] bg-white shadow-soft">
+    <section className="mx-auto max-w-4xl overflow-hidden rounded-[2rem] border border-[var(--line)] bg-white shadow-soft">
       <div className="bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.16),transparent_36%),linear-gradient(135deg,rgba(255,255,255,1),rgba(244,248,255,0.94))] p-6 sm:p-8">
-      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Add practice</p>
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">新しい練習を追加する</h1>
+      <p className="text-sm font-semibold text-[var(--accent-strong)]">作る</p>
+      <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">話してみたい1分を作る</h1>
       <p className="mt-3 text-sm leading-6 text-ink-600">
-        テンプレ、自由入力、AI draft は、練習を増やすための入口です。最後は下のフォームで自分の言葉に直してから保存します。
-      </p>
-      <p className="mt-2 text-sm leading-6 text-ink-600">
-        保存後は新しい script の listen に進み、短く見本を聞いて record に入れます。
+        映画やドラマのセリフっぽい練習、仕事、旅行、自己紹介、雑談。まず1本作って、保存したらすぐ「聞く」へ進みます。
       </p>
       <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
         <Link href="/scripts" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-          scripts
+          練習一覧
         </Link>
         <Link href="/progress" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-          progress
+          ベスト確認
         </Link>
         {sourceScript ? (
           <Link href={getScriptListenPath(sourceScript.id)} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-            元 script
+            元の台本
           </Link>
         ) : null}
       </div>

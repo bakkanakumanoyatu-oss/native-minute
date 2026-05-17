@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
-      return jsonError("見本音声 sample が必要です。", 400);
+      return jsonError("お手本ボイス用の録音が必要です。", 400);
     }
 
     const parsed = uploadVoiceSampleSchema.safeParse({
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     });
 
     if (!parsed.success) {
-      return jsonError(parsed.error.issues[0]?.message ?? "見本音声 sample アップロード入力を確認してください。", 400);
+      return jsonError(parsed.error.issues[0]?.message ?? "お手本ボイス用の録音アップロード入力を確認してください。", 400);
     }
 
     const uploaded = await uploadOwnedVoiceSample(supabase, user.id, {
@@ -50,6 +50,6 @@ export async function POST(request: Request) {
       )
     );
   } catch (error) {
-    return supabase.applyToResponse(jsonError(getErrorMessage(error, "見本音声 sample の保存に失敗しました。"), getErrorStatus(error, 500)));
+    return supabase.applyToResponse(jsonError(getErrorMessage(error, "お手本ボイス用の録音保存に失敗しました。"), getErrorStatus(error, 500)));
   }
 }

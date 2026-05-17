@@ -19,24 +19,24 @@ export function SavedScriptFreezeCandidateCheck({ script }: SavedScriptFreezeCan
     <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">Saved script freeze check</p>
-          <h2 className="mt-2 text-lg font-semibold text-ink-900">保存済み台本の freeze 目安</h2>
-          <p className="mt-2 text-sm leading-6 text-ink-600">保存済み script の read-only 目安です。</p>
+          <p className="text-xs font-semibold text-ink-500">保存前チェック</p>
+          <h2 className="mt-2 text-lg font-semibold text-ink-900">保存済み台本の目安</h2>
+          <p className="mt-2 text-sm leading-6 text-ink-600">保存済み台本の確認用メモです。</p>
         </div>
         <span className="shrink-0 rounded-full border border-[var(--line)] bg-ink-50 px-3 py-1 text-xs font-semibold text-ink-700">
-          read-only
+          確認のみ
         </span>
       </div>
 
       <p className="mt-4 text-sm font-semibold text-ink-900">
         {freezeReadiness.canFreeze
-          ? "将来の freeze 候補として概ね良さそうです。"
+          ? "練習用の台本として概ね良さそうです。"
           : "音声生成前に少し整えるとよさそうです。"}
       </p>
       <details className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3">
         <summary className="cursor-pointer text-sm font-semibold text-ink-800">台本チェックの詳細を見る</summary>
         <p className="mt-3 text-xs leading-5 text-ink-500">
-          ここでは freeze 保存、quota 消費、音声生成は行いません。編集したい場合は duplicate / new script で扱う方針です。
+          ここでは保存や音声生成は行いません。編集したい場合は複製して扱います。
         </p>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-5">
@@ -60,7 +60,7 @@ export function SavedScriptFreezeCandidateCheck({ script }: SavedScriptFreezeCan
           </ListBlock>
         </div>
 
-        <p className="mt-4 text-xs leading-5 text-ink-500">Next action: {freezeReadiness.nextAction}</p>
+        <p className="mt-4 text-xs leading-5 text-ink-500">次にやること: {freezeReadiness.nextAction}</p>
       </details>
     </section>
   );

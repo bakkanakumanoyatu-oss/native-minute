@@ -30,7 +30,7 @@ export function getActionExecutionCue(actionKind: GuidanceActionKind, words: str
   }
 
   if (actionKind === "retry_saved_evaluate") {
-    return "録り直さず、補助 transcript か設定だけ整えて同じ録音で進めます。";
+    return "録り直さず、開発用 transcript か設定だけ整えて同じ録音で進めます。";
   }
 
   if (actionKind === "prepare_recording") {
@@ -38,7 +38,7 @@ export function getActionExecutionCue(actionKind: GuidanceActionKind, words: str
   }
 
   if (actionKind === "fallback") {
-    return "台本どおりに補助 transcript を入れ、録音自体は変えずに進めます。";
+    return "台本どおりに開発用 transcript を入れ、録音自体は変えずに進めます。";
   }
 
   return "録音内容ではなく provider / key / storage の設定を確認します。";

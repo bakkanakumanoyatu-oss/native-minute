@@ -45,7 +45,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     return jsonOk({ savedModelAudios });
   } catch (error) {
-    return jsonAudioLibraryError(error, "保存済み見本音声を取得できませんでした。");
+    return jsonAudioLibraryError(error, "保存済みお手本ボイスを取得できませんでした。");
   }
 }
 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const parsedBody = saveModelAudioRequestSchema.safeParse(payload);
 
     if (!parsedBody.success) {
-      return jsonError(parsedBody.error.issues[0]?.message ?? "保存する見本音声を確認してください。", 400);
+      return jsonError(parsedBody.error.issues[0]?.message ?? "保存するお手本ボイスを確認してください。", 400);
     }
 
     const supabase = createSupabaseRouteClient();
@@ -80,6 +80,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return jsonOk({ savedModelAudio }, { status: 201 });
   } catch (error) {
-    return jsonAudioLibraryError(error, "見本音声を保存できませんでした。");
+    return jsonAudioLibraryError(error, "お手本ボイスを保存できませんでした。");
   }
 }

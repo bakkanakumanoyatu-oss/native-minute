@@ -12,7 +12,7 @@ const COST_GUARD_ENV: Record<CostGuardArea, string> = {
 const COST_GUARD_LABEL: Record<CostGuardArea, string> = {
   openai: "OpenAI を使う文字起こし / script generation",
   azure: "Azure pronunciation assessment",
-  elevenlabs: "ElevenLabs の voice clone / 見本音声生成",
+  elevenlabs: "ElevenLabs の voice clone / お手本ボイス生成",
   storage_uploads: "音声アップロード"
 };
 

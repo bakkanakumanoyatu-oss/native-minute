@@ -253,7 +253,7 @@ function getTtsFriendlinessNotes(longSentenceCount: number, longChunkCount: numb
   const notes = ["TTS friendliness は Phase S1 では placeholder。長さと区切りだけを安全な目安として見る。"];
 
   if (longSentenceCount > 0) {
-    notes.push("長い文があるため、見本音声では読み上げが速く聞こえる可能性がある。");
+    notes.push("長い文があるため、お手本では読み上げが速く聞こえる可能性がある。");
   }
 
   if (longChunkCount > 0) {

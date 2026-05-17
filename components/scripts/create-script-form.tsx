@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { QuotaPreflightNotice } from "@/components/scripts/quota-preflight-notice";
 import { ScriptFreezePreflightPreview } from "@/components/scripts/script-freeze-preflight-preview";
-import { ScriptPracticeReadinessPanel } from "@/components/scripts/script-practice-readiness-panel";
 
 export type ScriptFormInitialValues = {
   title: string;
@@ -56,7 +55,7 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
     setContent(draftCopy.content);
     setTargetSeconds(draftCopy.targetSeconds);
     setLocale(draftCopy.locale);
-    setMessage(`${draftCopy.sourceLabel ?? "Script Studio draft"} をフォームへコピーしました。これは freeze ではありません。保存前に編集できます。`);
+    setMessage(`${draftCopy.sourceLabel ?? "下書き"} をフォームへコピーしました。保存前に編集できます。`);
   }, [draftCopy]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -107,9 +106,9 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
       ) : null}
 
       <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-        <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Manual script form</p>
-        <p className="mt-2 font-semibold text-ink-900">ここで自分の言葉に直してから保存します。</p>
-        <p className="mt-1 text-xs leading-5 text-ink-500">保存後は新しい script として listen に進みます。コピーしただけでは freeze ではありません。</p>
+        <p className="text-xs font-semibold text-ink-500">最後に整える</p>
+        <p className="mt-2 font-semibold text-ink-900">ここで自分の言葉に直して保存します。</p>
+        <p className="mt-1 text-xs leading-5 text-ink-500">保存後はそのまま「聞く」へ進みます。</p>
       </div>
 
       <label className="block space-y-2">
@@ -124,13 +123,13 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-ink-700">台本</span>
+        <span className="text-sm font-medium text-ink-700">英文</span>
         <textarea
           value={content}
           onChange={(event) => setContent(event.target.value)}
           required
           rows={8}
-          placeholder="ここに固定1分の練習台本を入れます。"
+          placeholder="ここに1分で話したい英文を入れます。"
           className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
         />
       </label>
@@ -149,7 +148,7 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-ink-700">ロケール</span>
+          <span className="text-sm font-medium text-ink-700">英語の種類</span>
           <input
             value={locale}
             onChange={(event) => setLocale(event.target.value)}
@@ -159,14 +158,18 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
         </label>
       </div>
 
-      <ScriptPracticeReadinessPanel content={content} targetSeconds={targetSeconds} />
       {showLengthWarning ? (
         <p className="text-sm text-amber-700">
           台本が長めです。約 {estimatedSeconds} 秒想定なので、1分目標なら少し短くすると安定します。
         </p>
       ) : null}
-      <ScriptFreezePreflightPreview title={title} content={content} targetSeconds={targetSeconds} />
-      <QuotaPreflightNotice context="manual_form" compact />
+      <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
+        <summary className="cursor-pointer text-sm font-semibold text-ink-700">保存前チェックを見る</summary>
+        <div className="mt-4 space-y-4">
+          <ScriptFreezePreflightPreview title={title} content={content} targetSeconds={targetSeconds} />
+          <QuotaPreflightNotice context="manual_form" compact />
+        </div>
+      </details>
 
       {initialValues && canResetToInitial ? (
         <button
@@ -189,11 +192,11 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
         disabled={loading || isMissingRequiredFields}
         className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "保存中..." : "台本を保存して listen に進む"}
+        {loading ? "保存中..." : "保存して聞くへ進む"}
       </button>
 
       <p className="text-xs leading-5 text-ink-500">
-        保存後は、そのまま新しい script の listen に移動します。
+        保存後は、そのまま新しい台本の「聞く」に移動します。
       </p>
 
       {message ? (

@@ -45,12 +45,12 @@ export default function SupportPage() {
       />
 
       <LegalSection
-        title="見本音声・voice setup"
+        title="お手本ボイス・voice setup"
         summary="v1 mainline の voice provider は ElevenLabs です。OpenAI は voice provider ではなく、transcription / script generation / coaching 側で使います。"
         items={[
           "voice setup が未完了の場合、listen 画面や Settings から setup/voice に進めます。",
-          "ElevenLabs 側の rate limit、billing、verification、deleted voice などで見本音声生成に失敗することがあります。",
-          "provider kill switch が有効な場合は、見本音声生成が一時停止されることがあります。"
+          "ElevenLabs 側の rate limit、billing、verification、deleted voice などでお手本ボイス生成に失敗することがあります。",
+          "provider kill switch が有効な場合は、お手本ボイス生成が一時停止されることがあります。"
         ]}
       />
 

@@ -19,6 +19,7 @@ import { ScriptLoopStatusCard } from "@/components/guidance/script-loop-status-c
 import { ReviewPracticeFocus } from "@/components/guidance/review-practice-focus";
 import { TakeSummarySnapshot } from "@/components/guidance/take-summary-snapshot";
 import { StateActionSection, StateStepSection } from "@/components/guidance/state-sections";
+import { BestResultExportActions } from "@/components/export/best-result-export-actions";
 
 type PageParams = {
   params:
@@ -64,7 +65,7 @@ export default async function ReviewPage({ params }: PageParams) {
         />
         <StateActionSection
           eyebrow="Other actions"
-          title="補助導線"
+          title="設定・管理"
           summary="新しい script を作るか、直近の流れを見たいときだけ使います。"
           actions={[
             { label: "新しい script を作る", href: "/scripts/new" },
@@ -106,7 +107,7 @@ export default async function ReviewPage({ params }: PageParams) {
 
         <StateActionSection
           eyebrow="Other actions"
-          title="補助導線"
+          title="設定・管理"
           summary="一覧に戻って別の script に切り替えるときだけ使います。"
           actions={[
             { label: "scripts", href: "/scripts" }
@@ -138,7 +139,7 @@ export default async function ReviewPage({ params }: PageParams) {
         />
         <StateActionSection
           eyebrow="Other actions"
-          title="補助導線"
+          title="設定・管理"
           summary="一覧に戻って別の script や別の結果に切り替えるときだけ使います。"
           actions={[
             { label: "scripts", href: "/scripts" }
@@ -204,16 +205,22 @@ export default async function ReviewPage({ params }: PageParams) {
         focusPoints={reviewFocusPoints}
         advice={reviewOneLineAdvice}
         recordHref={recordHref}
+        brushUpHref={getDuplicateScriptPath(script.id)}
+        bestReviewHref={!isCurrentBest ? bestReviewHref : null}
         isCurrentLatest={isCurrentLatest}
         isCurrentBest={isCurrentBest}
         takeCount={progressItem?.takeCount ?? 0}
+        canPlaybackRecording={canPlaybackRecording}
+        takeId={review.take.id}
+        reviewedAt={review.take.reviewed_at ?? review.take.created_at}
+        exportComment={reviewOneLineAdvice}
       />
 
       <details data-testid="review-detail-panel" className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-sm">
         <summary className="cursor-pointer list-none rounded-[1.5rem] bg-ink-50 px-5 py-4 text-sm font-semibold text-ink-900">
-          詳細を見る
+          詳細分析を見る
           <span className="ml-3 font-normal text-ink-600">
-            transcript / score grid / weak words / 比較を開く
+            文字起こし、細かいスコア、比較を開く
           </span>
         </summary>
         <div className="mt-6 space-y-6">
@@ -537,7 +544,7 @@ export default async function ReviewPage({ params }: PageParams) {
             </div>
             <div className="lg:col-span-2 rounded-2xl border border-[var(--line)] bg-white p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Other actions</p>
-              <p className="mt-2 text-sm leading-6 text-ink-600">いまは差分を見るのが主で、ベスト結果の詳細確認は補助で十分です。</p>
+              <p className="mt-2 text-sm leading-6 text-ink-600">いまは差分を見るのが主で、ベスト結果の詳細確認は必要なときだけで十分です。</p>
               <Link
                 href={getScriptReviewPath(script.id, comparison.best.id)}
                 className="mt-3 inline-flex rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800"
@@ -569,19 +576,19 @@ export default async function ReviewPage({ params }: PageParams) {
       </section>
 
       <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Other actions</p>
-        <p className="mt-2 text-sm leading-6 text-ink-600">結果の確認と次の戻り先は上で完結できます。ここではベスト確認や script 管理に戻るときだけ使います。</p>
+        <p className="text-sm font-semibold text-[var(--accent-strong)]">その他の操作</p>
+        <p className="mt-2 text-sm leading-6 text-ink-600">結果の確認と次の戻り先は上で完結できます。ここではベスト確認や台本管理だけ使います。</p>
         <div className="mt-4 flex flex-wrap gap-3">
         {!isCurrentBest && bestReviewHref ? (
           <Link href={bestReviewHref} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-medium text-ink-700">
-            ベスト結果を見る
+            ベストを確認
           </Link>
         ) : null}
         <Link href="/scripts" className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-medium text-ink-700">
-          scripts
+          練習一覧
         </Link>
         <Link href={getDuplicateScriptPath(script.id)} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-medium text-ink-700">
-          script を複製
+          この台本を磨く
         </Link>
         </div>
       </section>
@@ -597,24 +604,36 @@ function ReviewSummaryFirst({
   focusPoints,
   advice,
   recordHref,
+  brushUpHref,
+  bestReviewHref,
   isCurrentLatest,
   isCurrentBest,
-  takeCount
+  takeCount,
+  canPlaybackRecording,
+  takeId,
+  reviewedAt,
+  exportComment
 }: {
   scriptTitle: string;
   score: number;
   focusPoints: string[];
   advice: string;
   recordHref: string;
+  brushUpHref: string;
+  bestReviewHref: string | null;
   isCurrentLatest: boolean;
   isCurrentBest: boolean;
   takeCount: number;
+  canPlaybackRecording: boolean;
+  takeId: string;
+  reviewedAt: string | null;
+  exportComment: string;
 }) {
   return (
     <section data-testid="review-summary-first" className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.14),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.94))] p-6 shadow-soft lg:p-8">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">次に直すこと</p>
+          <p className="text-sm font-semibold text-[var(--accent-strong)]">直す</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900">{scriptTitle}</h1>
           <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-ink-600">
             {isCurrentLatest ? <span className="rounded-full bg-ink-50 px-3 py-1 text-[var(--accent-strong)]">最新結果</span> : null}
@@ -624,7 +643,7 @@ function ReviewSummaryFirst({
         </div>
 
         <div className="rounded-[1.5rem] bg-[var(--accent)] p-5 text-center text-white shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/75">総合スコア</p>
+          <p className="text-xs font-semibold text-white/75">スコア</p>
           <p className="mt-2 text-5xl font-semibold tracking-tight">{score}</p>
         </div>
       </div>
@@ -652,19 +671,36 @@ function ReviewSummaryFirst({
 
       <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
         <Link href={recordHref} className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-5 py-3 text-white shadow-sm sm:w-auto">
-          もう一度録音する
+          もう一回録る
         </Link>
+        <Link href={brushUpHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-ink-800 sm:w-auto">
+          この台本を磨く
+        </Link>
+        {bestReviewHref ? (
+          <Link href={bestReviewHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-ink-800 sm:w-auto">
+            ベストを確認
+          </Link>
+        ) : null}
         <Link href="/progress" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-ink-800 sm:w-auto">
-          Progress
+          進み具合
         </Link>
         <Link href="/scripts" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-ink-800 sm:w-auto">
-          Practice に戻る
+          練習一覧
         </Link>
       </div>
 
       <p className="mt-4 text-sm leading-6 text-ink-600">
-        transcript や細かい score は下の「詳細を見る」にまとめています。まずはこの 1〜3 点だけ見て、次の録音へ戻れば十分です。
+        細かい分析は下にまとめています。まずはこの 1〜3 点だけ見て、次の録音へ戻れば十分です。
       </p>
+      {isCurrentBest ? (
+        <BestResultExportActions
+          audioHref={canPlaybackRecording ? `/api/takes/${takeId}/audio` : null}
+          title={scriptTitle}
+          score={score}
+          dateLabel={formatReviewDate(reviewedAt)}
+          comment={exportComment}
+        />
+      ) : null}
     </section>
   );
 }
@@ -757,6 +793,26 @@ function formatDelta(value: number) {
   return `${value > 0 ? "+" : ""}${value}`;
 }
 
+function formatReviewDate(value: string | null) {
+  if (!value) {
+    return "日付なし";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "日付なし";
+  }
+
+  return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
 function toProgressTakeSummaryFromReview(review: ReturnType<typeof hydrateStoredReview>): ProgressTakeSummary {
   return {
     id: review.take.id,
@@ -815,13 +871,13 @@ function PracticeGuidanceSection({
 }) {
   return (
     <section className={`rounded-[2rem] border p-6 shadow-sm ${getGuidanceToneClasses(guidance.tone)}`}>
-      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Next step</p>
+      <p className="text-sm font-semibold text-[var(--accent-strong)]">次にやること</p>
       <h2 className="mt-2 text-2xl font-semibold text-ink-900">{guidance.actionLabelJa}</h2>
       <p className="mt-2 text-xs uppercase tracking-[0.18em] text-ink-500">{getGuidanceActionBadgeLabel(guidance.actionKind)}</p>
       <p className="mt-4 text-sm leading-6 text-ink-800">{guidance.summaryJa}</p>
       <p className="mt-3 text-sm leading-6 text-ink-600">{guidance.reasonJa}</p>
       <p className="mt-3 text-sm leading-6 text-ink-700">今の実行指示: {guidance.executionCueJa}</p>
-      {guidance.followupCueJa ? <p className="mt-2 text-sm leading-6 text-ink-600">次に record へ戻ったら: {guidance.followupCueJa}</p> : null}
+      {guidance.followupCueJa ? <p className="mt-2 text-sm leading-6 text-ink-600">次に録る時: {guidance.followupCueJa}</p> : null}
       {guidance.focusReasonJa ? <p className="mt-3 text-sm leading-6 text-ink-600">今これを優先する理由: {guidance.focusReasonJa}</p> : null}
       {guidance.focusSummaryJa ? <p className="mt-3 text-sm leading-6 text-ink-700">{guidance.focusSummaryJa}</p> : null}
       {guidance.focusWords.length > 0 ? (
@@ -842,10 +898,10 @@ function PracticeGuidanceSection({
       </ol>
       {guidance.actionKind === "record" ? (
         <p className="mt-4 text-sm leading-6 text-ink-600">
-          record 画面では、失敗時も保存済み録音の再試行と Recovery plan が見えるので、同じ録音のまま立て直せます。
+          録音画面では、同じ録音で評価だけやり直すこともできます。
         </p>
       ) : null}
-      <p className="mt-2 text-sm leading-6 text-ink-600">迷ったら `Current step` と「{comparisonSectionTitle}」を見返し、いま耳を合わせ直す段階か、そのまま戻る段階かだけを確認すれば十分です。</p>
+      <p className="mt-2 text-sm leading-6 text-ink-600">迷ったら「{comparisonSectionTitle}」を見返し、聞き直すか、そのまま録るかだけ決めれば十分です。</p>
     </section>
   );
 }
@@ -865,19 +921,19 @@ function ReviewNextActionSection({
 }) {
   const primaryHref = guidance.actionKind === "listen" ? listenHref : recordHref;
   const secondaryHref = guidance.actionKind === "listen" ? recordHref : listenHref;
-  const secondaryLabel = guidance.actionKind === "listen" ? "このまま record に戻る" : "必要なら listen を挟む";
+  const secondaryLabel = guidance.actionKind === "listen" ? "このまま録る" : "必要なら聞き直す";
   const decisionText =
     guidance.actionKind === "listen"
       ? latestReviewHref
-        ? "いまは結果を見終えた段階です。まず耳を合わせ直したいなら listen に戻り、通常利用へ戻る前に最新結果を見直したいときだけ別導線を使います。"
-        : "いまは結果を見終えた段階です。まず耳を合わせ直したいなら listen に戻り、十分ならそのまま record に進めます。"
+        ? "耳を合わせ直したいなら聞くへ戻ります。最新結果を見直したいときだけ別導線を使います。"
+        : "耳を合わせ直したいなら聞くへ戻り、十分ならそのまま録音へ進めます。"
       : latestReviewHref
-        ? "いまは結果を見終えた段階です。そのまま record に戻るのが主導線で、通常利用へ戻る前に最新結果を見直したいときだけ別導線を使います。"
-        : "いまは結果を見終えた段階です。そのまま record に戻るのが主導線で、迷うときだけ listen を 1 回だけ挟みます。";
+        ? "そのまま録音へ戻るのが主導線です。最新結果を見直したいときだけ別導線を使います。"
+        : "そのまま録音へ戻るのが主導線です。迷うときだけ聞くを1回挟みます。";
 
   return (
     <section className={`rounded-[2rem] border p-6 shadow-sm ${getGuidanceToneClasses("steady")}`}>
-      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Next action</p>
+      <p className="text-sm font-semibold text-[var(--accent-strong)]">次にやること</p>
       <h2 className="mt-2 text-2xl font-semibold text-ink-900">次に戻る先を決める</h2>
       <p className="mt-3 text-sm leading-6 text-ink-700">{decisionText}</p>
       <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
@@ -893,10 +949,10 @@ function ReviewNextActionSection({
           </Link>
         ) : null}
         <Link href={progressHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-          progress を見る
+          ベストを確認
         </Link>
       </div>
-      <p className="mt-3 text-sm leading-6 text-ink-600">迷ったら `Next action` では戻り先だけを決めます。script 管理や別の結果確認だけを下の `Other actions` に回せば十分です。</p>
+      <p className="mt-3 text-sm leading-6 text-ink-600">迷ったら、戻り先だけ決めます。台本管理や別の結果確認は必要なときだけで十分です。</p>
     </section>
   );
 }
