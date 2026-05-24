@@ -4,14 +4,14 @@ import { LoginForm } from "@/components/auth/login-form";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  login_required: "ログインが必要です。続けるにはメールリンクでサインインしてください。",
-  supabase_not_configured: "Supabase の環境変数が未設定です。まず `.env.local` を確認してください。",
-  missing_code: "認証コードが見つかりませんでした。もう一度ログインをやり直してください。",
-  callback_failed: "サインインの完了に失敗しました。もう一度お試しください。",
+  login_required: "続けるにはメールリンクでログインしてください。",
+  supabase_not_configured: "ログインの準備がまだ完了していません。時間をおいてもう一度お試しください。",
+  missing_code: "ログインリンクを確認できませんでした。もう一度メールを送ってください。",
+  callback_failed: "ログインを完了できませんでした。もう一度お試しください。",
   callback_pkce_missing:
-    "サインインの完了に失敗しました。callback 時に PKCE verifier cookie を確認できませんでした。ログインを開始したのと同じブラウザセッションで、もう一度メールリンクを開いてください。",
+    "ログインを完了できませんでした。メールを開いたブラウザで、このページからもう一度ログインリンクを送ってください。",
   callback_exchange_failed:
-    "サインインの完了に失敗しました。callback では verifier cookie を確認できましたが、Supabase の session 交換で失敗しました。server log の `Auth callback exchange failed` を確認してください。"
+    "ログインリンクを確認できませんでした。期限切れの可能性があるため、もう一度メールを送ってください。"
 };
 
 type LoginPageProps = {
@@ -27,23 +27,23 @@ function getLoginReturnTargetState(rawNextPath: string | undefined) {
   if (nextPath) {
     return {
       nextPath,
-      title: `希望する戻り先: ${nextPath}`,
-      summary: "許可された app page のときだけ、この戻り先を login 完了後にも引き継ぎます。callback 失敗時も同じ戻り先を保ったまま login に戻します。"
+      title: "ログイン後に練習へ戻ります",
+      summary: nextPath === "/scripts" ? "メールリンクを開くと、練習一覧へ進みます。" : "メールリンクを開くと、続きの画面へ戻ります。"
     };
   }
 
   if (rawNextPath) {
     return {
       nextPath: null,
-      title: "希望する戻り先: /scripts",
-      summary: "受け取った戻り先は internal path ではなかったため引き継ぎません。login 完了後は安全に `/scripts` へ戻します。"
+      title: "ログイン後に練習へ戻ります",
+      summary: "メールリンクを開くと、練習一覧へ進みます。"
     };
   }
 
   return {
     nextPath: null,
-    title: "希望する戻り先: /scripts",
-    summary: "戻り先が指定されていないため、login 完了後は `/scripts` へ戻します。"
+    title: "ログイン後に練習へ戻ります",
+    summary: "メールリンクを開くと、練習一覧へ進みます。"
   };
 }
 
@@ -55,13 +55,11 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <section className="mx-auto max-w-xl rounded-[2rem] border border-[var(--line)] bg-white p-8 shadow-soft">
       <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">login</p>
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink-900">メールリンクで login</h1>
-      <p className="mt-3 text-sm leading-6 text-ink-600">
-        まずはメールリンクだけの最小導線です。Phase 2 以降でセッション運用と権限周りを詰めます。
-      </p>
+      <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink-900">メールリンクでログイン</h1>
+      <p className="mt-3 text-sm leading-6 text-ink-600">メールアドレスを入れて、届いたリンクを開くだけです。</p>
       {!configReady ? (
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-          Supabase の環境変数が未設定です。`NEXT_PUBLIC_SUPABASE_URL` と `NEXT_PUBLIC_SUPABASE_ANON_KEY` を設定するとログインできます。
+          ログインの準備がまだ完了していません。時間をおいてもう一度お試しください。
         </div>
       ) : null}
       {message ? (
@@ -75,10 +73,10 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
       </div>
       <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
         <Link href="/" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-          home
+          ホーム
         </Link>
         <Link href="/scripts" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-          scripts
+          練習一覧
         </Link>
       </div>
       <div className="mt-8">

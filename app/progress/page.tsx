@@ -33,24 +33,24 @@ function getProgressVoiceReadinessState(input: {
   if (!input.providerSupported) {
     return {
       tone: "alert" as const,
-      title: "listen の前提が不足しています",
-      summary: "voice provider が未対応なので、listen に戻る前に voice 側の前提を確認する必要があります。"
+      title: "お手本ボイスの準備が必要です",
+      summary: "お手本を聞く前に、声の設定を確認する必要があります。"
     };
   }
 
   if (!input.hasConsent) {
     return {
       tone: "focus" as const,
-      title: "voice の同意がまだありません",
-      summary: "保存済み結果は読めますが、listen に戻るには先に `/setup/voice` で同意を記録する必要があります。"
+      title: "自分の声の準備がまだです",
+      summary: "保存済み結果は読めます。お手本を聞く前に、声の準備をします。"
     };
   }
 
   if (!input.hasDefaultVoice) {
     return {
       tone: "focus" as const,
-      title: "listen 用の voice がまだありません",
-      summary: "結果は読めますが、listen に戻るには先に voice を 1 つ作る必要があります。"
+      title: "お手本ボイス用の声がまだありません",
+      summary: "結果は読めます。お手本を聞く前に、声を1つ登録します。"
     };
   }
 
@@ -191,7 +191,7 @@ export default async function ProgressPage() {
           <StateStepSection
             eyebrow="Recovery plan"
             title="record の前提も不足しています"
-            summary={`${transcriptionStatus.supported ? pronunciationStatus.message ?? "pronunciation evaluator の設定が不足しています。" : transcriptionStatus.message ?? "transcription provider の設定が不足しています。"} listen までは進めますが、最初の結果を保存する前に設定を整える必要があります。`}
+            summary={`${transcriptionStatus.supported ? pronunciationStatus.message ?? "評価の準備が不足しています。" : transcriptionStatus.message ?? "評価の準備が不足しています。"} お手本を聞くところまでは進めますが、最初の結果を保存する前に設定を整える必要があります。`}
             tone="alert"
           />
         ) : null}
@@ -203,7 +203,7 @@ export default async function ProgressPage() {
             voiceReadiness
               ? "listen を主導線に戻す前提が不足しています。まず voice 設定を整え、準備が済んだら最初の script から再開します。"
               : !canRecord
-                ? "listen で見本確認までは進められます。record で最初の結果を保存する前に、evaluation provider の前提を整えます。"
+                ? "お手本を聞くところまでは進められます。録音で最初の結果を保存する前に、評価の準備を整えます。"
               : candidateScript
               ? `まず候補の「${candidateScript.title}」から始めます。この候補は未着手や戻りやすさを優先して 1 本だけ出しているので、listen を挟みたいならそこから入り、すぐ録りたいなら record に進みます。`
               : "まず対象 script を 1 つ選びます。listen を挟みたいならそこから入り、すぐ録りたいなら record に進みます。"
@@ -232,11 +232,13 @@ export default async function ProgressPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">PROGRESS</p>
-      </div>
+      <ProgressAchievementHero
+        item={overallBestItem}
+        recommendedItem={recommendedItem}
+        canRecord={canRecord}
+      />
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         <TakeSummaryCard
           title="最新結果"
           take={latestReviewedItem?.latestTake ?? null}
@@ -244,16 +246,6 @@ export default async function ProgressPage() {
           href={latestReviewedItem?.latestTake ? getScriptReviewPath(latestReviewedItem.script.id, latestReviewedItem.latestTake.id) : null}
           emptyHref={recommendedItem ? getScriptRecordPath(recommendedItem.script.id) : "/scripts"}
           emptyListenHref={recommendedItem ? getScriptListenPath(recommendedItem.script.id) : null}
-          canRecord={canRecord}
-        />
-        <TakeSummaryCard
-          title="ベスト結果"
-          take={overallBestItem?.bestTake ?? null}
-          scriptTitle={overallBestItem?.script.title ?? "ベスト結果"}
-          href={overallBestItem?.bestTake ? getScriptReviewPath(overallBestItem.script.id, overallBestItem.bestTake.id) : null}
-          emptyHref={recommendedItem ? getScriptRecordPath(recommendedItem.script.id) : "/scripts"}
-          emptyListenHref={recommendedItem ? getScriptListenPath(recommendedItem.script.id) : null}
-          highlight
           canRecord={canRecord}
         />
         <ProgressQuickNextCard
@@ -283,7 +275,7 @@ export default async function ProgressPage() {
           <StateStepSection
             eyebrow="Recovery plan"
             title="record の前提が不足しています"
-            summary={`${transcriptionStatus.supported ? pronunciationStatus.message ?? "pronunciation evaluator の設定が不足しています。" : transcriptionStatus.message ?? "transcription provider の設定が不足しています。"} progress と listen は読めますが、record で保存まで進める前に設定を整える必要があります。`}
+            summary={`${transcriptionStatus.supported ? pronunciationStatus.message ?? "評価の準備が不足しています。" : transcriptionStatus.message ?? "評価の準備が不足しています。"} 成果とお手本は見られますが、録音で保存まで進める前に設定を整える必要があります。`}
             tone="alert"
           />
           <StateActionSection
@@ -295,11 +287,14 @@ export default async function ProgressPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="script数" value={overview.totalScripts} />
-        <StatCard label="保存済み結果" value={overview.totalReviewedTakes} />
-        <StatCard label="ベスト数" value={overview.bestTakeCount} />
-      </div>
+      <details className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-sm">
+        <summary className="cursor-pointer text-sm font-semibold text-ink-800">数字を見る</summary>
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <StatCard label="script数" value={overview.totalScripts} />
+          <StatCard label="保存済み結果" value={overview.totalReviewedTakes} />
+          <StatCard label="ベスト数" value={overview.bestTakeCount} />
+        </div>
+      </details>
 
       <details className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-sm">
         <summary className="cursor-pointer text-sm font-semibold text-ink-800">過去の記録を見る</summary>
@@ -584,6 +579,62 @@ async function getProgressAudioLibraryByScriptId(client: AppSupabaseClient, user
   return new Map<string, ProgressAudioLibraryState>(entries);
 }
 
+function ProgressAchievementHero({
+  item,
+  recommendedItem,
+  canRecord
+}: {
+  item: ScriptProgressItem | null;
+  recommendedItem: ScriptProgressItem | null;
+  canRecord: boolean;
+}) {
+  if (!item?.bestTake) {
+    return (
+      <section className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.94))] p-6 shadow-soft sm:p-8">
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">PROGRESS</p>
+        <h1 className="mt-3 text-3xl font-semibold text-ink-900">自分の成果</h1>
+        <p className="mt-3 text-sm leading-6 text-ink-700">最初の録音を残すと、ここにベスト録音が出ます。</p>
+        <Link href={recommendedItem ? getScriptListenPath(recommendedItem.script.id) : "/scripts"} className="mt-5 inline-flex rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white">
+          {recommendedItem ? "練習に戻る" : "練習を選ぶ"}
+        </Link>
+      </section>
+    );
+  }
+
+  const reviewHref = getScriptReviewPath(item.script.id, item.bestTake.id);
+  const retryHref = canRecord ? getScriptRecordPath(item.script.id) : getScriptListenPath(item.script.id);
+
+  return (
+    <section className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.94))] p-6 shadow-soft sm:p-8">
+      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">PROGRESS</p>
+      <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">自分の成果</h1>
+          <p className="mt-3 text-sm font-semibold text-ink-700">{item.script.title}</p>
+          <p className="mt-3 text-5xl font-semibold text-[var(--accent-strong)]">{item.bestTake.score}点</p>
+          <p className="mt-3 line-clamp-2 text-sm leading-6 text-ink-700">{item.bestTake.coach.summaryJa}</p>
+          <audio className="mt-5 w-full" controls preload="none" src={`/api/takes/${item.bestTake.id}/audio`} />
+        </div>
+        <div className="grid gap-3 text-sm font-semibold">
+          <Link href={retryHref} className="inline-flex justify-center rounded-2xl bg-[var(--accent)] px-5 py-4 text-white">
+            もう一回挑戦
+          </Link>
+          <Link href={reviewHref} className="inline-flex justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-4 text-ink-800">
+            結果を見る
+          </Link>
+          <BestResultExportActions
+            audioHref={`/api/takes/${item.bestTake.id}/audio`}
+            title={item.script.title}
+            score={item.bestTake.score}
+            dateLabel={formatSavedAt(item.bestTake.reviewedAt ?? item.bestTake.createdAt)}
+            comment={item.bestTake.coach.summaryJa}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function PracticeGuidanceCard({ guidance }: { guidance: PracticeGuidance }) {
   return (
     <section className={`mt-6 rounded-[1.75rem] border p-5 ${getGuidanceToneClasses(guidance.tone)}`}>
@@ -780,7 +831,6 @@ function getMetadataNumber(metadata: Json, key: string) {
 
 function formatModelAudioMetadata(metadata: Json) {
   const styleLabel = getMetadataString(metadata, "voice_style_label");
-  const provider = getMetadataString(metadata, "provider") ?? "provider 不明";
   const voiceLabel = getMetadataString(metadata, "voice_label");
   const targetSpeed = getMetadataString(metadata, "target_speed");
   const contentType = getMetadataString(metadata, "content_type");
@@ -788,8 +838,7 @@ function formatModelAudioMetadata(metadata: Json) {
   const parts = [
     styleLabel ? `style: ${styleLabel}` : "style: 旧データ / 詳細なし",
     targetSpeed ? `speed intent: ${targetSpeed}` : null,
-    `provider: ${provider}`,
-    voiceLabel ? `voice: ${voiceLabel}` : null,
+    voiceLabel ? `声: ${voiceLabel}` : null,
     contentType ? `type: ${contentType}` : null,
     byteLength ? `${Math.round(byteLength / 1024)}KB` : null
   ].filter(Boolean);

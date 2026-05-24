@@ -88,10 +88,10 @@ export default async function RecordPage({ params }: PageParams) {
         </div>
         <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
           <a href="#record-evaluate-panel" className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-white shadow-sm sm:w-auto">
-            録音を始める
+            マイクで録音する
           </a>
           <Link href={listenHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800 sm:w-auto">
-            先に聞く
+            お手本を聞く
           </Link>
           {latestReviewHref ? (
             <Link href={latestReviewHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800 sm:w-auto">
@@ -148,7 +148,7 @@ export default async function RecordPage({ params }: PageParams) {
             </ul>
           </div>
           <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white px-4 py-4 text-sm text-ink-600">
-            録音 → 保存 → 文字起こし → 評価 → 保存
+            録音 → 確認 → 評価
           </div>
           {!transcriptionStatus.supported ? (
             <div className="space-y-4">
@@ -202,7 +202,7 @@ export default async function RecordPage({ params }: PageParams) {
         </details>
 
         <div id="record-evaluate-panel" className="order-1 rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm lg:order-1">
-          <h2 className="text-lg font-semibold text-ink-900">評価して保存する</h2>
+          <h2 className="text-lg font-semibold text-ink-900">録音して評価へ</h2>
           <div className="mt-4 text-sm font-semibold">
             <RecordAndEvaluatePanel
               scriptId={script.id}

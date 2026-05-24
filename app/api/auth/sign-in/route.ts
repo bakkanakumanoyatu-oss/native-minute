@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildAuthCallbackPath, LOGIN_CONTINUITY_COOKIE, getInternalPath, getRequestOrigin } from "@/lib/navigation";
+import { buildAuthCallbackHref, LOGIN_CONTINUITY_COOKIE, getInternalPath, getRequestOrigin } from "@/lib/navigation";
 import { createSupabaseRouteClient } from "@/lib/supabase/route";
 import { getPublicAppUrl } from "@/lib/env";
 import { jsonError, jsonOk } from "@/lib/http";
@@ -40,15 +40,15 @@ function classifySignInFailure(input: {
     return {
       kind: "origin_or_redirect" as const,
       message: originMismatch
-        ? `ログイン用メールを送信できませんでした。現在のアクセス origin (${input.requestOrigin}) を Supabase の許可済み redirect URL に追加し、NEXT_PUBLIC_APP_URL (${input.publicAppUrl}) と同じ origin で開いてください。`
-        : "ログイン用メールを送信できませんでした。現在のアクセス origin を Supabase の許可済み redirect URL に追加してください。"
+        ? "ログイン用メールを送信できませんでした。アプリを開いているURLとログイン用リンクの戻り先がずれています。"
+        : "ログイン用メールを送信できませんでした。ログイン用リンクの戻り先を確認してください。"
     };
   }
 
   if (originMismatch) {
     return {
       kind: "origin_or_redirect" as const,
-      message: `ログイン用メールを送信できませんでした。現在のアクセス origin (${input.requestOrigin}) と NEXT_PUBLIC_APP_URL (${input.publicAppUrl}) がずれているため、メールリンク後に session を確立できない可能性があります。origin をそろえてから再試行してください。`
+      message: "ログイン用メールを送信できませんでした。アプリを開いているURLを確認して、もう一度お試しください。"
     };
   }
 
@@ -61,7 +61,7 @@ function classifySignInFailure(input: {
   ) {
     return {
       kind: "email_provider_unavailable" as const,
-      message: "ログイン用メールを送信できませんでした。Supabase Auth のメール送信設定または email login の有効化を確認してください。"
+      message: "ログイン用メールを送信できませんでした。少し待ってからもう一度お試しください。"
     };
   }
 
@@ -73,7 +73,7 @@ function classifySignInFailure(input: {
 
 export async function POST(request: NextRequest) {
   if (!hasSupabaseConfig()) {
-    return jsonError("Supabase の環境変数が未設定です。", 503);
+    return jsonError("ログインの準備がまだ完了していません。時間をおいてもう一度お試しください。", 503);
   }
 
   const nextPath = getInternalPath(request.nextUrl.searchParams.get("next"), "/scripts");
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createSupabaseRouteClient();
-  const callbackPath = buildAuthCallbackPath();
+  const callbackPath = buildAuthCallbackHref(nextPath, "/scripts");
   const requestOrigin = getRequestOrigin(request);
   const publicAppUrl = getPublicAppUrl();
   const emailRedirectTo = new URL(callbackPath, requestOrigin).toString();

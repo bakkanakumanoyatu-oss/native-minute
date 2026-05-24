@@ -40,15 +40,9 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
       <div className="bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.16),transparent_36%),linear-gradient(135deg,rgba(255,255,255,1),rgba(244,248,255,0.94))] p-6 sm:p-8">
       <p className="text-sm font-semibold text-[var(--accent-strong)]">作る</p>
       <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">話してみたい1分を作る</h1>
-      <p className="mt-3 text-sm leading-6 text-ink-600">
-        映画やドラマのセリフっぽい練習、仕事、旅行、自己紹介、雑談。まず1本作って、保存したらすぐ「聞く」へ進みます。
-      </p>
-      <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
+      <div className="mt-5 grid gap-2 text-sm font-semibold sm:max-w-xs">
         <Link href="/scripts" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
           練習一覧
-        </Link>
-        <Link href="/progress" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-          ベスト確認
         </Link>
         {sourceScript ? (
           <Link href={getScriptListenPath(sourceScript.id)} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">

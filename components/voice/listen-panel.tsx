@@ -546,6 +546,113 @@ export function ListenPanel({
     }
   }
 
+  const audioPlayerBlock = audioUrl ? (
+    <div data-testid="listen-audio-block" className="space-y-3 rounded-2xl border border-[var(--line)] bg-white px-4 py-4">
+      <PlaybackRateControl
+        testId="listen-playback-rate"
+        value={playbackRate}
+        onChange={setPlaybackRate}
+        label="聞く速さ"
+        description="音声を作り直さず、この画面で聞く速さだけ変えます。"
+        disabled={!audioPlaybackUrl}
+      />
+      {audioPlaybackUrl ? (
+        <audio
+          data-testid="listen-audio-element"
+          key={audioPlaybackUrl}
+          ref={audioRef}
+          src={audioPlaybackUrl}
+          controls
+          preload="none"
+          className="w-full"
+          onLoadedMetadata={(event) => {
+            const nextDuration = Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : null;
+            event.currentTarget.playbackRate = playbackRate;
+            setAudioDurationSeconds(nextDuration);
+          }}
+          onCanPlay={() => {
+            setPlaybackIssue(null);
+          }}
+          onPlay={() => {
+            setPlaybackIssue(null);
+            setIsPlaying(true);
+          }}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => {
+            setIsPlaying(false);
+            setHasConfirmedListen(true);
+            setPlaybackIssue(null);
+            setShowPlaybackFallback(true);
+          }}
+          onTimeUpdate={(event) => {
+            if (!hasConfirmedListen && event.currentTarget.currentTime >= confirmationSeconds) {
+              setHasConfirmedListen(true);
+              setPlaybackIssue(null);
+              setShowPlaybackFallback(true);
+            }
+          }}
+          onError={() => {
+            setIsPlaying(false);
+            if (hasConfirmedListen) {
+              setMessage("再生に失敗しましたが、お手本は確認済みです。練習エリアに戻るか、違和感がある時の判断を開けます。");
+              setMessageKind("info");
+              return;
+            }
+            setPlaybackIssue({
+              kind: "playback_failed",
+              message: "ブラウザでお手本を再生できませんでした。ページを再読込するか、お手本ボイスを更新してからもう一度お試しください。"
+            });
+            setShowPlaybackFallback(true);
+            setMessage(null);
+          }}
+          onStalled={() => {
+            setIsPlaying(false);
+            if (hasConfirmedListen) {
+              setMessage("再確認の再生が不安定でしたが、お手本は確認済みです。必要ならもう一度聞くか、練習へ戻れます。");
+              setMessageKind("info");
+              return;
+            }
+            setPlaybackIssue({
+              kind: "playback_unstable",
+              message: "お手本の再生が途中で止まりました。少し待つか、お手本ボイスを更新してから聞き直してください。"
+            });
+            setShowPlaybackFallback(true);
+            setMessage(null);
+          }}
+          onWaiting={() => {
+            setIsPlaying(false);
+            if (hasConfirmedListen) {
+              setMessage("再確認の読み込みが不安定でしたが、お手本は確認済みです。必要ならもう一度聞くか、練習へ戻れます。");
+              setMessageKind("info");
+              return;
+            }
+            setPlaybackIssue({
+              kind: "playback_unstable",
+              message: "お手本の読み込みが不安定です。少し待つか、お手本ボイスを更新してから短く聞き直してください。"
+            });
+            setShowPlaybackFallback(true);
+            setMessage(null);
+          }}
+        >
+          お使いのブラウザでは音声を再生できません。お手本ボイスを更新するか、新しいタブで再生してください。
+        </audio>
+      ) : (
+        <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
+          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">準備中</p>
+          <p className="mt-2">お手本を再生できる状態にしています。数秒待てば、この画面のまま再生できます。</p>
+        </div>
+      )}
+      <p className="text-xs uppercase tracking-[0.18em] text-ink-500">
+        {playbackStatus === "saved"
+          ? "保存済み"
+          : playbackStatus === "generated_cached"
+            ? "保存済み"
+            : "新しいお手本"}
+      </p>
+      <SavedModelAudioControl scriptId={scriptId} audioUrl={audioUrl} />
+    </div>
+  ) : null;
+
   return (
     <div className="space-y-4" aria-busy={loading || isPreparingPlayback}>
       <div data-testid="listen-voice-status" className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
@@ -564,9 +671,11 @@ export function ListenPanel({
         </details>
       </div>
 
+      {audioPlayerBlock}
+
       {canGenerateAudio ? (
-        <div data-testid="listen-style-preset" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-4 text-sm leading-6 text-ink-700">
-          <p className="text-xs font-semibold text-ink-500">声の雰囲気</p>
+        <details data-testid="listen-style-preset" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-4 text-sm leading-6 text-ink-700">
+          <summary className="cursor-pointer text-sm font-semibold text-ink-800">声の雰囲気を変える</summary>
           <p className="mt-2 font-semibold text-ink-900">{selectedVoiceStyleOption?.label ?? voiceStylePreset}</p>
           <p className="mt-2 text-ink-600">
             {hasPendingVoiceStyleChange
@@ -596,7 +705,7 @@ export function ListenPanel({
               );
             })}
           </div>
-        </div>
+        </details>
       ) : null}
 
       <div
@@ -759,7 +868,7 @@ export function ListenPanel({
       ) : null}
 
       <div className="flex flex-wrap gap-3">
-        {!recoveryGuidance && canGenerateAudio ? (
+        {!recoveryGuidance && canGenerateAudio && !audioUrl ? (
           <div className="flex flex-col items-start gap-2">
             <button
               data-testid="listen-generate-button"
@@ -768,7 +877,7 @@ export function ListenPanel({
               disabled={loading}
               className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? (audioUrl ? "作り直し中..." : "作成中...") : audioUrl ? "お手本ボイスを作り直す" : "お手本ボイスを作る"}
+              {loading ? "作成中..." : "お手本ボイスを作る"}
             </button>
             <p className="rounded-full border border-[var(--line)] bg-ink-50 px-3 py-1 text-xs font-semibold text-ink-600">
               ベータでは お手本ボイス生成は10回まで
@@ -852,111 +961,24 @@ export function ListenPanel({
         ) : null}
       </div>
 
-      {audioUrl ? (
-        <div data-testid="listen-audio-block" className="space-y-3 rounded-2xl border border-[var(--line)] bg-white px-4 py-4">
-          <PlaybackRateControl
-            testId="listen-playback-rate"
-            value={playbackRate}
-            onChange={setPlaybackRate}
-            label="聞く速さ"
-            description="音声を作り直さず、この画面で聞く速さだけ変えます。"
-            disabled={!audioPlaybackUrl}
-          />
-          {audioPlaybackUrl ? (
-            <audio
-              data-testid="listen-audio-element"
-              key={audioPlaybackUrl}
-              ref={audioRef}
-              src={audioPlaybackUrl}
-              controls
-              preload="none"
-              className="w-full"
-              onLoadedMetadata={(event) => {
-                const nextDuration = Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : null;
-                event.currentTarget.playbackRate = playbackRate;
-                setAudioDurationSeconds(nextDuration);
-              }}
-              onCanPlay={() => {
-                setPlaybackIssue(null);
-              }}
-              onPlay={() => {
-                setPlaybackIssue(null);
-                setIsPlaying(true);
-              }}
-              onPause={() => setIsPlaying(false)}
-              onEnded={() => {
-                setIsPlaying(false);
-                setHasConfirmedListen(true);
-                setPlaybackIssue(null);
-                setShowPlaybackFallback(true);
-              }}
-              onTimeUpdate={(event) => {
-                if (!hasConfirmedListen && event.currentTarget.currentTime >= confirmationSeconds) {
-                  setHasConfirmedListen(true);
-                  setPlaybackIssue(null);
-                  setShowPlaybackFallback(true);
-                }
-              }}
-              onError={() => {
-                setIsPlaying(false);
-                if (hasConfirmedListen) {
-                  setMessage("再生に失敗しましたが、お手本は確認済みです。練習エリアに戻るか、違和感がある時の判断を開けます。");
-                  setMessageKind("info");
-                  return;
-                }
-                setPlaybackIssue({
-                  kind: "playback_failed",
-                  message: "ブラウザでお手本を再生できませんでした。ページを再読込するか、お手本ボイスを更新してからもう一度お試しください。"
-                });
-                setShowPlaybackFallback(true);
-                setMessage(null);
-              }}
-              onStalled={() => {
-                setIsPlaying(false);
-                if (hasConfirmedListen) {
-                  setMessage("再確認の再生が不安定でしたが、お手本は確認済みです。必要ならもう一度聞くか、練習へ戻れます。");
-                  setMessageKind("info");
-                  return;
-                }
-                setPlaybackIssue({
-                  kind: "playback_unstable",
-                  message: "お手本の再生が途中で止まりました。少し待つか、お手本ボイスを更新してから聞き直してください。"
-                });
-                setShowPlaybackFallback(true);
-                setMessage(null);
-              }}
-              onWaiting={() => {
-                setIsPlaying(false);
-                if (hasConfirmedListen) {
-                  setMessage("再確認の読み込みが不安定でしたが、お手本は確認済みです。必要ならもう一度聞くか、練習へ戻れます。");
-                  setMessageKind("info");
-                  return;
-                }
-                setPlaybackIssue({
-                  kind: "playback_unstable",
-                  message: "お手本の読み込みが不安定です。少し待つか、お手本ボイスを更新してから短く聞き直してください。"
-                });
-                setShowPlaybackFallback(true);
-                setMessage(null);
-              }}
+      {audioUrl && !recoveryGuidance && canGenerateAudio ? (
+        <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
+          <summary className="cursor-pointer text-sm font-semibold text-ink-800">その他の操作</summary>
+          <div className="mt-3 flex flex-col items-start gap-2">
+            <button
+              data-testid="listen-generate-button"
+              type="button"
+              onClick={handleGenerate}
+              disabled={loading}
+              className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              お使いのブラウザでは音声を再生できません。お手本ボイスを更新するか、新しいタブで再生してください。
-            </audio>
-          ) : (
-            <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">準備中</p>
-              <p className="mt-2">お手本を再生できる状態にしています。数秒待てば、この画面のまま再生できます。</p>
-            </div>
-          )}
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">
-            {playbackStatus === "saved"
-              ? "保存済み"
-              : playbackStatus === "generated_cached"
-                ? "保存済み"
-                : "新しいお手本"}
-          </p>
-          <SavedModelAudioControl scriptId={scriptId} audioUrl={audioUrl} />
-        </div>
+              {loading ? "作り直し中..." : "お手本ボイスを作り直す"}
+            </button>
+            <p className="rounded-full border border-[var(--line)] bg-ink-50 px-3 py-1 text-xs font-semibold text-ink-600">
+              ベータでは お手本ボイス生成は10回まで
+            </p>
+          </div>
+        </details>
       ) : null}
 
       {message ? <p data-testid="listen-message" className={`text-sm ${messageKind === "error" ? "text-amber-800" : "text-ink-600"}`}>{message}</p> : null}

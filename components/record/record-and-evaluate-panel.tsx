@@ -349,12 +349,12 @@ export function RecordAndEvaluatePanel({
     }
 
     if (!pronunciationSupported) {
-      setErrorMessage(pronunciationMessage ?? "pronunciation evaluator の設定を確認してください。", "evaluate", 503);
+      setErrorMessage(pronunciationMessage ?? "評価の準備を確認してください。", "evaluate", 503);
       return;
     }
 
     if (needsDevFallback && transcriptionSupported && transcriptText.trim().length === 0) {
-      setErrorMessage("mock transcription では開発用 transcript が必要です。開発用 transcript を入れてから再試行してください。", "evaluate", 400);
+      setErrorMessage("開発用の入力が必要です。詳細を開いて入力してから再試行してください。", "evaluate", 400);
       return;
     }
 
@@ -371,7 +371,7 @@ export function RecordAndEvaluatePanel({
 
       if (!recordingReference) {
         if (azureNeedsNormalization) {
-          setInfoMessage("Azure evaluation 用に録音を wav/PCM へ変換しています。", "upload");
+          setInfoMessage("評価前に録音を整えています。", "upload");
           fileToUpload = await normalizeBrowserAudioFileToPcmWav(selectedFile);
         }
 
@@ -451,8 +451,8 @@ export function RecordAndEvaluatePanel({
   const azureNeedsNormalization = Boolean(selectedFile && azureRequiresWavUpload && !isLikelyWaveRecording(selectedFile));
   const azureRecordingFormatMessage = azureRequiresWavUpload
     ? azureNeedsNormalization
-      ? "Azure evaluation では、この録音を upload 前に wav/PCM へ自動変換します。変換できない環境では wav ファイルを選び直します。"
-      : "Azure evaluation では PCM WAV を使います。非 wav 録音は client 側で正規化してから upload します。"
+      ? "評価前に録音を自動で整えます。"
+      : "この録音形式で進められます。"
     : null;
   const recoveryGuidance =
     message && messageKind === "error" && messagePhase
@@ -488,7 +488,7 @@ export function RecordAndEvaluatePanel({
           ? "録音は準備完了"
           : "録音待ち";
   const currentStageDescription = isPreparingUploadFile
-    ? "Azure evaluation 用に wav/PCM へ正規化しています。"
+    ? "評価前に録音を整えています。"
     : isUploading
     ? "録音を保存しています。"
     : isEvaluating
@@ -498,9 +498,9 @@ export function RecordAndEvaluatePanel({
       : selectedFile
         ? "録音は選択済みです。必要なら再生プレビューで確認してから進められます。"
         : !pronunciationSupported
-          ? "録音前に pronunciation evaluator の前提を整える必要があります。"
+          ? "評価の準備が必要です。"
         : !transcriptionSupported
-          ? "録音前に文字起こしの準備が必要です。"
+          ? "評価の準備が必要です。"
           : "まずマイクで録音します。ファイルを使う場合だけ下のファイル用メニューを開きます。";
   const currentStageDecisionHint = isPreparingUploadFile
     ? "いまは待機で十分です。変換が終わると upload に進みます。"
@@ -513,9 +513,9 @@ export function RecordAndEvaluatePanel({
       : selectedFile
         ? "いまはこの録音で進むか、録り直すかを決める段階です。"
       : azureRequiresWavUpload
-        ? "いまは Azure 用の音声をどう正規化して進めるかも合わせて決める段階です。"
+        ? "いまは録音を準備する段階です。"
       : !pronunciationSupported
-          ? "いまは evaluation 設定を直すまでの戻り先を決める段階です。"
+          ? "いまは評価の準備が整うまでの戻り先を決める段階です。"
         : !transcriptionSupported
           ? "いまは設定を直すまでの戻り先を決める段階です。"
           : "いまは録音を準備する段階です。";
@@ -541,7 +541,7 @@ export function RecordAndEvaluatePanel({
     : selectedFile
         ? "この録音で次に進む"
       : !pronunciationSupported
-        ? "evaluation 設定を確認するまでの戻り先を決める"
+        ? "評価の準備が整うまでの戻り先を決める"
       : !transcriptionSupported
         ? "設定を確認するまでの戻り先を決める"
         : "録音を準備する";
@@ -550,19 +550,19 @@ export function RecordAndEvaluatePanel({
       ? "同じ録音で続けるか、録音を差し替えるか、必要なら聞く画面に戻るかを決めます。"
       : "案内どおり立て直すか、録音を準備し直すか、必要なら聞く画面に戻るかを決めます。"
     : isMissingRequiredFallback
-      ? "いまは開発用入力を入れてから進む段階です。入力が済めば、この録音のまま評価に進めます。台本を聞き直したいときは聞く画面に戻れます。"
+      ? "いまは開発用の入力を入れてから進む段階です。入力後はこの録音のまま評価へ進めます。"
     : azureNeedsNormalization
-      ? "いま選んでいる録音は Azure 用に自動で wav/PCM へ正規化してから進めます。変換に失敗したときだけ wav ファイルへ差し替えます。"
+      ? "いま選んでいる録音は、評価前に自動で整えてから進みます。"
     : uploadedRecording
       ? "いまは録音の保存までは終わっています。違和感がなければそのまま評価を続け、変えたいなら録音を差し替え、迷うなら聞く画面を1回だけ挟めます。"
     : selectedFile
         ? "いまは録音の準備ができています。違和感がなければ評価に進み、変えたいなら録音を作り直し、迷うなら見本を聞き直します。"
         : azureRequiresWavUpload
-          ? "Azure pronunciation assessment を使う間も、この画面の録音をそのまま使えます。非 wav のときは upload 前に client 側で wav/PCM へ正規化します。"
+          ? "この画面の録音をそのまま使えます。"
         : !pronunciationSupported
           ? "いまは評価設定の復旧待ちです。設定を直すまで評価保存は進めず、聞く画面か練習一覧に戻ります。"
         : !transcriptionSupported
-          ? "いまは文字起こし設定の復旧待ちです。設定を直すまで評価保存は進めず、聞く画面に戻ります。"
+          ? "いまは評価の準備待ちです。準備が整うまで聞く画面に戻ります。"
           : "録音がまだないので、まずマイクで録ります。台本を聞き直したいときは聞く画面に戻れます。";
   const nextActionActions: RecordDecisionAction[] = recoveryGuidance
     ? [
@@ -821,7 +821,7 @@ export function RecordAndEvaluatePanel({
             ) : null}
             {uploadedRecording && !isBusy ? (
               <p data-testid="record-upload-reuse-hint" className="mt-3 text-sm text-ink-600">
-                この録音はすでに保存済みです。再試行では再 upload せず、評価からやり直します。
+                この録音で評価をもう一度試せます。
               </p>
             ) : null}
           </div>
@@ -913,7 +913,7 @@ export function RecordAndEvaluatePanel({
             </ol>
             <p className="mt-4 text-sm font-semibold text-ink-900">次の一手: {recoveryGuidance.primaryActionLabelJa}</p>
             {recoveryGuidance.retryKeepsUpload ? (
-              <p className="mt-2 text-sm leading-6 text-ink-600">この録音は保存済みなので、再試行では再 upload せず評価だけをやり直します。</p>
+              <p className="mt-2 text-sm leading-6 text-ink-600">この録音のまま評価だけをやり直せます。</p>
             ) : null}
             <p className="mt-2 text-sm leading-6 text-ink-600">迷ったら、同じ録音で続けるか録り直すかだけ決めます。</p>
           </section>
@@ -946,8 +946,8 @@ export function RecordAndEvaluatePanel({
         ) : null}
 
         {canSaveEvaluation ? (
-          <div className="rounded-2xl border border-dashed border-[var(--line)] bg-ink-50 p-4">
-            <p className="text-xs font-semibold text-ink-500">開発用入力</p>
+          <details className="rounded-2xl border border-dashed border-[var(--line)] bg-ink-50 p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-ink-800">詳細</summary>
             <p className="mt-2 text-sm leading-6 text-ink-600">
               通常は空欄で大丈夫です。開発用の評価設定で必要なときだけ使います。
             </p>
@@ -974,14 +974,14 @@ export function RecordAndEvaluatePanel({
                 開発用の評価設定では、この入力が必要です。
               </p>
             ) : null}
-          </div>
+          </details>
         ) : (
-          <div className="rounded-2xl border border-dashed border-[var(--line)] bg-ink-50 p-4">
-            <p className="text-xs font-semibold text-ink-500">開発用入力</p>
+          <details className="rounded-2xl border border-dashed border-[var(--line)] bg-ink-50 p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-ink-800">詳細</summary>
             <p className="mt-2 text-sm leading-6 text-ink-600">
               いまは保存済み結果を作る前提が足りないため、この入力では先に進めません。
             </p>
-          </div>
+          </details>
         )}
 
         {!showNextAction ? (

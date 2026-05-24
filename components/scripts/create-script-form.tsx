@@ -3,8 +3,6 @@
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { QuotaPreflightNotice } from "@/components/scripts/quota-preflight-notice";
-import { ScriptFreezePreflightPreview } from "@/components/scripts/script-freeze-preflight-preview";
 
 export type ScriptFormInitialValues = {
   title: string;
@@ -163,14 +161,6 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
           台本が長めです。約 {estimatedSeconds} 秒想定なので、1分目標なら少し短くすると安定します。
         </p>
       ) : null}
-      <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
-        <summary className="cursor-pointer text-sm font-semibold text-ink-700">保存前チェックを見る</summary>
-        <div className="mt-4 space-y-4">
-          <ScriptFreezePreflightPreview title={title} content={content} targetSeconds={targetSeconds} />
-          <QuotaPreflightNotice context="manual_form" compact />
-        </div>
-      </details>
-
       {initialValues && canResetToInitial ? (
         <button
           type="button"

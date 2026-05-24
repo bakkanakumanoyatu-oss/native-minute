@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { buildLoginHref, LOGIN_CONTINUITY_COOKIE, getInternalPath, getRequestOrigin } from "@/lib/navigation";
 import { createSupabaseRouteClient } from "@/lib/supabase/route";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
+
+const EMAIL_OTP_TYPES = new Set<EmailOtpType>(["signup", "invite", "magiclink", "recovery", "email_change", "email"]);
+
+function getEmailOtpType(type: string): EmailOtpType {
+  return EMAIL_OTP_TYPES.has(type as EmailOtpType) ? type as EmailOtpType : "magiclink";
+}
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -48,24 +55,46 @@ export async function GET(request: NextRequest) {
   }
 
   const code = requestUrl.searchParams.get("code");
+  const tokenHash = requestUrl.searchParams.get("token_hash");
+  const otpType = requestUrl.searchParams.get("type") ?? "magiclink";
+  const providerError = requestUrl.searchParams.get("error");
 
-  if (!code) {
+  if (providerError) {
+    console.error("Auth callback returned provider error", {
+      error: providerError,
+      origin: requestOrigin,
+      nextPath
+    });
+
+    return finalize(redirectTo(buildLoginHref(nextPath, "callback_failed", "/scripts")), {
+      clearPkceVerifierCookies: false
+    });
+  }
+
+  if (!code && !tokenHash) {
     return finalize(redirectTo(buildLoginHref(nextPath, "missing_code", "/scripts")), {
       clearPkceVerifierCookies: false
     });
   }
 
   const supabase = createSupabaseRouteClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } = tokenHash
+    ? await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: getEmailOtpType(otpType)
+      })
+    : await supabase.auth.exchangeCodeForSession(code as string);
 
   if (error) {
-    const errorCode = hasPkceVerifierCookie ? "callback_exchange_failed" : "callback_pkce_missing";
+    const errorCode = tokenHash || hasPkceVerifierCookie ? "callback_exchange_failed" : "callback_pkce_missing";
 
     console.error("Auth callback exchange failed", {
       message: error.message,
       code: error.code ?? null,
       origin: requestOrigin,
       nextPath,
+      callbackMode: tokenHash ? "token_hash" : "code",
+      otpType: tokenHash ? otpType : null,
       hasPkceVerifierCookie,
       callbackCookieNames: cookieNames.filter((name) => name.includes("auth-token") || name === LOGIN_CONTINUITY_COOKIE)
     });

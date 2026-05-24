@@ -7,5 +7,11 @@ export function requireEnv(name: string): string {
 }
 
 export function getPublicAppUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const value = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return value;
+  }
 }

@@ -13,8 +13,6 @@ import { getCachedListenAudio, getVoiceSetupState } from "@/services/voice";
 import { ListenPanel } from "@/components/voice/listen-panel";
 import { ScriptLoopStatusCard } from "@/components/guidance/script-loop-status-card";
 import { ScriptPracticeChunks } from "@/components/guidance/script-practice-chunks";
-import { SavedScriptFreezeCandidateCheck } from "@/components/scripts/saved-script-freeze-candidate-check";
-import { VoiceGenerationPreflightNotice } from "@/components/scripts/voice-generation-preflight-notice";
 import { StateActionSection, StateStepSection } from "@/components/guidance/state-sections";
 
 type PageParams = {
@@ -163,8 +161,8 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
                     listenBlockedKind === "provider_unavailable"
                       ? voiceSetup.providerMessage
                       : listenBlockedKind === "consent_required"
-                        ? "まだ consent が完了していません。まず `/setup/voice` で同意を記録してください。"
-                        : "consent は完了していますが、voice がまだありません。お手本ボイスを作る前に voice を作成してください。",
+                        ? "まだ声の準備が終わっていません。先に声の設定を開きます。"
+                        : "お手本ボイスに使う声がまだありません。先に声を登録してください。",
                   hasAudio: Boolean(cachedAudio),
                   practiceContext
                 })}
@@ -205,8 +203,20 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
             <h2 className="mt-2 text-xl font-semibold text-ink-900">読んで、まねる</h2>
             <div className="mt-4 rounded-[1.5rem] border border-[var(--line)] bg-white p-5">
               <p className="text-xs font-semibold text-ink-500">英文スクリプト</p>
-              <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-ink-900">{script.content}</p>
+              <p className="mt-3 whitespace-pre-wrap text-lg leading-9 text-ink-900">{script.content}</p>
             </div>
+            <details className="mt-4 rounded-[1.5rem] border border-[var(--line)] bg-white p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-ink-800">区切りを見る</summary>
+              <div className="mt-4">
+                <ScriptPracticeChunks
+                  testId="listen-practice-chunks"
+                  chunks={practiceChunks}
+                  focusWords={practiceFocusWords}
+                  summary="まねる前に、どこで区切るかだけ決めます。"
+                  actionCue="まずは1〜2区切りだけ声に出す"
+                />
+              </div>
+            </details>
             <div className="mt-4 grid gap-3 text-sm leading-6 text-ink-700 sm:grid-cols-3">
               <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
                 <p className="font-semibold text-ink-900">1. お手本を聞く</p>
@@ -266,28 +276,6 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
       <details className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
         <summary className="cursor-pointer text-sm font-semibold text-ink-800">設定・管理を見る</summary>
         <div className="mt-5 space-y-5">
-          <ScriptPracticeChunks
-            testId="listen-practice-chunks"
-            chunks={practiceChunks}
-            focusWords={practiceFocusWords}
-            summary="まねる前に、どこで区切るかだけ決めます。"
-            actionCue="まずは 1〜2 区切りだけまねてから録音へ"
-          />
-
-          <SavedScriptFreezeCandidateCheck script={script} />
-
-          <VoiceGenerationPreflightNotice
-            provider={voiceSetup.provider}
-            providerReadiness={voiceSetup.providerReadiness}
-            providerSupported={voiceSetup.providerSupported}
-            providerMessage={voiceSetup.providerMessage}
-            hasConsent={Boolean(voiceSetup.consent)}
-            defaultVoiceLabel={voiceSetup.defaultVoice?.label ?? null}
-            cachedVoiceLabel={cachedAudio?.voice.label ?? null}
-            hasCachedAudio={Boolean(cachedAudio)}
-            canGenerateAudio={!listenBlockedKind}
-          />
-
           <ScriptLoopStatusCard
             currentStep="listen"
             takeCount={progressItem?.takeCount ?? 0}

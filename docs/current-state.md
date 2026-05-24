@@ -31,6 +31,13 @@
 - ユーザー向けの主語は `お手本` / `お手本ボイス` に寄せ、`見本音声`、`補助`、英語の route label は主導線に出さない。
 - テンプレートは実引用ではなく app original の quote-inspired 練習文にする。
 
+## UI/UX Phase 2 の画面方針
+- Home / `/scripts` は、5本までの練習ストックを選ぶ毎日の練習場として見せる。
+- `/progress` は分析より先に、自分のベスト録音、ベストスコア、もう一回挑戦の導線を見せる。
+- `/scripts/new` は最初に `テンプレートから選ぶ / 自分で書く / AIに作ってもらう` の3択だけを出し、フォームや詳細は選択後に出す。
+- `/listen` は保存済みのお手本ボイスがある場合は再生を先に出し、作り直しや声の雰囲気は詳細へ下げる。
+- `/record` はマイク録音を主導線にし、ファイル利用、評価前提、開発用入力は詳細へ下げる。
+
 ## すでに通っていること
 - 主要 route handler は薄く、service に委譲している。
 - `/api/evaluate` は audio-first で、client の `scriptText` を信用しない。
@@ -278,7 +285,7 @@
 - logout と成功した callback 後は `nm-login-next` と PKCE verifier cookie を明示的に掃除する。callback 失敗時は、古い / 期限切れ link で次の pending login を壊さないよう PKCE verifier cookie は残し、login 画面で理由を分けて再試行させる。`next` は internal path のみ受け取り、既知 route prefix は小文字へ正規化する。
 - Gate 0 smoke で magic link を連打すると Supabase Auth の email rate limit に当たることがある。その場合は callback bug と混同せず、しばらく待ってから新しい link を発行する。UI では rate limit を raw detail なしの日本語 message として表示する。
 - `/auth/callback` と `/api/auth/*` は middleware の auth 初期化を通さず、PKCE verifier cookie と callback exchange の間に余計な auth 読み出しを挟まない。
-- callback failure は、`PKCE verifier cookie が callback に届いていない` 場合と、`cookie はあるが Supabase exchange 自体が失敗した` 場合を分けて login に戻す。server log では `Auth callback exchange failed` に cookie 有無も残す。
+- callback は `code` 交換と `token_hash` 検証の両方を受ける。失敗時は、`PKCE verifier cookie が callback に届いていない` 場合と、`cookie はあるが Supabase exchange 自体が失敗した` 場合を分けて login に戻す。server log では `Auth callback exchange failed` に cookie 有無も残す。
 - auth の magic link redirect URL は受信 Host と forwarded proto から origin を組み立てる。callback 後の戻り先は相対 `Location` にして、`127.0.0.1` と `localhost` の host ずれで PKCE cookie が落ちないようにする。
 - OpenAI voice は manual smoke で provider-side consent 登録段階から entitlement 不足らしい失敗に到達した。repo 側の main flow 実装はここまでで止め、v1 mainline は ElevenLabs / mock fallback で続ける。
 

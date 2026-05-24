@@ -28,15 +28,15 @@ function getProviderFallbackSteps(requirements: VoiceProviderRequirements) {
 
 function getProviderRequirementSummary(requirements: VoiceProviderRequirements) {
   if (requirements.requiresConsentRecording && requirements.requiresSampleAudio) {
-    return `${requirements.voiceLabel} では、同意録音とお手本ボイス用の録音が必要です。どちらもこの画面で app-owned storage に保存してから provider に渡します。`;
+    return `${requirements.voiceLabel} では、同意録音とお手本ボイス用の録音が必要です。`;
   }
 
   if (requirements.requiresConsentRecording) {
-    return `${requirements.voiceLabel} では、同意録音が必要です。この画面で app-owned storage に保存してから provider に渡します。`;
+    return `${requirements.voiceLabel} では、同意録音が必要です。`;
   }
 
   if (requirements.requiresSampleAudio) {
-    return `${requirements.voiceLabel} では、お手本ボイス用の録音が必要です。voice 作成前に app-owned storage へ保存した参照を使います。`;
+    return `${requirements.voiceLabel} では、お手本ボイス用の録音が必要です。`;
   }
 
   return null;
@@ -50,22 +50,22 @@ function getVoiceSetupRecoverySummary(input: {
   hasSuggestedScript: boolean;
 }) {
   if (!input.providerSupported) {
-    return input.providerStatusMessage ?? "voice provider の前提が不足しているので、listen に進む前に設定を見直す必要があります。";
+    return input.providerStatusMessage ?? "お手本ボイスを作る準備が不足しています。";
   }
 
   if (!input.hasConsent) {
-    return "voice はまだ作れません。先に同意を記録し、そのあと voice を 1 つ作れば listen に進めます。";
+    return "まず自分の声を使う準備をします。そのあと、お手本ボイス用の声を作れます。";
   }
 
   if (!input.hasDefaultVoice) {
-    return "同意は済んでいます。次は voice を 1 つ作れば、listen に進む前提が整います。";
+    return "次は、お手本ボイスに使う自分の声を登録します。";
   }
 
   if (!input.hasSuggestedScript) {
-    return "voice の前提は整っています。次は最初の script を 1 本作り、そのまま listen に進めます。";
+    return "声の準備は完了です。次は最初の練習を作ります。";
   }
 
-  return "voice の前提は整っています。次に開く候補 script を確認してから listen に進めます。";
+  return "声の準備は完了です。練習を選んで、お手本を聞けます。";
 }
 
 function getProviderReadinessSummary(input: {
@@ -128,7 +128,7 @@ function getVoiceReadyActionState(input: {
   const alternateAction =
     input.requestedNextPath && input.candidateScript
       ? {
-          label: "候補の script で listen",
+          label: "候補の練習で聞く",
           href: getScriptListenPath(input.candidateScript.id)
         }
       : null;
@@ -138,13 +138,13 @@ function getVoiceReadyActionState(input: {
     primaryLabel: input.requestedNextPath
       ? "前の画面に戻る"
       : input.candidateScript
-        ? "候補の script で listen"
-        : "最初の script を作る",
+        ? "候補の練習で聞く"
+        : "最初の練習を作る",
     summary: input.requestedNextPath
-      ? "voice の準備は完了です。いまは元の画面に戻って main loop を再開できます。"
+      ? "声の準備は完了です。元の画面に戻れます。"
       : input.candidateScript
-        ? "voice の準備は完了です。次は script を 1 つ選び、listen から main loop に入ります。"
-        : "voice の準備は完了です。次は最初の script を作って listen に進みます。",
+        ? "声の準備は完了です。次は練習を1つ選んで、お手本を聞きます。"
+        : "声の準備は完了です。次は最初の練習を作ります。",
     alternateAction
   };
 }
@@ -226,9 +226,9 @@ export default async function VoiceSetupPage({
     hasDefaultVoice: Boolean(state.defaultVoice)
   });
   const readyNextSummary = !state.consent
-    ? "まず同意を記録し、必要なら同意録音もここで保存します。"
+      ? "まず自分の声を使う準備をします。"
     : !state.defaultVoice
-      ? "同意は完了しています。次は voice を作成します。"
+      ? "次は、お手本ボイスに使う自分の声を登録します。"
       : readyAction.summary;
 
   return (
@@ -240,7 +240,7 @@ export default async function VoiceSetupPage({
           ここでは、お手本ボイスに使う自分の声を準備します。普段の練習では必要な時だけここに戻ります。
         </p>
         <details className="mt-4 max-w-3xl rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm leading-6 text-ink-700">
-          <summary className="cursor-pointer font-semibold text-ink-800">詳しい設定を見る</summary>
+          <summary className="cursor-pointer font-semibold text-ink-800">詳細を見る</summary>
           <div className="mt-3 space-y-2">
             {providerRequirementSummary ? <p>{providerRequirementSummary}</p> : null}
             {state.providerRequirements.entitlementSensitive ? (
@@ -248,7 +248,7 @@ export default async function VoiceSetupPage({
                 {`${state.providerRequirements.providerLabel} 側の voice 作成権限で止まる場合があります。その場合は auth や upload ではなく provider entitlement を確認し、練習を先に進めるなら \`VOICE_PROVIDER=${fallbackProvider}\` に戻します。`}
               </p>
             ) : null}
-            <p>v1 mainline の voice provider は ElevenLabs です。OpenAI は transcription / script generation / coaching 側で使います。</p>
+            <p>通常の練習では、この詳細を確認する必要はありません。</p>
           </div>
         </details>
       </div>
@@ -276,7 +276,7 @@ export default async function VoiceSetupPage({
             <summary className="cursor-pointer font-semibold text-ink-800">詳しい状態を見る</summary>
             <dl className="mt-3 space-y-2">
               <div>
-                <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">voice provider</dt>
+                <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">音声サービス</dt>
                 <dd>{state.provider}</dd>
               </div>
             </dl>
@@ -359,9 +359,9 @@ export default async function VoiceSetupPage({
             <p className="mt-2">同意を保存すると、この画面でそのままお手本ボイス用の声を作れます。</p>
             {state.providerRequirements.entitlementSensitive ? (
               <details className="mt-2 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-xs leading-5 text-ink-600">
-                <summary className="cursor-pointer font-semibold text-ink-800">provider 権限で止まる場合</summary>
+                <summary className="cursor-pointer font-semibold text-ink-800">うまくいかない時</summary>
                 <p className="mt-2">
-                  {state.providerRequirements.voiceLabel} の voice 作成権限が無い環境では、provider-side の同意登録またはその次の voice 作成で止まります。その場合は auth や upload ではなく entitlement 側の不足を先に確認します。
+                  声の作成権限が無い環境では、この画面で止まることがあります。その場合は設定側の確認が必要です。
                 </p>
               </details>
             ) : null}
@@ -369,10 +369,10 @@ export default async function VoiceSetupPage({
           <StateActionSection
             eyebrow="Other actions"
             title="設定・管理"
-            summary="voice を作る前でも script 一覧や home は確認できますが、listen に進むには先に同意が必要です。"
+            summary="声を作る前でも練習一覧は確認できます。お手本を聞くには先にこの準備が必要です。"
             actions={[
-              { label: "scripts", href: "/scripts" },
-              { label: "home", href: "/" }
+              { label: "練習一覧", href: "/scripts" },
+              { label: "ホーム", href: "/" }
             ]}
           />
         </section>
@@ -390,9 +390,9 @@ export default async function VoiceSetupPage({
             <p className="mt-2">声を作成すると、次はお手本を聞いてまねる画面へ進めます。</p>
             {state.providerRequirements.entitlementSensitive ? (
               <details className="mt-2 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-xs leading-5 text-ink-600">
-                <summary className="cursor-pointer font-semibold text-ink-800">provider 権限で止まる場合</summary>
+                <summary className="cursor-pointer font-semibold text-ink-800">うまくいかない時</summary>
                 <p className="mt-2">
-                  {`Your organization does not have access to this endpoint. のような失敗は、実装や auth ではなく ${state.providerRequirements.voiceLabel} の entitlement 不足として扱います。継続して main loop を進めたい場合は \`VOICE_PROVIDER=${fallbackProvider}\` に戻し、voice 作成は権限付与後に再開してください。`}
+                  声の作成権限が無い環境では、この画面で止まることがあります。その場合は設定側の確認が必要です。
                 </p>
               </details>
             ) : null}
@@ -408,10 +408,10 @@ export default async function VoiceSetupPage({
           <StateActionSection
             eyebrow="Other actions"
             title="設定・管理"
-            summary="script を先に確認したいときだけ使います。listen に進むには voice 作成まで終えておく必要があります。"
+            summary="練習一覧を先に確認したいときだけ使います。お手本を聞くには声の登録が必要です。"
             actions={[
-              { label: "scripts", href: "/scripts" },
-              { label: "progress", href: "/progress" }
+              { label: "練習一覧", href: "/scripts" },
+              { label: "成果", href: "/progress" }
             ]}
           />
         </section>
@@ -420,7 +420,7 @@ export default async function VoiceSetupPage({
       {state.providerRequirements.entitlementSensitive && !state.defaultVoice ? (
         <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
           <details>
-            <summary className="cursor-pointer text-lg font-semibold text-ink-900">Recovery plan / provider 権限で止まる場合</summary>
+            <summary className="cursor-pointer text-lg font-semibold text-ink-900">うまくいかない時</summary>
             <p className="mt-3 text-sm leading-6 text-ink-600">
               {`${state.providerRequirements.voiceLabel} endpoint の entitlement が無い環境では、この画面の実装は通っても provider-side の同意登録または voice 作成が止まります。開発を止めない最短手順は ${fallbackProvider} へ一旦戻すことです。`}
             </p>
@@ -444,7 +444,7 @@ export default async function VoiceSetupPage({
       {state.provider === "elevenlabs" && state.providerSupported && !state.defaultVoice ? (
         <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
           <details>
-            <summary className="cursor-pointer text-lg font-semibold text-ink-900">Recovery plan / ElevenLabs で止まる場合</summary>
+            <summary className="cursor-pointer text-lg font-semibold text-ink-900">詳しい復旧メモ</summary>
             <p className="mt-3 text-sm leading-6 text-ink-600">
               ElevenLabs voice clone が止まった場合は、まず failure point を切り分けます。current repo では verification pending voice を保存しないため、provider 側で追加操作が必要な失敗はその場で fail-fast します。
             </p>
@@ -470,31 +470,31 @@ export default async function VoiceSetupPage({
         <section data-testid="voice-ready-block" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-ink-900">お手本を聞けます</h2>
           <p className="mt-2 text-sm leading-6 text-ink-600">
-            現在の voice は <span className="font-semibold text-ink-900">{state.defaultVoice.label}</span> です。
+            登録済みの声は <span className="font-semibold text-ink-900">{state.defaultVoice.label}</span> です。
           </p>
           <p className="mt-2 text-sm leading-6 text-ink-600">
             {candidateScript
               ? requestedNextPath
-                ? "元の画面に戻る導線を優先しています。別の script に切り替えたいときは scripts に戻って選び直せます。"
-                : `次に開く候補は「${candidateScript.title}」です。これは直近で触った script を入口候補として 1 本だけ出しているだけなので、別の script にしたいときは scripts に戻って選び直せます。`
+                ? "元の画面に戻る導線を優先しています。別の練習に切り替えたいときは練習一覧で選び直せます。"
+                : `次に開く候補は「${candidateScript.title}」です。別の練習にしたいときは練習一覧で選び直せます。`
               : requestedNextPath
                 ? "元の画面に戻る導線を優先しています。"
-                : "まだ script がないので、次は最初の script を作ってから listen に進みます。"}
+                : "まだ練習がないので、次は最初の練習を作ってからお手本を聞きます。"}
           </p>
           <div className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-            <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Launchpad</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-ink-500">次の入口</p>
             <p className="mt-2">
               {requestedNextPath
-                ? "再開導線は保ったままです。前の画面に戻るか、候補 script から通常利用に戻るかのどちらかをここで選べます。"
+                ? "前の画面に戻るか、候補の練習へ進むかを選べます。"
                 : candidateScript
-                  ? "初回利用でも再利用でも、まずは 1 本だけ選べば十分です。迷ったら候補 script の listen から入り、違う台本にしたいときだけ scripts に戻ります。"
-                  : "まだ最初の script がないので、ここでは作成から始めるのが最短です。"}
+                  ? "まずは1本だけ選べば十分です。迷ったら候補の練習から入ります。"
+                  : "まだ最初の練習がないので、ここでは作成から始めます。"}
             </p>
           </div>
           <details className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-xs leading-5 text-ink-600">
-            <summary className="cursor-pointer font-semibold text-ink-800">voice の詳細を見る</summary>
-            <p className="mt-2">provider: {state.defaultVoice.provider}</p>
-            <p className="mt-1">設定済みなら、普段の practice flow では provider を意識せず listen に進めます。</p>
+            <summary className="cursor-pointer font-semibold text-ink-800">詳細を見る</summary>
+            <p className="mt-2">音声サービス: {state.defaultVoice.provider}</p>
+            <p className="mt-1">普段の練習では、この詳細を意識しなくて大丈夫です。</p>
           </details>
           <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
             <Link href={readyAction.primaryHref} className="rounded-2xl bg-[var(--accent)] px-4 py-3 text-white">
@@ -506,10 +506,10 @@ export default async function VoiceSetupPage({
               </Link>
             ) : null}
             <Link href="/scripts" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-              scripts
+              練習一覧
             </Link>
             <Link href="/progress" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-              progress
+              成果
             </Link>
           </div>
         </section>

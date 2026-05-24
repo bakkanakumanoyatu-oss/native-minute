@@ -146,10 +146,10 @@ export default async function ScriptsPage() {
       <div className="overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.18),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(239,248,246,0.92))] p-6 shadow-soft sm:p-8 lg:p-10">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
           <div>
-            <p className="text-sm font-semibold text-[var(--accent-strong)]">今日の1分</p>
+            <p className="text-sm font-semibold text-[var(--accent-strong)]">練習ストック</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">自分の練習場</h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-ink-700">
-              1本選んで、お手本を聞いてまねる。納得したら録音して評価します。
+              5本まで置いて、今日やる1本を選びます。
             </p>
             <div className="mt-5 grid max-w-3xl gap-2 text-sm font-semibold text-ink-700 sm:grid-cols-5">
               {["作る", "聞いてまねる", "録音して評価", "直す", "ベストを残す"].map((step, index) => (
@@ -175,7 +175,11 @@ export default async function ScriptsPage() {
             <Link href="/scripts/new" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-4 text-ink-800 transition hover:bg-ink-50 sm:w-auto">
               新しい1分を作る
             </Link>
-          ) : null}
+          ) : (
+            <span className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white/70 px-5 py-4 text-ink-500 sm:w-auto">
+              5本あります。整理してから追加
+            </span>
+          )}
         </div>
       </div>
 

@@ -13,7 +13,7 @@ type NewScriptWorkspaceProps = {
 
 export function NewScriptWorkspace({ initialValues, sourceTitle = null }: NewScriptWorkspaceProps) {
   const [draftCopy, setDraftCopy] = useState<ScriptFormDraftCopy | null>(null);
-  const [entryMode, setEntryMode] = useState<ScriptStudioEntryMode>("template");
+  const [entryMode, setEntryMode] = useState<ScriptStudioEntryMode | null>(initialValues ? "freewriting" : null);
   const formSectionRef = useRef<HTMLDivElement | null>(null);
 
   function scrollFormIntoView() {
@@ -34,6 +34,7 @@ export function NewScriptWorkspace({ initialValues, sourceTitle = null }: NewScr
       locale: "en-US",
       sourceLabel: "Script Studio draft"
     });
+    setEntryMode("freewriting");
     scrollFormIntoView();
   }
 
@@ -46,6 +47,7 @@ export function NewScriptWorkspace({ initialValues, sourceTitle = null }: NewScr
       locale: "en-US",
       sourceLabel: "テンプレ"
     });
+    setEntryMode("freewriting");
     scrollFormIntoView();
   }
 
@@ -59,9 +61,13 @@ export function NewScriptWorkspace({ initialValues, sourceTitle = null }: NewScr
           <ScriptStudioMockPanel onCopyDraft={handleCopyDraft} />
         </div>
       ) : null}
-      <div ref={formSectionRef} className="mt-8 scroll-mt-6">
-        <CreateScriptForm initialValues={initialValues} sourceTitle={sourceTitle} draftCopy={draftCopy} />
-      </div>
+      {entryMode === "freewriting" || draftCopy || initialValues ? (
+        <div ref={formSectionRef} className="mt-8 scroll-mt-6">
+          <CreateScriptForm initialValues={initialValues} sourceTitle={sourceTitle} draftCopy={draftCopy} />
+        </div>
+      ) : (
+        <div ref={formSectionRef} />
+      )}
     </>
   );
 }

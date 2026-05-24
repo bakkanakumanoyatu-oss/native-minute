@@ -7,7 +7,7 @@ import { SCRIPT_STUDIO_TEMPLATES } from "@/lib/script-studio/templates";
 export type ScriptStudioEntryMode = "template" | "freewriting" | "ai";
 
 type ScriptStudioEntryModesProps = {
-  activeMode: ScriptStudioEntryMode;
+  activeMode: ScriptStudioEntryMode | null;
   onModeChange: (mode: ScriptStudioEntryMode) => void;
   onUseTemplate: (template: ScriptStudioTemplate) => void;
 };
@@ -20,21 +20,21 @@ const ENTRY_MODES: Array<{
 }> = [
   {
     id: "template",
-    title: "テンプレから選ぶ",
+    title: "テンプレートから選ぶ",
     label: "すぐ作る",
-    summary: "話してみたくなる型を選び、自分用に直します。"
+    summary: "型を選んで、自分用に直します。"
   },
   {
     id: "freewriting",
-    title: "自由に書く",
+    title: "自分で書く",
     label: "自由入力",
-    summary: "好きな題材や原稿を、1分で話せる形にします。"
+    summary: "英文を直接入れて保存します。"
   },
   {
     id: "ai",
-    title: "AIに書かせる",
+    title: "AIに作ってもらう",
     label: "下書き",
-    summary: "言いたいことを、編集できる1分英文にします。"
+    summary: "短いメモから英文を作ります。"
   }
 ];
 
@@ -42,9 +42,8 @@ export function ScriptStudioEntryModes({ activeMode, onModeChange, onUseTemplate
   return (
     <section className="rounded-2xl border border-[var(--line)] bg-white px-4 py-5">
       <div>
-        <p className="text-xs font-semibold text-[var(--accent-strong)]">入口を選ぶ</p>
-        <h2 className="mt-2 text-xl font-semibold text-ink-900">今日話すテーマを決める</h2>
-        <p className="mt-2 text-sm leading-6 text-ink-600">選んだあと、下のフォームで自分の言葉に直して保存します。</p>
+        <p className="text-xs font-semibold text-[var(--accent-strong)]">3択</p>
+        <h2 className="mt-2 text-xl font-semibold text-ink-900">練習の作り方を選ぶ</h2>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -70,18 +69,17 @@ export function ScriptStudioEntryModes({ activeMode, onModeChange, onUseTemplate
         })}
       </div>
 
+      {activeMode ? (
       <div className="mt-5">
         {activeMode === "template" ? <TemplateEntry onUseTemplate={onUseTemplate} /> : null}
         {activeMode === "freewriting" ? <FreewritingEntry /> : null}
         {activeMode === "ai" ? (
           <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-            <p className="font-semibold text-ink-900">下書きを作って、気に入った文だけ使います。</p>
-            <p className="mt-1">
-              短い文に区切ったり、自分が言いそうな表現へ直してから保存します。著作物の本文そのものは内蔵しません。
-            </p>
+            <p className="font-semibold text-ink-900">AIに1分スクリプトを書かせる</p>
           </div>
         ) : null}
       </div>
+      ) : null}
     </section>
   );
 }
