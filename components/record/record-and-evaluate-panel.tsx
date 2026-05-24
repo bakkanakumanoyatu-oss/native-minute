@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { normalizeBrowserAudioFileToPcmWav } from "@/lib/browser-pcm-wav";
-import { getGuidanceActionBadgeLabel, getGuidancePrimaryButtonLabel, getGuidanceToneClasses } from "@/lib/guidance-ui";
-import { getRecordNextStepGuidance, getRecordRecoveryGuidance } from "@/lib/record-recovery-guidance";
+import { getGuidancePrimaryButtonLabel, getGuidanceToneClasses } from "@/lib/guidance-ui";
+import { getRecordRecoveryGuidance } from "@/lib/record-recovery-guidance";
 import { getShortRecordingPrompt } from "@/lib/recording";
 import { MAX_RECORDING_BYTES, RECORDING_FORMAT_LABEL, RECORDING_MIME_TYPES } from "@/services/storage/constants";
 
@@ -169,12 +169,9 @@ export function RecordAndEvaluatePanel({
   listenHref,
   transcriptionProvider,
   transcriptionSupported,
-  transcriptionMessage,
   pronunciationProvider,
   pronunciationSupported,
   pronunciationMessage,
-  pronunciationDiagnostics,
-  practiceContext
 }: RecordAndEvaluatePanelProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -449,11 +446,6 @@ export function RecordAndEvaluatePanel({
   const shortRecordingPrompt = isMeasuringDuration ? null : getShortRecordingPrompt(durationSeconds, targetSeconds);
   const azureRequiresWavUpload = isAzurePronunciationProvider(pronunciationProvider);
   const azureNeedsNormalization = Boolean(selectedFile && azureRequiresWavUpload && !isLikelyWaveRecording(selectedFile));
-  const azureRecordingFormatMessage = azureRequiresWavUpload
-    ? azureNeedsNormalization
-      ? "評価前に録音を自動で整えます。"
-      : "この録音形式で進められます。"
-    : null;
   const recoveryGuidance =
     message && messageKind === "error" && messagePhase
         ? getRecordRecoveryGuidance({
@@ -466,59 +458,6 @@ export function RecordAndEvaluatePanel({
           shortRecordingPrompt
         })
       : null;
-  const nextStepGuidance = getRecordNextStepGuidance({
-    hasSelectedFile: Boolean(selectedFile),
-    hasUploadedRecording: Boolean(uploadedRecording),
-    isMeasuringDuration,
-    isMissingRequiredFallback,
-    shortRecordingPrompt,
-    transcriptionSupported,
-    transcriptionMessage,
-    practiceContext
-  });
-  const currentStageLabel = isPreparingUploadFile
-    ? "変換中"
-    : isUploading
-    ? "保存中"
-    : isEvaluating
-      ? "評価中"
-      : uploadedRecording
-        ? "録音は保存済み"
-        : selectedFile
-          ? "録音は準備完了"
-          : "録音待ち";
-  const currentStageDescription = isPreparingUploadFile
-    ? "評価前に録音を整えています。"
-    : isUploading
-    ? "録音を保存しています。"
-    : isEvaluating
-      ? "録音を評価して、結果を保存しています。"
-      : uploadedRecording
-        ? "この録音はすでに保存済みなので、次の再試行は評価から再開できます。"
-      : selectedFile
-        ? "録音は選択済みです。必要なら再生プレビューで確認してから進められます。"
-        : !pronunciationSupported
-          ? "評価の準備が必要です。"
-        : !transcriptionSupported
-          ? "評価の準備が必要です。"
-          : "まずマイクで録音します。ファイルを使う場合だけ下のファイル用メニューを開きます。";
-  const currentStageDecisionHint = isPreparingUploadFile
-    ? "いまは待機で十分です。変換が終わると upload に進みます。"
-    : isUploading
-    ? "いまは待機で十分です。保存が終わると評価に進みます。"
-    : isEvaluating
-      ? "いまは待機で十分です。完了すると結果確認に進みます。"
-      : uploadedRecording
-        ? "いまは保存済み録音で評価を続けるか、録音を差し替えるかを決める段階です。"
-      : selectedFile
-        ? "いまはこの録音で進むか、録り直すかを決める段階です。"
-      : azureRequiresWavUpload
-        ? "いまは録音を準備する段階です。"
-      : !pronunciationSupported
-          ? "いまは評価の準備が整うまでの戻り先を決める段階です。"
-        : !transcriptionSupported
-          ? "いまは設定を直すまでの戻り先を決める段階です。"
-          : "いまは録音を準備する段階です。";
   const submitLabel = isPreparingUploadFile
     ? "wav/PCM へ変換中..."
     : isUploading
@@ -532,38 +471,6 @@ export function RecordAndEvaluatePanel({
       : "評価して保存する";
   const canShowPrepareActions = !selectedFile && canSaveEvaluation;
   const showNextAction = Boolean(selectedFile || recoveryGuidance || canShowPrepareActions || !canSaveEvaluation);
-  const nextActionTitle = recoveryGuidance
-    ? recoveryGuidance.retryKeepsUpload
-      ? "保存済み録音で次に進む"
-      : "立て直し方を決める"
-    : uploadedRecording
-      ? "保存済み録音で次に進む"
-    : selectedFile
-        ? "この録音で次に進む"
-      : !pronunciationSupported
-        ? "評価の準備が整うまでの戻り先を決める"
-      : !transcriptionSupported
-        ? "設定を確認するまでの戻り先を決める"
-        : "録音を準備する";
-  const nextActionDescription = recoveryGuidance
-    ? recoveryGuidance.retryKeepsUpload
-      ? "同じ録音で続けるか、録音を差し替えるか、必要なら聞く画面に戻るかを決めます。"
-      : "案内どおり立て直すか、録音を準備し直すか、必要なら聞く画面に戻るかを決めます。"
-    : isMissingRequiredFallback
-      ? "いまは開発用の入力を入れてから進む段階です。入力後はこの録音のまま評価へ進めます。"
-    : azureNeedsNormalization
-      ? "いま選んでいる録音は、評価前に自動で整えてから進みます。"
-    : uploadedRecording
-      ? "いまは録音の保存までは終わっています。違和感がなければそのまま評価を続け、変えたいなら録音を差し替え、迷うなら聞く画面を1回だけ挟めます。"
-    : selectedFile
-        ? "いまは録音の準備ができています。違和感がなければ評価に進み、変えたいなら録音を作り直し、迷うなら見本を聞き直します。"
-        : azureRequiresWavUpload
-          ? "この画面の録音をそのまま使えます。"
-        : !pronunciationSupported
-          ? "いまは評価設定の復旧待ちです。設定を直すまで評価保存は進めず、聞く画面か練習一覧に戻ります。"
-        : !transcriptionSupported
-          ? "いまは評価の準備待ちです。準備が整うまで聞く画面に戻ります。"
-          : "録音がまだないので、まずマイクで録ります。台本を聞き直したいときは聞く画面に戻れます。";
   const nextActionActions: RecordDecisionAction[] = recoveryGuidance
     ? [
         {
@@ -697,67 +604,7 @@ export function RecordAndEvaluatePanel({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-[var(--line)] bg-white p-5 shadow-sm">
-        <p className="text-sm font-semibold text-[var(--accent-strong)]">録音</p>
-        <h2 className="mt-2 text-xl font-semibold text-ink-900">録って、評価へ進む</h2>
-        <p className="mt-2 text-sm leading-6 text-ink-600">
-          自分の声を録音します。選んだ音声でよければ、そのまま評価して直すところを見ます。
-        </p>
-        <details className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3">
-          <summary className="cursor-pointer text-sm font-semibold text-ink-800">録音形式の補足</summary>
-          <p className="mt-3 text-sm leading-6 text-ink-600">
-            録音ファイルを保存してから評価します。通常はこのまま進めば大丈夫です。
-          </p>
-          <p className="mt-4 text-xs font-semibold text-ink-500">文字起こし</p>
-          <p
-            data-testid="record-transcription-status"
-            data-provider={transcriptionProvider}
-            data-supported={transcriptionSupported ? "true" : "false"}
-            className="mt-2 text-sm leading-6 text-ink-700"
-          >
-            {transcriptionSupported
-              ? "準備できています。"
-              : transcriptionMessage ?? "文字起こしの設定を確認してください。"}
-          </p>
-          <p className="mt-4 text-xs font-semibold text-ink-500">評価</p>
-          <p
-            data-testid="record-pronunciation-status"
-            data-provider={pronunciationProvider}
-            data-supported={pronunciationSupported ? "true" : "false"}
-            className="mt-2 text-sm leading-6 text-ink-700"
-          >
-            {pronunciationSupported
-              ? "準備できています。"
-              : pronunciationMessage ?? "pronunciation evaluator の設定を確認してください。"}
-          </p>
-          {pronunciationDiagnostics.length > 0 && (azureRequiresWavUpload || !pronunciationSupported) ? (
-            <ul data-testid="record-pronunciation-diagnostics" className="mt-3 space-y-2 text-sm leading-6 text-ink-600">
-              {pronunciationDiagnostics.map((diagnostic) => (
-                <li key={diagnostic.key}>
-                  • {diagnostic.label}: {diagnostic.message}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </details>
-        <div className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-          <p className="text-xs font-semibold text-ink-500">今やること</p>
-          <p className="mt-2 font-semibold text-ink-900">{currentStageLabel}</p>
-          <p className="mt-2">{currentStageDescription}</p>
-          <p className="mt-2 text-ink-600">{currentStageDecisionHint}</p>
-        </div>
-      </div>
-
       <div className="space-y-4 rounded-3xl border border-[var(--line)] bg-white p-5 shadow-sm">
-        <div>
-          <p className="text-xs font-semibold text-ink-500">録音入力</p>
-          <p className="mt-2 text-sm leading-6 text-ink-600">
-            まずマイクで録ります。ファイルを使う場合だけ、下のファイル用メニューを開きます。
-          </p>
-          {azureRecordingFormatMessage ? (
-            <p className="mt-2 text-sm leading-6 text-amber-700">{azureRecordingFormatMessage}</p>
-          ) : null}
-        </div>
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
@@ -826,10 +673,7 @@ export function RecordAndEvaluatePanel({
             ) : null}
           </div>
         ) : (
-          <div className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4 text-sm leading-6 text-ink-700">
-            <p className="text-xs font-semibold text-ink-500">今やること</p>
-            <p className="mt-2">まだ録音はありません。まずマイクで録ります。</p>
-          </div>
+          <p className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4 text-sm leading-6 text-ink-700">まだ録音はありません。</p>
         )}
 
         <label className="block space-y-2">
@@ -851,37 +695,6 @@ export function RecordAndEvaluatePanel({
           </p>
         ) : null}
 
-        {!recoveryGuidance ? (
-          <section className={`rounded-2xl border p-4 ${getGuidanceToneClasses(nextStepGuidance.tone)}`}>
-            <p className="text-xs font-semibold text-ink-500">次にやること</p>
-            <h3 className="mt-2 text-lg font-semibold text-ink-900">{nextStepGuidance.titleJa}</h3>
-            <p className="mt-2 text-xs uppercase tracking-[0.18em] text-ink-500">{getGuidanceActionBadgeLabel(nextStepGuidance.actionKind)}</p>
-            <p className="mt-3 text-sm leading-6 text-ink-800">{nextStepGuidance.summaryJa}</p>
-            {nextStepGuidance.sourceHintJa ? <p className="mt-3 text-sm leading-6 text-ink-600">{nextStepGuidance.sourceHintJa}</p> : null}
-            <p className="mt-3 text-sm leading-6 text-ink-700">{nextStepGuidance.executionCueJa}</p>
-            {nextStepGuidance.focusReasonJa ? <p className="mt-3 text-sm leading-6 text-ink-600">今これを優先する理由: {nextStepGuidance.focusReasonJa}</p> : null}
-            {nextStepGuidance.focusSummaryJa ? <p className="mt-3 text-sm leading-6 text-ink-700">{nextStepGuidance.focusSummaryJa}</p> : null}
-            {nextStepGuidance.focusWords.length > 0 ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {nextStepGuidance.focusWords.map((word) => (
-                  <span key={word} className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold text-ink-700">
-                    {word}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-            <ol className="mt-4 space-y-2 text-sm leading-6 text-ink-700">
-              {nextStepGuidance.stepsJa.map((item, index) => (
-                <li key={item}>
-                  {index + 1}. {item}
-                </li>
-              ))}
-            </ol>
-            <p className="mt-4 text-sm font-semibold text-ink-900">次の一手: {nextStepGuidance.primaryActionLabelJa}</p>
-            <p className="mt-2 text-sm leading-6 text-ink-600">迷ったら録音プレビューを1回だけ聞き、録り直すか評価へ進むか決めます。</p>
-          </section>
-        ) : null}
-
         {recoveryGuidance ? (
           <section
             data-testid="record-recovery-guidance"
@@ -889,42 +702,13 @@ export function RecordAndEvaluatePanel({
           >
             <p className="text-xs font-semibold text-ink-500">うまくいかない時</p>
             <h3 className="mt-2 text-lg font-semibold text-ink-900">{recoveryGuidance.titleJa}</h3>
-            <p className="mt-2 text-xs uppercase tracking-[0.18em] text-ink-500">{getGuidanceActionBadgeLabel(recoveryGuidance.actionKind)}</p>
             <p className="mt-3 text-sm leading-6 text-ink-800">{recoveryGuidance.summaryJa}</p>
-            {recoveryGuidance.sourceHintJa ? <p className="mt-3 text-sm leading-6 text-ink-600">{recoveryGuidance.sourceHintJa}</p> : null}
-            <p className="mt-3 text-sm leading-6 text-ink-700">{recoveryGuidance.executionCueJa}</p>
-            {recoveryGuidance.focusReasonJa ? <p className="mt-3 text-sm leading-6 text-ink-600">今これを優先する理由: {recoveryGuidance.focusReasonJa}</p> : null}
-            {recoveryGuidance.focusSummaryJa ? <p className="mt-3 text-sm leading-6 text-ink-700">{recoveryGuidance.focusSummaryJa}</p> : null}
-            {recoveryGuidance.focusWords.length > 0 ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {recoveryGuidance.focusWords.map((word) => (
-                  <span key={word} className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold text-ink-700">
-                    {word}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-            <ol className="mt-4 space-y-2 text-sm leading-6 text-ink-700">
-              {recoveryGuidance.stepsJa.map((item, index) => (
-                <li key={item}>
-                  {index + 1}. {item}
-                </li>
-              ))}
-            </ol>
-            <p className="mt-4 text-sm font-semibold text-ink-900">次の一手: {recoveryGuidance.primaryActionLabelJa}</p>
-            {recoveryGuidance.retryKeepsUpload ? (
-              <p className="mt-2 text-sm leading-6 text-ink-600">この録音のまま評価だけをやり直せます。</p>
-            ) : null}
-            <p className="mt-2 text-sm leading-6 text-ink-600">迷ったら、同じ録音で続けるか録り直すかだけ決めます。</p>
           </section>
         ) : null}
 
         {showNextAction ? (
-          <section className={`rounded-2xl border p-4 ${getGuidanceToneClasses("steady")}`}>
-            <p className="text-xs font-semibold text-ink-500">次にやること</p>
-            <h3 className="mt-2 text-lg font-semibold text-ink-900">{nextActionTitle}</h3>
-            <p className="mt-3 text-sm leading-6 text-ink-700">{nextActionDescription}</p>
-            <p className="mt-3 inline-flex rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold text-ink-600">
+          <section className="rounded-2xl border border-[var(--line)] bg-white p-4">
+            <p className="inline-flex rounded-full border border-[var(--line)] bg-ink-50 px-3 py-1 text-xs font-semibold text-ink-600">
               ベータでは 評価は10回まで
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
@@ -941,7 +725,6 @@ export function RecordAndEvaluatePanel({
                 </button>
               ))}
             </div>
-            <p className="mt-3 text-sm leading-6 text-ink-600">迷ったら、録り直すか評価へ進むかだけ決めれば十分です。</p>
           </section>
         ) : null}
 

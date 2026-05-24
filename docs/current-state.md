@@ -8,7 +8,7 @@
 5. 納得したら `/scripts/[id]/record` で自分の声を録音する。
 6. 評価して、保存済み結果を atomic に保存する。
 7. `/scripts/[id]/review/[takeId]` で短い評価を見て、直す / ベストを残す。
-8. `/progress` で最新結果、ベスト結果、次に戻る先を見る。
+8. `/progress` で最大5本の練習スロットから成果を選び、最新結果 / ベスト結果 / 保存済み録音を見る。
 
 ## UI/UX Phase 1 の画面方針
 - ユーザー向け main loop は `作る -> 聞く -> 録る -> 直す` の4語を前面に出す。
@@ -33,9 +33,9 @@
 
 ## UI/UX Phase 2 の画面方針
 - Home / `/scripts` は、5本までの練習ストックを選ぶ毎日の練習場として見せる。
-- `/progress` は分析より先に、自分のベスト録音、ベストスコア、もう一回挑戦の導線を見せる。
+- `/progress` は分析より先に、5本までの練習スロット、最新結果、ベスト結果、保存済み録音を見せる。
 - `/scripts/new` は最初に `テンプレートから選ぶ / 自分で書く / AIに作ってもらう` の3択だけを出し、フォームや詳細は選択後に出す。
-- `/listen` は保存済みのお手本ボイスがある場合は再生を先に出し、作り直しや声の雰囲気は詳細へ下げる。
+- `/listen` は保存済みのお手本ボイスがある場合は再生を先に出し、作り直しは小さく表示する。声の雰囲気変更は常設 UI から外す。
 - `/record` はマイク録音を主導線にし、ファイル利用、評価前提、開発用入力は詳細へ下げる。
 
 ## すでに通っていること
@@ -43,8 +43,8 @@
 - `/api/evaluate` は audio-first で、client の `scriptText` を信用しない。
 - review 保存は `persist_review_bundle` 経由で atomic にまとまる。
 - listen は `未生成 / 保存済み音声 / 新規生成 / キャッシュ再利用` を分けて表示する。
-- listen は見本音声生成時に `natural / expressive / clear / slow` の voice style preset を選べる。ElevenLabs では preset を `voice_settings` に変換し、それ以外の provider では安全に無視する。
-- listen の見本音声と review の保存済み録音は、client-side の再生速度だけを `0.75x / 0.85x / 1.0x / 1.15x` で切り替えられる。provider 再生成や `script_audios` cache 変更は伴わない。
+- listen の常設 UI では voice style preset を出さず、既定の練習用 preset でお手本ボイスを生成する。provider mapping 境界と cache identity は既存のまま維持する。
+- listen のお手本ボイスと review / progress の保存済み録音は、client-side の再生速度だけを `0.75x / 0.85x / 1.0x / 1.15x` で切り替えられる。listen では 3秒 / 5秒の巻き戻し・早送りもできる。provider 再生成や `script_audios` cache 変更は伴わない。
 - `/scripts/new` では、手動フォームの話しやすさ診断は初期表示から外し、AI下書きの詳細確認や保存前チェックだけ details 側で見る。
 - `/scripts/new` には Script Studio Phase S2 の UI mock があり、`ScriptBrief -> mock ScriptDraft -> quality report -> freeze readiness` の流れを local helper だけで確認できる。本番AI生成、保存、freeze、音声生成にはまだ接続していない。
 - Script Studio Phase S2.5 として、generation prompt contract / output validation / freeze preflight を `lib/script-studio/generation.ts` に固定した。将来 AI が返す metrics / chunks / focusWords はそのまま信用せず、`englishScript` から quality report を再計算する。
@@ -164,13 +164,13 @@
 - `scripts` は Practice library として、まず今日の練習を 1 本選び、`listen / record / script 複製 / 最新結果` を script ごとに選べる。不足前提があるときは、先に `voice 設定` や `listen` 側へ戻す。
 - `scripts` は page 上部で `初回導線 / 再開導線` を先にまとめ、複製は card 側のその他の操作へ寄せている。
 - `voice 設定` に戻る導線は、候補 script が見えている場面ではその script の `listen` に戻る形を優先している。
-- `scripts` と `progress` の候補 script は、最適解ではなく未着手や戻りやすさを優先して 1 本だけ出す入口候補として扱っている。
+- `scripts` は練習候補を選ぶ入口、`progress` は最大5本の練習スロットから成果を選んで見る入口として扱う。
 - `setup/voice` は `?next=` が internal path のときだけ保持し、blocked state から戻る設定・管理導線に使う。
 - `/api/uploads/voice-consent` を追加し、同意録音は `voice-consents` bucket の app-owned object として先に保存してから `/api/voice-consent` に参照を渡せる。
 - `setup/voice` / `scripts` / `listen` / `progress` が参照する consent と default voice は、現在の `VOICE_PROVIDER` に一致する row だけを見る。
 - `setup/voice` と voice service は、provider 名の直書きより `provider requirements` を本線にしている。`requiresConsentRecording / requiresSampleAudio / requiresProviderConsentId / entitlementSensitive` のような条件は factory から読む。
 - voice provider 本接続時も固定前提なのは、app-owned の `voice_consents / voices / script_audios` row、app-owned storage (`voice-consents / voice-samples / script-audios`)、server 側 cache key 判定、replay route 経由の protected 再生、の 4 つ。
-- progress は最新結果とベスト結果を比較し、`listen / record / 結果確認` に戻れる。画面上部でも次に戻る 1 本を決めやすくしている。
+- progress は5本までの練習スロットを切り替え、選んだ台本の最新結果 / ベスト結果 / 保存済み録音を確認できる。必要なら `listen / record / 結果確認` に戻れる。
 - Azure Speech pronunciation assessment は live manual smoke で wav/PCM 録音に対して `record -> evaluate -> review -> progress` が通り、さらに OpenAI transcription + Azure pronunciation evaluator の実ブラウザ人間マイク録音でも review / progress まで確認済み。
 - core path の最小 Playwright smoke はあり、少なくとも `未ログインでは protected route に入れない`、`mock voice で setup/listen`、`listen blocked branch の provider_unavailable / consent_required / voice_required`、`provider_unavailable でも保存済みお手本ボイスがあれば listen を継続でき、audio 要素が playback-ready までロードできる分岐`、`mock listen 生成`、`mock 前提の record -> review -> progress` は自動で崩れを拾う。
 - `npm run e2e:auth-guard` と `npm run e2e:setup-voice` を分けて回せるので、manual smoke 前でも guard と voice setup の current flow を短く確認しやすい。
@@ -195,14 +195,11 @@
 - 履歴意味が絡むときは script mutation より duplication を優先する。
 
 ## 直近の変更
-- `listen / record / review` の先頭に、その script の `main loop 現在位置 / 保存済み結果数 / すぐ戻る先` をまとめた共通 status card を追加し、画面をまたいだ読み替えを減らした。
-- 共通 status card には `最新結果の score / 保存時刻 / 弱点語 / coach` の要点も載せ、detail 画面から戻り判断をするときに毎回 review を開き直さなくても済むようにした。
-- listen / record / review / progress の guidance を `Current step / Next step / Recovery plan / Next action / Other actions` の役割で読みやすく寄せた。
-- listen では共通文法に加えて、`音声状態 / 更新の意味 / 違和感があるときの判断` を分けて読めるようにした。
-- focus words は 1〜3 個に絞り、`なぜ今これを優先するか` と短い実行指示も共通表示するようにした。
-- record は `録音 / upload / 評価` の失敗を分け、保存済み録音の再試行と `Recovery plan` を出す。
-- listen は persisted result を軽く参照しつつ、通常 guidance と再生失敗・品質違和感の recovery guidance を出す。
-- listen では `音声状態` と `更新の意味` を分け、同じ voice の更新がキャッシュ再利用でも判断導線が消えないようにした。
+- listen / record / progress は説明ページではなく操作ページに寄せた。`今やること` / `次にやること` / 長い guidance は主導線から外し、必要操作だけを残す。
+- listen は sticky な お手本ボイス player、スクリプト、区切り表示、録音へ進む、お手本ボイスを作り直す、に絞った。3秒 / 5秒の巻き戻し・早送りを追加し、区切り練習中も player を見失いにくくした。
+- record はマイク録音、お手本へ戻る、録音前の区切り、録音確認、評価へ進む、ベータ10回表示に絞った。音声ファイル利用と開発用入力は details 側に下げた。
+- progress は最大5本の練習スロットを切り替え、選んだ台本ごとに最新結果 / ベスト結果 / 前回結果 / 保存済みベスト録音 / 保存済みお手本を確認する画面にした。
+- progress の自分の録音と保存済みお手本は protected audio player 経由で取得し、raw protected URL を audio に直接渡さない。
 - empty / not-found / fallback / config-error 状態でも、main loop に戻りやすい section 構成へ寄せている。
 - `progress` の no-result 状態や `record` の録音前状態でも、`listen に戻る / そのまま進む / 録音を作り直す` をその場で選びやすくした。
 - `setup/voice` / `scripts` / `progress` では、上流の handoff で次に開く script や route を選びやすいように小さい運用導線を足した。
@@ -306,7 +303,7 @@
 2. `/setup/voice` で同意と必要な録音 upload を含む voice 設定を整える。
 3. `/scripts` で script を作るか複製する。
 4. `/scripts/[id]/listen` で見本確認をする。
-5. voice や provider が不足しているときは、その場の `Recovery plan / Next action` から `voice 設定` や `scripts` に戻る。
+5. 声や評価の準備が不足しているときは、その場の案内から `voice 設定` や `scripts` に戻る。
 6. `/scripts/[id]/record` で録音を保存する。Azure のときは非 wav 録音も client 側で wav / PCM に寄せてから保存する。
 7. `/scripts/[id]/review/[takeId]` で保存済み結果を確認する。
-8. `/progress` で次の戻り先を決める。
+8. `/progress` で5本までの練習スロットから成果を選んで見る。
