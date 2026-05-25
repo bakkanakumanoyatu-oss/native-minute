@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { pickScriptsLaunchCandidate } from "@/lib/launchpad";
 import { buildLoginHref, buildScriptListenVoiceSetupHref, buildVoiceSetupHref } from "@/lib/navigation";
-import { getDuplicateScriptPath, getScriptListenPath, getScriptRecordPath, getScriptReviewPath } from "@/lib/script-routes";
+import { getDuplicateScriptPath, getScriptListenPath, getScriptRecordPath } from "@/lib/script-routes";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DeleteScriptButton } from "@/components/scripts/delete-script-button";
@@ -148,16 +148,7 @@ export default async function ScriptsPage() {
           <div>
             <p className="text-sm font-semibold text-[var(--accent-strong)]">練習ストック</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">自分の練習場</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-ink-700">
-              5本まで置いて、今日やる1本を選びます。
-            </p>
-            <div className="mt-5 grid max-w-3xl gap-2 text-sm font-semibold text-ink-700 sm:grid-cols-5">
-              {["作る", "聞いてまねる", "録音して評価", "直す", "ベストを残す"].map((step, index) => (
-                <span key={step} className="rounded-2xl border border-white/80 bg-white/75 px-4 py-3">
-                  {index + 1}. {step}
-                </span>
-              ))}
-            </div>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-ink-700">5本まで置いて、今日やる1本を選びます。</p>
           </div>
           <div className="rounded-[1.75rem] border border-white/80 bg-white/90 p-6 shadow-sm">
             <p className="text-sm font-semibold text-ink-900">ストック</p>
@@ -211,7 +202,6 @@ export default async function ScriptsPage() {
       ) : (
         <div className="grid gap-5">
           {visibleScripts.map((item) => {
-            const reviewHref = item.latestTake ? getScriptReviewPath(item.script.id, item.latestTake.id) : null;
             const primaryHref = getCardPrimaryHref(item, { voiceReady, canRecord });
             const primaryLabel = getCardPrimaryLabel(item, { voiceReady, canRecord });
 
@@ -230,7 +220,7 @@ export default async function ScriptsPage() {
                   <div className="rounded-[1.5rem] border border-[var(--line)] bg-ink-50 p-5">
                     <p className="text-xs font-semibold text-ink-500">最新スコア</p>
                     <p className="mt-1 text-4xl font-semibold text-ink-900">{item.latestTake?.score ?? "-"}</p>
-                    <p className="mt-3 text-xs font-semibold text-ink-500">次にやること</p>
+                    <p className="mt-3 text-xs font-semibold text-ink-500">練習メモ</p>
                     <p className="mt-1 text-sm font-semibold text-[var(--accent-strong)]">{getNextAction(item, { voiceReady, canRecord })}</p>
                   </div>
                 </div>
@@ -248,11 +238,6 @@ export default async function ScriptsPage() {
                     <Link href={getScriptRecordPath(item.script.id)} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-ink-700">
                       録る
                     </Link>
-                    {reviewHref ? (
-                      <Link href={reviewHref} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-ink-700">
-                        直す
-                      </Link>
-                    ) : null}
                     <Link href={getDuplicateScriptPath(item.script.id)} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-ink-700">
                       この台本を磨く
                     </Link>

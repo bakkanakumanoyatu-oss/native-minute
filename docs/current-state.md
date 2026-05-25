@@ -195,6 +195,11 @@
 - 履歴意味が絡むときは script mutation より duplication を優先する。
 
 ## 直近の変更
+- Home は Practice / Progress への入口に寄せ、練習一覧の重複表示をやめた。Practice は5本までの練習スロット選択、Progress は成果確認に役割を分ける。
+- 共通 nav は pathname ベースで現在ページを点灯する。Home / Practice / Progress / Voice / Settings を対象にする。
+- listen の区切り表示では、各 chunk の下に小さい 5秒戻る / 3秒戻る / 再生・一時停止 / 3秒進む / 5秒進む controls を出す。正確な区切り音声切り出しはタイムスタンプがないため未実装。
+- setup/voice は登録済みの自分の声、クローン元音声の有無、同意録音 metadata から分かる形式/サイズだけを表示し、既存 voice 作成 flow で再アップロードして作り直せる。
+- Brush-up v1 は `docs/brush-up-v1-design-plan.md` に設計だけを固定した。既存お手本を上書きせず、Review 起点の candidate から始める案だが、storage identity / cache key / metadata contract は実装前の判断点として残す。
 - listen / record / progress は説明ページではなく操作ページに寄せた。`今やること` / `次にやること` / 長い guidance は主導線から外し、必要操作だけを残す。
 - listen は sticky な お手本ボイス player、スクリプト、区切り表示、録音へ進む、お手本ボイスを作り直す、に絞った。3秒 / 5秒の巻き戻し・早送りを追加し、区切り練習中も player を見失いにくくした。
 - record はマイク録音、お手本へ戻る、録音前の区切り、録音確認、評価へ進む、ベータ10回表示に絞った。音声ファイル利用と開発用入力は details 側に下げた。

@@ -11,6 +11,7 @@ import { VoiceConsentForm } from "@/components/voice/voice-consent-form";
 import { getVoiceSetupState } from "@/services/voice";
 import { listScripts } from "@/services/scripts/scripts.service";
 import type { VoiceProviderRequirements } from "@/providers/voice";
+import type { Json } from "@/types/database";
 
 function getProviderFallbackSteps(requirements: VoiceProviderRequirements) {
   const fallbackProvider = requirements.recommendedDevelopmentFallbackProvider;
@@ -149,6 +150,52 @@ function getVoiceReadyActionState(input: {
   };
 }
 
+function formatVoiceDate(value: string | null | undefined) {
+  if (!value) {
+    return "不明";
+  }
+
+  return new Intl.DateTimeFormat("ja-JP", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
+function formatByteLength(value: Json | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  if (value >= 1024 * 1024) {
+    return `${(value / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  return `${Math.round(value / 1024)} KB`;
+}
+
+function getJsonRecord(value: Json | null | undefined) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, Json | undefined>;
+}
+
+function getConsentRecordingInfo(metadata: Json) {
+  const recording = getJsonRecord(getJsonRecord(metadata)?.recording);
+
+  if (!recording) {
+    return null;
+  }
+
+  return {
+    contentType: typeof recording.contentType === "string" ? recording.contentType : null,
+    byteLength: formatByteLength(recording.byteLength)
+  };
+}
+
 export default async function VoiceSetupPage({
   searchParams
 }: {
@@ -230,6 +277,7 @@ export default async function VoiceSetupPage({
     : !state.defaultVoice
       ? "次は、お手本ボイスに使う自分の声を登録します。"
       : readyAction.summary;
+  const consentRecordingInfo = state.consent ? getConsentRecordingInfo(state.consent.metadata) : null;
 
   return (
     <section className="space-y-6">
@@ -472,6 +520,25 @@ export default async function VoiceSetupPage({
           <p className="mt-2 text-sm leading-6 text-ink-600">
             登録済みの声は <span className="font-semibold text-ink-900">{state.defaultVoice.label}</span> です。
           </p>
+          <div className="mt-4 grid gap-3 rounded-2xl border border-[var(--line)] bg-ink-50 p-4 text-sm leading-6 text-ink-700 sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">自分の声</p>
+              <p className="mt-1 font-semibold text-ink-900">{state.defaultVoice.label}</p>
+              <p className="mt-1 text-ink-600">登録 {formatVoiceDate(state.defaultVoice.created_at)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">クローン元音声</p>
+              <p className="mt-1 font-semibold text-ink-900">{state.defaultVoice.sample_audio_path ? "登録あり" : "表示できる録音情報なし"}</p>
+              {consentRecordingInfo ? (
+                <p className="mt-1 text-ink-600">
+                  同意録音 {consentRecordingInfo.contentType ?? "形式不明"}
+                  {consentRecordingInfo.byteLength ? ` / ${consentRecordingInfo.byteLength}` : null}
+                </p>
+              ) : (
+                <p className="mt-1 text-ink-600">ファイル名や長さは保存されていません。</p>
+              )}
+            </div>
+          </div>
           <p className="mt-2 text-sm leading-6 text-ink-600">
             {candidateScript
               ? requestedNextPath
@@ -494,8 +561,20 @@ export default async function VoiceSetupPage({
           <details className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-xs leading-5 text-ink-600">
             <summary className="cursor-pointer font-semibold text-ink-800">詳細を見る</summary>
             <p className="mt-2">音声サービス: {state.defaultVoice.provider}</p>
+            <p className="mt-1">クローン元音声: {state.defaultVoice.sample_audio_path ? "登録済み参照あり" : "保存済み参照なし"}</p>
             <p className="mt-1">普段の練習では、この詳細を意識しなくて大丈夫です。</p>
           </details>
+          {state.consent ? (
+            <details className="mt-4 rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
+              <summary className="cursor-pointer text-sm font-semibold text-ink-800">自分の声を再アップロードして作り直す</summary>
+              <p className="mt-3 text-sm leading-6 text-ink-600">
+                新しい録音からお手本ボイス用の声を作り直します。既存の声は上書きせず、新しく作った声が次のお手本に使われます。
+              </p>
+              <div className="mt-4">
+                <CreateVoiceForm consentId={state.consent.id} requirements={state.providerRequirements} />
+              </div>
+            </details>
+          ) : null}
           <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
             <Link href={readyAction.primaryHref} className="rounded-2xl bg-[var(--accent)] px-4 py-3 text-white">
               {readyAction.primaryLabel}

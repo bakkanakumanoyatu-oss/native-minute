@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { buildLoginHref } from "@/lib/navigation";
-import { getScriptListenPath, getScriptRecordPath, getScriptReviewPath } from "@/lib/script-routes";
+import { getScriptReviewPath } from "@/lib/script-routes";
 import { getAuthState } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
@@ -96,11 +96,6 @@ function ProgressHeader({ slotCount }: { slotCount: number }) {
           <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">自分の成果</h1>
           <p className="mt-2 text-sm font-semibold text-ink-600">練習スロット {slotCount} / 5</p>
         </div>
-        {slotCount < 5 ? (
-          <Link href="/scripts/new" className="inline-flex rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-            練習を追加
-          </Link>
-        ) : null}
       </div>
     </div>
   );
@@ -120,14 +115,13 @@ function ProgressSlotSelector({
       {slotCells.map((item, index) => {
         if (!item) {
           return (
-            <Link
+            <div
               key={`empty-${index}`}
-              href="/scripts/new"
               className="rounded-[1.25rem] border border-dashed border-[var(--line)] bg-white/70 p-4 text-sm text-ink-500"
             >
               <span className="font-semibold">空きスロット {index + 1}</span>
-              <span className="mt-2 block text-xs leading-5">新しい1分を追加</span>
-            </Link>
+              <span className="mt-2 block text-xs leading-5">Practice で追加</span>
+            </div>
           );
         }
 
@@ -168,15 +162,10 @@ function ProgressSlotResult({
   return (
     <div className="space-y-5">
       <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-[var(--accent-strong)]">選択中</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink-900">{item.script.title}</h2>
-            <p className="mt-3 line-clamp-2 text-sm leading-6 text-ink-600">{item.script.content}</p>
-          </div>
-          <Link href={getScriptRecordPath(item.script.id)} className="inline-flex rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white">
-            もう一回挑戦
-          </Link>
+        <div>
+          <p className="text-sm font-semibold text-[var(--accent-strong)]">選択中</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink-900">{item.script.title}</h2>
+          <p className="mt-3 line-clamp-2 text-sm leading-6 text-ink-600">{item.script.content}</p>
         </div>
       </section>
 
@@ -186,14 +175,12 @@ function ProgressSlotResult({
           take={item.latestTake}
           scriptTitle={item.script.title}
           reviewHref={item.latestTake ? getScriptReviewPath(item.script.id, item.latestTake.id) : null}
-          emptyActionHref={getScriptRecordPath(item.script.id)}
         />
         <ResultCard
           label="ベスト結果"
           take={item.bestTake}
           scriptTitle={item.script.title}
           reviewHref={item.bestTake ? getScriptReviewPath(item.script.id, item.bestTake.id) : null}
-          emptyActionHref={getScriptRecordPath(item.script.id)}
           showExport
         />
       </div>
@@ -206,24 +193,6 @@ function ProgressSlotResult({
           <SavedModelAudioSummaryList items={library.savedModelAudios} loadFailed={library.loadFailed} />
         </div>
       </details>
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Link href={getScriptListenPath(item.script.id)} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-center text-sm font-semibold text-ink-800">
-          お手本を聞く
-        </Link>
-        <Link href={getScriptRecordPath(item.script.id)} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-center text-sm font-semibold text-ink-800">
-          録る
-        </Link>
-        {item.latestTake ? (
-          <Link href={getScriptReviewPath(item.script.id, item.latestTake.id)} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-center text-sm font-semibold text-ink-800">
-            直すところを見る
-          </Link>
-        ) : (
-          <Link href="/scripts" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-center text-sm font-semibold text-ink-800">
-            練習一覧
-          </Link>
-        )}
-      </div>
     </div>
   );
 }
@@ -233,14 +202,12 @@ function ResultCard({
   take,
   scriptTitle,
   reviewHref,
-  emptyActionHref,
   showExport = false
 }: {
   label: string;
   take: ProgressTakeSummary | null;
   scriptTitle: string;
   reviewHref: string | null;
-  emptyActionHref: string;
   showExport?: boolean;
 }) {
   return (
@@ -274,9 +241,7 @@ function ResultCard({
       ) : (
         <div className="mt-4 rounded-2xl border border-dashed border-[var(--line)] bg-ink-50 p-4">
           <p className="text-sm font-semibold text-ink-800">まだ録音結果がありません</p>
-          <Link href={emptyActionHref} className="mt-4 inline-flex rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white">
-            録音する
-          </Link>
+          <p className="mt-2 text-sm leading-6 text-ink-600">練習を録音するとここに表示されます。</p>
         </div>
       )}
     </article>

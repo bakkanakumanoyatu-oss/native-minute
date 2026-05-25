@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { SavedModelAudioControl } from "@/components/audio-library/saved-model-audio-control";
 import { PlaybackRateControl, type PlaybackRate } from "@/components/audio/playback-rate-control";
 import type { ListenPracticeContext } from "@/lib/listen-guidance";
+import { getMatchingFocusWords, type PracticeChunk } from "@/lib/script-practice-chunks";
 import { DEFAULT_VOICE_STYLE_PRESET } from "@/lib/voice-style";
 
 type SpeakResponse = {
@@ -32,6 +33,8 @@ type ListenPanelProps = {
   setupVoiceHref?: string;
   canGenerateAudio?: boolean;
   generateBlockedSummary?: string | null;
+  practiceChunks?: PracticeChunk[];
+  focusWords?: string[];
 };
 
 type MessageKind = "info" | "error";
@@ -54,7 +57,9 @@ export function ListenPanel({
   initialVoiceLabel = null,
   initialVoiceId = null,
   canGenerateAudio = true,
-  generateBlockedSummary = null
+  generateBlockedSummary = null,
+  practiceChunks = [],
+  focusWords = []
 }: ListenPanelProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioUrl, setAudioUrl] = useState(initialAudioUrl);
@@ -66,6 +71,7 @@ export function ListenPanel({
   const [playbackRate, setPlaybackRate] = useState<PlaybackRate>(1);
   const [audioDurationSeconds, setAudioDurationSeconds] = useState<number | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     if (!audioUrl) {
@@ -184,6 +190,26 @@ export function ListenPanel({
     audio.currentTime = clampTime(audio.currentTime + seconds, duration);
   }
 
+  async function togglePlayback() {
+    const audio = audioRef.current;
+
+    if (!audio || !resolvedAudioUrl) {
+      return;
+    }
+
+    if (audio.paused) {
+      try {
+        await audio.play();
+      } catch {
+        setMessage("再生できませんでした。ブラウザの音声許可を確認してください。");
+        setMessageKind("error");
+      }
+      return;
+    }
+
+    audio.pause();
+  }
+
   return (
     <div className="space-y-4" aria-busy={loading}>
       {audioUrl ? (
@@ -217,6 +243,9 @@ export function ListenPanel({
                   event.currentTarget.playbackRate = playbackRate;
                   setAudioDurationSeconds(nextDuration);
                 }}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => setIsPlaying(false)}
               >
                 お使いのブラウザでは音声を再生できません。
               </audio>
@@ -266,7 +295,97 @@ export function ListenPanel({
         ) : null}
       </div>
 
+      <ListenChunkControls
+        chunks={practiceChunks}
+        focusWords={focusWords}
+        audioReady={Boolean(resolvedAudioUrl) && !loadFailed}
+        isPlaying={isPlaying}
+        onSeek={seekBy}
+        onTogglePlayback={togglePlayback}
+      />
+
       {message ? <p data-testid="listen-message" className={`text-sm ${messageKind === "error" ? "text-amber-800" : "text-ink-600"}`}>{message}</p> : null}
     </div>
+  );
+}
+
+function ListenChunkControls({
+  chunks,
+  focusWords,
+  audioReady,
+  isPlaying,
+  onSeek,
+  onTogglePlayback
+}: {
+  chunks: PracticeChunk[];
+  focusWords: string[];
+  audioReady: boolean;
+  isPlaying: boolean;
+  onSeek: (seconds: number) => void;
+  onTogglePlayback: () => void;
+}) {
+  if (chunks.length === 0) {
+    return null;
+  }
+
+  const limitedFocusWords = focusWords.map((word) => word.trim()).filter(Boolean).slice(0, 3);
+
+  return (
+    <details className="rounded-[1.5rem] border border-[var(--line)] bg-white p-4" data-testid="listen-segmented-practice">
+      <summary className="cursor-pointer text-sm font-semibold text-ink-800">区切りを見る</summary>
+      <ol className="mt-4 grid gap-3">
+        {chunks.map((chunk) => {
+          const chunkFocusWords = getMatchingFocusWords(chunk.text, limitedFocusWords);
+
+          return (
+            <li key={`${chunk.index}-${chunk.text}`} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-ink-500">chunk {chunk.index}</p>
+                  <p className="mt-2 text-base leading-7 text-ink-900">{chunk.text}</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink-700">{chunk.wordCount} words</span>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm leading-6">
+                <span className="rounded-full bg-white px-3 py-1 font-semibold text-[var(--accent-strong)]">{chunk.cueJa}</span>
+                {chunkFocusWords.map((word) => (
+                  <span key={word} className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold text-ink-600">
+                    focus: {word}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-3 grid grid-cols-5 gap-2 text-xs font-semibold">
+                <MiniAudioButton label="5戻る" disabled={!audioReady} onClick={() => onSeek(-5)} />
+                <MiniAudioButton label="3戻る" disabled={!audioReady} onClick={() => onSeek(-3)} />
+                <MiniAudioButton label={isPlaying ? "一時停止" : "再生"} disabled={!audioReady} onClick={onTogglePlayback} />
+                <MiniAudioButton label="3進む" disabled={!audioReady} onClick={() => onSeek(3)} />
+                <MiniAudioButton label="5進む" disabled={!audioReady} onClick={() => onSeek(5)} />
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </details>
+  );
+}
+
+function MiniAudioButton({
+  label,
+  disabled,
+  onClick
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="min-h-10 rounded-2xl border border-[var(--line)] bg-white px-2 py-2 text-ink-800 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-45"
+    >
+      {label}
+    </button>
   );
 }

@@ -12,7 +12,6 @@ import { getScript } from "@/services/scripts/scripts.service";
 import { getCachedListenAudio, getVoiceSetupState } from "@/services/voice";
 import { ListenPanel } from "@/components/voice/listen-panel";
 import { ScriptLoopStatusCard } from "@/components/guidance/script-loop-status-card";
-import { ScriptPracticeChunks } from "@/components/guidance/script-practice-chunks";
 import { StateActionSection, StateStepSection } from "@/components/guidance/state-sections";
 
 type PageParams = {
@@ -160,6 +159,8 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
                     nextRecordHref={recordHref}
                     canGenerateAudio={false}
                     generateBlockedSummary="保存済みのお手本はこのまま確認できます。新しいお手本ボイスを作るには、先に声の設定を整えてください。"
+                    practiceChunks={practiceChunks}
+                    focusWords={practiceFocusWords}
                   />
                 </div>
               ) : null}
@@ -174,6 +175,8 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
                 initialVoiceId={voiceSetup.defaultVoice.id}
                 practiceContext={practiceContext}
                 nextRecordHref={recordHref}
+                practiceChunks={practiceChunks}
+                focusWords={practiceFocusWords}
               />
             </div>
           )}
@@ -182,18 +185,6 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
               <p className="text-xs font-semibold text-ink-500">英文スクリプト</p>
               <p className="mt-3 whitespace-pre-wrap text-lg leading-9 text-ink-900">{script.content}</p>
             </div>
-            <details className="mt-4 rounded-[1.5rem] border border-[var(--line)] bg-white p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-ink-800">区切りを見る</summary>
-              <div className="mt-4">
-                <ScriptPracticeChunks
-                  testId="listen-practice-chunks"
-                  chunks={practiceChunks}
-                  focusWords={practiceFocusWords}
-                  summary="まねる前に、どこで区切るかだけ決めます。"
-                  actionCue="まずは1〜2区切りだけ声に出す"
-                />
-              </div>
-            </details>
             <Link href={recordHref} className="mt-5 inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-5 py-4 text-sm font-semibold text-white shadow-sm sm:w-auto">
               録音して評価へ進む
             </Link>
