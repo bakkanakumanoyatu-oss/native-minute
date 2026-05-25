@@ -31,7 +31,6 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
   const trimmedLanguage = language.trim();
   const requiresRecording = requirements.requiresConsentRecording;
   const voiceLabel = requirements.voiceLabel;
-  const fallbackProvider = requirements.recommendedDevelopmentFallbackProvider ?? "mock";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -108,7 +107,7 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
         return;
       }
 
-      setMessage("同意を記録しました。次はこのページで voice を作成します。");
+      setMessage("同意を保存しました。次はこのページでお手本ボイスを作れます。");
       router.refresh();
     } catch {
       setMessage("通信に失敗しました。少し待ってからお試しください。");
@@ -161,19 +160,21 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
           onChange={(event) => setRecordingFile(event.target.files?.[0] ?? null)}
           className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-ink-100 file:px-3 file:py-2 file:text-sm file:font-medium focus:border-[var(--accent)]"
         />
+        {recordingFile ? <span className="block text-xs font-semibold text-[var(--accent-strong)]">選択済み: {recordingFile.name}</span> : null}
       </label>
 
       <button
         data-testid="voice-consent-submit"
         type="submit"
         disabled={loading || !accepted}
+        aria-busy={loading}
         className="inline-flex items-center justify-center rounded-2xl bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "記録中..." : "同意を保存して次へ"}
       </button>
 
       <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-xs leading-5 text-ink-600">
-        <summary className="cursor-pointer font-semibold text-ink-800">詳しい補足を見る</summary>
+        <summary className="cursor-pointer font-semibold text-ink-800">うまくいかない時</summary>
         <p className="mt-3">
           {requiresRecording
             ? `${voiceLabel} では、同意者名・言語・同意録音が必要です。`
@@ -181,9 +182,6 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
               ? "この画面では同意だけ保存し、次のステップで自分の声の録音を使います。"
               : "通常はチェックだけでも進めます。"}
         </p>
-        {requirements.provider === "elevenlabs" ? (
-          <p className="mt-2">普段の練習では provider 名を意識しなくて大丈夫です。</p>
-        ) : null}
         {requirements.entitlementSensitive ? (
           <p className="mt-2">
             同意登録や声の作成で {voiceLabel} 側の権限不足に当たる場合があります。
@@ -204,9 +202,9 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
       {message ? <p data-testid="voice-consent-message" className="text-sm text-ink-600">{message}</p> : null}
       {requirements.entitlementSensitive && isOpenAiEntitlementMessage(message) ? (
         <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Recovery plan</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">うまくいかない時</p>
           <p className="mt-2">
-            {`voice 作成の entitlement 不足は、provider-side の同意登録段階でもその後の voice 作成段階でも起こりえます。練習継続を優先するなら \`VOICE_PROVIDER=${fallbackProvider}\` に戻し、${fallbackProvider} voice で main loop を進めます。`}
+            声の作成権限が必要な状態です。練習を先に進めたい場合は設定を切り替えてから再試行してください。
           </p>
         </div>
       ) : null}

@@ -180,6 +180,7 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
       <button
         type="submit"
         disabled={loading || isMissingRequiredFields}
+        aria-busy={loading}
         className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "保存中..." : "保存して聞くへ進む"}

@@ -72,6 +72,7 @@ export function ListenPanel({
   const [audioDurationSeconds, setAudioDurationSeconds] = useState<number | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const isResolvingAudio = Boolean(audioUrl && !resolvedAudioUrl && !loadFailed);
 
   useEffect(() => {
     if (!audioUrl) {
@@ -213,7 +214,7 @@ export function ListenPanel({
   return (
     <div className="space-y-4" aria-busy={loading}>
       {audioUrl ? (
-        <div data-testid="listen-audio-block" className="sticky top-3 z-20 space-y-3 rounded-2xl border border-[var(--line)] bg-white/95 px-4 py-4 shadow-sm backdrop-blur">
+        <div data-testid="listen-audio-block" className="space-y-3 rounded-2xl border border-[var(--line)] bg-white px-4 py-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold text-ink-900">お手本ボイス</p>
             {voiceLabel ? <p className="text-xs font-semibold text-ink-500">{voiceLabel}</p> : null}
@@ -255,7 +256,8 @@ export function ListenPanel({
                     key={seconds}
                     type="button"
                     onClick={() => seekBy(seconds)}
-                    className="rounded-2xl border border-[var(--line)] bg-ink-50 px-3 py-2 text-ink-800 transition hover:bg-white"
+                    className="rounded-2xl border border-[var(--line)] bg-ink-50 px-3 py-2 text-ink-800 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
+                    disabled={!resolvedAudioUrl}
                   >
                     {seconds < 0 ? `${Math.abs(seconds)}秒戻る` : `${seconds}秒進む`}
                   </button>
@@ -276,6 +278,7 @@ export function ListenPanel({
             type="button"
             onClick={handleGenerate}
             disabled={loading}
+            aria-busy={loading}
             className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
               audioUrl
                 ? "border border-[var(--line)] bg-white text-ink-800 hover:bg-ink-50"
@@ -299,6 +302,7 @@ export function ListenPanel({
         chunks={practiceChunks}
         focusWords={focusWords}
         audioReady={Boolean(resolvedAudioUrl) && !loadFailed}
+        audioLoading={isResolvingAudio}
         isPlaying={isPlaying}
         onSeek={seekBy}
         onTogglePlayback={togglePlayback}
@@ -313,6 +317,7 @@ function ListenChunkControls({
   chunks,
   focusWords,
   audioReady,
+  audioLoading,
   isPlaying,
   onSeek,
   onTogglePlayback
@@ -320,6 +325,7 @@ function ListenChunkControls({
   chunks: PracticeChunk[];
   focusWords: string[];
   audioReady: boolean;
+  audioLoading: boolean;
   isPlaying: boolean;
   onSeek: (seconds: number) => void;
   onTogglePlayback: () => void;
@@ -339,12 +345,17 @@ function ListenChunkControls({
 
           return (
             <li key={`${chunk.index}-${chunk.text}`} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-ink-500">chunk {chunk.index}</p>
-                  <p className="mt-2 text-base leading-7 text-ink-900">{chunk.text}</p>
-                </div>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">区切り {chunk.index}</p>
                 <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink-700">{chunk.wordCount} words</span>
+              </div>
+              <p className="mt-3 break-words text-lg leading-8 text-ink-950">{chunk.text}</p>
+              <div className="mt-3 grid grid-cols-5 gap-2 text-xs font-semibold">
+                <MiniAudioButton label="5戻る" disabled={!audioReady} busy={audioLoading} onClick={() => onSeek(-5)} />
+                <MiniAudioButton label="3戻る" disabled={!audioReady} busy={audioLoading} onClick={() => onSeek(-3)} />
+                <MiniAudioButton label={isPlaying ? "一時停止" : "再生"} disabled={!audioReady} busy={audioLoading} onClick={onTogglePlayback} />
+                <MiniAudioButton label="3進む" disabled={!audioReady} busy={audioLoading} onClick={() => onSeek(3)} />
+                <MiniAudioButton label="5進む" disabled={!audioReady} busy={audioLoading} onClick={() => onSeek(5)} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-sm leading-6">
                 <span className="rounded-full bg-white px-3 py-1 font-semibold text-[var(--accent-strong)]">{chunk.cueJa}</span>
@@ -353,13 +364,6 @@ function ListenChunkControls({
                     focus: {word}
                   </span>
                 ))}
-              </div>
-              <div className="mt-3 grid grid-cols-5 gap-2 text-xs font-semibold">
-                <MiniAudioButton label="5戻る" disabled={!audioReady} onClick={() => onSeek(-5)} />
-                <MiniAudioButton label="3戻る" disabled={!audioReady} onClick={() => onSeek(-3)} />
-                <MiniAudioButton label={isPlaying ? "一時停止" : "再生"} disabled={!audioReady} onClick={onTogglePlayback} />
-                <MiniAudioButton label="3進む" disabled={!audioReady} onClick={() => onSeek(3)} />
-                <MiniAudioButton label="5進む" disabled={!audioReady} onClick={() => onSeek(5)} />
               </div>
             </li>
           );
@@ -372,10 +376,12 @@ function ListenChunkControls({
 function MiniAudioButton({
   label,
   disabled,
+  busy,
   onClick
 }: {
   label: string;
   disabled: boolean;
+  busy: boolean;
   onClick: () => void;
 }) {
   return (
@@ -383,6 +389,7 @@ function MiniAudioButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
+      aria-label={busy ? `${label}。音声を準備中` : label}
       className="min-h-10 rounded-2xl border border-[var(--line)] bg-white px-2 py-2 text-ink-800 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-45"
     >
       {label}

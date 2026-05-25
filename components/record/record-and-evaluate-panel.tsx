@@ -186,6 +186,7 @@ export function RecordAndEvaluatePanel({
   const [uploadedRecording, setUploadedRecording] = useState<UploadedRecordingReference | null>(null);
   const [transcriptText, setTranscriptText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [isStartingRecording, setIsStartingRecording] = useState(false);
   const [isMeasuringDuration, setIsMeasuringDuration] = useState(false);
   const [isPreparingUploadFile, setIsPreparingUploadFile] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -267,8 +268,10 @@ export function RecordAndEvaluatePanel({
 
   async function handleStartRecording() {
     clearMessage();
+    setIsStartingRecording(true);
 
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setIsStartingRecording(false);
       setErrorMessage("このブラウザでは録音に対応していません。下のファイル選択を使ってください。", "record");
       return;
     }
@@ -307,6 +310,8 @@ export function RecordAndEvaluatePanel({
       setIsRecording(true);
     } catch {
       setErrorMessage("マイクの取得に失敗しました。権限を確認するか、音声ファイルを使ってください。", "record");
+    } finally {
+      setIsStartingRecording(false);
     }
   }
 
@@ -440,6 +445,7 @@ export function RecordAndEvaluatePanel({
   }
 
   const isBusy = isPreparingUploadFile || isUploading || isEvaluating;
+  const isRecordButtonBusy = isBusy || isStartingRecording;
   const canSaveEvaluation = transcriptionSupported && pronunciationSupported;
   const needsDevFallback = transcriptionProvider === "mock";
   const isMissingRequiredFallback = needsDevFallback && transcriptionSupported && transcriptText.trim().length === 0;
@@ -541,10 +547,15 @@ export function RecordAndEvaluatePanel({
         ? [
             {
               id: "start-recording",
-              label: "マイクで録音する",
+              label: isRecording ? "録音を止める" : isStartingRecording ? "マイクを準備中..." : "マイクで録音する",
               tone: "primary",
-              disabled: isBusy,
+              disabled: isRecordButtonBusy,
               onClick: () => {
+                if (isRecording) {
+                  handleStopRecording();
+                  return;
+                }
+
                 void handleStartRecording();
               }
             },
@@ -609,10 +620,11 @@ export function RecordAndEvaluatePanel({
           <button
             type="button"
             onClick={isRecording ? handleStopRecording : handleStartRecording}
-            disabled={isBusy}
+            disabled={isRecordButtonBusy}
+            aria-busy={isStartingRecording}
             className="inline-flex items-center justify-center rounded-2xl bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isRecording ? "録音を止める" : "マイクで録音する"}
+            {isRecording ? "録音を止める" : isStartingRecording ? "マイクを準備中..." : "マイクで録音する"}
           </button>
 
           {selectedFile ? (
@@ -719,6 +731,7 @@ export function RecordAndEvaluatePanel({
                   type="button"
                   onClick={action.onClick}
                   disabled={action.disabled}
+                  aria-busy={action.id === "primary-submit" && isBusy ? true : undefined}
                   className={`${getRecordDecisionButtonClasses(action.tone)} ${action.disabled ? "cursor-not-allowed opacity-60" : ""}`}
                 >
                   {action.label}
@@ -774,6 +787,7 @@ export function RecordAndEvaluatePanel({
               type="button"
               onClick={handleSubmit}
               disabled={isBusy || isMeasuringDuration || !selectedFile || !canSaveEvaluation || isMissingRequiredFallback}
+              aria-busy={isBusy}
               className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {messagePhase === "evaluate" && messageKind === "error" && uploadedRecording

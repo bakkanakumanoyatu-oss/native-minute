@@ -20,41 +20,6 @@ function getVoiceReady(input: {
   return input.providerSupported && input.hasConsent && input.hasDefaultVoice;
 }
 
-function getPracticeHref(input: {
-  candidateScript: ScriptProgressItem | null;
-  voiceReady: boolean;
-  canRecord: boolean;
-}) {
-  if (!input.candidateScript) {
-    return "/scripts/new";
-  }
-
-  if (!input.voiceReady) {
-    return buildScriptListenVoiceSetupHref(input.candidateScript.script.id, "/scripts");
-  }
-
-  if (input.canRecord && input.candidateScript.takeCount > 0 && input.candidateScript.improvementTrend === "up") {
-    return getScriptRecordPath(input.candidateScript.script.id);
-  }
-
-  return getScriptListenPath(input.candidateScript.script.id);
-}
-
-function getPracticeLabel(input: {
-  hasScripts: boolean;
-  voiceReady: boolean;
-}) {
-  if (!input.hasScripts) {
-    return "最初の練習を作る";
-  }
-
-  if (!input.voiceReady) {
-    return "声の準備をして始める";
-  }
-
-  return "練習を始める";
-}
-
 function getNextAction(item: ScriptProgressItem, input: { voiceReady: boolean; canRecord: boolean }) {
   if (!input.voiceReady && item.takeCount === 0) {
     return "声を準備して、お手本へ";
@@ -138,8 +103,6 @@ export default async function ScriptsPage() {
     hasConsent: Boolean(voiceSetup.consent),
     hasDefaultVoice: Boolean(voiceSetup.defaultVoice)
   });
-  const primaryPracticeHref = getPracticeHref({ candidateScript, voiceReady, canRecord });
-  const primaryPracticeLabel = getPracticeLabel({ hasScripts: scripts.length > 0, voiceReady });
 
   return (
     <section className="space-y-6">
@@ -158,12 +121,12 @@ export default async function ScriptsPage() {
             </p>
           </div>
         </div>
-        <div className="mt-8 flex flex-wrap gap-3 text-sm font-semibold">
-          <Link href={primaryPracticeHref} className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-6 py-4 text-white shadow-sm transition hover:bg-[var(--accent-strong)] sm:w-auto">
-            {primaryPracticeLabel}
-          </Link>
+        <div className="mt-8 flex flex-col gap-3 text-sm font-semibold sm:flex-row sm:items-center">
+          <p className="text-sm leading-6 text-ink-700">
+            {scripts.length > 0 ? "今ある練習から選びます。" : "まずは新しい1分を作ります。"}
+          </p>
           {scripts.length < MAX_VISIBLE_PRACTICES ? (
-            <Link href="/scripts/new" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-4 text-ink-800 transition hover:bg-ink-50 sm:w-auto">
+            <Link href="/scripts/new" className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-5 py-4 text-white shadow-sm transition hover:bg-[var(--accent-strong)] sm:w-auto">
               新しい1分を作る
             </Link>
           ) : (

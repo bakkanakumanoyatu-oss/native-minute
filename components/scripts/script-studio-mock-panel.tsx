@@ -321,6 +321,7 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
               type="button"
               onClick={handleGenerateDraft}
               disabled={isGenerating}
+              aria-busy={isGenerating}
               className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isGenerating ? "作成中..." : generationResult ? "AIに1分スクリプトを書かせる" : "AIに1分スクリプトを書かせる"}

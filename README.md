@@ -193,7 +193,7 @@ callback failure は、`PKCE verifier cookie が callback に届いていない`
 
 ## 操作画面の方針
 
-主要画面は、説明より操作を先に見せます。Home は Practice / Progress への入口、Practice は5本までの練習スロット選択、Progress は成果確認です。listen はお手本ボイス、スクリプト、区切り下のミニ音声操作、録音へ進む導線を中心にし、record はマイク録音と評価操作を中心にします。
+主要画面は、説明より操作を先に見せます。Home は Practice / Progress への入口、Practice は5本までの練習スロット選択、Progress は成果確認です。setup/voice は自分の声の登録と再アップロードに絞り、provider/debug 詳細は主導線から外します。listen はお手本ボイス、スクリプト、区切り下のミニ音声操作、録音へ進む導線を中心にし、record はマイク録音と評価操作を中心にします。主要ボタンは押下、処理中、disabled が分かる表示に寄せています。
 
 ## mock と実装済みの境界
 

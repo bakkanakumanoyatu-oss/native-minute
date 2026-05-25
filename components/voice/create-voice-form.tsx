@@ -71,10 +71,6 @@ function isElevenLabsAccountOrLimitMessage(message: string | null) {
   );
 }
 
-function isOwnedVoiceSamplePath(path: string) {
-  return path.trim().toLowerCase().startsWith("storage://voice-samples/");
-}
-
 export function CreateVoiceForm({
   consentId,
   requirements
@@ -83,17 +79,14 @@ export function CreateVoiceForm({
   requirements: VoiceProviderRequirements;
 }) {
   const router = useRouter();
-  const [label, setLabel] = useState("Native Minute の voice");
+  const [label, setLabel] = useState("自分の声");
   const [sampleAudioFile, setSampleAudioFile] = useState<File | null>(null);
-  const [sampleAudioPath, setSampleAudioPath] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const trimmedLabel = label.trim();
-  const trimmedSampleAudioPath = sampleAudioPath.trim();
   const isMissingRequiredLabel = trimmedLabel.length === 0;
   const requiresUploadedSample = requirements.requiresSampleAudio;
   const voiceLabel = requirements.voiceLabel;
-  const fallbackProvider = requirements.recommendedDevelopmentFallbackProvider ?? "mock";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -101,13 +94,8 @@ export function CreateVoiceForm({
     setMessage(null);
 
     try {
-      if (requiresUploadedSample && !sampleAudioFile && !trimmedSampleAudioPath) {
-        setMessage(`${voiceLabel} ではお手本ボイス用の録音が必要です。ファイルを選ぶか、upload 済み path を入力してください。`);
-        return;
-      }
-
-      if (requiresUploadedSample && trimmedSampleAudioPath && !isOwnedVoiceSamplePath(trimmedSampleAudioPath)) {
-        setMessage(`${voiceLabel} では app-owned な storage://voice-samples/... 参照だけを使います。mock:// や別 bucket の古い path は使わず、sample を再アップロードしてください。`);
+      if (requiresUploadedSample && !sampleAudioFile) {
+        setMessage("お手本ボイス用に、自分の声の録音ファイルを選んでください。");
         return;
       }
 
@@ -159,19 +147,18 @@ export function CreateVoiceForm({
         body: JSON.stringify({
           consentId,
           label: trimmedLabel,
-          sampleAudio,
-          sampleAudioPath: trimmedSampleAudioPath || undefined
+          sampleAudio
         })
       });
 
       const payload = (await response.json()) as { ok: boolean; message?: string };
 
       if (!response.ok || !payload.ok) {
-        setMessage(payload.message ?? "voice の作成に失敗しました。");
+        setMessage(payload.message ?? "お手本ボイスを作れませんでした。");
         return;
       }
 
-      setMessage("voice を作成しました。上の Next action から listen に進めます。");
+      setMessage("お手本ボイスを作りました。次の入口から練習へ進めます。");
       router.refresh();
     } catch {
       setMessage("通信に失敗しました。少し待ってからお試しください。");
@@ -203,61 +190,29 @@ export function CreateVoiceForm({
           onChange={(event) => setSampleAudioFile(event.target.files?.[0] ?? null)}
           className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-ink-100 file:px-3 file:py-2 file:text-sm file:font-medium focus:border-[var(--accent)]"
         />
+        {sampleAudioFile ? <span className="block text-xs font-semibold text-[var(--accent-strong)]">選択済み: {sampleAudioFile.name}</span> : null}
       </label>
-
-      <details className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3">
-        <summary className="cursor-pointer text-sm font-semibold text-ink-800">録音ファイルを直接指定する</summary>
-        <label className="mt-3 block space-y-2">
-          <span className="text-sm font-medium text-ink-700">保存済み録音の参照</span>
-          <input
-            data-testid="voice-create-sample-path"
-            value={sampleAudioPath}
-            onChange={(event) => setSampleAudioPath(event.target.value)}
-            placeholder={requiresUploadedSample ? "storage://voice-samples/..." : "storage://voice-samples/..."}
-            className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
-          />
-        </label>
-      </details>
-
-      {trimmedSampleAudioPath ? (
-        <button
-          type="button"
-          onClick={() => setSampleAudioPath("")}
-          className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50"
-        >
-          path を消す
-        </button>
-      ) : null}
 
       <button
         data-testid="voice-create-submit"
         type="submit"
         disabled={loading || isMissingRequiredLabel}
+        aria-busy={loading}
         className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "作成中..." : "自分の声を録音してお手本ボイスを作る"}
       </button>
 
       <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-xs leading-5 text-ink-600">
-        <summary className="cursor-pointer font-semibold text-ink-800">詳しい補足を見る</summary>
+        <summary className="cursor-pointer font-semibold text-ink-800">うまくいかない時</summary>
         <p className="mt-3">
           {requiresUploadedSample
             ? `${voiceLabel} では自分の声の録音が必要です。通常はファイルを選ぶだけで進めます。`
             : "通常は録音ファイルを選ぶだけで進めます。保存済み参照は確認用です。"}
         </p>
-        {requiresUploadedSample && trimmedSampleAudioPath && !isOwnedVoiceSamplePath(trimmedSampleAudioPath) ? (
-          <p className="mt-2 text-amber-700">
-            現在入力されている参照は使えません。録音ファイルを選び直してください。
-          </p>
-        ) : null}
-        {requirements.provider === "elevenlabs" ? (
-          <p className="mt-2">
-            ElevenLabs では、この録音からお手本ボイス用の声を作ります。普段の練習では provider 名を意識しません。
-          </p>
-        ) : null}
         {requirements.entitlementSensitive ? (
           <p className="mt-2">
-            {`声の作成権限が無い場合は、この画面で止まることがあります。練習 flow を先に進めるなら \`VOICE_PROVIDER=${fallbackProvider}\` に戻すのが最小です。`}
+            声の作成権限が無い場合は、この画面で止まることがあります。設定を確認してからもう一度試してください。
           </p>
         ) : null}
       </details>
@@ -273,40 +228,39 @@ export function CreateVoiceForm({
       {message ? <p data-testid="voice-create-message" className="text-sm text-ink-600">{message}</p> : null}
       {requirements.entitlementSensitive && isOpenAiEntitlementMessage(message) ? (
         <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Recovery plan</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">うまくいかない時</p>
           <ol className="mt-2 space-y-2">
-            <li>{`1. \`.env.local\` の \`VOICE_PROVIDER\` を \`${fallbackProvider}\` に戻す。`}</li>
-            <li>2. 開発サーバーを再起動する。</li>
-            <li>{`3. \`/setup/voice\` で ${fallbackProvider} voice を作成し、practice main loop を続ける。`}</li>
+            <li>1. 声の作成権限を確認する。</li>
+            <li>2. 先に練習を進めたい場合は、開発用の声に切り替えてから再試行する。</li>
           </ol>
         </div>
       ) : null}
       {requirements.provider === "elevenlabs" && isElevenLabsMessage(message) ? (
         <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Recovery plan</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">うまくいかない時</p>
           {isElevenLabsVerificationMessage(message) ? (
             <ol className="mt-2 space-y-2">
-              <li>1. ElevenLabs 側で voice clone の verification を完了する。</li>
-              <li>2. 完了後にこの画面へ戻り、同じ sample か更新した sample で作り直す。</li>
-              <li>{`3. 先に main loop を進めたい場合は \`VOICE_PROVIDER=${fallbackProvider}\` に戻す。`}</li>
+              <li>1. 音声サービス側の本人確認を完了する。</li>
+              <li>2. 完了後にこの画面へ戻り、同じ録音か更新した録音で作り直す。</li>
+              <li>3. 先に練習を進めたい場合は、開発用の声に切り替えてから再試行する。</li>
             </ol>
           ) : isElevenLabsSampleMessage(message) ? (
             <ol className="mt-2 space-y-2">
-              <li>1. sample audio をアップロードし直し、`storage://voice-samples/...` の owned 参照で再試行する。</li>
-              <li>2. 形式・長さ・内容を見直し、別の sample でもう一度作成する。</li>
-              <li>{`3. sample で詰まり続ける場合は \`VOICE_PROVIDER=${fallbackProvider}\` に戻して main loop を継続する。`}</li>
+              <li>1. 自分の声の録音をアップロードし直す。</li>
+              <li>2. 形式・長さ・内容を見直し、別の録音でもう一度作成する。</li>
+              <li>3. 何度も止まる場合は、先に練習できる設定へ切り替える。</li>
             </ol>
           ) : isElevenLabsAccountOrLimitMessage(message) ? (
             <ol className="mt-2 space-y-2">
-              <li>1. ElevenLabs 側の API key、voice cloning 利用可否、plan / quota / billing を確認する。</li>
+              <li>1. 音声サービス側の利用可否を確認する。</li>
               <li>2. rate limit の場合は少し待ってから 1 回だけ再試行する。</li>
-              <li>{`3. provider 側の確認が必要な間は \`VOICE_PROVIDER=${fallbackProvider}\` に戻して main loop を継続する。`}</li>
+              <li>3. 確認が必要な間は、先に練習できる設定へ切り替える。</li>
             </ol>
           ) : (
             <ol className="mt-2 space-y-2">
-              <li>1. ElevenLabs API key、account 側の voice cloning 可否、provider の稼働状態を確認する。</li>
-              <li>2. server log の request id と failure point を見て、createVoice / synthesize のどちらで止まったか確認する。</li>
-              <li>{`3. 先に main loop を進めたい場合は \`VOICE_PROVIDER=${fallbackProvider}\` に戻す。`}</li>
+              <li>1. 音声サービス側の状態を確認する。</li>
+              <li>2. 自分の声の録音を変えてもう一度作る。</li>
+              <li>3. 先に練習を進めたい場合は、開発用の声へ切り替える。</li>
             </ol>
           )}
         </div>

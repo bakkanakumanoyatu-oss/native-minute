@@ -195,6 +195,10 @@
 - 履歴意味が絡むときは script mutation より duplication を優先する。
 
 ## 直近の変更
+- production 人間チェック後の UI cleanup として、setup/voice の provider/debug/readiness 表示を主導線から外し、現在の声の状態、アップロード、再アップロード、次の入口だけに寄せた。
+- listen は大きな sticky audio card をやめ、通常のお手本ボイス player と、各区切り文直下の 5秒戻る / 3秒戻る / 再生・一時停止 / 3秒進む / 5秒進む controls を主役にした。
+- scripts は hero の重複した「練習を始める」ボタンを削り、保存済み練習カードを選ぶか、新しい1分を作るかに整理した。
+- 主要操作では、pressed / tap feedback、loading aria、録音開始中の表示、ファイル選択済み表示を足し、処理が遅い場面でも押したことが分かるようにした。
 - Home は Practice / Progress への入口に寄せ、練習一覧の重複表示をやめた。Practice は5本までの練習スロット選択、Progress は成果確認に役割を分ける。
 - 共通 nav は pathname ベースで現在ページを点灯する。Home / Practice / Progress / Voice / Settings を対象にする。
 - listen の区切り表示では、各 chunk の下に小さい 5秒戻る / 3秒戻る / 再生・一時停止 / 3秒進む / 5秒進む controls を出す。正確な区切り音声切り出しはタイムスタンプがないため未実装。

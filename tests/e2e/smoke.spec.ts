@@ -347,9 +347,9 @@ test("authenticated user can complete the minimal setup voice UI flow", async ({
   await page.goto("/setup/voice");
   await expect(page).toHaveURL(/\/setup\/voice$/);
   await expect(page.getByTestId("voice-setup-state")).toBeVisible();
-  await expect(page.getByTestId("voice-setup-state")).toContainText("mock");
-  await expect(page.getByTestId("voice-setup-state")).toContainText("Details / provider readiness");
-  await expect(page.getByTestId("voice-setup-state")).toContainText("provider 前提はそろっています。");
+  await expect(page.getByTestId("voice-setup-state")).toContainText("現在の声の状態");
+  await expect(page.getByTestId("voice-setup-state")).not.toContainText("Details / provider readiness");
+  await expect(page.getByTestId("voice-setup-state")).not.toContainText("provider 前提はそろっています。");
   await expect(page.getByTestId("voice-provider-preflight")).toHaveCount(0);
 
   if (await page.getByTestId("voice-consent-form").isVisible()) {
@@ -362,21 +362,17 @@ test("authenticated user can complete the minimal setup voice UI flow", async ({
 
   if (await page.getByTestId("voice-create-form").isVisible()) {
     await page.getByTestId("voice-create-label").fill("E2E UI Voice");
-    await page.getByTestId("voice-create-sample-path").fill("mock://samples/e2e-ui.wav");
+    await page.getByTestId("voice-create-sample-file").setInputFiles("tests/fixtures/sample-recording.webm");
     await page.getByTestId("voice-create-submit").click();
-  }
-
-  if (await page.getByTestId("voice-create-form").isVisible()) {
-    await expect(page.getByTestId("voice-create-form")).toHaveCount(0);
   }
 
   await expect(page.getByTestId("voice-setup-state")).toContainText("完了");
   await expect(page.getByTestId("voice-setup-state")).not.toContainText("未作成");
-  await expect(page.getByTestId("voice-setup-next-step")).toContainText("listen");
+  await expect(page.getByTestId("voice-setup-next-step")).toContainText("声の準備は完了です");
   await expect(page.getByTestId("voice-ready-block")).toBeVisible();
-  await expect(page.getByTestId("voice-ready-block")).toContainText("見本確認に進める状態");
-  await expect(page.getByRole("link", { name: /候補の script で listen|最初の script を作る|前の画面に戻る/ })).toBeVisible();
-  await expect(page.getByTestId("voice-ready-block").getByRole("link", { name: "scripts" })).toBeVisible();
+  await expect(page.getByTestId("voice-ready-block")).toContainText("お手本を聞けます");
+  await expect(page.getByRole("link", { name: /候補の練習で聞く|最初の練習を作る|前の画面に戻る/ })).toBeVisible();
+  await expect(page.getByTestId("voice-ready-block").getByRole("link", { name: "練習一覧" })).toBeVisible();
 
   await page.goto(`/scripts/${seededScript.id}/listen`);
   await expect(page.getByTestId("listen-panel-shell")).toBeVisible();

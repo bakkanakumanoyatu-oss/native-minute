@@ -44,3 +44,27 @@ a {
 ::selection {
   background: rgba(28, 160, 138, 0.22);
 }
+
+button,
+a[href],
+summary,
+label {
+  -webkit-tap-highlight-color: rgba(28, 160, 138, 0.16);
+}
+
+button:not(:disabled),
+a[href],
+summary {
+  touch-action: manipulation;
+}
+
+button:not(:disabled):active,
+a[href]:active,
+summary:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+button:disabled,
+button[aria-busy="true"] {
+  cursor: not-allowed;
+}
