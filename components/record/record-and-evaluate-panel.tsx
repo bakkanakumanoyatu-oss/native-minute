@@ -72,10 +72,10 @@ type RecordDecisionAction = {
 
 function getRecordDecisionButtonClasses(tone: RecordDecisionAction["tone"]) {
   if (tone === "primary") {
-    return "inline-flex items-center justify-center rounded-2xl bg-[#f26d5b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#dc5b4b]";
+    return "inline-flex items-center justify-center rounded-2xl bg-[var(--record-accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--record-accent-strong)]";
   }
 
-  return "inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50";
+  return "inline-flex items-center justify-center rounded-2xl border border-[var(--studio-line)] bg-[var(--studio-panel)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--studio-surface)]";
 }
 
 function measureAudioDuration(file: File): Promise<number | null> {
@@ -615,14 +615,14 @@ export function RecordAndEvaluatePanel({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4 rounded-3xl border border-[var(--line)] bg-white p-5 shadow-sm">
+      <div className="space-y-4 rounded-3xl border border-[var(--studio-line)] bg-[var(--studio-panel)] p-5 shadow-sm">
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
             onClick={isRecording ? handleStopRecording : handleStartRecording}
             disabled={isRecordButtonBusy}
             aria-busy={isStartingRecording}
-            className="inline-flex items-center justify-center rounded-2xl bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-2xl bg-[var(--studio-ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isRecording ? "録音を止める" : isStartingRecording ? "マイクを準備中..." : "マイクで Take を録る"}
           </button>
@@ -632,17 +632,17 @@ export function RecordAndEvaluatePanel({
               type="button"
               onClick={handleClearSelectedRecording}
               disabled={isBusy}
-              className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-2xl border border-[var(--studio-line)] bg-[var(--studio-panel)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--studio-surface)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               Take を消す
             </button>
           ) : null}
         </div>
 
-        <details className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3">
+        <details className="rounded-2xl border border-[var(--studio-line)] bg-[var(--studio-surface)] px-4 py-3">
           <summary className="cursor-pointer text-sm font-semibold text-ink-800">録音済みファイルを使う</summary>
           <p className="mt-3 text-sm leading-6 text-ink-600">手元に録音済みの音声がある場合だけ使います。</p>
-          <label className="mt-3 inline-flex cursor-pointer items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
+          <label className="mt-3 inline-flex cursor-pointer items-center justify-center rounded-2xl border border-[var(--studio-line)] bg-[var(--studio-panel)] px-4 py-3 text-sm font-semibold text-ink-800">
             ファイルを選択
             <input
               ref={fileInputRef}
@@ -662,7 +662,7 @@ export function RecordAndEvaluatePanel({
         </details>
 
         {selectedFile ? (
-          <div data-testid="record-selected-file" className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
+          <div data-testid="record-selected-file" className="rounded-2xl border border-[var(--studio-line)] bg-[var(--studio-surface)] p-4">
             <p className="text-xs font-semibold text-ink-500">今回の Take</p>
             <p className="text-sm font-semibold text-ink-900">{selectedFile.name}</p>
             <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink-500">
@@ -685,7 +685,7 @@ export function RecordAndEvaluatePanel({
             ) : null}
           </div>
         ) : (
-          <p className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4 text-sm leading-6 text-ink-700">まだ Take はありません。</p>
+          <p className="rounded-2xl border border-[var(--studio-line)] bg-[var(--studio-surface)] p-4 text-sm leading-6 text-ink-700">まだ Take はありません。</p>
         )}
 
         <label className="block space-y-2">
@@ -697,7 +697,7 @@ export function RecordAndEvaluatePanel({
             min={1}
             max={600}
             placeholder="自動計測できない場合に入力"
-            className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#d46b52]"
+            className="w-full rounded-2xl border border-[var(--studio-line)] bg-[var(--studio-panel)] px-4 py-3 text-sm outline-none transition focus:border-[var(--record-accent)]"
           />
         </label>
 
@@ -719,8 +719,8 @@ export function RecordAndEvaluatePanel({
         ) : null}
 
         {showNextAction ? (
-          <section className="rounded-2xl border border-[var(--line)] bg-white p-4">
-            <p className="inline-flex rounded-full border border-[var(--line)] bg-ink-50 px-3 py-1 text-xs font-semibold text-ink-600">
+          <section className="rounded-2xl border border-[var(--studio-line)] bg-[var(--studio-surface)] p-4">
+            <p className="inline-flex rounded-full border border-[var(--studio-line)] bg-[var(--studio-panel)] px-3 py-1 text-xs font-semibold text-ink-600">
               ベータでは 評価は10回まで
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
@@ -742,7 +742,7 @@ export function RecordAndEvaluatePanel({
         ) : null}
 
         {canSaveEvaluation ? (
-          <details className="rounded-2xl border border-dashed border-[var(--line)] bg-ink-50 p-4">
+          <details className="rounded-2xl border border-dashed border-[var(--studio-line)] bg-[var(--studio-surface)] p-4">
             <summary className="cursor-pointer text-sm font-semibold text-ink-800">詳細</summary>
             <p className="mt-2 text-sm leading-6 text-ink-600">
               通常は空欄で大丈夫です。開発用の評価設定で必要なときだけ使います。
@@ -753,14 +753,14 @@ export function RecordAndEvaluatePanel({
               onChange={(event) => setTranscriptText(event.target.value)}
               placeholder={needsDevFallback ? "開発用の評価設定では入力が必要です。" : "通常は空欄のままで大丈夫です。"}
               rows={5}
-              className="mt-3 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#d46b52]"
+              className="mt-3 w-full rounded-2xl border border-[var(--studio-line)] bg-[var(--studio-panel)] px-4 py-3 text-sm outline-none transition focus:border-[var(--record-accent)]"
             />
             {transcriptText.trim().length > 0 ? (
               <button
                 type="button"
                 onClick={() => setTranscriptText("")}
                 disabled={isBusy}
-                className="mt-3 inline-flex rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-3 inline-flex rounded-2xl border border-[var(--studio-line)] bg-[var(--studio-panel)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--studio-surface)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 入力を消す
               </button>
@@ -772,7 +772,7 @@ export function RecordAndEvaluatePanel({
             ) : null}
           </details>
         ) : (
-          <details className="rounded-2xl border border-dashed border-[var(--line)] bg-ink-50 p-4">
+          <details className="rounded-2xl border border-dashed border-[var(--studio-line)] bg-[var(--studio-surface)] p-4">
             <summary className="cursor-pointer text-sm font-semibold text-ink-800">詳細</summary>
             <p className="mt-2 text-sm leading-6 text-ink-600">
               いまは保存済み結果を作る前提が足りないため、この入力では先に進めません。
@@ -788,13 +788,13 @@ export function RecordAndEvaluatePanel({
               onClick={handleSubmit}
               disabled={isBusy || isMeasuringDuration || !selectedFile || !canSaveEvaluation || isMissingRequiredFallback}
               aria-busy={isBusy}
-              className="inline-flex items-center justify-center rounded-2xl bg-[#f26d5b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#dc5b4b] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-2xl bg-[var(--record-accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--record-accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {messagePhase === "evaluate" && messageKind === "error" && uploadedRecording
                 ? getGuidancePrimaryButtonLabel("retry_saved_evaluate")
                 : submitLabel}
             </button>
-            <p className="rounded-full border border-[var(--line)] bg-ink-50 px-3 py-1 text-xs font-semibold text-ink-600">
+            <p className="rounded-full border border-[var(--studio-line)] bg-[var(--studio-surface)] px-3 py-1 text-xs font-semibold text-ink-600">
               ベータでは 評価は10回まで
             </p>
           </div>
@@ -804,7 +804,7 @@ export function RecordAndEvaluatePanel({
           <button
             type="button"
             onClick={clearMessage}
-            className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50"
+            className="inline-flex items-center justify-center rounded-2xl border border-[var(--studio-line)] bg-[var(--studio-panel)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--studio-surface)]"
           >
             メッセージを閉じる
           </button>

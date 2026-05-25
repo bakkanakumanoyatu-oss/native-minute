@@ -19,13 +19,13 @@ function HomeActionCard({
       href={href}
       className={`relative overflow-hidden rounded-[2rem] border p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft ${
         primary
-          ? "border-ink-900 bg-ink-900 text-white"
-          : "border-[var(--line)] bg-[linear-gradient(135deg,#ffffff,#f7f6ff)] text-ink-900"
+          ? "border-[var(--studio-ink)] bg-[var(--studio-ink)] text-white"
+          : "border-[var(--studio-line)] bg-[linear-gradient(135deg,var(--studio-panel),var(--studio-surface))] text-ink-900"
       }`}
     >
       <span
         aria-hidden="true"
-        className={`mb-5 flex h-8 items-end gap-1.5 ${motif === "log" ? "text-[#8d7bd6]" : "text-[#f2b35d]"}`}
+        className={`mb-5 flex h-8 items-end gap-1.5 ${motif === "log" ? "text-[var(--saved-accent)]" : "text-[var(--studio-accent)]"}`}
       >
         {[14, 24, 18, 30, 12].map((height, index) => (
           <span key={index} className="w-1.5 rounded-full bg-current opacity-80" style={{ height }} />
@@ -42,14 +42,14 @@ export default async function HomePage() {
 
   return (
     <section className="space-y-6">
-      <div className="relative overflow-hidden rounded-[2rem] border border-ink-900/10 bg-[linear-gradient(135deg,#111321,#272a43_62%,#32405a)] p-6 shadow-soft sm:p-8 lg:p-10">
-        <div className="absolute bottom-6 right-6 hidden w-44 rounded-[1.5rem] border border-white/70 bg-white/75 p-4 shadow-sm sm:block">
-          <div aria-hidden="true" className="flex h-10 items-end gap-1.5 text-[#f2b35d]">
+      <div className="relative overflow-hidden rounded-[2rem] border border-[rgba(45,38,31,0.18)] bg-[linear-gradient(135deg,#181722,#2b2d44_62%,#3b4058)] p-6 shadow-soft sm:p-8 lg:p-10">
+        <div className="absolute bottom-6 right-6 hidden w-44 rounded-[1.5rem] border border-white/20 bg-[rgba(255,250,243,0.84)] p-4 shadow-sm sm:block">
+          <div aria-hidden="true" className="flex h-10 items-end gap-1.5 text-[var(--studio-accent)]">
             {[18, 28, 14, 34, 22, 30].map((height, index) => (
               <span key={index} className="w-2 rounded-full bg-current" style={{ height }} />
             ))}
           </div>
-          <p className="mt-3 text-xs font-semibold text-ink-600">1 minute voice studio</p>
+          <p className="mt-3 text-xs font-semibold text-[var(--studio-muted)]">1 minute voice studio</p>
         </div>
         <p className="text-sm font-semibold text-white/80">Native Minute</p>
         <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
@@ -73,8 +73,8 @@ export default async function HomePage() {
       </div>
 
       {user ? (
-        <div className="rounded-[2rem] border border-[var(--line)] bg-white px-5 py-4 shadow-sm">
-          <Link href="/setup/voice" className="text-sm font-semibold text-[#8a4d37]">
+        <div className="rounded-[2rem] border border-[var(--studio-line)] bg-[var(--studio-panel)] px-5 py-4 shadow-sm">
+          <Link href="/setup/voice" className="text-sm font-semibold text-[var(--studio-accent-strong)]">
             声の設定
           </Link>
           <p className="mt-1 text-sm leading-6 text-ink-600">お手本ボイスを作る時だけ使います。</p>
