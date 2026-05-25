@@ -1,14 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { pickRecentScriptCandidate } from "@/lib/launchpad";
 import { buildLoginHref, getOptionalInternalPath } from "@/lib/navigation";
-import { getScriptListenPath } from "@/lib/script-routes";
 import { getAuthState } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CreateVoiceForm } from "@/components/voice/create-voice-form";
 import { VoiceConsentForm } from "@/components/voice/voice-consent-form";
 import { getVoiceSetupState } from "@/services/voice";
-import { listScripts } from "@/services/scripts/scripts.service";
 import type { Json } from "@/types/database";
 
 function getVoiceSetupRecoverySummary(input: {
@@ -16,7 +13,6 @@ function getVoiceSetupRecoverySummary(input: {
   providerStatusMessage: string | null;
   hasConsent: boolean;
   hasDefaultVoice: boolean;
-  hasSuggestedScript: boolean;
 }) {
   if (!input.providerSupported) {
     return input.providerStatusMessage ?? "お手本ボイスを作る準備が不足しています。";
@@ -30,39 +26,7 @@ function getVoiceSetupRecoverySummary(input: {
     return "次は、お手本ボイスに使う自分の声を登録します。";
   }
 
-  if (!input.hasSuggestedScript) {
-    return "声の準備は完了です。次は最初の練習を作ります。";
-  }
-
-  return "声の準備は完了です。練習を選んで、お手本を聞けます。";
-}
-
-function getVoiceReadyActionState(input: {
-  requestedNextPath: string | null;
-  candidateScript: { id: string; title: string } | null;
-}) {
-  const alternateAction =
-    input.requestedNextPath && input.candidateScript
-      ? {
-          label: "候補の練習で聞く",
-          href: getScriptListenPath(input.candidateScript.id)
-        }
-      : null;
-
-  return {
-    primaryHref: input.requestedNextPath ?? (input.candidateScript ? getScriptListenPath(input.candidateScript.id) : "/scripts/new"),
-    primaryLabel: input.requestedNextPath
-      ? "前の画面に戻る"
-      : input.candidateScript
-        ? "候補の練習で聞く"
-        : "最初の練習を作る",
-    summary: input.requestedNextPath
-      ? "声の準備は完了です。元の画面に戻れます。"
-      : input.candidateScript
-        ? "声の準備は完了です。次は練習を1つ選んで、お手本を聞きます。"
-        : "声の準備は完了です。次は最初の練習を作ります。",
-    alternateAction
-  };
+  return "声の準備は完了です。";
 }
 
 function formatVoiceDate(value: string | null | undefined) {
@@ -138,27 +102,13 @@ export default async function VoiceSetupPage({
   }
 
   const supabase = createSupabaseServerClient();
-  const [state, scripts] = await Promise.all([
-    getVoiceSetupState(supabase, authState.user.id),
-    listScripts(supabase, authState.user.id)
-  ]);
-  const candidateScript = pickRecentScriptCandidate(scripts);
+  const state = await getVoiceSetupState(supabase, authState.user.id);
   const readyStateSummary = getVoiceSetupRecoverySummary({
     providerSupported: state.providerSupported,
     providerStatusMessage: state.providerMessage,
     hasConsent: Boolean(state.consent),
-    hasDefaultVoice: Boolean(state.defaultVoice),
-    hasSuggestedScript: Boolean(candidateScript)
+    hasDefaultVoice: Boolean(state.defaultVoice)
   });
-  const readyAction = getVoiceReadyActionState({
-    requestedNextPath,
-    candidateScript
-  });
-  const readyNextSummary = !state.consent
-      ? "まず自分の声を使う準備をします。"
-    : !state.defaultVoice
-      ? "次は、お手本ボイスに使う自分の声を登録します。"
-      : readyAction.summary;
   const consentRecordingInfo = state.consent ? getConsentRecordingInfo(state.consent.metadata) : null;
 
   return (
@@ -171,32 +121,46 @@ export default async function VoiceSetupPage({
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section data-testid="voice-setup-state" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">現在の声の状態</h2>
-          <dl className="mt-4 space-y-3 text-sm leading-6 text-ink-700">
-            <div>
-              <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">同意</dt>
-              <dd>{state.consent ? "完了" : "未完了"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">自分の声</dt>
-              <dd>{state.defaultVoice ? state.defaultVoice.label : "未作成"}</dd>
-            </div>
-          </dl>
-          {!state.providerSupported ? (
-            <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-              {state.providerMessage}
-            </p>
+      <section data-testid="voice-setup-state" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-ink-900">現在の声の状態</h2>
+        <dl className="mt-4 space-y-3 text-sm leading-6 text-ink-700">
+          <div>
+            <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">同意</dt>
+            <dd>{state.consent ? "完了" : "未完了"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">自分の声</dt>
+            <dd>{state.defaultVoice ? state.defaultVoice.label : "未作成"}</dd>
+          </div>
+          {state.defaultVoice ? (
+            <>
+              <div>
+                <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">登録</dt>
+                <dd>{formatVoiceDate(state.defaultVoice.created_at)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">元の録音</dt>
+                <dd>{state.defaultVoice.sample_audio_path ? "登録あり" : "表示できる録音情報なし"}</dd>
+              </div>
+            </>
           ) : null}
-          <p className="mt-4 text-sm leading-6 text-ink-600">{readyStateSummary}</p>
-        </section>
-
-        <section data-testid="voice-setup-next-step" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">次の入口</h2>
-          <p className="mt-3 text-sm leading-6 text-ink-600">{readyNextSummary}</p>
-        </section>
-      </div>
+          {consentRecordingInfo ? (
+            <div>
+              <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">同意録音</dt>
+              <dd>
+                {consentRecordingInfo.contentType ?? "形式不明"}
+                {consentRecordingInfo.byteLength ? ` / ${consentRecordingInfo.byteLength}` : null}
+              </dd>
+            </div>
+          ) : null}
+        </dl>
+        {!state.providerSupported ? (
+          <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+            {state.providerMessage}
+          </p>
+        ) : null}
+        <p className="mt-4 text-sm leading-6 text-ink-600">{readyStateSummary}</p>
+      </section>
 
       {!state.providerSupported ? (
         <div className="rounded-[2rem] border border-amber-200 bg-amber-50 p-6 shadow-sm">
@@ -231,50 +195,9 @@ export default async function VoiceSetupPage({
 
       {state.providerSupported && state.defaultVoice ? (
         <section data-testid="voice-ready-block" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">お手本を聞けます</h2>
-          <p className="mt-2 text-sm leading-6 text-ink-600">
-            登録済みの声は <span className="font-semibold text-ink-900">{state.defaultVoice.label}</span> です。
-          </p>
-          <div className="mt-4 grid gap-3 rounded-2xl border border-[var(--line)] bg-ink-50 p-4 text-sm leading-6 text-ink-700 sm:grid-cols-2">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">自分の声</p>
-              <p className="mt-1 font-semibold text-ink-900">{state.defaultVoice.label}</p>
-              <p className="mt-1 text-ink-600">登録 {formatVoiceDate(state.defaultVoice.created_at)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">クローン元音声</p>
-              <p className="mt-1 font-semibold text-ink-900">{state.defaultVoice.sample_audio_path ? "登録あり" : "表示できる録音情報なし"}</p>
-              {consentRecordingInfo ? (
-                <p className="mt-1 text-ink-600">
-                  同意録音 {consentRecordingInfo.contentType ?? "形式不明"}
-                  {consentRecordingInfo.byteLength ? ` / ${consentRecordingInfo.byteLength}` : null}
-                </p>
-              ) : (
-                <p className="mt-1 text-ink-600">ファイル名や長さは保存されていません。</p>
-              )}
-            </div>
-          </div>
-          <p className="mt-2 text-sm leading-6 text-ink-600">
-            {candidateScript
-              ? requestedNextPath
-                ? "元の画面に戻る導線を優先しています。別の練習に切り替えたいときは練習一覧で選び直せます。"
-                : `次に開く候補は「${candidateScript.title}」です。別の練習にしたいときは練習一覧で選び直せます。`
-              : requestedNextPath
-                ? "元の画面に戻る導線を優先しています。"
-                : "まだ練習がないので、次は最初の練習を作ってからお手本を聞きます。"}
-          </p>
-          <div className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-            <p className="text-xs uppercase tracking-[0.18em] text-ink-500">次の入口</p>
-            <p className="mt-2">
-              {requestedNextPath
-                ? "前の画面に戻るか、候補の練習へ進むかを選べます。"
-                : candidateScript
-                  ? "まずは1本だけ選べば十分です。迷ったら候補の練習から入ります。"
-                  : "まだ最初の練習がないので、ここでは作成から始めます。"}
-            </p>
-          </div>
+          <h2 className="text-lg font-semibold text-ink-900">自分の声を作り直す</h2>
           {state.consent ? (
-            <details className="mt-4 rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
+            <details className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3">
               <summary className="cursor-pointer text-sm font-semibold text-ink-800">自分の声を再アップロードして作り直す</summary>
               <p className="mt-3 text-sm leading-6 text-ink-600">
                 新しい録音からお手本ボイス用の声を作り直します。既存の声は上書きせず、新しく作った声が次のお手本に使われます。
@@ -284,22 +207,6 @@ export default async function VoiceSetupPage({
               </div>
             </details>
           ) : null}
-          <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
-            <Link href={readyAction.primaryHref} className="rounded-2xl bg-[var(--accent)] px-4 py-3 text-white">
-              {readyAction.primaryLabel}
-            </Link>
-            {readyAction.alternateAction ? (
-              <Link href={readyAction.alternateAction.href} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-                {readyAction.alternateAction.label}
-              </Link>
-            ) : null}
-            <Link href="/scripts" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-              練習一覧
-            </Link>
-            <Link href="/progress" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
-              成果
-            </Link>
-          </div>
         </section>
       ) : null}
     </section>

@@ -37,9 +37,6 @@ export default async function HomePage() {
         <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
           1分英語を、お手本で聞いて、自分で録って、成果を見る。
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-7 text-ink-700">
-          毎日使う練習場です。細かい設定より、まず練習を選びます。
-        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

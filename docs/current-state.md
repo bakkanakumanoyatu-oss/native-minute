@@ -195,7 +195,10 @@
 - 履歴意味が絡むときは script mutation より duplication を優先する。
 
 ## 直近の変更
-- production 人間チェック後の UI cleanup として、setup/voice の provider/debug/readiness 表示を主導線から外し、現在の声の状態、アップロード、再アップロード、次の入口だけに寄せた。
+- listen の音声再生は、client-side fetch で Blob URL 化せず、単一の audio element が protected replay URL を直接読む形へ戻した。`/api/script-audio/[audioId]` は Range request に 206 で返せるため、mobile Safari でも metadata / seek / play が通りやすい。
+- listen の mini controls は同じ audioRef を直接操作する。再生 / 一時停止は音声 URL があれば押せ、3秒 / 5秒の seek は metadata 準備後に有効になる。
+- setup/voice は「お手本を聞けます」「次の入口」などの余分な状態 section と provider/debug/readiness 表示を主導線から外し、現在の声の状態、アップロード、再アップロードだけに絞った。
+- Home から「毎日使う練習場です。細かい設定より、まず練習を選びます。」の説明を削った。
 - listen は大きな sticky audio card をやめ、通常のお手本ボイス player と、各区切り文直下の 5秒戻る / 3秒戻る / 再生・一時停止 / 3秒進む / 5秒進む controls を主役にした。
 - scripts は hero の重複した「練習を始める」ボタンを削り、保存済み練習カードを選ぶか、新しい1分を作るかに整理した。
 - 主要操作では、pressed / tap feedback、loading aria、録音開始中の表示、ファイル選択済み表示を足し、処理が遅い場面でも押したことが分かるようにした。

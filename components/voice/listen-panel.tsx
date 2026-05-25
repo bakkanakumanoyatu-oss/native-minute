@@ -63,7 +63,6 @@ export function ListenPanel({
 }: ListenPanelProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioUrl, setAudioUrl] = useState(initialAudioUrl);
-  const [resolvedAudioUrl, setResolvedAudioUrl] = useState<string | null>(null);
   const [voiceLabel, setVoiceLabel] = useState(initialVoiceLabel);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -71,70 +70,21 @@ export function ListenPanel({
   const [playbackRate, setPlaybackRate] = useState<PlaybackRate>(1);
   const [audioDurationSeconds, setAudioDurationSeconds] = useState<number | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const isResolvingAudio = Boolean(audioUrl && !resolvedAudioUrl && !loadFailed);
 
   useEffect(() => {
-    if (!audioUrl) {
-      setResolvedAudioUrl(null);
-      setLoadFailed(false);
-      return;
-    }
-
-    const sourceUrl = audioUrl;
-    let active = true;
-    let objectUrl: string | null = null;
-    const controller = new AbortController();
-
-    setResolvedAudioUrl(null);
     setLoadFailed(false);
-
-    async function resolveAudioUrl() {
-      try {
-        const response = await fetch(sourceUrl, {
-          credentials: "same-origin",
-          signal: controller.signal
-        });
-
-        if (!response.ok) {
-          throw new Error(`audio_fetch_failed_${response.status}`);
-        }
-
-        const audioBlob = await response.blob();
-        objectUrl = URL.createObjectURL(audioBlob);
-
-        if (!active) {
-          URL.revokeObjectURL(objectUrl);
-          return;
-        }
-
-        setResolvedAudioUrl(objectUrl);
-      } catch {
-        if (!active || controller.signal.aborted) {
-          return;
-        }
-
-        setLoadFailed(true);
-      }
-    }
-
-    void resolveAudioUrl();
-
-    return () => {
-      active = false;
-      controller.abort();
-
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
+    setAudioReady(false);
+    setAudioDurationSeconds(null);
+    setIsPlaying(false);
   }, [audioUrl]);
 
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.playbackRate = playbackRate;
     }
-  }, [playbackRate, resolvedAudioUrl]);
+  }, [playbackRate, audioUrl]);
 
   async function handleGenerate() {
     if (!canGenerateAudio) {
@@ -146,6 +96,7 @@ export function ListenPanel({
     setLoading(true);
     setMessage(null);
     setLoadFailed(false);
+    setAudioReady(false);
 
     try {
       const response = await fetch("/api/speak-script", {
@@ -194,7 +145,7 @@ export function ListenPanel({
   async function togglePlayback() {
     const audio = audioRef.current;
 
-    if (!audio || !resolvedAudioUrl) {
+    if (!audio || !audioUrl || loadFailed) {
       return;
     }
 
@@ -225,31 +176,48 @@ export function ListenPanel({
             onChange={setPlaybackRate}
             label="聞く速さ"
             description="再生速度だけを変えます。"
-            disabled={!resolvedAudioUrl}
+            disabled={!audioUrl || loadFailed}
           />
           {loadFailed ? (
             <p className="text-sm leading-6 text-amber-800">お手本の取得に失敗しました。ページを再読込するか、作り直してください。</p>
-          ) : resolvedAudioUrl ? (
+          ) : (
             <>
               <audio
                 data-testid="listen-audio-element"
-                key={resolvedAudioUrl}
+                key={audioUrl}
                 ref={audioRef}
-                src={resolvedAudioUrl}
+                src={audioUrl}
                 controls
-                preload="none"
+                preload="metadata"
                 className="w-full"
                 onLoadedMetadata={(event) => {
                   const nextDuration = Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : null;
                   event.currentTarget.playbackRate = playbackRate;
                   setAudioDurationSeconds(nextDuration);
+                  setAudioReady(true);
+                  setLoadFailed(false);
                 }}
-                onPlay={() => setIsPlaying(true)}
+                onCanPlay={(event) => {
+                  event.currentTarget.playbackRate = playbackRate;
+                  setAudioReady(true);
+                  setLoadFailed(false);
+                }}
+                onPlay={(event) => {
+                  event.currentTarget.playbackRate = playbackRate;
+                  setAudioReady(true);
+                  setIsPlaying(true);
+                }}
                 onPause={() => setIsPlaying(false)}
                 onEnded={() => setIsPlaying(false)}
+                onError={() => {
+                  setLoadFailed(true);
+                  setAudioReady(false);
+                  setIsPlaying(false);
+                }}
               >
                 お使いのブラウザでは音声を再生できません。
               </audio>
+              {!audioReady ? <p className="text-sm leading-6 text-ink-600">お手本を準備しています...</p> : null}
               <div className="grid grid-cols-4 gap-2 text-xs font-semibold sm:flex">
                 {[-5, -3, 3, 5].map((seconds) => (
                   <button
@@ -257,15 +225,13 @@ export function ListenPanel({
                     type="button"
                     onClick={() => seekBy(seconds)}
                     className="rounded-2xl border border-[var(--line)] bg-ink-50 px-3 py-2 text-ink-800 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
-                    disabled={!resolvedAudioUrl}
+                    disabled={!audioReady || loadFailed}
                   >
                     {seconds < 0 ? `${Math.abs(seconds)}秒戻る` : `${seconds}秒進む`}
                   </button>
                 ))}
               </div>
             </>
-          ) : (
-            <p className="text-sm leading-6 text-ink-600">お手本を準備しています...</p>
           )}
           <SavedModelAudioControl scriptId={scriptId} audioUrl={audioUrl} />
         </div>
@@ -301,8 +267,9 @@ export function ListenPanel({
       <ListenChunkControls
         chunks={practiceChunks}
         focusWords={focusWords}
-        audioReady={Boolean(resolvedAudioUrl) && !loadFailed}
-        audioLoading={isResolvingAudio}
+        canPlay={Boolean(audioUrl) && !loadFailed}
+        canSeek={audioReady && !loadFailed}
+        audioLoading={Boolean(audioUrl && !audioReady && !loadFailed)}
         isPlaying={isPlaying}
         onSeek={seekBy}
         onTogglePlayback={togglePlayback}
@@ -316,7 +283,8 @@ export function ListenPanel({
 function ListenChunkControls({
   chunks,
   focusWords,
-  audioReady,
+  canPlay,
+  canSeek,
   audioLoading,
   isPlaying,
   onSeek,
@@ -324,7 +292,8 @@ function ListenChunkControls({
 }: {
   chunks: PracticeChunk[];
   focusWords: string[];
-  audioReady: boolean;
+  canPlay: boolean;
+  canSeek: boolean;
   audioLoading: boolean;
   isPlaying: boolean;
   onSeek: (seconds: number) => void;
@@ -351,11 +320,11 @@ function ListenChunkControls({
               </div>
               <p className="mt-3 break-words text-lg leading-8 text-ink-950">{chunk.text}</p>
               <div className="mt-3 grid grid-cols-5 gap-2 text-xs font-semibold">
-                <MiniAudioButton label="5戻る" disabled={!audioReady} busy={audioLoading} onClick={() => onSeek(-5)} />
-                <MiniAudioButton label="3戻る" disabled={!audioReady} busy={audioLoading} onClick={() => onSeek(-3)} />
-                <MiniAudioButton label={isPlaying ? "一時停止" : "再生"} disabled={!audioReady} busy={audioLoading} onClick={onTogglePlayback} />
-                <MiniAudioButton label="3進む" disabled={!audioReady} busy={audioLoading} onClick={() => onSeek(3)} />
-                <MiniAudioButton label="5進む" disabled={!audioReady} busy={audioLoading} onClick={() => onSeek(5)} />
+                <MiniAudioButton label="5戻る" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(-5)} />
+                <MiniAudioButton label="3戻る" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(-3)} />
+                <MiniAudioButton label={isPlaying ? "一時停止" : "再生"} disabled={!canPlay} busy={audioLoading} onClick={onTogglePlayback} />
+                <MiniAudioButton label="3進む" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(3)} />
+                <MiniAudioButton label="5進む" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(5)} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-sm leading-6">
                 <span className="rounded-full bg-white px-3 py-1 font-semibold text-[var(--accent-strong)]">{chunk.cueJa}</span>

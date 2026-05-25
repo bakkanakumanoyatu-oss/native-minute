@@ -161,7 +161,7 @@ async function waitForListenAudioPlaybackReady(page: Page) {
       }
     )
     .toMatchObject({
-      currentSrc: expect.stringMatching(/^blob:/),
+      currentSrc: expect.stringMatching(/\/api\/script-audio\/[^/]+$/),
       readyState: expect.any(Number),
       duration: expect.any(Number)
     });
@@ -185,6 +185,53 @@ async function waitForListenAudioPlaybackReady(page: Page) {
       hasDuration: true,
       canPlay: true
     });
+}
+
+async function expectListenMiniControlsCanSeek(page: Page) {
+  const audio = page.getByTestId("listen-audio-element");
+
+  await page.getByTestId("listen-segmented-practice").locator("summary").click();
+  const segmentedPractice = page.getByTestId("listen-segmented-practice");
+  await expect(segmentedPractice.getByText(/区切り 1/)).toBeVisible();
+  const firstChunk = segmentedPractice.locator("li").first();
+  const forwardButton = firstChunk.getByRole("button", { name: "3進む" });
+  const backButton = firstChunk.getByRole("button", { name: "3戻る" });
+  await expect(forwardButton).toBeEnabled();
+  await expect(backButton).toBeEnabled();
+
+  await audio.evaluate((element) => {
+    const media = element as HTMLAudioElement;
+    media.currentTime = 0;
+  });
+  await forwardButton.click();
+  await expect
+    .poll(
+      async () =>
+        audio.evaluate((element) => {
+          const media = element as HTMLAudioElement;
+          return media.currentTime;
+        }),
+      {
+        timeout: 5_000,
+        message: "mini controls の 3秒進むで currentTime が変わりませんでした。"
+      }
+    )
+    .toBeGreaterThan(0);
+
+  await backButton.click();
+  await expect
+    .poll(
+      async () =>
+        audio.evaluate((element) => {
+          const media = element as HTMLAudioElement;
+          return media.currentTime;
+        }),
+      {
+        timeout: 5_000,
+        message: "mini controls の 3秒戻るで currentTime が 0 に戻りませんでした。"
+      }
+    )
+    .toBe(0);
 }
 
 test("authenticated user can complete the minimal record -> review -> progress happy path", async ({ page }) => {
@@ -293,7 +340,6 @@ test("authenticated user sees listen provider_unavailable recovery when provider
   await expect(recoveryBlock).toBeVisible();
   await expect(recoveryBlock).toHaveAttribute("data-kind", "provider_unavailable");
   await expect(page.getByRole("link", { name: "voice 設定へ進む" })).toBeVisible();
-  await expect(page.getByText("Recovery plan")).toBeVisible();
   await expect(page.getByTestId("listen-panel-shell")).toHaveCount(0);
 });
 
@@ -309,11 +355,9 @@ test("authenticated user can keep listening to saved audio even when provider be
   await expect(recoveryBlock).toBeVisible();
   await expect(recoveryBlock).toHaveAttribute("data-kind", "provider_unavailable");
   await expect(page.getByTestId("listen-panel-shell")).toBeVisible();
-  await expect(page.getByTestId("listen-generate-blocked")).toBeVisible();
-  await expect(page.getByTestId("listen-current-step")).toBeVisible();
-  await expect(page.getByTestId("listen-next-step")).toBeVisible();
   await expect(page.getByTestId("listen-audio-block")).toBeVisible();
   await waitForListenAudioPlaybackReady(page);
+  await expectListenMiniControlsCanSeek(page);
   await expect(page.getByTestId("listen-generate-button")).toHaveCount(0);
 });
 
@@ -325,14 +369,13 @@ test("authenticated user can generate mock listen audio once voice setup is read
   await page.goto(`/scripts/${seededScript.id}/listen`);
   await expect(page).toHaveURL(new RegExp(`/scripts/${seededScript.id}/listen$`));
   await expect(page.getByTestId("listen-panel-shell")).toBeVisible();
-  await expect(page.getByTestId("listen-current-step")).toBeVisible();
-  await expect(page.getByTestId("listen-next-step")).toBeVisible();
   await expect(page.getByTestId("listen-generate-button")).toBeEnabled();
 
   await page.getByTestId("listen-generate-button").click();
-  await expect(page.getByTestId("listen-audio-block")).toBeVisible();
-  await expect(page.getByTestId("listen-generate-button")).toContainText("見本音声を更新する");
-  await expect(page.getByTestId("listen-current-step")).toContainText(/再生待ち|再生中|再生確認済み/);
+  await expect(page.getByTestId("listen-audio-block")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("listen-generate-button")).toContainText("お手本ボイスを作り直す");
+  await waitForListenAudioPlaybackReady(page);
+  await expectListenMiniControlsCanSeek(page);
 
   expect(pageErrors).toEqual([]);
   expect(getRelevantConsoleErrors(consoleErrors)).toEqual([]);
@@ -368,11 +411,10 @@ test("authenticated user can complete the minimal setup voice UI flow", async ({
 
   await expect(page.getByTestId("voice-setup-state")).toContainText("完了");
   await expect(page.getByTestId("voice-setup-state")).not.toContainText("未作成");
-  await expect(page.getByTestId("voice-setup-next-step")).toContainText("声の準備は完了です");
+  await expect(page.getByTestId("voice-setup-next-step")).toHaveCount(0);
   await expect(page.getByTestId("voice-ready-block")).toBeVisible();
-  await expect(page.getByTestId("voice-ready-block")).toContainText("お手本を聞けます");
-  await expect(page.getByRole("link", { name: /候補の練習で聞く|最初の練習を作る|前の画面に戻る/ })).toBeVisible();
-  await expect(page.getByTestId("voice-ready-block").getByRole("link", { name: "練習一覧" })).toBeVisible();
+  await expect(page.getByTestId("voice-ready-block")).toContainText("自分の声を作り直す");
+  await expect(page.getByTestId("voice-ready-block")).not.toContainText("お手本を聞けます");
 
   await page.goto(`/scripts/${seededScript.id}/listen`);
   await expect(page.getByTestId("listen-panel-shell")).toBeVisible();
