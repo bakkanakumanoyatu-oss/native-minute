@@ -196,15 +196,15 @@
 
 ## 直近の変更
 - listen の音声再生は、client-side fetch で Blob URL 化せず、単一の audio element が protected replay URL を直接読む形へ戻した。`/api/script-audio/[audioId]` は Range request に 206 で返せるため、mobile Safari でも metadata / seek / play が通りやすい。
-- listen の mini controls と下部固定 audio bar は同じ audioRef を直接操作する。再生 / 一時停止は音声 URL があれば押せ、3秒 / 5秒の seek は metadata 準備後に有効になる。
+- listen の見えている音声操作は下部固定 audio bar に一本化した。hidden audio element は単一の audioRef を維持し、再生 / 一時停止は音声 URL があれば押せ、3秒 / 5秒の seek は metadata 準備後に有効になる。
 - setup/voice は「お手本を聞けます」「次の入口」などの余分な状態 section と provider/debug/readiness 表示を主導線から外し、現在の声の状態、アップロード、再アップロードだけに絞った。
 - Home から「毎日使う練習場です。細かい設定より、まず練習を選びます。」の説明を削った。
-- listen は大きな sticky audio card をやめ、通常のお手本ボイス player と、各区切り文直下の 5秒戻る / 3秒戻る / 再生・一時停止 / 3秒進む / 5秒進む controls を主役にした。
+- listen は大きな sticky audio card や区切り文ごとの重複 controls をやめ、区切りカードは英文 / cue / focus に集中させた。音声操作は下部固定 bar で行う。
 - scripts は hero の重複した「練習を始める」ボタンを削り、保存済み練習カードを選ぶか、新しい1分を作るかに整理した。
 - 主要操作では、pressed / tap feedback、loading aria、録音開始中の表示、ファイル選択済み表示を足し、処理が遅い場面でも押したことが分かるようにした。
 - Home は Practice / Progress への入口に寄せ、練習一覧の重複表示をやめた。Practice は5本までの練習スロット選択、Progress は成果確認に役割を分ける。
 - 共通 nav は pathname ベースで現在ページを点灯する。Home / Practice / Progress / Voice / Settings を対象にする。
-- listen の区切り表示では、各 chunk の下に小さい 5秒戻る / 3秒戻る / 再生・一時停止 / 3秒進む / 5秒進む controls を出す。正確な区切り音声切り出しはタイムスタンプがないため未実装。
+- listen の区切り表示では、各 chunk の英文 / cue / focus だけを出す。正確な区切り音声切り出しはタイムスタンプがないため未実装で、聞き直しは下部固定 audio bar で行う。
 - setup/voice は登録済みの自分の声、クローン元音声の有無、同意録音 metadata から分かる形式/サイズだけを表示し、既存 voice 作成 flow で再アップロードして作り直せる。
 - Brush-up v1 は `docs/brush-up-v1-design-plan.md` に設計だけを固定した。既存お手本を上書きせず、Review 起点の candidate から始める案だが、storage identity / cache key / metadata contract は実装前の判断点として残す。
 - listen / record / progress は説明ページではなく操作ページに寄せた。`今やること` / `次にやること` / 長い guidance は主導線から外し、必要操作だけを残す。

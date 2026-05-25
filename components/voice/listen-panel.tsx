@@ -202,9 +202,8 @@ export function ListenPanel({
                 key={audioUrl}
                 ref={audioRef}
                 src={audioUrl}
-                controls
                 preload="metadata"
-                className="w-full"
+                className="hidden"
                 onLoadedMetadata={(event) => {
                   const nextDuration = Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : null;
                   event.currentTarget.playbackRate = playbackRate;
@@ -240,19 +239,6 @@ export function ListenPanel({
                 お使いのブラウザでは音声を再生できません。
               </audio>
               {!audioReady ? <p className="text-sm leading-6 text-ink-600">お手本を準備しています...</p> : null}
-              <div className="grid grid-cols-4 gap-2 text-xs font-semibold sm:flex">
-                {[-5, -3, 3, 5].map((seconds) => (
-                  <button
-                    key={seconds}
-                    type="button"
-                    onClick={() => seekBy(seconds)}
-                    className="rounded-2xl border border-[var(--line)] bg-ink-50 px-3 py-2 text-ink-800 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45"
-                    disabled={!audioReady || loadFailed}
-                  >
-                    {seconds < 0 ? `${Math.abs(seconds)}秒戻る` : `${seconds}秒進む`}
-                  </button>
-                ))}
-              </div>
             </>
           )}
           <SavedModelAudioControl scriptId={scriptId} audioUrl={audioUrl} />
@@ -289,12 +275,6 @@ export function ListenPanel({
       <ListenChunkControls
         chunks={practiceChunks}
         focusWords={focusWords}
-        canPlay={Boolean(audioUrl) && !loadFailed}
-        canSeek={audioReady && !loadFailed}
-        audioLoading={Boolean(audioUrl && !audioReady && !loadFailed)}
-        isPlaying={isPlaying}
-        onSeek={seekBy}
-        onTogglePlayback={togglePlayback}
       />
 
       {message ? <p data-testid="listen-message" className={`text-sm ${messageKind === "error" ? "text-amber-800" : "text-ink-600"}`}>{message}</p> : null}
@@ -361,22 +341,10 @@ function StickyListenAudioControls({
 
 function ListenChunkControls({
   chunks,
-  focusWords,
-  canPlay,
-  canSeek,
-  audioLoading,
-  isPlaying,
-  onSeek,
-  onTogglePlayback
+  focusWords
 }: {
   chunks: PracticeChunk[];
   focusWords: string[];
-  canPlay: boolean;
-  canSeek: boolean;
-  audioLoading: boolean;
-  isPlaying: boolean;
-  onSeek: (seconds: number) => void;
-  onTogglePlayback: () => void;
 }) {
   if (chunks.length === 0) {
     return null;
@@ -398,13 +366,6 @@ function ListenChunkControls({
                 <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink-700">{chunk.wordCount} words</span>
               </div>
               <p className="mt-3 break-words text-lg leading-8 text-ink-950">{chunk.text}</p>
-              <div className="mt-3 grid grid-cols-5 gap-2 text-xs font-semibold">
-                <MiniAudioButton label="5戻る" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(-5)} />
-                <MiniAudioButton label="3戻る" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(-3)} />
-                <MiniAudioButton label={isPlaying ? "一時停止" : "再生"} disabled={!canPlay} busy={audioLoading} onClick={onTogglePlayback} />
-                <MiniAudioButton label="3進む" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(3)} />
-                <MiniAudioButton label="5進む" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(5)} />
-              </div>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-sm leading-6">
                 <span className="rounded-full bg-white px-3 py-1 font-semibold text-[var(--accent-strong)]">{chunk.cueJa}</span>
                 {chunkFocusWords.map((word) => (

@@ -138,7 +138,8 @@ async function ensureMockListenAudioReady(page: Page, scriptId: string) {
 
 async function waitForListenAudioPlaybackReady(page: Page) {
   const audio = page.getByTestId("listen-audio-element");
-  await expect(audio).toBeVisible();
+  await expect(audio).toBeAttached();
+  await expect(audio).not.toBeVisible();
 
   await audio.evaluate((element) => {
     (element as HTMLAudioElement).load();
@@ -187,57 +188,30 @@ async function waitForListenAudioPlaybackReady(page: Page) {
     });
 }
 
-async function expectListenMiniControlsCanSeek(page: Page) {
-  const audio = page.getByTestId("listen-audio-element");
-
-  await page.getByTestId("listen-segmented-practice").locator("summary").click();
+async function expectListenChunksFocusOnText(page: Page) {
   const segmentedPractice = page.getByTestId("listen-segmented-practice");
+  await segmentedPractice.evaluate((element) => {
+    (element as HTMLDetailsElement).open = true;
+  });
   await expect(segmentedPractice.getByText(/区切り 1/)).toBeVisible();
   const firstChunk = segmentedPractice.locator("li").first();
-  const forwardButton = firstChunk.getByRole("button", { name: "3進む" });
-  const backButton = firstChunk.getByRole("button", { name: "3戻る" });
-  await expect(forwardButton).toBeEnabled();
-  await expect(backButton).toBeEnabled();
-
-  await audio.evaluate((element) => {
-    const media = element as HTMLAudioElement;
-    media.currentTime = 0;
-  });
-  await forwardButton.click();
-  await expect
-    .poll(
-      async () =>
-        audio.evaluate((element) => {
-          const media = element as HTMLAudioElement;
-          return media.currentTime;
-        }),
-      {
-        timeout: 5_000,
-        message: "mini controls の 3秒進むで currentTime が変わりませんでした。"
-      }
-    )
-    .toBeGreaterThan(0);
-
-  await backButton.click();
-  await expect
-    .poll(
-      async () =>
-        audio.evaluate((element) => {
-          const media = element as HTMLAudioElement;
-          return media.currentTime;
-        }),
-      {
-        timeout: 5_000,
-        message: "mini controls の 3秒戻るで currentTime が 0 に戻りませんでした。"
-      }
-    )
-    .toBe(0);
+  await expect(firstChunk.locator("p").filter({ hasText: /区切り 1/ })).toBeVisible();
+  await expect(firstChunk.locator("p").filter({ hasText: /\S/ }).nth(1)).toBeVisible();
+  await expect(segmentedPractice.getByRole("button", { name: "5戻る" })).toHaveCount(0);
+  await expect(segmentedPractice.getByRole("button", { name: "3戻る" })).toHaveCount(0);
+  await expect(segmentedPractice.getByRole("button", { name: "再生" })).toHaveCount(0);
+  await expect(segmentedPractice.getByRole("button", { name: "3進む" })).toHaveCount(0);
+  await expect(segmentedPractice.getByRole("button", { name: "5進む" })).toHaveCount(0);
 }
 
 async function expectListenStickyControlsStayVisibleAndSeek(page: Page) {
   const audio = page.getByTestId("listen-audio-element");
   const stickyControls = page.getByTestId("listen-sticky-audio-controls");
 
+  await expect(page.getByTestId("listen-audio-block").getByRole("button", { name: "5秒戻る" })).toHaveCount(0);
+  await expect(page.getByTestId("listen-audio-block").getByRole("button", { name: "3秒戻る" })).toHaveCount(0);
+  await expect(page.getByTestId("listen-audio-block").getByRole("button", { name: "3秒進む" })).toHaveCount(0);
+  await expect(page.getByTestId("listen-audio-block").getByRole("button", { name: "5秒進む" })).toHaveCount(0);
   await expect(stickyControls).toBeVisible();
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await expect(stickyControls).toBeVisible();
@@ -436,7 +410,7 @@ test("authenticated user can keep listening to saved audio even when provider be
   await expect(page.getByTestId("listen-panel-shell")).toBeVisible();
   await expect(page.getByTestId("listen-audio-block")).toBeVisible();
   await waitForListenAudioPlaybackReady(page);
-  await expectListenMiniControlsCanSeek(page);
+  await expectListenChunksFocusOnText(page);
   await expectListenStickyControlsStayVisibleAndSeek(page);
   await expect(page.getByTestId("listen-generate-button")).toHaveCount(0);
 });
@@ -455,7 +429,7 @@ test("authenticated user can generate mock listen audio once voice setup is read
   await expect(page.getByTestId("listen-audio-block")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("listen-generate-button")).toContainText("お手本ボイスを作り直す");
   await waitForListenAudioPlaybackReady(page);
-  await expectListenMiniControlsCanSeek(page);
+  await expectListenChunksFocusOnText(page);
   await expectListenStickyControlsStayVisibleAndSeek(page);
 
   expect(pageErrors).toEqual([]);
