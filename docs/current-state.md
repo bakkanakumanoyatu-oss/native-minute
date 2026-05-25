@@ -38,6 +38,13 @@
 - `/listen` は保存済みのお手本ボイスがある場合は再生を先に出し、作り直しは小さく表示する。声の雰囲気変更は常設 UI から外す。
 - `/record` はマイク録音を主導線にし、ファイル利用、評価前提、開発用入力は詳細へ下げる。
 
+## UI/UX improvement cadence
+- UI/UX の small diff は 3〜5 個程度のまとまりで進め、production 人間確認は UI Batch ごとに行う。
+- copy / heading / color / card hierarchy / spacing / small visual motifs / CTA wording / empty state / screen tone は、単発で確認を求めすぎず、Codex が checks を通しながら次の small diff へ進めてよい。
+- 音声再生、録音、upload、評価、login / auth、storage、iPhone Safari 固有挙動、画面が壊れる可能性がある修正は batch にまとめず、1 件ごとに人間確認する。
+- 推奨 batch は A: Home / Practice / Record、B: Listen / Review、C: Progress / Navigation / Return loops。
+- batch の人間確認では「声を育てる、1分スタジオ」っぽくなったか、やりすぎていないか、スマホで読みやすいか、今日も1分だけやろうと思えるか、どの画面が一番違和感あるかを見る。
+
 ## すでに通っていること
 - 主要 route handler は薄く、service に委譲している。
 - `/api/evaluate` は audio-first で、client の `scriptText` を信用しない。
@@ -193,6 +200,7 @@
 - `provider_voice_id` は provider 呼び出し用の外部 ID に留め、cache や replay ownership の基準にしない。
 - `takes` は script 全文 snapshot を持たないので、in-place script edit は軽く入れない。
 - 履歴意味が絡むときは script mutation より duplication を優先する。
+- UI/UX small diff でも、DB schema / migration、API contract、auth / ownership / storage access、provider 本接続、Listen fixed audio bar、main loop、UI direction docs に影響する場合は停止して報告する。
 
 ## 直近の変更
 - listen の音声再生は、client-side fetch で Blob URL 化せず、単一の audio element が protected replay URL を直接読む形へ戻した。`/api/script-audio/[audioId]` は Range request に 206 で返せるため、mobile Safari でも metadata / seek / play が通りやすい。

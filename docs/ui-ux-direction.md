@@ -22,6 +22,41 @@ Native Minute は、自分専用の1分ボイススタジオです。
 - スマホで片手操作できる余白とボタンを維持する。
 - Listen は「スクリプトを見ながら、下部固定 bar で何度も聞いてまねる」体験を基準にする。
 
+## UI / UX improvement cadence
+
+UI / UX の雰囲気づくりは、small diff を 3〜5 個程度のまとまりで進め、意味のある UI Batch ごとに production 人間確認します。copy、heading、color、card hierarchy、spacing、small visual motifs、CTA wording、empty state、screen tone のような細かい改善は、単発で毎回 human confirmation を求めすぎません。
+
+Codex は各 small diff で safety checks を通し、batch の区切りで変更内容と確認観点をまとめて報告します。標準確認は `npm run lint`、`npm run build`、`npm run typecheck`、`git diff --check`、可能なら関係する smoke です。
+
+ただし、音声再生、録音、upload、評価、login / auth、storage、iPhone Safari 固有挙動、画面が壊れる可能性がある修正は UI Batch にまとめず、1 件ごとに人間確認します。
+
+### Recommended UI batches
+
+- UI Batch A: Home / Practice / Record
+  - 今日の1分スタジオに入る。
+  - 今日録る1本を選ぶ。
+  - まず1テイク残す。
+- UI Batch B: Listen / Review
+  - 区切りを見ながら何度も聞いてまねる。
+  - 今回の Take から次の1点を見つける。
+- UI Batch C: Progress / Navigation / Return loops
+  - 声のログを見る。
+  - ベストテイクを見る。
+  - 次に録る1本が見える。
+  - また練習したくなる。
+
+### Human review questions
+
+- 前より「声を育てる、1分スタジオ」っぽくなったか。
+- やりすぎていないか。
+- スマホで読みやすいか。
+- 今日も1分だけやろうと思えるか。
+- どの画面が一番違和感あるか。
+
+### Do not over-ask for human confirmation
+
+minor copy / color / spacing の単発確認は原則不要です。Codex は checks を通したうえで次の small diff へ進めてよいです。ただし batch の区切りでは必ず報告し、人間確認の URL と観点を出します。
+
 ## Screen roles
 
 ### Home
@@ -70,6 +105,17 @@ Native Minute は、自分専用の1分ボイススタジオです。
 - provider contract を UI 都合で変えない。
 - review / progress の履歴整合を壊さない。
 - Listen の下部固定 audio bar を中心にした練習体験を保つ。
+
+## Stop conditions
+
+- DB schema / migration が必要になる。
+- API contract 変更が必要になる。
+- auth / ownership / storage access に関わる。
+- provider 本接続に関わる。
+- Listen fixed audio bar の挙動を壊す可能性がある。
+- main loop を壊す可能性がある。
+- この UI direction と衝突する。
+- 今後の方針が変わる複数案の判断が必要になる。
 
 ## What can change
 
