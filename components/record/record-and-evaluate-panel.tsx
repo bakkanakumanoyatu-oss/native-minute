@@ -72,7 +72,7 @@ type RecordDecisionAction = {
 
 function getRecordDecisionButtonClasses(tone: RecordDecisionAction["tone"]) {
   if (tone === "primary") {
-    return "inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)]";
+    return "inline-flex items-center justify-center rounded-2xl bg-[#f26d5b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#dc5b4b]";
   }
 
   return "inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50";
@@ -697,7 +697,7 @@ export function RecordAndEvaluatePanel({
             min={1}
             max={600}
             placeholder="自動計測できない場合に入力"
-            className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#d46b52]"
           />
         </label>
 
@@ -753,7 +753,7 @@ export function RecordAndEvaluatePanel({
               onChange={(event) => setTranscriptText(event.target.value)}
               placeholder={needsDevFallback ? "開発用の評価設定では入力が必要です。" : "通常は空欄のままで大丈夫です。"}
               rows={5}
-              className="mt-3 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--accent)]"
+              className="mt-3 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#d46b52]"
             />
             {transcriptText.trim().length > 0 ? (
               <button
@@ -788,7 +788,7 @@ export function RecordAndEvaluatePanel({
               onClick={handleSubmit}
               disabled={isBusy || isMeasuringDuration || !selectedFile || !canSaveEvaluation || isMissingRequiredFallback}
               aria-busy={isBusy}
-              className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-2xl bg-[#f26d5b] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#dc5b4b] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {messagePhase === "evaluate" && messageKind === "error" && uploadedRecording
                 ? getGuidancePrimaryButtonLabel("retry_saved_evaluate")

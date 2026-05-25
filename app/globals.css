@@ -22,8 +22,8 @@ body {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(28, 160, 138, 0.16), transparent 32%),
-    radial-gradient(circle at top right, rgba(76, 88, 189, 0.08), transparent 30%),
+    radial-gradient(circle at top left, rgba(242, 179, 93, 0.12), transparent 32%),
+    radial-gradient(circle at top right, rgba(39, 42, 67, 0.08), transparent 30%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(245, 246, 250, 0.94) 36%),
     var(--bg);
   color: var(--ink);
@@ -42,14 +42,14 @@ a {
 }
 
 ::selection {
-  background: rgba(28, 160, 138, 0.22);
+  background: rgba(242, 179, 93, 0.26);
 }
 
 button,
 a[href],
 summary,
 label {
-  -webkit-tap-highlight-color: rgba(28, 160, 138, 0.16);
+  -webkit-tap-highlight-color: rgba(242, 179, 93, 0.18);
 }
 
 button:not(:disabled),

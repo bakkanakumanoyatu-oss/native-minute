@@ -25,7 +25,7 @@ function HomeActionCard({
     >
       <span
         aria-hidden="true"
-        className={`mb-5 flex h-8 items-end gap-1.5 ${motif === "log" ? "text-[#6d63c7]" : "text-[var(--accent)]"}`}
+        className={`mb-5 flex h-8 items-end gap-1.5 ${motif === "log" ? "text-[#8d7bd6]" : "text-[#f2b35d]"}`}
       >
         {[14, 24, 18, 30, 12].map((height, index) => (
           <span key={index} className="w-1.5 rounded-full bg-current opacity-80" style={{ height }} />
@@ -44,7 +44,7 @@ export default async function HomePage() {
     <section className="space-y-6">
       <div className="relative overflow-hidden rounded-[2rem] border border-ink-900/10 bg-[linear-gradient(135deg,#111321,#272a43_62%,#32405a)] p-6 shadow-soft sm:p-8 lg:p-10">
         <div className="absolute bottom-6 right-6 hidden w-44 rounded-[1.5rem] border border-white/70 bg-white/75 p-4 shadow-sm sm:block">
-          <div aria-hidden="true" className="flex h-10 items-end gap-1.5 text-[var(--accent)]">
+          <div aria-hidden="true" className="flex h-10 items-end gap-1.5 text-[#f2b35d]">
             {[18, 28, 14, 34, 22, 30].map((height, index) => (
               <span key={index} className="w-2 rounded-full bg-current" style={{ height }} />
             ))}
@@ -74,7 +74,7 @@ export default async function HomePage() {
 
       {user ? (
         <div className="rounded-[2rem] border border-[var(--line)] bg-white px-5 py-4 shadow-sm">
-          <Link href="/setup/voice" className="text-sm font-semibold text-[var(--accent-strong)]">
+          <Link href="/setup/voice" className="text-sm font-semibold text-[#8a4d37]">
             声の設定
           </Link>
           <p className="mt-1 text-sm leading-6 text-ink-600">お手本ボイスを作る時だけ使います。</p>

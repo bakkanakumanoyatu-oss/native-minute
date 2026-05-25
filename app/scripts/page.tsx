@@ -106,7 +106,7 @@ export default async function ScriptsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[linear-gradient(135deg,#ffffff,#f8fbff_58%,#eff8f6)] p-6 shadow-soft sm:p-8 lg:p-10">
+      <div className="overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[linear-gradient(135deg,#ffffff,#fbf8f4_58%,#f1ebe2)] p-6 shadow-soft sm:p-8 lg:p-10">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
           <div>
             <div aria-hidden="true" className="mb-5 flex max-w-xs gap-2">
@@ -114,7 +114,7 @@ export default async function ScriptsPage() {
                 <span key={slot} className={`h-2 flex-1 rounded-full ${slot < Math.min(scripts.length, MAX_VISIBLE_PRACTICES) ? "bg-ink-900" : "bg-ink-100"}`} />
               ))}
             </div>
-            <p className="text-sm font-semibold text-[var(--accent-strong)]">1分ストック</p>
+            <p className="text-sm font-semibold text-[#8a4d37]">1分ストック</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">今日録る1本を選ぶ</h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-ink-700">5本まで置いて、今日の Take を残す1本を選びます。</p>
           </div>
@@ -146,7 +146,7 @@ export default async function ScriptsPage() {
         <div className="rounded-[2rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-ink-700">
           <p className="font-semibold text-ink-900">お手本ボイスを聞く前に、声の準備が必要です。</p>
           <p className="mt-1">台本は先に作れます。練習開始時に必要な分だけ案内します。</p>
-          <Link href={candidateScript ? buildScriptListenVoiceSetupHref(candidateScript.script.id, "/scripts") : buildVoiceSetupHref("/scripts", "/scripts")} className="mt-3 inline-flex font-semibold text-[var(--accent-strong)]">
+          <Link href={candidateScript ? buildScriptListenVoiceSetupHref(candidateScript.script.id, "/scripts") : buildVoiceSetupHref("/scripts", "/scripts")} className="mt-3 inline-flex font-semibold text-[#8a4d37]">
             声の設定へ
           </Link>
         </div>
@@ -189,11 +189,11 @@ export default async function ScriptsPage() {
                     <p className="text-xs font-semibold text-ink-500">最新テイク</p>
                     <p className="mt-1 text-4xl font-semibold text-ink-900">{item.latestTake?.score ?? "-"}</p>
                     <p className="mt-3 text-xs font-semibold text-ink-500">次はここだけ</p>
-                    <p className="mt-1 text-sm font-semibold text-[var(--accent-strong)]">{getNextAction(item, { voiceReady, canRecord })}</p>
+                    <p className="mt-1 text-sm font-semibold text-[#8a4d37]">{getNextAction(item, { voiceReady, canRecord })}</p>
                   </div>
                 </div>
                 <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
-                  <Link href={primaryHref} className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-5 py-4 text-white shadow-sm transition hover:bg-[var(--accent-strong)] sm:w-auto">
+                  <Link href={primaryHref} className="inline-flex w-full justify-center rounded-2xl bg-ink-900 px-5 py-4 text-white shadow-sm transition hover:bg-ink-800 sm:w-auto">
                     {primaryLabel}
                   </Link>
                 </div>

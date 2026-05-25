@@ -26,8 +26,8 @@ export function AppNav() {
             aria-current={active ? "page" : undefined}
             className={`rounded-full px-3 py-2 transition ${
               active
-                ? "bg-[var(--accent)] text-white shadow-sm"
-                : "bg-ink-50 text-ink-700 hover:bg-accent-50"
+                ? "bg-ink-900 text-white shadow-sm"
+                : "bg-ink-50 text-ink-700 hover:bg-[#f3ece3]"
             }`}
           >
             {item.label}
