@@ -234,6 +234,85 @@ async function expectListenMiniControlsCanSeek(page: Page) {
     .toBe(0);
 }
 
+async function expectListenStickyControlsStayVisibleAndSeek(page: Page) {
+  const audio = page.getByTestId("listen-audio-element");
+  const stickyControls = page.getByTestId("listen-sticky-audio-controls");
+
+  await expect(stickyControls).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect(stickyControls).toBeVisible();
+  await expect
+    .poll(
+      async () =>
+        stickyControls.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            bottom: Math.round(rect.bottom),
+            viewportHeight: window.innerHeight,
+            visibleHeight: Math.round(Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0))
+          };
+        }),
+      {
+        timeout: 5_000,
+        message: "fixed audio controls がスクロール後も viewport 内に残っていません。"
+      }
+    )
+    .toMatchObject({
+      bottom: expect.any(Number),
+      viewportHeight: expect.any(Number),
+      visibleHeight: expect.any(Number)
+    });
+
+  const position = await stickyControls.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      isPinnedToBottom: Math.abs(rect.bottom - window.innerHeight) <= 2,
+      visibleHeight: Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0)
+    };
+  });
+  expect(position.isPinnedToBottom).toBeTruthy();
+  expect(position.visibleHeight).toBeGreaterThan(0);
+
+  const forwardButton = stickyControls.getByRole("button", { name: "3進む" });
+  const backButton = stickyControls.getByRole("button", { name: "3戻る" });
+  await expect(forwardButton).toBeEnabled();
+  await expect(backButton).toBeEnabled();
+
+  await audio.evaluate((element) => {
+    const media = element as HTMLAudioElement;
+    media.currentTime = 0;
+  });
+  await forwardButton.click();
+  await expect
+    .poll(
+      async () =>
+        audio.evaluate((element) => {
+          const media = element as HTMLAudioElement;
+          return media.currentTime;
+        }),
+      {
+        timeout: 5_000,
+        message: "fixed controls の 3秒進むで currentTime が変わりませんでした。"
+      }
+    )
+    .toBeGreaterThan(0);
+
+  await backButton.click();
+  await expect
+    .poll(
+      async () =>
+        audio.evaluate((element) => {
+          const media = element as HTMLAudioElement;
+          return media.currentTime;
+        }),
+      {
+        timeout: 5_000,
+        message: "fixed controls の 3秒戻るで currentTime が 0 に戻りませんでした。"
+      }
+    )
+    .toBe(0);
+}
+
 test("authenticated user can complete the minimal record -> review -> progress happy path", async ({ page }) => {
   const { consoleErrors, pageErrors } = await collectRuntimeErrors(page);
   const scriptsResponse = await page.goto("/scripts");
@@ -358,6 +437,7 @@ test("authenticated user can keep listening to saved audio even when provider be
   await expect(page.getByTestId("listen-audio-block")).toBeVisible();
   await waitForListenAudioPlaybackReady(page);
   await expectListenMiniControlsCanSeek(page);
+  await expectListenStickyControlsStayVisibleAndSeek(page);
   await expect(page.getByTestId("listen-generate-button")).toHaveCount(0);
 });
 
@@ -376,6 +456,7 @@ test("authenticated user can generate mock listen audio once voice setup is read
   await expect(page.getByTestId("listen-generate-button")).toContainText("お手本ボイスを作り直す");
   await waitForListenAudioPlaybackReady(page);
   await expectListenMiniControlsCanSeek(page);
+  await expectListenStickyControlsStayVisibleAndSeek(page);
 
   expect(pageErrors).toEqual([]);
   expect(getRelevantConsoleErrors(consoleErrors)).toEqual([]);

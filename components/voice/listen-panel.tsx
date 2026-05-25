@@ -39,6 +39,17 @@ type ListenPanelProps = {
 
 type MessageKind = "info" | "error";
 
+function formatPlaybackTime(value: number | null) {
+  if (!value || !Number.isFinite(value) || value < 0) {
+    return "0:00";
+  }
+
+  const minutes = Math.floor(value / 60);
+  const seconds = Math.floor(value % 60).toString().padStart(2, "0");
+
+  return `${minutes}:${seconds}`;
+}
+
 function clampTime(value: number, duration: number | null) {
   if (!Number.isFinite(value)) {
     return 0;
@@ -69,6 +80,7 @@ export function ListenPanel({
   const [messageKind, setMessageKind] = useState<MessageKind>("info");
   const [playbackRate, setPlaybackRate] = useState<PlaybackRate>(1);
   const [audioDurationSeconds, setAudioDurationSeconds] = useState<number | null>(null);
+  const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
   const [loadFailed, setLoadFailed] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -77,6 +89,7 @@ export function ListenPanel({
     setLoadFailed(false);
     setAudioReady(false);
     setAudioDurationSeconds(null);
+    setCurrentTimeSeconds(0);
     setIsPlaying(false);
   }, [audioUrl]);
 
@@ -139,7 +152,9 @@ export function ListenPanel({
     }
 
     const duration = Number.isFinite(audio.duration) ? audio.duration : audioDurationSeconds;
-    audio.currentTime = clampTime(audio.currentTime + seconds, duration);
+    const nextTime = clampTime(audio.currentTime + seconds, duration);
+    audio.currentTime = nextTime;
+    setCurrentTimeSeconds(nextTime);
   }
 
   async function togglePlayback() {
@@ -194,6 +209,7 @@ export function ListenPanel({
                   const nextDuration = Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : null;
                   event.currentTarget.playbackRate = playbackRate;
                   setAudioDurationSeconds(nextDuration);
+                  setCurrentTimeSeconds(event.currentTarget.currentTime);
                   setAudioReady(true);
                   setLoadFailed(false);
                 }}
@@ -209,6 +225,12 @@ export function ListenPanel({
                 }}
                 onPause={() => setIsPlaying(false)}
                 onEnded={() => setIsPlaying(false)}
+                onTimeUpdate={(event) => {
+                  setCurrentTimeSeconds(event.currentTarget.currentTime);
+                }}
+                onSeeking={(event) => {
+                  setCurrentTimeSeconds(event.currentTarget.currentTime);
+                }}
                 onError={() => {
                   setLoadFailed(true);
                   setAudioReady(false);
@@ -276,6 +298,63 @@ export function ListenPanel({
       />
 
       {message ? <p data-testid="listen-message" className={`text-sm ${messageKind === "error" ? "text-amber-800" : "text-ink-600"}`}>{message}</p> : null}
+
+      {audioUrl && !loadFailed ? (
+        <StickyListenAudioControls
+          canPlay={Boolean(audioUrl) && !loadFailed}
+          canSeek={audioReady && !loadFailed}
+          audioLoading={Boolean(audioUrl && !audioReady && !loadFailed)}
+          isPlaying={isPlaying}
+          currentTimeLabel={formatPlaybackTime(currentTimeSeconds)}
+          durationLabel={audioDurationSeconds ? formatPlaybackTime(audioDurationSeconds) : null}
+          onSeek={seekBy}
+          onTogglePlayback={togglePlayback}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function StickyListenAudioControls({
+  canPlay,
+  canSeek,
+  audioLoading,
+  isPlaying,
+  currentTimeLabel,
+  durationLabel,
+  onSeek,
+  onTogglePlayback
+}: {
+  canPlay: boolean;
+  canSeek: boolean;
+  audioLoading: boolean;
+  isPlaying: boolean;
+  currentTimeLabel: string;
+  durationLabel: string | null;
+  onSeek: (seconds: number) => void;
+  onTogglePlayback: () => void;
+}) {
+  return (
+    <div
+      data-testid="listen-sticky-audio-controls"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-white/95 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur"
+    >
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-ink-600">
+          <span>お手本ボイス</span>
+          <span aria-live="off">
+            {currentTimeLabel}
+            {durationLabel ? ` / ${durationLabel}` : ""}
+          </span>
+        </div>
+        <div className="grid grid-cols-5 gap-2 text-xs font-semibold">
+          <MiniAudioButton label="5戻る" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(-5)} />
+          <MiniAudioButton label="3戻る" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(-3)} />
+          <MiniAudioButton label={isPlaying ? "一時停止" : "再生"} disabled={!canPlay} busy={audioLoading} onClick={onTogglePlayback} />
+          <MiniAudioButton label="3進む" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(3)} />
+          <MiniAudioButton label="5進む" disabled={!canSeek} busy={audioLoading} onClick={() => onSeek(5)} />
+        </div>
+      </div>
     </div>
   );
 }

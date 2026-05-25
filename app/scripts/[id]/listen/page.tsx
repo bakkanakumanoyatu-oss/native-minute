@@ -114,7 +114,7 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
       : null;
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
       <div data-testid="listen-practice-first-view" className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.15),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.92))] p-6 shadow-soft sm:p-8">
         <p className="text-sm font-semibold text-[var(--accent-strong)]">聞いてまねる</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">お手本を聞いて、声に出す</h1>
