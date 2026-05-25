@@ -17,10 +17,10 @@ function HomeActionCard({
   return (
     <Link
       href={href}
-      className={`relative overflow-hidden rounded-[2rem] border p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft ${
+      className={`relative overflow-hidden rounded-[2rem] border p-6 transition hover:-translate-y-0.5 ${
         primary
-          ? "border-[var(--studio-ink)] bg-[var(--studio-ink)] text-white"
-          : "border-[var(--studio-line)] bg-[linear-gradient(135deg,var(--studio-panel),var(--studio-surface))] text-ink-900"
+          ? "border-[var(--studio-ink)] bg-[var(--studio-ink)] text-white shadow-[var(--shadow-studio-soft)] hover:shadow-[var(--shadow-studio-lift)]"
+          : "border-[var(--line-subtle)] bg-[linear-gradient(135deg,var(--surface-secondary),var(--surface-inset))] text-ink-900 hover:shadow-[0_18px_44px_rgba(45,38,31,0.1)]"
       }`}
     >
       <span
@@ -42,8 +42,8 @@ export default async function HomePage() {
 
   return (
     <section className="space-y-6">
-      <div className="relative overflow-hidden rounded-[2rem] border border-[rgba(45,38,31,0.18)] bg-[linear-gradient(135deg,#181722,#2b2d44_62%,#3b4058)] p-6 shadow-soft sm:p-8 lg:p-10">
-        <div className="absolute bottom-6 right-6 hidden w-44 rounded-[1.5rem] border border-white/20 bg-[rgba(255,250,243,0.84)] p-4 shadow-sm sm:block">
+      <div className="relative overflow-hidden rounded-[2rem] border border-[var(--line-dark)] bg-[linear-gradient(135deg,#181722,#2b2d44_62%,#3b4058)] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8 lg:p-10">
+        <div className="absolute bottom-6 right-6 hidden w-44 rounded-[1.5rem] border border-[var(--line-dark)] bg-[rgba(220,196,170,0.22)] p-4 shadow-[0_16px_44px_rgba(0,0,0,0.16)] backdrop-blur sm:block">
           <div aria-hidden="true" className="flex h-10 items-end gap-1.5 text-[var(--studio-accent)]">
             {[18, 28, 14, 34, 22, 30].map((height, index) => (
               <span key={index} className="w-2 rounded-full bg-current" style={{ height }} />
@@ -73,7 +73,7 @@ export default async function HomePage() {
       </div>
 
       {user ? (
-        <div className="rounded-[2rem] border border-[var(--studio-line)] bg-[var(--studio-panel)] px-5 py-4 shadow-sm">
+        <div className="rounded-[2rem] border border-[var(--line-subtle)] bg-[var(--surface-secondary)] px-5 py-4">
           <Link href="/setup/voice" className="text-sm font-semibold text-[var(--studio-accent-strong)]">
             声の設定
           </Link>

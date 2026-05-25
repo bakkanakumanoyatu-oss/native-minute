@@ -11,12 +11,12 @@ type StateActionEyebrow = "Next action" | "Other actions" | "次にやること"
 
 function getActionClasses(tone: "primary" | "secondary", eyebrow: StateActionEyebrow) {
   if (tone === "primary") {
-    return "inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white shadow-sm sm:w-auto";
+    return "inline-flex w-full justify-center rounded-2xl bg-[var(--studio-ink)] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(24,23,34,0.18)] sm:w-auto";
   }
 
   return eyebrow === "Other actions" || eyebrow === "その他の操作" || eyebrow === "設定・管理"
-    ? "inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-medium text-ink-700 sm:w-auto"
-    : "inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto";
+    ? "inline-flex w-full justify-center rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-sm font-medium text-ink-700 sm:w-auto"
+    : "inline-flex w-full justify-center rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto";
 }
 
 export function StateStepSection({
@@ -31,7 +31,7 @@ export function StateStepSection({
   tone?: GuidanceTone;
 }) {
   return (
-    <section className={`rounded-[2rem] border p-5 shadow-sm sm:p-6 ${getGuidanceToneClasses(tone)}`}>
+    <section className={`rounded-[2rem] border p-5 sm:p-6 ${getGuidanceToneClasses(tone)}`}>
       <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">{eyebrow}</p>
       <h2 className="mt-2 text-xl font-semibold text-ink-900 sm:text-2xl">{title}</h2>
       <p className="mt-3 text-sm leading-6 text-ink-700">{summary}</p>
@@ -51,7 +51,7 @@ export function StateActionSection({
   actions: StateActionLink[];
 }) {
   return (
-    <section className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-sm sm:p-6">
+    <section className="rounded-[2rem] border border-[var(--line-subtle)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-studio-soft)] sm:p-6">
       <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">{eyebrow}</p>
       <h2 className="mt-2 text-xl font-semibold text-ink-900 sm:text-2xl">{title}</h2>
       {summary ? <p className="mt-3 text-sm leading-6 text-ink-600">{summary}</p> : null}

@@ -180,7 +180,7 @@ export function ListenPanel({
   return (
     <div className="space-y-4" aria-busy={loading}>
       {audioUrl ? (
-        <div data-testid="listen-audio-block" className="space-y-3 rounded-2xl border border-[var(--line)] bg-white px-4 py-4 shadow-sm">
+        <div data-testid="listen-audio-block" className="space-y-3 rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold text-ink-900">お手本ボイス</p>
             {voiceLabel ? <p className="text-xs font-semibold text-ink-500">{voiceLabel}</p> : null}
@@ -255,20 +255,20 @@ export function ListenPanel({
             aria-busy={loading}
             className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
               audioUrl
-                ? "border border-[var(--line)] bg-white text-ink-800 hover:bg-ink-50"
-                : "bg-[var(--accent)] text-white hover:bg-[var(--accent-strong)]"
+                ? "border border-[var(--line-subtle)] bg-[var(--surface-secondary)] text-ink-800 hover:bg-[var(--surface-inset)]"
+                : "bg-[var(--studio-ink)] text-white hover:opacity-90"
             }`}
           >
             {loading ? (audioUrl ? "作り直し中..." : "作成中...") : audioUrl ? "お手本ボイスを作り直す" : "お手本ボイスを作る"}
           </button>
         ) : null}
         {canGenerateAudio ? (
-          <p className="rounded-full border border-[var(--line)] bg-ink-50 px-3 py-1 text-xs font-semibold text-ink-600">
+          <p className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-secondary)] px-3 py-1 text-xs font-semibold text-ink-600">
             ベータでは お手本ボイス生成は10回まで
           </p>
         ) : null}
         {!canGenerateAudio && generateBlockedSummary ? (
-          <p className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm leading-6 text-ink-700">{generateBlockedSummary}</p>
+          <p className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] px-4 py-3 text-sm leading-6 text-ink-700">{generateBlockedSummary}</p>
         ) : null}
       </div>
 
@@ -317,7 +317,7 @@ function StickyListenAudioControls({
   return (
     <div
       data-testid="listen-sticky-audio-controls"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-white/95 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line-subtle)] bg-[rgba(239,225,209,0.96)] px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_40px_rgba(45,38,31,0.16)] backdrop-blur"
     >
       <div className="mx-auto max-w-3xl">
         <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-ink-600">
@@ -353,23 +353,23 @@ function ListenChunkControls({
   const limitedFocusWords = focusWords.map((word) => word.trim()).filter(Boolean).slice(0, 3);
 
   return (
-    <details className="rounded-[1.5rem] border border-[var(--line)] bg-white p-4" data-testid="listen-segmented-practice">
+    <details className="rounded-[1.5rem] border border-[var(--line-subtle)] bg-[var(--surface-secondary)] p-4" data-testid="listen-segmented-practice">
       <summary className="cursor-pointer text-sm font-semibold text-ink-800">区切りを見る</summary>
       <ol className="mt-4 grid gap-3">
         {chunks.map((chunk) => {
           const chunkFocusWords = getMatchingFocusWords(chunk.text, limitedFocusWords);
 
           return (
-            <li key={`${chunk.index}-${chunk.text}`} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4">
+            <li key={`${chunk.index}-${chunk.text}`} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">区切り {chunk.index}</p>
-                <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink-700">{chunk.wordCount} words</span>
+                <span className="shrink-0 rounded-full bg-[var(--surface-paper)] px-3 py-1 text-xs font-semibold text-ink-700">{chunk.wordCount} words</span>
               </div>
               <p className="mt-3 break-words text-lg leading-8 text-ink-950">{chunk.text}</p>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-sm leading-6">
-                <span className="rounded-full bg-white px-3 py-1 font-semibold text-[var(--accent-strong)]">{chunk.cueJa}</span>
+                <span className="rounded-full bg-[var(--surface-paper)] px-3 py-1 font-semibold text-[var(--accent-strong)]">{chunk.cueJa}</span>
                 {chunkFocusWords.map((word) => (
-                  <span key={word} className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold text-ink-600">
+                  <span key={word} className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-3 py-1 text-xs font-semibold text-ink-600">
                     focus: {word}
                   </span>
                 ))}
@@ -399,7 +399,7 @@ function MiniAudioButton({
       disabled={disabled}
       onClick={onClick}
       aria-label={busy ? `${label}。音声を準備中` : label}
-      className="min-h-10 rounded-2xl border border-[var(--line)] bg-white px-2 py-2 text-ink-800 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-45"
+      className="min-h-10 rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-2 py-2 text-ink-800 transition hover:bg-[var(--surface-inset)] disabled:cursor-not-allowed disabled:opacity-45"
     >
       {label}
     </button>

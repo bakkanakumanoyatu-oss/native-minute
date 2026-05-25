@@ -74,7 +74,7 @@ export default async function RecordPage({ params }: PageParams) {
 
   return (
     <section className="space-y-6">
-      <div data-testid="record-practice-first-view" className="relative overflow-hidden rounded-[2rem] border border-[rgba(45,38,31,0.22)] bg-[linear-gradient(135deg,var(--studio-ink),var(--studio-ink-soft))] p-6 text-white shadow-soft sm:p-8">
+      <div data-testid="record-practice-first-view" className="relative overflow-hidden rounded-[2rem] border border-[var(--line-dark)] bg-[linear-gradient(135deg,var(--studio-ink),var(--studio-ink-soft))] p-6 text-white shadow-[var(--shadow-studio-soft)] sm:p-8">
         <div aria-hidden="true" className="absolute right-6 top-6 flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">
           <span className="h-2.5 w-2.5 rounded-full bg-[var(--record-accent)]" />
           REC
@@ -85,12 +85,12 @@ export default async function RecordPage({ params }: PageParams) {
         <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
           お手本をまねたら、30〜60秒で今日の Take を録ります。完璧より、まず1本残して評価へ進みます。
         </p>
-        <div className="mt-5 rounded-[1.5rem] border border-white/15 bg-[rgba(255,250,243,0.08)] p-5 shadow-sm">
+        <div className="mt-5 rounded-[1.5rem] border border-[var(--line-dark)] bg-[rgba(220,196,170,0.12)] p-5">
           <p className="text-xs font-semibold text-white/55">英文</p>
           <p className="mt-2 whitespace-pre-wrap text-base leading-8 text-white">{script.content}</p>
         </div>
         <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
-          <a href="#record-evaluate-panel" className="inline-flex w-full justify-center rounded-2xl bg-[var(--record-accent)] px-4 py-3 text-white shadow-sm transition hover:bg-[var(--record-accent-strong)] sm:w-auto">
+          <a href="#record-evaluate-panel" className="inline-flex w-full justify-center rounded-2xl bg-[var(--record-accent)] px-4 py-3 text-white shadow-[0_16px_38px_rgba(184,78,55,0.22)] transition hover:bg-[var(--record-accent-strong)] sm:w-auto">
             Take を録る
           </a>
           <Link href={listenHref} className="inline-flex w-full justify-center rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white transition hover:bg-white/15 sm:w-auto">
@@ -104,7 +104,7 @@ export default async function RecordPage({ params }: PageParams) {
         </div>
       </div>
 
-      <details className="rounded-[2rem] border border-[var(--studio-line)] bg-[var(--studio-panel)] p-6 shadow-sm">
+      <details className="rounded-[2rem] border border-[var(--line-subtle)] bg-[var(--surface-secondary)] p-6">
         <summary className="cursor-pointer text-sm font-semibold text-ink-800">録音前の区切りを見る</summary>
         <div className="mt-5 space-y-5">
           <ScriptPracticeChunks
@@ -119,7 +119,7 @@ export default async function RecordPage({ params }: PageParams) {
       </details>
 
       <div className="grid gap-4">
-        <div id="record-evaluate-panel" className="rounded-[2rem] border border-[var(--studio-line)] bg-[var(--studio-panel)] p-6 shadow-sm">
+        <div id="record-evaluate-panel" className="rounded-[2rem] border border-[var(--line-subtle)] bg-[var(--surface-secondary)] p-6 shadow-[var(--shadow-studio-soft)]">
           <div className="text-sm font-semibold">
             <RecordAndEvaluatePanel
               scriptId={script.id}

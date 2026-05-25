@@ -115,19 +115,19 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
 
   return (
     <section className="space-y-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
-      <div data-testid="listen-practice-first-view" className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.15),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.92))] p-6 shadow-soft sm:p-8">
+      <div data-testid="listen-practice-first-view" className="rounded-[2rem] border border-[var(--line-subtle)] bg-[radial-gradient(circle_at_top_left,rgba(200,121,63,0.18),transparent_34%),linear-gradient(135deg,var(--surface-primary),var(--surface-secondary))] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8">
         <p className="text-sm font-semibold text-[var(--accent-strong)]">聞いてまねる</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">お手本を聞いて、声に出す</h1>
         <p className="mt-3 text-base font-semibold text-ink-800">{script.title}</p>
         <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
-          <a href="#listen-panel-shell" className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-white shadow-sm sm:w-auto">
+          <a href="#listen-panel-shell" className="inline-flex w-full justify-center rounded-2xl bg-[var(--studio-ink)] px-4 py-3 text-white shadow-[0_12px_28px_rgba(24,23,34,0.18)] sm:w-auto">
             {showCreatedHandoff ? "お手本へ進む" : "お手本を聞く"}
           </a>
         </div>
       </div>
 
       <div className="grid gap-4">
-        <div className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
+        <div className="rounded-[2rem] border border-[var(--line-subtle)] bg-[var(--surface-primary)] p-6 shadow-[var(--shadow-studio-soft)]">
           {listenBlockedKind ? (
             <>
               <ListenRecoverySection
@@ -180,19 +180,19 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
               />
             </div>
           )}
-          <section id="listen-practice-area" className="mt-6 rounded-[2rem] border border-[var(--line)] bg-ink-50 p-5">
-            <div className="rounded-[1.5rem] border border-[var(--line)] bg-white p-5">
+          <section id="listen-practice-area" className="mt-6 rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-5">
+            <div className="rounded-[1.5rem] border border-[var(--line-subtle)] bg-[var(--surface-paper)] p-5">
               <p className="text-xs font-semibold text-ink-500">英文スクリプト</p>
               <p className="mt-3 whitespace-pre-wrap text-lg leading-9 text-ink-900">{script.content}</p>
             </div>
-            <Link href={recordHref} className="mt-5 inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-5 py-4 text-sm font-semibold text-white shadow-sm sm:w-auto">
+            <Link href={recordHref} className="mt-5 inline-flex w-full justify-center rounded-2xl bg-[var(--record-accent)] px-5 py-4 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(220,91,75,0.2)] sm:w-auto">
               録音して評価へ進む
             </Link>
           </section>
         </div>
       </div>
 
-      <details className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
+      <details className="rounded-[2rem] border border-[var(--line-subtle)] bg-[var(--surface-secondary)] p-6">
         <summary className="cursor-pointer text-sm font-semibold text-ink-800">設定・管理を見る</summary>
         <div className="mt-5 space-y-5">
           <ScriptLoopStatusCard
@@ -256,21 +256,21 @@ function ListenRecoverySection({
   return (
     <>
       <div data-testid="listen-recovery-block" data-kind={kind}>
-        <section className={`rounded-[2rem] border px-6 py-6 shadow-sm ${getGuidanceToneClasses(guidance.tone)}`}>
+        <section className={`rounded-[2rem] border px-6 py-6 shadow-[var(--shadow-studio-soft)] ${getGuidanceToneClasses(guidance.tone)}`}>
           <p className="text-sm font-semibold text-[var(--accent-strong)]">うまくいかない時</p>
           <h2 className="mt-2 text-2xl font-semibold text-ink-900">{guidance.titleJa}</h2>
           <p className="mt-3 text-sm leading-6 text-ink-800">{guidance.summaryJa}</p>
           <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
-            <Link href={ctaHref} className="rounded-2xl bg-[var(--accent)] px-4 py-3 text-white">
+            <Link href={ctaHref} className="rounded-2xl bg-[var(--studio-ink)] px-4 py-3 text-white">
               {guidance.primaryActionLabelJa}
             </Link>
             {hasSavedAudio ? (
-              <a href="#listen-panel-shell" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
+              <a href="#listen-panel-shell" className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-ink-800">
                 保存済みのお手本を聞く
               </a>
             ) : null}
             {latestReviewHref ? (
-              <Link href={latestReviewHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
+              <Link href={latestReviewHref} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-ink-800">
                 最新結果
               </Link>
             ) : null}

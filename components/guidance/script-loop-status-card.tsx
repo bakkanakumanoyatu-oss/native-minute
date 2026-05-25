@@ -34,14 +34,14 @@ function getTrendLabel(improvementTrend: ScriptLoopStatusCardProps["improvementT
 
 function getStepClasses(active: boolean, available: boolean) {
   if (active) {
-    return "rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-semibold text-white";
+    return "rounded-full bg-[var(--studio-ink)] px-3 py-1 text-xs font-semibold text-white";
   }
 
   if (available) {
-    return "rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold text-ink-700";
+    return "rounded-full border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 py-1 text-xs font-semibold text-ink-700";
   }
 
-  return "rounded-full border border-dashed border-[var(--line)] bg-ink-50 px-3 py-1 text-xs font-semibold text-ink-500";
+  return "rounded-full border border-dashed border-[var(--line-subtle)] bg-[var(--surface-secondary)] px-3 py-1 text-xs font-semibold text-ink-500";
 }
 
 function getLoopSummary(input: {
@@ -140,7 +140,7 @@ export function ScriptLoopStatusCard({
   });
 
   return (
-    <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
+    <section className="rounded-[2rem] border border-[var(--line-subtle)] bg-[var(--surface-primary)] p-6 shadow-[var(--shadow-studio-soft)]">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">main loop</p>
@@ -148,8 +148,8 @@ export function ScriptLoopStatusCard({
           <p className="mt-3 text-sm leading-6 text-ink-700">{summary}</p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
-          <span className="rounded-full border border-[var(--line)] bg-ink-50 px-3 py-1 text-ink-700">保存済み結果 {takeCount}件</span>
-          <span className="rounded-full border border-[var(--line)] bg-ink-50 px-3 py-1 text-ink-700">{getTrendLabel(improvementTrend, takeCount)}</span>
+          <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 py-1 text-ink-700">保存済み結果 {takeCount}件</span>
+          <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 py-1 text-ink-700">{getTrendLabel(improvementTrend, takeCount)}</span>
         </div>
       </div>
 
@@ -178,17 +178,17 @@ export function ScriptLoopStatusCard({
 
       <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
         {currentStep !== "listen" ? (
-          <Link href={listenHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
+          <Link href={listenHref} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-ink-800">
             listen
           </Link>
         ) : null}
         {currentStep !== "record" ? (
-          <Link href={recordHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
+          <Link href={recordHref} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-ink-800">
             record
           </Link>
         ) : null}
         {hasLatestReview && (currentStep !== "review" || !isCurrentLatestReview) ? (
-          <Link href={latestReviewHref!} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
+          <Link href={latestReviewHref!} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-ink-800">
             最新結果を見る
           </Link>
         ) : null}

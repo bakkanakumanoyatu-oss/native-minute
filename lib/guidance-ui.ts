@@ -10,14 +10,14 @@ export type GuidanceActionKind =
 
 export function getGuidanceToneClasses(tone: GuidanceTone) {
   if (tone === "alert") {
-    return "border-amber-200 bg-amber-50";
+    return "border-[var(--line-inset)] bg-[var(--surface-notice)]";
   }
 
   if (tone === "focus") {
-    return "border-[var(--accent)] bg-[rgba(217,119,6,0.06)]";
+    return "border-[var(--line-inset)] bg-[var(--surface-inset)]";
   }
 
-  return "border-[var(--line)] bg-ink-50";
+  return "border-[var(--line-subtle)] bg-[var(--surface-secondary)]";
 }
 
 export function getGuidanceActionBadgeLabel(actionKind: GuidanceActionKind) {

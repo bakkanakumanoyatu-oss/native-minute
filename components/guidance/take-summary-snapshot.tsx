@@ -53,7 +53,7 @@ export function TakeSummarySnapshot({
   coachLabel?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4">
+    <div className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl">
           <p className="text-xs uppercase tracking-[0.18em] text-ink-500">{eyebrow}</p>
@@ -61,9 +61,9 @@ export function TakeSummarySnapshot({
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
           {showScoreChip ? (
-            <span className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-ink-700">総合 {take.score}</span>
+            <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-3 py-1 text-ink-700">総合 {take.score}</span>
           ) : null}
-          <span className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-ink-700">
+          <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-3 py-1 text-ink-700">
             {formatTakeTimestamp(take.reviewedAt ?? take.createdAt)}
           </span>
         </div>

@@ -260,7 +260,7 @@ export function SavedModelAudioControl({ scriptId, audioUrl }: SavedModelAudioCo
   }
 
   return (
-    <div data-testid="saved-model-audio-control" className="border-t border-[var(--line)] pt-4" aria-busy={mutating || loading}>
+    <div data-testid="saved-model-audio-control" className="border-t border-[var(--line-subtle)] pt-4" aria-busy={mutating || loading}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Audio Library</p>
@@ -292,7 +292,7 @@ export function SavedModelAudioControl({ scriptId, audioUrl }: SavedModelAudioCo
             type="button"
             onClick={handleUnsave}
             disabled={mutating}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--surface-inset-strong)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <X aria-hidden className="h-4 w-4" />
             {mutating ? "保存解除中..." : "保存を外す"}
@@ -302,7 +302,7 @@ export function SavedModelAudioControl({ scriptId, audioUrl }: SavedModelAudioCo
             type="button"
             onClick={handleSave}
             disabled={mutating || loading || !scriptAudioId}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--studio-ink)] px-4 py-3 text-sm font-semibold text-white shadow-[var(--shadow-studio-soft)] transition hover:bg-[var(--studio-ink-soft)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {scriptAudioId ? <BookmarkPlus aria-hidden className="h-4 w-4" /> : <BookmarkCheck aria-hidden className="h-4 w-4" />}
             {mutating ? "保存中..." : loading ? "確認中..." : "このお手本ボイスを保存"}
