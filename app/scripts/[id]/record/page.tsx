@@ -74,26 +74,30 @@ export default async function RecordPage({ params }: PageParams) {
 
   return (
     <section className="space-y-6">
-      <div data-testid="record-practice-first-view" className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.15),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.92))] p-6 shadow-soft sm:p-8">
-        <p className="text-sm font-semibold text-[var(--accent-strong)]">今日の Take</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">まず1テイク残す</h1>
-        <p className="mt-3 text-base font-semibold text-ink-800">{script.title}</p>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-700">
+      <div data-testid="record-practice-first-view" className="relative overflow-hidden rounded-[2rem] border border-ink-900 bg-[linear-gradient(135deg,#141622,#272a43)] p-6 text-white shadow-soft sm:p-8">
+        <div aria-hidden="true" className="absolute right-6 top-6 flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#f26d5b]" />
+          REC
+        </div>
+        <p className="text-sm font-semibold text-white/70">今日の Take</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">まず1テイク残す</h1>
+        <p className="mt-3 text-base font-semibold text-white/90">{script.title}</p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
           お手本をまねたら、30〜60秒で今日の Take を録ります。完璧より、まず1本残して評価へ進みます。
         </p>
-        <div className="mt-5 rounded-[1.5rem] border border-white/80 bg-white/85 p-5">
-          <p className="text-xs font-semibold text-ink-500">英文</p>
-          <p className="mt-2 whitespace-pre-wrap text-base leading-8 text-ink-900">{script.content}</p>
+        <div className="mt-5 rounded-[1.5rem] border border-white/15 bg-white/[0.08] p-5 shadow-sm">
+          <p className="text-xs font-semibold text-white/55">英文</p>
+          <p className="mt-2 whitespace-pre-wrap text-base leading-8 text-white">{script.content}</p>
         </div>
         <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
-          <a href="#record-evaluate-panel" className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-white shadow-sm sm:w-auto">
+          <a href="#record-evaluate-panel" className="inline-flex w-full justify-center rounded-2xl bg-[#f26d5b] px-4 py-3 text-white shadow-sm transition hover:bg-[#dc5b4b] sm:w-auto">
             Take を録る
           </a>
-          <Link href={listenHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800 sm:w-auto">
+          <Link href={listenHref} className="inline-flex w-full justify-center rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white transition hover:bg-white/15 sm:w-auto">
             もう一度まねる
           </Link>
           {latestReviewHref ? (
-            <Link href={latestReviewHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800 sm:w-auto">
+            <Link href={latestReviewHref} className="inline-flex w-full justify-center rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white transition hover:bg-white/15 sm:w-auto">
               次はここだけを見る
             </Link>
           ) : null}
