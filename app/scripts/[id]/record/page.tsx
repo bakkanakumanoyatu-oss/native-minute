@@ -47,16 +47,16 @@ export default async function RecordPage({ params }: PageParams) {
     return (
       <section className="space-y-6">
         <StateStepSection
-          title="録音する台本が見つからない状態"
-          summary="対象の台本を取得できませんでした。練習一覧から選び直します。"
+          title="今日の1分が見つかりません"
+          summary="対象の1分を取得できませんでした。1分ストックから選び直します。"
           tone="alert"
         />
         <StateActionSection
           eyebrow="設定・管理"
           title="戻る先を決める"
-          summary="まず練習一覧に戻って対象を選び直します。"
+          summary="まず1分ストックに戻って対象を選び直します。"
           actions={[
-            { label: "練習一覧", href: "/scripts", tone: "primary" }
+            { label: "1分ストック", href: "/scripts", tone: "primary" }
           ]}
         />
         <StateActionSection
@@ -75,11 +75,11 @@ export default async function RecordPage({ params }: PageParams) {
   return (
     <section className="space-y-6">
       <div data-testid="record-practice-first-view" className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.15),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.92))] p-6 shadow-soft sm:p-8">
-        <p className="text-sm font-semibold text-[var(--accent-strong)]">録る</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">自分の声で録る</h1>
+        <p className="text-sm font-semibold text-[var(--accent-strong)]">今日の Take</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">まず1テイク残す</h1>
         <p className="mt-3 text-base font-semibold text-ink-800">{script.title}</p>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-700">
-          見本をまねて、30〜60秒を目安に録音します。細かい設定より、まず1回録って評価へ進みます。
+          お手本をまねたら、30〜60秒で今日の Take を録ります。完璧より、まず1本残して評価へ進みます。
         </p>
         <div className="mt-5 rounded-[1.5rem] border border-white/80 bg-white/85 p-5">
           <p className="text-xs font-semibold text-ink-500">英文</p>
@@ -87,14 +87,14 @@ export default async function RecordPage({ params }: PageParams) {
         </div>
         <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
           <a href="#record-evaluate-panel" className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-white shadow-sm sm:w-auto">
-            マイクで録音する
+            Take を録る
           </a>
           <Link href={listenHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800 sm:w-auto">
-            お手本を聞く
+            もう一度まねる
           </Link>
           {latestReviewHref ? (
             <Link href={latestReviewHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800 sm:w-auto">
-              直すところを見る
+              次はここだけを見る
             </Link>
           ) : null}
         </div>
@@ -108,7 +108,7 @@ export default async function RecordPage({ params }: PageParams) {
             chunks={practiceChunks}
             focusWords={practiceFocusWords}
             summary="録音では全文を一気に急がず、意味の塊ごとに息継ぎします。速さより区切りを優先し、最後の語尾まで落とさず言い切ります。"
-            actionCue="録音前に chunk 1 から順番に口だけで確認"
+            actionCue="録る前に、区切り1から声に出して確認"
           />
 
         </div>

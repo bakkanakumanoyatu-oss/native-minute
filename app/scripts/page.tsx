@@ -62,10 +62,10 @@ function getCardPrimaryLabel(item: ScriptProgressItem, input: { voiceReady: bool
   }
 
   if (input.canRecord && item.takeCount > 0 && item.improvementTrend === "up") {
-    return "録る";
+    return "Take を録る";
   }
 
-  return "練習する";
+  return "1分を始める";
 }
 
 function getFirstLine(content: string) {
@@ -109,21 +109,21 @@ export default async function ScriptsPage() {
       <div className="overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.18),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(239,248,246,0.92))] p-6 shadow-soft sm:p-8 lg:p-10">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
           <div>
-            <p className="text-sm font-semibold text-[var(--accent-strong)]">練習ストック</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">自分の練習場</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-ink-700">5本まで置いて、今日やる1本を選びます。</p>
+            <p className="text-sm font-semibold text-[var(--accent-strong)]">1分ストック</p>
+            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">今日録る1本を選ぶ</h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-ink-700">5本まで置いて、今日の Take を残す1本を選びます。</p>
           </div>
           <div className="rounded-[1.75rem] border border-white/80 bg-white/90 p-6 shadow-sm">
-            <p className="text-sm font-semibold text-ink-900">ストック</p>
-            <p className="mt-2 text-4xl font-semibold tracking-tight text-[var(--accent-strong)]">練習課題 {Math.min(scripts.length, MAX_VISIBLE_PRACTICES)} / {MAX_VISIBLE_PRACTICES}</p>
+            <p className="text-sm font-semibold text-ink-900">今日の1分</p>
+            <p className="mt-2 text-4xl font-semibold tracking-tight text-[var(--accent-strong)]">1分ストック {Math.min(scripts.length, MAX_VISIBLE_PRACTICES)} / {MAX_VISIBLE_PRACTICES}</p>
             <p className="mt-1 text-sm leading-6 text-ink-600">
-              {scripts.length === 0 ? "まず1本作ります。" : hiddenScriptCount > 0 ? `表示は5個まで。ほか ${hiddenScriptCount} 件は絞っています。` : "5個までストックできます。"}
+              {scripts.length === 0 ? "まず1テイク用の1本を作ります。" : hiddenScriptCount > 0 ? `表示は5個まで。ほか ${hiddenScriptCount} 件は絞っています。` : "5本まで置けます。"}
             </p>
           </div>
         </div>
         <div className="mt-8 flex flex-col gap-3 text-sm font-semibold sm:flex-row sm:items-center">
           <p className="text-sm leading-6 text-ink-700">
-            {scripts.length > 0 ? "今ある練習から選びます。" : "まずは新しい1分を作ります。"}
+            {scripts.length > 0 ? "今ある1分から選びます。" : "まずは新しい1分を作ります。"}
           </p>
           {scripts.length < MAX_VISIBLE_PRACTICES ? (
             <Link href="/scripts/new" className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-5 py-4 text-white shadow-sm transition hover:bg-[var(--accent-strong)] sm:w-auto">
@@ -156,10 +156,10 @@ export default async function ScriptsPage() {
 
       {scripts.length === 0 ? (
         <div className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-semibold text-ink-900">最初の1本を作りましょう。</h2>
+          <h2 className="text-2xl font-semibold text-ink-900">最初の1分を作りましょう。</h2>
           <p className="mt-3 text-sm leading-6 text-ink-600">映画やドラマのセリフっぽい言い回し、仕事、旅行、自己紹介など、話してみたいテーマから始められます。</p>
           <Link href="/scripts/new" className="mt-5 inline-flex rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white">
-            練習文を作る
+            1分を作る
           </Link>
         </div>
       ) : (
@@ -175,15 +175,15 @@ export default async function ScriptsPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-2xl font-semibold text-ink-900">{item.script.title}</h2>
                       <span className="rounded-full bg-ink-50 px-3 py-1 text-xs font-semibold text-ink-600">
-                        {item.takeCount > 0 ? `練習 ${item.takeCount}回` : "未着手"}
+                        {item.takeCount > 0 ? `Take ${item.takeCount}回` : "まだ録っていない"}
                       </span>
                     </div>
                     <p className="mt-4 text-base leading-7 text-ink-700">{getFirstLine(item.script.content)}</p>
                   </div>
                   <div className="rounded-[1.5rem] border border-[var(--line)] bg-ink-50 p-5">
-                    <p className="text-xs font-semibold text-ink-500">最新スコア</p>
+                    <p className="text-xs font-semibold text-ink-500">最新テイク</p>
                     <p className="mt-1 text-4xl font-semibold text-ink-900">{item.latestTake?.score ?? "-"}</p>
-                    <p className="mt-3 text-xs font-semibold text-ink-500">練習メモ</p>
+                    <p className="mt-3 text-xs font-semibold text-ink-500">次はここだけ</p>
                     <p className="mt-1 text-sm font-semibold text-[var(--accent-strong)]">{getNextAction(item, { voiceReady, canRecord })}</p>
                   </div>
                 </div>

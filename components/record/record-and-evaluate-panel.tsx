@@ -346,7 +346,7 @@ export function RecordAndEvaluatePanel({
     }
 
     if (!selectedFile) {
-      setErrorMessage("先にマイクで録音してください。録音済みファイルを使う場合はファイル用メニューを開きます。", "record", 400);
+      setErrorMessage("先にマイクで Take を録ってください。録音済みファイルを使う場合はファイル用メニューを開きます。", "record", 400);
       return;
     }
 
@@ -467,14 +467,14 @@ export function RecordAndEvaluatePanel({
   const submitLabel = isPreparingUploadFile
     ? "wav/PCM へ変換中..."
     : isUploading
-    ? "録音を保存中..."
+    ? "Take を保存中..."
     : isEvaluating
       ? "評価中..."
       : uploadedRecording && messagePhase === "evaluate" && messageKind === "error"
-        ? "保存済み録音で評価を再試行する"
+        ? "保存済み Take で評価を再試行する"
       : uploadedRecording
-        ? "保存済み録音で評価を続ける"
-      : "評価して保存する";
+        ? "保存済み Take で評価を続ける"
+      : "この Take で評価する";
   const canShowPrepareActions = !selectedFile && canSaveEvaluation;
   const showNextAction = Boolean(selectedFile || recoveryGuidance || canShowPrepareActions || !canSaveEvaluation);
   const nextActionActions: RecordDecisionAction[] = recoveryGuidance
@@ -492,7 +492,7 @@ export function RecordAndEvaluatePanel({
         },
         {
           id: "clear-recording",
-          label: uploadedRecording ? "録音を差し替える" : "録音を準備し直す",
+          label: uploadedRecording ? "Take を差し替える" : "Take を録り直す",
           tone: "secondary",
           disabled: isBusy || !selectedFile,
           onClick: handleClearSelectedRecording
@@ -501,7 +501,7 @@ export function RecordAndEvaluatePanel({
           ? [
               {
                 id: "return-listen",
-                label: "見本を聞き直す",
+                label: "もう一度まねる",
                 tone: "secondary" as const,
                 disabled: isBusy,
                 onClick: () => {
@@ -524,7 +524,7 @@ export function RecordAndEvaluatePanel({
           },
         {
           id: "clear-recording",
-          label: uploadedRecording ? "録音を差し替える" : "録音を作り直す",
+          label: uploadedRecording ? "Take を差し替える" : "Take を録り直す",
           tone: "secondary",
           disabled: isBusy,
           onClick: handleClearSelectedRecording
@@ -533,7 +533,7 @@ export function RecordAndEvaluatePanel({
           ? [
               {
                 id: "return-listen",
-                label: "見本を聞き直す",
+                label: "もう一度まねる",
                 tone: "secondary" as const,
                 disabled: isBusy,
                 onClick: () => {
@@ -547,7 +547,7 @@ export function RecordAndEvaluatePanel({
         ? [
             {
               id: "start-recording",
-              label: isRecording ? "録音を止める" : isStartingRecording ? "マイクを準備中..." : "マイクで録音する",
+              label: isRecording ? "録音を止める" : isStartingRecording ? "マイクを準備中..." : "マイクで Take を録る",
               tone: "primary",
               disabled: isRecordButtonBusy,
               onClick: () => {
@@ -563,7 +563,7 @@ export function RecordAndEvaluatePanel({
               ? [
                   {
                     id: "return-listen",
-                    label: "先に見本を聞く",
+                    label: "先にお手本をまねる",
                     tone: "secondary" as const,
                     disabled: isBusy,
                     onClick: () => {
@@ -579,7 +579,7 @@ export function RecordAndEvaluatePanel({
               ? [
                   {
                     id: "return-listen",
-                    label: "聞く画面に戻る",
+                    label: "お手本へ戻る",
                     tone: "primary" as const,
                     onClick: () => {
                       router.push(listenHref);
@@ -589,7 +589,7 @@ export function RecordAndEvaluatePanel({
               : []),
             {
               id: "return-scripts",
-              label: "scripts に戻る",
+              label: "1分ストックに戻る",
               tone: "secondary",
               onClick: () => {
                 router.push("/scripts");
@@ -602,7 +602,7 @@ export function RecordAndEvaluatePanel({
               ? [
                   {
                     id: "return-listen",
-                    label: "聞く画面に戻る",
+                    label: "お手本へ戻る",
                     tone: "primary" as const,
                     onClick: () => {
                       router.push(listenHref);
@@ -624,7 +624,7 @@ export function RecordAndEvaluatePanel({
             aria-busy={isStartingRecording}
             className="inline-flex items-center justify-center rounded-2xl bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isRecording ? "録音を止める" : isStartingRecording ? "マイクを準備中..." : "マイクで録音する"}
+            {isRecording ? "録音を止める" : isStartingRecording ? "マイクを準備中..." : "マイクで Take を録る"}
           </button>
 
           {selectedFile ? (
@@ -634,13 +634,13 @@ export function RecordAndEvaluatePanel({
               disabled={isBusy}
               className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              録音を消す
+              Take を消す
             </button>
           ) : null}
         </div>
 
         <details className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3">
-          <summary className="cursor-pointer text-sm font-semibold text-ink-800">音声ファイルを使う</summary>
+          <summary className="cursor-pointer text-sm font-semibold text-ink-800">録音済みファイルを使う</summary>
           <p className="mt-3 text-sm leading-6 text-ink-600">手元に録音済みの音声がある場合だけ使います。</p>
           <label className="mt-3 inline-flex cursor-pointer items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
             ファイルを選択
@@ -663,7 +663,7 @@ export function RecordAndEvaluatePanel({
 
         {selectedFile ? (
           <div data-testid="record-selected-file" className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
-            <p className="text-xs font-semibold text-ink-500">録音状態</p>
+            <p className="text-xs font-semibold text-ink-500">今回の Take</p>
             <p className="text-sm font-semibold text-ink-900">{selectedFile.name}</p>
             <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink-500">
               {selectedFile.type || "音声ファイル"} / {Math.round(selectedFile.size / 1024)}KB / {durationSeconds ?? "未計測"}秒
@@ -680,16 +680,16 @@ export function RecordAndEvaluatePanel({
             ) : null}
             {uploadedRecording && !isBusy ? (
               <p data-testid="record-upload-reuse-hint" className="mt-3 text-sm text-ink-600">
-                この録音で評価をもう一度試せます。
+                この Take で評価をもう一度試せます。
               </p>
             ) : null}
           </div>
         ) : (
-          <p className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4 text-sm leading-6 text-ink-700">まだ録音はありません。</p>
+          <p className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4 text-sm leading-6 text-ink-700">まだ Take はありません。</p>
         )}
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-ink-700">録音秒数</span>
+          <span className="text-sm font-medium text-ink-700">Take の秒数</span>
           <input
             value={durationSeconds ?? ""}
             onChange={(event) => setDurationSeconds(event.target.value ? Number(event.target.value) : null)}

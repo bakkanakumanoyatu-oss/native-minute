@@ -42,14 +42,14 @@ export default async function HomePage() {
       <div className="grid gap-4 md:grid-cols-2">
         <HomeActionCard
           href={user ? "/scripts" : "/login"}
-          title={user ? "Practice へ進む" : "ログインして始める"}
-          summary={user ? "5本までの練習ストックから、今日やる1本を選びます。" : "ログインすると練習ストックを作れます。"}
+          title={user ? "今日の1分スタジオへ" : "ログインして始める"}
+          summary={user ? "5本までの1分ストックから、今日の Take を録る1本を選びます。" : "ログインすると今日の1分を作れます。"}
           primary
         />
         <HomeActionCard
           href={user ? "/progress" : "/login"}
-          title="Progress を見る"
-          summary="ベスト録音、最新結果、保存済みの成果を確認します。"
+          title="声のログを見る"
+          summary="ベストテイク、最新テイク、これまでの成果を確認します。"
         />
       </div>
 
