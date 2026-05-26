@@ -182,7 +182,10 @@ export function ListenPanel({
       {audioUrl ? (
         <div data-testid="listen-audio-block" className="space-y-3 rounded-[1.75rem] border border-[var(--line-dark)] bg-[var(--control-panel)] px-4 py-4 text-[var(--cta-primary-text)] shadow-[0_18px_44px_rgba(24,23,34,0.22)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-[var(--cta-primary-text)]">お手本ボイス</p>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(255,241,221,0.62)]">Native voice</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--cta-primary-text)]">お手本ボイス</p>
+            </div>
             {voiceLabel ? <p className="text-xs font-semibold text-[rgba(255,241,221,0.68)]">{voiceLabel}</p> : null}
           </div>
           <PlaybackRateControl

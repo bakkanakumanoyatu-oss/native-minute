@@ -116,13 +116,13 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
   return (
     <section className="space-y-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
       <div data-testid="listen-practice-first-view" className="overflow-hidden rounded-[2rem] border border-[var(--line-inset)] bg-[radial-gradient(circle_at_top_left,rgba(200,121,63,0.2),transparent_34%),linear-gradient(135deg,var(--studio-surface-secondary),var(--booth-wall-soft)_58%,var(--studio-surface-inset))] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8">
-        <p className="text-sm font-semibold text-[var(--studio-accent-strong)]">耳を合わせる</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">お手本のリズムを耳に入れる</h1>
+        <p className="text-sm font-semibold text-[var(--studio-accent-strong)]">Native voice</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">お手本ボイスを聞く</h1>
         <p className="mt-3 text-base font-semibold text-ink-800">{script.title}</p>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-700">台本を見ながら、下の操作バーで何度も戻してまねます。</p>
         <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
           <a href="#listen-panel-shell" className="inline-flex w-full justify-center rounded-2xl bg-[var(--cta-primary-bg)] px-4 py-3 text-[var(--cta-primary-text)] shadow-[0_12px_28px_rgba(24,23,34,0.18)] transition hover:opacity-90 sm:w-auto">
-            {showCreatedHandoff ? "お手本へ進む" : "リズムを聞く"}
+            {showCreatedHandoff ? "お手本へ進む" : "お手本を聞く"}
           </a>
         </div>
       </div>
