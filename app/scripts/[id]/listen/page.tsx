@@ -6,7 +6,7 @@ import { createPracticeChunks } from "@/lib/script-practice-chunks";
 import { getScriptListenPath, getScriptRecordPath, getScriptReviewPath } from "@/lib/script-routes";
 import { getGuidanceToneClasses } from "@/lib/guidance-ui";
 import { getListenRecoveryGuidance } from "@/lib/listen-recovery-guidance";
-import { getProgressOverview } from "@/services/progress";
+import { getScriptProgressSummary, type ScriptProgressItem } from "@/services/progress";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getScript } from "@/services/scripts/scripts.service";
@@ -77,12 +77,11 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
     );
   }
 
-  const [voiceSetup, cachedAudio, overview] = await Promise.all([
+  const [voiceSetup, cachedAudio, progressItem] = await Promise.all([
     timeAsync("listen.page.voiceSetup", () => getVoiceSetupState(supabase, user.id)),
     timeAsync("listen.page.cachedAudio", () => getCachedListenAudio(supabase, user.id, script.id)),
-    timeAsync("listen.page.progressOverview", () => getProgressOverview(supabase, user.id))
+    timeAsync("listen.page.progressSummary", () => getScriptProgressSummary(supabase, user.id, script))
   ]);
-  const progressItem = overview.scripts.find((item) => item.script.id === id) ?? null;
   const latestReviewHref = progressItem?.latestTake ? getScriptReviewPath(script.id, progressItem.latestTake.id) : null;
   const practiceChunks = createPracticeChunks(script.content);
   const practiceFocusWords = getPracticeFocusWords(progressItem);
@@ -216,7 +215,7 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
   );
 }
 
-function getPracticeFocusWords(progressItem: Awaited<ReturnType<typeof getProgressOverview>>["scripts"][number] | null) {
+function getPracticeFocusWords(progressItem: ScriptProgressItem | null) {
   if (!progressItem?.latestTake) {
     return [];
   }

@@ -6,7 +6,7 @@ import { createPracticeChunks } from "@/lib/script-practice-chunks";
 import { getScriptListenPath, getScriptRecordPath, getScriptReviewPath } from "@/lib/script-routes";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getProgressOverview } from "@/services/progress";
+import { getScriptProgressSummary, type ScriptProgressItem } from "@/services/progress";
 import { getPronunciationProviderStatus } from "@/services/pronunciation";
 import { getScript } from "@/services/scripts/scripts.service";
 import { getTranscriptionProviderStatus } from "@/services/transcription";
@@ -38,8 +38,7 @@ export default async function RecordPage({ params }: PageParams) {
   const script = await timeAsync("record.page.script", () => getScript(supabase, user.id, id));
   const transcriptionStatus = getTranscriptionProviderStatus();
   const pronunciationStatus = getPronunciationProviderStatus();
-  const overview = await timeAsync("record.page.progressOverview", () => getProgressOverview(supabase, user.id));
-  const progressItem = overview.scripts.find((item) => item.script.id === id) ?? null;
+  const progressItem = script ? await timeAsync("record.page.progressSummary", () => getScriptProgressSummary(supabase, user.id, script)) : null;
   const latestReviewHref = progressItem?.latestTake ? getScriptReviewPath(id, progressItem.latestTake.id) : null;
   const practiceChunks = createPracticeChunks(script?.content ?? "");
   const practiceFocusWords = getPracticeFocusWords(progressItem);
@@ -162,7 +161,7 @@ export default async function RecordPage({ params }: PageParams) {
   );
 }
 
-function getPracticeFocusWords(progressItem: Awaited<ReturnType<typeof getProgressOverview>>["scripts"][number] | null) {
+function getPracticeFocusWords(progressItem: ScriptProgressItem | null) {
   if (!progressItem?.latestTake) {
     return [];
   }

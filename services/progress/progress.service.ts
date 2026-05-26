@@ -197,6 +197,84 @@ async function getHydratedReviews(client: AppSupabaseClient, userId: string) {
   });
 }
 
+async function getHydratedReviewsForScript(client: AppSupabaseClient, userId: string, scriptId: string) {
+  return timeAsync("progress.hydratedReviewsForScript", async () => {
+    const [takesResult, weakWordsResult, coachFeedbackResult] = await Promise.all([
+      client
+        .from("takes")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("script_id", scriptId)
+        .order("created_at", { ascending: false }),
+      client
+        .from("weak_words")
+        .select("*, takes!inner(user_id, script_id)")
+        .eq("takes.user_id", userId)
+        .eq("takes.script_id", scriptId)
+        .order("created_at", { ascending: true }),
+      client
+        .from("coach_feedback")
+        .select("*, takes!inner(user_id, script_id)")
+        .eq("takes.user_id", userId)
+        .eq("takes.script_id", scriptId)
+    ]);
+    const { data: takes, error: takesError } = asMany<TakeRow>(takesResult);
+    const { data: weakWords, error: weakWordsError } = weakWordsResult;
+    const { data: coachFeedback, error: coachFeedbackError } = coachFeedbackResult;
+
+    if (takesError) {
+      throw mapProgressError("script take 一覧取得", takesError);
+    }
+
+    if (weakWordsError) {
+      throw mapProgressError("script weak_words 取得", weakWordsError);
+    }
+
+    if (coachFeedbackError) {
+      throw mapProgressError("script coach_feedback 取得", coachFeedbackError);
+    }
+
+    const weakWordsByTakeId = new Map<string, WeakWordRow[]>();
+    for (const row of (weakWords ?? []) as Array<WeakWordRow & { takes: { user_id: string; script_id: string } }>) {
+      const list = weakWordsByTakeId.get(row.take_id) ?? [];
+      list.push({
+        id: row.id,
+        take_id: row.take_id,
+        word: row.word,
+        score: row.score,
+        note: row.note,
+        created_at: row.created_at
+      });
+      weakWordsByTakeId.set(row.take_id, list);
+    }
+
+    const coachByTakeId = new Map<string, CoachFeedbackRow>();
+    for (const row of (coachFeedback ?? []) as Array<CoachFeedbackRow & { takes: { user_id: string; script_id: string } }>) {
+      coachByTakeId.set(row.take_id, {
+        id: row.id,
+        take_id: row.take_id,
+        locale: row.locale,
+        title: row.title,
+        summary: row.summary,
+        bullets: row.bullets,
+        next_step: row.next_step,
+        focus_words: row.focus_words,
+        created_at: row.created_at
+      });
+    }
+
+    return (takes ?? []).map((take) =>
+      hydrateStoredReview(
+        toStoredTakeReview(
+          take,
+          weakWordsByTakeId.get(take.id) ?? [],
+          coachByTakeId.get(take.id) ?? null
+        )
+      )
+    );
+  });
+}
+
 function toScriptProgressItem(script: ScriptListItem, reviews: HydratedTakeReview[]): ScriptProgressItem {
   const sortedByCreated = [...reviews].sort((a, b) => (a.take.created_at < b.take.created_at ? 1 : -1));
   const latest = sortedByCreated[0] ? toProgressTakeSummary(sortedByCreated[0]) : null;
@@ -221,6 +299,10 @@ function toScriptProgressItem(script: ScriptListItem, reviews: HydratedTakeRevie
     latestVsBest: latest && bestSummary && latest.id !== bestSummary.id ? buildTakeDiff(latest, bestSummary) : null,
     improvementTrend: getImprovementTrend(latest, previous)
   };
+}
+
+export async function getScriptProgressSummary(client: AppSupabaseClient, userId: string, script: ScriptListItem): Promise<ScriptProgressItem> {
+  return timeAsync("progress.scriptSummary", async () => toScriptProgressItem(script, await getHydratedReviewsForScript(client, userId, script.id)));
 }
 
 export async function getProgressOverview(client: AppSupabaseClient, userId: string): Promise<ProgressOverview> {

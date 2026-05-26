@@ -325,7 +325,8 @@
 - Authenticated timing の測定順と判断基準は `docs/performance-audit.md` の runbook に固定した。`npm run performance:timing-smoke` は既存 storageState があれば protected route を叩けるが、結果は HTTP status / duration だけに留め、実測値は server console の `[timing]` label を読む。
 - 2026-05-26 の local authenticated timing では、mock provider 前提で Progress の Audio Library read、evaluate の storage download / persistence、protected audio replay、Review の複数 loading path が目立った。詳細は `docs/performance-audit.md` の timing run を見る。
 - Progress Audio Library deferral / selected-slot scope として、`/progress` の初期表示では選択中 script の保存済みお手本 / ベスト録音だけを読むようにした。slot 選択、latest / best、保存済み録音の表示意味は維持し、DB / API / auth / storage policy は変えていない。
-- 次の速度改善は、DB / API / auth / storage / provider contract を変えずに、Listen・Record 向け selected-script summary、続いて Review data loading consolidation の順で小さく進める。
+- Listen / Record 向け selected-script summary として、両画面の初期表示では全 script の `getProgressOverview()` を読まず、対象 script の take / weak words / coach feedback だけを hydrate するようにした。latest / best / next step / status card の意味は維持し、DB / API / auth / storage policy は変えていない。
+- 次の速度改善は、DB / API / auth / storage / provider contract を変えずに、Review data loading consolidation を小さく進める。
 - Gate1b の protected replay / cross-user ownership proof は human browser で PASS。User A の script-audio / take-audio replay は 200 相当で再生でき、User B では同じ音声が 403/404 相当で再生できなかった。raw URL / raw id / signed URL / user id / storage path は記録していない。
 - main loop の retry UX と、次の一手の分かりやすさを small diff で上げ続ける。
 - voice provider 本接続の準備を、小さい差分で進める。
