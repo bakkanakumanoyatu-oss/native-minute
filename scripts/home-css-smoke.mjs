@@ -60,7 +60,7 @@ if (status !== 200) {
   failures.push(`Expected HTTP 200, got ${status}`);
 }
 
-if (result.h1 !== "1分英語を、お手本で聞いて、自分で録って、成果を見る。") {
+if (result.h1 !== "今日の1分スタジオに入る。") {
   failures.push(`Expected Home h1, got "${result.h1}"`);
 }
 

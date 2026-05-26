@@ -19,8 +19,8 @@ function HomeActionCard({
       href={href}
       className={`relative overflow-hidden rounded-[2rem] border p-6 transition hover:-translate-y-0.5 ${
         primary
-          ? "border-[var(--studio-ink)] bg-[var(--studio-ink)] text-white shadow-[var(--shadow-studio-soft)] hover:shadow-[var(--shadow-studio-lift)]"
-          : "border-[var(--line-subtle)] bg-[linear-gradient(135deg,var(--surface-secondary),var(--surface-inset))] text-ink-900 hover:shadow-[0_18px_44px_rgba(45,38,31,0.1)]"
+          ? "border-[var(--line-dark)] bg-[linear-gradient(135deg,var(--studio-ink),var(--studio-ink-soft))] text-white shadow-[var(--shadow-studio-soft)] hover:shadow-[var(--shadow-studio-lift)]"
+          : "border-[var(--line-inset)] bg-[linear-gradient(135deg,var(--surface-primary),var(--surface-secondary))] text-ink-900 hover:shadow-[0_18px_44px_rgba(45,38,31,0.1)]"
       }`}
     >
       <span
@@ -42,26 +42,38 @@ export default async function HomePage() {
 
   return (
     <section className="space-y-6">
-      <div className="relative overflow-hidden rounded-[2rem] border border-[var(--line-dark)] bg-[linear-gradient(135deg,#181722,#2b2d44_62%,#3b4058)] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8 lg:p-10">
-        <div className="absolute bottom-6 right-6 hidden w-44 rounded-[1.5rem] border border-[var(--line-dark)] bg-[rgba(220,196,170,0.22)] p-4 shadow-[0_16px_44px_rgba(0,0,0,0.16)] backdrop-blur sm:block">
-          <div aria-hidden="true" className="flex h-10 items-end gap-1.5 text-[var(--studio-accent)]">
-            {[18, 28, 14, 34, 22, 30].map((height, index) => (
-              <span key={index} className="w-2 rounded-full bg-current" style={{ height }} />
-            ))}
+      <div className="relative overflow-hidden rounded-[2rem] border border-[var(--line-dark)] bg-[radial-gradient(circle_at_20%_10%,rgba(200,121,63,0.22),transparent_34%),linear-gradient(135deg,#181722,#272a3d_62%,#34384d)] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8 lg:p-10">
+        <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
+          <div>
+            <p className="text-sm font-semibold text-white/80">Native Minute</p>
+            <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+              今日の1分スタジオに入る。
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70">
+              お手本のリズムを耳に入れて、まず1テイクを残します。
+            </p>
           </div>
-          <p className="mt-3 text-xs font-semibold text-[var(--studio-muted)]">1 minute voice studio</p>
+
+          <div className="rounded-[1.5rem] border border-[var(--line-dark)] bg-[rgba(255,241,221,0.1)] p-4 shadow-[0_16px_44px_rgba(0,0,0,0.16)] backdrop-blur">
+            <div className="rounded-[1.25rem] border border-[rgba(255,241,221,0.18)] bg-[rgba(255,241,221,0.12)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">today</p>
+              <p className="mt-2 text-lg font-semibold tracking-tight text-white">台本を選ぶ</p>
+              <p className="mt-2 text-xs leading-5 text-white/70">5本までの1分ストックから、今日録る1本へ。</p>
+            </div>
+            <div aria-hidden="true" className="mt-4 flex h-10 items-end gap-1.5 text-[var(--studio-accent)]">
+              {[18, 28, 14, 34, 22, 30].map((height, index) => (
+                <span key={index} className="w-2 rounded-full bg-current" style={{ height }} />
+              ))}
+            </div>
+          </div>
         </div>
-        <p className="text-sm font-semibold text-white/80">Native Minute</p>
-        <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          1分英語を、お手本で聞いて、自分で録って、成果を見る。
-        </h1>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <HomeActionCard
           href={user ? "/scripts" : "/login"}
-          title={user ? "今日の1分スタジオへ" : "ログインして始める"}
-          summary={user ? "5本までの1分ストックから、今日の Take を録る1本を選びます。" : "ログインすると今日の1分を作れます。"}
+          title={user ? "1分を始める" : "ログインして始める"}
+          summary={user ? "今日録る1本を選んで、リズムを聞いてから Take へ進みます。" : "ログインすると今日の1分を作れます。"}
           primary
         />
         <HomeActionCard
@@ -73,11 +85,14 @@ export default async function HomePage() {
       </div>
 
       {user ? (
-        <div className="rounded-[2rem] border border-[var(--line-subtle)] bg-[var(--surface-secondary)] px-5 py-4">
-          <Link href="/setup/voice" className="text-sm font-semibold text-[var(--studio-accent-strong)]">
-            声の設定
-          </Link>
-          <p className="mt-1 text-sm leading-6 text-ink-600">お手本ボイスを作る時だけ使います。</p>
+        <div className="rounded-[2rem] border border-[var(--line-subtle)] bg-[var(--surface-secondary)] px-5 py-4 shadow-[0_14px_34px_rgba(45,38,31,0.06)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8c5f37]">settings</p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-6 text-ink-600">お手本ボイスを作る時だけ使います。</p>
+            <Link href="/setup/voice" className="text-sm font-semibold text-[var(--studio-accent-strong)]">
+              声の設定
+            </Link>
+          </div>
         </div>
       ) : null}
     </section>
