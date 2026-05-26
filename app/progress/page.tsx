@@ -52,8 +52,9 @@ export default async function ProgressPage({ searchParams }: PageProps) {
 
   const supabase = createSupabaseServerClient();
   const overview = await getProgressOverview(supabase, authState.user.id);
-  const slots = overview.scripts.slice(0, 5);
+  const slots = getVisibleProgressSlots(overview.scripts, resolvedSearchParams?.scriptId);
   const selectedItem = slots.find((item) => item.script.id === resolvedSearchParams?.scriptId) ?? slots[0] ?? null;
+  const selectedSlotNumber = selectedItem ? slots.findIndex((item) => item.script.id === selectedItem.script.id) + 1 : null;
   const audioLibraryByScriptId = await getProgressAudioLibraryByScriptId(
     supabase,
     authState.user.id,
@@ -81,6 +82,7 @@ export default async function ProgressPage({ searchParams }: PageProps) {
       <ProgressSlotSelector slots={slots} selectedScriptId={selectedItem?.script.id ?? null} />
       <ProgressSlotResult
         item={selectedItem}
+        slotNumber={selectedSlotNumber}
         library={selectedItem ? audioLibraryByScriptId.get(selectedItem.script.id) ?? getEmptyProgressAudioLibraryState(false) : getEmptyProgressAudioLibraryState(false)}
       />
     </section>
@@ -135,11 +137,14 @@ function ProgressSlotSelector({
             data-testid={`progress-script-card-${item.script.id}`}
             className={`rounded-[1.25rem] border p-4 text-left transition ${
               isSelected
-                ? "border-[var(--line-inset)] bg-[var(--surface-log-shelf)] shadow-[var(--shadow-studio-soft)]"
+                ? "border-[#6f5236] bg-[var(--surface-paper)] shadow-[var(--shadow-studio-soft)] ring-1 ring-[#6f5236]/15"
                 : "border-[var(--line-subtle)] bg-[var(--surface-secondary)] hover:border-[var(--line-inset)]"
             }`}
           >
-            <span className="text-xs font-semibold text-[#8c5f37]">slot {index + 1}</span>
+            <span className="flex items-center justify-between gap-2 text-xs font-semibold text-[#8c5f37]">
+              <span>slot {index + 1}</span>
+              {isSelected ? <span className="rounded-full bg-[rgba(111,82,54,0.12)] px-2 py-1 text-[11px] text-[#5f432b]">選択中</span> : null}
+            </span>
             <span className="mt-2 line-clamp-2 block text-sm font-semibold text-ink-900">{item.script.title}</span>
             <span className="mt-3 block text-xs text-ink-600">{score === null ? "まだ録っていない" : `ベスト ${score}`}</span>
           </Link>
@@ -151,20 +156,26 @@ function ProgressSlotSelector({
 
 function ProgressSlotResult({
   item,
+  slotNumber,
   library
 }: {
   item: ScriptProgressItem | null;
+  slotNumber: number | null;
   library: ProgressAudioLibraryState;
 }) {
   if (!item) {
     return null;
   }
 
+  const latestTake = getTakeForScript(item.latestTake, item.script.id);
+  const bestTake = getTakeForScript(item.bestTake, item.script.id);
+  const selectedLibrary = getLibraryForScript(library, item.script.id);
+
   return (
     <div className="space-y-5">
       <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-paper)] p-6 shadow-[var(--shadow-studio-soft)]">
         <div>
-          <p className="text-sm font-semibold text-[#8c5f37]">次に戻る1分</p>
+          <p className="text-sm font-semibold text-[#8c5f37]">{slotNumber ? `slot ${slotNumber} を表示中` : "選択中の1分"}</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink-900">{item.script.title}</h2>
           <p className="mt-3 line-clamp-2 text-sm leading-6 text-ink-600">{item.script.content}</p>
         </div>
@@ -173,15 +184,15 @@ function ProgressSlotResult({
       <div className="grid gap-4 lg:grid-cols-2">
         <ResultCard
           label="最新テイク"
-          take={item.latestTake}
+          take={latestTake}
           scriptTitle={item.script.title}
-          reviewHref={item.latestTake ? getScriptReviewPath(item.script.id, item.latestTake.id) : null}
+          reviewHref={latestTake ? getScriptReviewPath(item.script.id, latestTake.id) : null}
         />
         <ResultCard
           label="ベストテイク"
-          take={item.bestTake}
+          take={bestTake}
           scriptTitle={item.script.title}
-          reviewHref={item.bestTake ? getScriptReviewPath(item.script.id, item.bestTake.id) : null}
+          reviewHref={bestTake ? getScriptReviewPath(item.script.id, bestTake.id) : null}
           showExport
         />
       </div>
@@ -190,8 +201,8 @@ function ProgressSlotResult({
         <summary className="cursor-pointer text-sm font-semibold text-ink-800">声のログを開く</summary>
         <div className="mt-5 space-y-5">
           <PreviousTakeBlock item={item} />
-          <SavedBestTakeSummaryList scriptId={item.script.id} items={library.savedBestTakes} loadFailed={library.loadFailed} />
-          <SavedModelAudioSummaryList items={library.savedModelAudios} loadFailed={library.loadFailed} />
+          <SavedBestTakeSummaryList scriptId={item.script.id} items={selectedLibrary.savedBestTakes} loadFailed={selectedLibrary.loadFailed} />
+          <SavedModelAudioSummaryList items={selectedLibrary.savedModelAudios} loadFailed={selectedLibrary.loadFailed} />
         </div>
       </details>
     </div>
@@ -242,8 +253,8 @@ function ResultCard({
         </div>
       ) : (
         <div className="mt-4 rounded-2xl border border-dashed border-[var(--line-inset)] bg-[var(--surface-inset)] p-4">
-          <p className="text-sm font-semibold text-ink-800">まだ録っていません</p>
-          <p className="mt-2 text-sm leading-6 text-ink-600">Take を録ると、この紙に残ります。</p>
+          <p className="text-sm font-semibold text-ink-800">まだこの1分には Take がありません</p>
+          <p className="mt-2 text-sm leading-6 text-ink-600">この台本で Take を録ると、この紙に残ります。</p>
         </div>
       )}
     </article>
@@ -251,7 +262,9 @@ function ResultCard({
 }
 
 function PreviousTakeBlock({ item }: { item: ScriptProgressItem }) {
-  if (!item.previousTake) {
+  const previousTake = getTakeForScript(item.previousTake, item.script.id);
+
+  if (!previousTake) {
     return <p className="rounded-2xl bg-[var(--surface-inset)] p-4 text-sm leading-6 text-ink-600">前回の Take はまだありません。</p>;
   }
 
@@ -259,11 +272,11 @@ function PreviousTakeBlock({ item }: { item: ScriptProgressItem }) {
     <div className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] p-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-semibold text-ink-900">前回の Take</p>
-        <p className="text-sm font-semibold text-ink-700">score {item.previousTake.score}</p>
+        <p className="text-sm font-semibold text-ink-700">score {previousTake.score}</p>
       </div>
-      <p className="mt-2 text-sm leading-6 text-ink-600">{item.previousTake.coach.summaryJa}</p>
+      <p className="mt-2 text-sm leading-6 text-ink-600">{previousTake.coach.summaryJa}</p>
       <div className="mt-4">
-        <ProtectedAudioPlayer sourceUrl={`/api/takes/${item.previousTake.id}/audio`} variant="studio" />
+        <ProtectedAudioPlayer sourceUrl={`/api/takes/${previousTake.id}/audio`} variant="studio" />
       </div>
     </div>
   );
@@ -380,6 +393,38 @@ function getEmptyProgressAudioLibraryState(loadFailed: boolean): ProgressAudioLi
     savedModelAudios: [],
     savedBestTakes: [],
     loadFailed
+  };
+}
+
+function getVisibleProgressSlots(items: ScriptProgressItem[], selectedScriptId: string | undefined) {
+  const firstSlots = items.slice(0, 5);
+
+  if (!selectedScriptId || firstSlots.some((item) => item.script.id === selectedScriptId)) {
+    return firstSlots;
+  }
+
+  const selectedItem = items.find((item) => item.script.id === selectedScriptId);
+
+  if (!selectedItem) {
+    return firstSlots;
+  }
+
+  return [selectedItem, ...firstSlots.filter((item) => item.script.id !== selectedScriptId)].slice(0, 5);
+}
+
+function getTakeForScript(take: ProgressTakeSummary | null, scriptId: string) {
+  if (!take || take.scriptId !== scriptId) {
+    return null;
+  }
+
+  return take;
+}
+
+function getLibraryForScript(library: ProgressAudioLibraryState, scriptId: string): ProgressAudioLibraryState {
+  return {
+    savedModelAudios: library.savedModelAudios.filter((item) => item.script_id === scriptId),
+    savedBestTakes: library.savedBestTakes.filter((item) => item.script_id === scriptId),
+    loadFailed: library.loadFailed
   };
 }
 
