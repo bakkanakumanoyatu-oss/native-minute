@@ -227,7 +227,90 @@ NATIVE_MINUTE_ENABLE_TIMING=1 npm run start
 
 The first optimization pass should use these logs to decide whether to start with selected-script progress summaries, Review loading consolidation, Progress audio-library deferral, or protected audio replay tuning.
 
-## 13. Measurement gaps
+## 13. Authenticated timing runbook
+
+Use this runbook before changing performance-sensitive implementation. The goal is to capture authenticated timing labels for the existing flow, not to optimize during measurement.
+
+### Safety setup
+
+- Use local dev or a short, intentional production measurement window only.
+- Do not paste user ids, script text, transcript text, storage paths, raw audio, raw provider responses, cookies, or secrets into notes.
+- Development server logs timing automatically. Production logs timing only when `NATIVE_MINUTE_ENABLE_TIMING=1`.
+- Prefer mock providers for local route timing unless the target is specifically provider latency.
+
+Local dev:
+
+```bash
+NATIVE_MINUTE_ENABLE_TIMING=1 npm run dev
+```
+
+Optional local helper, after logging in in the same target origin or after creating `tests/e2e/.auth/user.json`:
+
+```bash
+PERFORMANCE_TIMING_BASE_URL=http://localhost:3000 \
+PERFORMANCE_TIMING_SCRIPT_ID=<script-id> \
+PERFORMANCE_TIMING_TAKE_ID=<take-id> \
+npm run performance:timing-smoke
+```
+
+The helper prints HTTP status and request duration only. It does not print cookie values, script text, transcript, storage paths, or response bodies. The authoritative timings are still the app server console `[timing]` lines.
+
+### Measurement order
+
+1. Open `/scripts`.
+   - Watch: `progress.overview`, `progress.hydratedReviews`, plus any page-level script list labels if added later.
+   - If this is slow, the likely next step is selected-list / lightweight practice summary work.
+2. Open one script's `/scripts/[id]/listen`.
+   - Watch: `listen.page.script`, `listen.page.voiceSetup`, `listen.page.cachedAudio`, `listen.page.progressOverview`, `voice.cachedListenAudio.*`, `progress.overview`.
+   - If `listen.page.progressOverview` dominates, move toward selected-script summary for Listen.
+   - If `voice.cachedListenAudio.*` dominates, inspect duplicate script/default voice/cache lookup cost.
+3. Open `/scripts/[id]/record`.
+   - Watch: `record.page.script`, `record.page.progressOverview`.
+   - If `record.page.progressOverview` dominates, move toward selected-script summary for Record.
+4. Record or upload a short test take, then evaluate.
+   - Watch: `evaluate.route.auth`, `evaluate.route.validation`, `evaluate.audioInput`, `recording.storageDownload`, `evaluate.transcription`, `evaluate.pronunciation`, `evaluate.coach`, `evaluate.persistenceRpc`, `evaluate.refetchStoredReview`.
+   - If provider labels dominate, prioritize staged feedback / perceived-speed UI before changing provider behavior.
+   - If `recording.storageDownload` dominates, inspect storage replay/download cost before touching evaluation semantics.
+5. Open `/scripts/[id]/review/[takeId]`.
+   - Watch: `review.page.storedReview`, `review.page.comparison`, `review.page.progressOverview`, `progress.scriptTakeComparison`, `progress.hydratedReviews`.
+   - If `progress.hydratedReviews` appears twice or dominates, move toward Review data loading consolidation.
+6. Play the saved recording from Review.
+   - Watch: `takesAudio.route.auth`, `takesAudio.route.storedReview`, `takesAudio.route.recordingDownload`, `recording.storageDownload`.
+   - If this dominates, consider take audio replay / Range / loading UX work.
+7. Open `/progress`.
+   - Watch: `progress.page.overview`, `progress.page.audioLibrary`, `progress.audioLibraryByScript`, `progress.overview`, `progress.hydratedReviews`.
+   - If audio library labels dominate first view, consider deferring library detail reads.
+8. Play saved recordings or saved model audio from Progress.
+   - Take audio: `takesAudio.route.*`, `recording.storageDownload`.
+   - Script audio: `scriptAudio.route.*`, `voice.replay.storageDownload`.
+
+### What to record
+
+Record three runs per target when possible:
+
+- First authenticated hit after server start.
+- Second hit after refresh.
+- Same flow after one record -> evaluate -> review cycle.
+
+Use a small table:
+
+| Target | Label | Run 1 | Run 2 | Run 3 | Note |
+| --- | ---: | ---: | ---: | --- |
+| `/progress` | `progress.overview` | | | | |
+
+Notes should describe stage names only, for example "progress overview dominates" or "Azure pronunciation dominates." Do not paste user-owned content.
+
+### Next optimization decision rules
+
+- `progress.overview` / `progress.hydratedReviews` dominate Listen or Record: implement selected-script summary service first.
+- `review.page.comparison` plus `review.page.progressOverview` both hydrate all history: consolidate Review data loading.
+- `progress.page.audioLibrary` / `progress.audioLibraryByScript` dominate `/progress`: defer or selected-script-scope Audio Library reads.
+- `takesAudio.route.recordingDownload` / `recording.storageDownload` dominate replay: inspect take audio replay strategy, Range support, or player loading UX.
+- `evaluate.transcription` / `evaluate.pronunciation` dominate: prioritize staged feedback / async-feel UI before provider or scoring changes.
+- `voice.speakScript.providerSynthesize` dominates cache miss: improve generation feedback and cache-hit reuse visibility before provider contract changes.
+- Middleware/page auth dominates every protected route: investigate auth timing carefully, but do not cache user-owned pages or weaken ownership checks.
+
+## 14. Measurement gaps
 
 - No authenticated production timing was measured in this audit.
 - No Supabase query timing was measured per table or per route.

@@ -12,6 +12,7 @@
     "voice:style-smoke": "node scripts/voice-style-mapping-smoke.mjs",
     "pronunciation:preflight": "node scripts/pronunciation-provider-preflight.mjs",
     "production:preflight": "node scripts/production-readiness-preflight.mjs",
+    "performance:timing-smoke": "node scripts/performance-timing-smoke.mjs",
     "supabase:storage-rls:check": "node scripts/check-supabase-storage-rls-readiness.mjs",
     "account-deletion:provider-cleanup:self-test": "node scripts/account-deletion-provider-cleanup-self-test.mjs",
     "account-deletion:storage-cleanup:self-test": "node scripts/account-deletion-storage-cleanup-self-test.mjs",
