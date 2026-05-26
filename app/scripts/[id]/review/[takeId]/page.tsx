@@ -670,6 +670,16 @@ function ReviewSummaryFirst({
         </section>
       </div>
 
+      {canPlaybackRecording ? (
+        <section data-testid="review-summary-recording" className="mt-6 rounded-[1.75rem] border border-[var(--line-dark)] bg-[var(--control-panel)] p-4 text-[var(--cta-primary-text)] shadow-[var(--shadow-studio-soft)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(255,241,221,0.62)]">今回の録音</p>
+          <h2 className="mt-2 text-base font-semibold text-[var(--cta-primary-text)]">録った声を聞く</h2>
+          <div className="mt-4">
+            <ProtectedAudioPlayer sourceUrl={`/api/takes/${takeId}/audio`} variant="studio" />
+          </div>
+        </section>
+      ) : null}
+
       <div className="mt-6 rounded-[1.75rem] border border-[var(--line-dark)] bg-[var(--control-panel)] p-4 text-sm font-semibold shadow-[var(--shadow-studio-soft)]">
         <p className="mb-3 text-xs uppercase tracking-[0.18em] text-[rgba(255,241,221,0.62)]">次の操作</p>
         <div className="flex flex-wrap gap-3">

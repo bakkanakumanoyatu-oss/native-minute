@@ -203,6 +203,7 @@
 - UI/UX small diff でも、DB schema / migration、API contract、auth / ownership / storage access、provider 本接続、Listen fixed audio bar、main loop、UI direction docs に影響する場合は停止して報告する。
 
 ## 直近の変更
+- Record は録音直後の local blob / 選択ファイルを「この Take を聞く」としてその場で preview できる。Review は first view で保存済み録音を聞けるようにし、Progress は選択 slot の台本全文を最新 / ベスト Take の近くで確認できる。録音 upload、evaluate、review persistence、progress aggregation、API contract は変えていない。
 - Home は「今日の1分スタジオに入る入口」として、studio entrance / flow preview / control panel CTA / settings surface の役割を整理した。hero 内の flow preview は押せる CTA に見えないよう弱め、主CTAは「1分を始める」に一本化している。auth、navigation、各画面の main loop logic は変えていない。
 - Progress の slot 選択は warning に見えない warm paper / darker border / `選択中` label へ寄せた。`?scriptId=` で開いた script は5枠表示に含め、詳細エリアは選択 script に紐づく latest / best / saved recordings だけを表示し、無関係な全体 latest / best は混ぜない。
 - Progress は「声のログを見る場所」として、5スロット選択 / 最新 Take / ベストテイク / 保存済み録音 / 保存済みお手本を log shelf / take paper / control panel に寄せた。progress aggregation、best take logic、canonical source は変えていない。

@@ -177,7 +177,10 @@ function ProgressSlotResult({
         <div>
           <p className="text-sm font-semibold text-[#8c5f37]">{slotNumber ? `slot ${slotNumber} を表示中` : "選択中の1分"}</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink-900">{item.script.title}</h2>
-          <p className="mt-3 line-clamp-2 text-sm leading-6 text-ink-600">{item.script.content}</p>
+          <div data-testid="progress-selected-script-paper" className="mt-4 rounded-[1.5rem] border border-[var(--line-inset)] bg-[var(--surface-take-paper)] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8c5f37]">この1分の台本</p>
+            <p className="mt-3 max-h-48 overflow-y-auto whitespace-pre-wrap text-sm leading-7 text-ink-800">{item.script.content}</p>
+          </div>
         </div>
       </section>
 

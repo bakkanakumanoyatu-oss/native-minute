@@ -673,15 +673,22 @@ export function RecordAndEvaluatePanel({
             <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink-500">
               {selectedFile.type || "音声ファイル"} / {Math.round(selectedFile.size / 1024)}KB / {durationSeconds ?? "未計測"}秒
             </p>
-          {isMeasuringDuration ? (
+            {isMeasuringDuration ? (
               <p className="mt-2 text-sm text-ink-600">音声の長さを確認しています。判定が終わるまで評価保存は待機します。</p>
             ) : durationSeconds === null ? (
               <p className="mt-2 text-sm text-amber-700">音声の長さを自動判定できない場合だけ、下の秒数欄に手入力してください。</p>
             ) : null}
             {previewUrl ? (
-              <audio controls preload="none" className="mt-4 w-full">
-                <source src={previewUrl} type={selectedFile.type || "audio/webm"} />
-              </audio>
+              <div className="mt-4 rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-paper)] p-4">
+                <p className="text-sm font-semibold text-ink-900">この Take を聞く</p>
+                <audio
+                  key={previewUrl}
+                  controls
+                  preload="metadata"
+                  src={previewUrl}
+                  className="mt-3 w-full"
+                />
+              </div>
             ) : null}
             {uploadedRecording && !isBusy ? (
               <p data-testid="record-upload-reuse-hint" className="mt-3 text-sm text-ink-600">
