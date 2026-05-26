@@ -11,6 +11,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ProtectedAudioPlayer } from "@/components/audio/protected-audio-player";
 import { SavedBestTakeControl } from "@/components/audio-library/saved-best-take-control";
 import { getScript } from "@/services/scripts/scripts.service";
+import { getPronunciationProviderName } from "@/services/pronunciation";
 import { getStoredReview, hydrateStoredReview } from "@/services/review/review.service";
 import { getProgressOverview, getScriptTakeComparison, type ProgressTakeSummary } from "@/services/progress";
 import { parseRecordingAudioReference } from "@/services/storage";
@@ -155,6 +156,7 @@ export default async function ReviewPage({ params }: PageParams) {
   const weakWords = hydratedReview.weakWords;
   const comparison = await getScriptTakeComparison(supabase, user.id, script.id, takeId);
   const progressOverview = await getProgressOverview(supabase, user.id);
+  const isPracticeEstimate = getPronunciationProviderName() === "mock";
   const progressItem = progressOverview.scripts.find((item) => item.script.id === script.id) ?? null;
   const latestReviewHref = progressItem?.latestTake ? getScriptReviewPath(script.id, progressItem.latestTake.id) : null;
   const bestReviewHref = progressItem?.bestTake ? getScriptReviewPath(script.id, progressItem.bestTake.id) : null;
@@ -214,13 +216,14 @@ export default async function ReviewPage({ params }: PageParams) {
         takeId={review.take.id}
         reviewedAt={review.take.reviewed_at ?? review.take.created_at}
         exportComment={reviewOneLineAdvice}
+        isPracticeEstimate={isPracticeEstimate}
       />
 
       <details data-testid="review-detail-panel" className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-5 shadow-[var(--shadow-studio-soft)]">
         <summary className="cursor-pointer list-none rounded-[1.5rem] border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-5 py-4 text-sm font-semibold text-ink-900">
           細かいメモを見る
           <span className="ml-3 font-normal text-ink-600">
-            文字起こし、スコア、ベストとの差を開く
+            文字起こし、参考スコア、ベストとの差を開く
           </span>
         </summary>
         <div className="mt-6 space-y-6">
@@ -257,7 +260,7 @@ export default async function ReviewPage({ params }: PageParams) {
       />
 
       <div data-testid="review-score-grid" className="grid gap-4 lg:grid-cols-3">
-        <Metric label="総合" value={evaluation.score} />
+        <Metric label="参考スコア" value={evaluation.score} />
         <Metric label="精度" value={evaluation.accuracyScore} />
         <Metric label="流暢さ" value={evaluation.fluencyScore} />
       </div>
@@ -397,7 +400,7 @@ export default async function ReviewPage({ params }: PageParams) {
               {weakWords.map((word) => (
                 <li key={word.id} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3">
                   <p className="text-sm font-semibold text-ink-900">{word.word}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink-500">score {word.score ?? "未算出"}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink-500">目安 {word.score ?? "未算出"}</p>
                   <p className="mt-2 text-sm leading-6 text-ink-700">{word.note ?? "補足なし"}</p>
                 </li>
               ))}
@@ -512,9 +515,9 @@ export default async function ReviewPage({ params }: PageParams) {
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
             <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">点数差</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">目安の差</p>
               <ul className="mt-3 space-y-2 text-sm text-ink-700">
-                <li>総合: {formatDelta(comparison.diff.scoreDelta)}</li>
+                <li>参考スコア: {formatDelta(comparison.diff.scoreDelta)}</li>
                 <li>精度: {formatDelta(comparison.diff.accuracyDelta)}</li>
                 <li>流暢さ: {formatDelta(comparison.diff.fluencyDelta)}</li>
                 <li>リズム: {formatDelta(comparison.diff.rhythmDelta)}</li>
@@ -612,7 +615,8 @@ function ReviewSummaryFirst({
   canPlaybackRecording,
   takeId,
   reviewedAt,
-  exportComment
+  exportComment,
+  isPracticeEstimate
 }: {
   scriptTitle: string;
   score: number;
@@ -628,6 +632,7 @@ function ReviewSummaryFirst({
   takeId: string;
   reviewedAt: string | null;
   exportComment: string;
+  isPracticeEstimate: boolean;
 }) {
   return (
     <section data-testid="review-summary-first" className="rounded-[2rem] border border-[var(--line-inset)] bg-[linear-gradient(135deg,var(--surface-notice),var(--surface-primary))] p-6 shadow-[var(--shadow-studio-soft)] lg:p-8">
@@ -643,9 +648,14 @@ function ReviewSummaryFirst({
         </div>
 
         <div className="rounded-[1.5rem] border border-[var(--line-subtle)] bg-[var(--surface-take-paper)] p-5 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">score</p>
-          <p className="mt-2 text-4xl font-semibold tracking-tight text-ink-900">{score}</p>
-          <p className="mt-2 text-xs leading-5 text-ink-600">採点表ではなく、次の1点を決める目印です。</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">参考スコア</p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-ink-900">{score}</p>
+          <p className="mt-2 text-xs leading-5 text-ink-600">採点表ではなく、次の1点を決める目安です。</p>
+          {isPracticeEstimate ? (
+            <p className="mt-2 rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 py-2 text-xs leading-5 text-ink-600">
+              この環境では練習用の簡易評価です。
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -874,7 +884,7 @@ function getComparisonPriorityText(diff: {
     return `${formatWordListWithOverflow(diff.improvedWeakWords).replaceAll(" / ", "、")} は改善しています。大きく変えずに同じ感覚で録る価値があります。`;
   }
 
-  return `差分は主にスコア ${diff.scoreDelta > 0 ? "+" : ""}${diff.scoreDelta} です。今は発音点よりテンポの整え直しを優先するとまとまりやすいです。`;
+  return `差分は主に参考スコア ${diff.scoreDelta > 0 ? "+" : ""}${diff.scoreDelta} です。今は点数よりテンポの整え直しを優先するとまとまりやすいです。`;
 }
 
 function PracticeGuidanceSection({

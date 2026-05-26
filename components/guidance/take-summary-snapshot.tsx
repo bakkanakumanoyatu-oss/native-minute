@@ -61,14 +61,14 @@ export function TakeSummarySnapshot({
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
           {showScoreChip ? (
-            <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-3 py-1 text-ink-700">総合 {take.score}</span>
+            <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-3 py-1 text-ink-700">目安 {take.score}</span>
           ) : null}
           <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-3 py-1 text-ink-700">
             {formatTakeTimestamp(take.reviewedAt ?? take.createdAt)}
           </span>
         </div>
       </div>
-      <p className="mt-3 text-sm leading-6 text-ink-700">弱点語: {formatWeakWords(take)}</p>
+      <p className="mt-3 text-sm leading-6 text-ink-700">Focus words: {formatWeakWords(take)}</p>
       {showStrengths ? <p className="mt-2 text-sm leading-6 text-ink-700">強み: {formatStrengths(take, maxStrengths)}</p> : null}
       <p className="mt-2 text-sm leading-6 text-ink-600">{coachLabel}: {take.coach.nextStepJa}</p>
     </div>

@@ -10,6 +10,7 @@ import { listSavedBestTakes, listSavedModelAudios, type SavedBestTakeRow, type S
 import { getProgressOverview, type ProgressTakeSummary, type ScriptProgressItem } from "@/services/progress";
 import { ProtectedAudioPlayer } from "@/components/audio/protected-audio-player";
 import { BestResultExportActions } from "@/components/export/best-result-export-actions";
+import { getPronunciationProviderName } from "@/services/pronunciation";
 
 type ProgressAudioLibraryState = {
   savedModelAudios: SavedModelAudioRow[];
@@ -52,6 +53,7 @@ export default async function ProgressPage({ searchParams }: PageProps) {
 
   const supabase = createSupabaseServerClient();
   const overview = await getProgressOverview(supabase, authState.user.id);
+  const isPracticeEstimate = getPronunciationProviderName() === "mock";
   const slots = getVisibleProgressSlots(overview.scripts, resolvedSearchParams?.scriptId);
   const selectedItem = slots.find((item) => item.script.id === resolvedSearchParams?.scriptId) ?? slots[0] ?? null;
   const selectedSlotNumber = selectedItem ? slots.findIndex((item) => item.script.id === selectedItem.script.id) + 1 : null;
@@ -83,6 +85,7 @@ export default async function ProgressPage({ searchParams }: PageProps) {
       <ProgressSlotResult
         item={selectedItem}
         slotNumber={selectedSlotNumber}
+        isPracticeEstimate={isPracticeEstimate}
         library={selectedItem ? audioLibraryByScriptId.get(selectedItem.script.id) ?? getEmptyProgressAudioLibraryState(false) : getEmptyProgressAudioLibraryState(false)}
       />
     </section>
@@ -146,7 +149,7 @@ function ProgressSlotSelector({
               {isSelected ? <span className="rounded-full bg-[rgba(111,82,54,0.12)] px-2 py-1 text-[11px] text-[#5f432b]">選択中</span> : null}
             </span>
             <span className="mt-2 line-clamp-2 block text-sm font-semibold text-ink-900">{item.script.title}</span>
-            <span className="mt-3 block text-xs text-ink-600">{score === null ? "まだ録っていない" : `ベスト ${score}`}</span>
+            <span className="mt-3 block text-xs text-ink-600">{score === null ? "まだ録っていない" : `目安 ${score}`}</span>
           </Link>
         );
       })}
@@ -157,10 +160,12 @@ function ProgressSlotSelector({
 function ProgressSlotResult({
   item,
   slotNumber,
+  isPracticeEstimate,
   library
 }: {
   item: ScriptProgressItem | null;
   slotNumber: number | null;
+  isPracticeEstimate: boolean;
   library: ProgressAudioLibraryState;
 }) {
   if (!item) {
@@ -190,6 +195,7 @@ function ProgressSlotResult({
           take={latestTake}
           scriptTitle={item.script.title}
           reviewHref={latestTake ? getScriptReviewPath(item.script.id, latestTake.id) : null}
+          isPracticeEstimate={isPracticeEstimate}
         />
         <ResultCard
           label="ベストテイク"
@@ -197,6 +203,7 @@ function ProgressSlotResult({
           scriptTitle={item.script.title}
           reviewHref={bestTake ? getScriptReviewPath(item.script.id, bestTake.id) : null}
           showExport
+          isPracticeEstimate={isPracticeEstimate}
         />
       </div>
 
@@ -217,13 +224,15 @@ function ResultCard({
   take,
   scriptTitle,
   reviewHref,
-  showExport = false
+  showExport = false,
+  isPracticeEstimate
 }: {
   label: string;
   take: ProgressTakeSummary | null;
   scriptTitle: string;
   reviewHref: string | null;
   showExport?: boolean;
+  isPracticeEstimate: boolean;
 }) {
   return (
     <article className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-take-paper)] p-6 shadow-[var(--shadow-studio-soft)]">
@@ -232,7 +241,8 @@ function ResultCard({
         <div className="mt-4 space-y-4">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-4xl font-semibold tracking-tight text-ink-900">{take.score}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">参考スコア</p>
+              <p className="mt-1 text-3xl font-semibold tracking-tight text-ink-900">{take.score}</p>
               <p className="mt-1 text-xs font-semibold text-ink-500">{formatReviewDate(take.reviewedAt ?? take.createdAt)}</p>
             </div>
             {reviewHref ? (
@@ -241,6 +251,11 @@ function ResultCard({
               </Link>
             ) : null}
           </div>
+          {isPracticeEstimate ? (
+            <p className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-xs leading-5 text-ink-600">
+              この環境では練習用の簡易評価です。次の1点と Focus words を優先して見ます。
+            </p>
+          ) : null}
           <p className="text-sm leading-6 text-ink-700">{take.coach.summaryJa}</p>
           <ProtectedAudioPlayer sourceUrl={`/api/takes/${take.id}/audio`} variant="studio" />
           {showExport ? (
@@ -275,7 +290,7 @@ function PreviousTakeBlock({ item }: { item: ScriptProgressItem }) {
     <div className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] p-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-semibold text-ink-900">前回の Take</p>
-        <p className="text-sm font-semibold text-ink-700">score {previousTake.score}</p>
+        <p className="text-sm font-semibold text-ink-700">参考スコア {previousTake.score}</p>
       </div>
       <p className="mt-2 text-sm leading-6 text-ink-600">{previousTake.coach.summaryJa}</p>
       <div className="mt-4">
