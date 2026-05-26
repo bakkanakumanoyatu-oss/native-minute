@@ -318,3 +318,56 @@ Notes should describe stage names only, for example "progress overview dominates
 - No mobile Safari real-user timing was captured.
 - No bundle analyzer is configured.
 - Current smoke tests verify rendering / flow, not performance budgets.
+
+## 15. Local authenticated timing run 2026-05-26
+
+This run used local `next dev` with timing enabled, an existing E2E auth storage state, and mock providers:
+
+- `NATIVE_MINUTE_ENABLE_TIMING=1`
+- `VOICE_PROVIDER=mock`
+- `TRANSCRIPTION_PROVIDER=mock`
+- `PRONUNCIATION_PROVIDER=mock`
+
+The run created a test script, mock voice, mock script audio, uploaded a fixture recording, evaluated three takes, and hit the main authenticated routes three times. Script ids, take ids, cookies, storage keys, transcript text, and raw response bodies were not recorded in this report.
+
+### Client request durations
+
+The first route hit may include `next dev` compile cost. Warm runs are more useful for implementation prioritization.
+
+| Target | Run 1 | Run 2 | Run 3 | Notes |
+| --- | ---: | ---: | ---: | --- |
+| `/scripts` | 1944ms | 233ms | 276ms | Run 1 includes compile. |
+| `/scripts/[id]/listen` | 1466ms | 306ms | 295ms | Warm route is sub-350ms locally. |
+| `/scripts/[id]/record` | 800ms | 298ms | 286ms | Warm route is sub-300ms locally. |
+| `/scripts/[id]/review/[takeId]` | 977ms | 431ms | 477ms | Review remains heavier than listen/record. |
+| take audio replay | 638ms | 340ms | 586ms | Protected recording replay is variable. |
+| script audio replay | 838ms | 295ms | 810ms | Script audio replay is variable. |
+| `/progress` | 677ms | 687ms | 403ms | Progress stays comparatively heavier. |
+
+### Server timing highlights
+
+| Area | Labels | Observed range | Interpretation |
+| --- | --- | ---: | --- |
+| Scripts page | `progress.overview`, `progress.hydratedReviews` | 109-470ms | Warm overview is moderate, first post-compile route was higher. |
+| Listen page | `listen.page.cachedAudio`, `listen.page.progressOverview` | 101-111ms / 118-127ms | Both are visible but not dominant in local mock timing. |
+| Record page | `record.page.progressOverview` | 108-179ms | Selected-script summary could still reduce repeated work, but this was not the biggest warm cost. |
+| Review page | `review.page.storedReview`, `review.page.comparison`, `review.page.progressOverview` | 100-206ms / 95-182ms / 44-79ms | Review still does duplicated history-oriented work; consolidation remains useful. |
+| Progress page | `progress.page.overview`, `progress.page.audioLibrary` | 107-129ms / 174-249ms | Audio Library reads were consistently larger than overview on Progress. |
+| Take audio replay | `takesAudio.route.storedReview`, `takesAudio.route.recordingDownload` | 102-156ms / 100-242ms | Replay latency is split between stored review lookup and storage download. |
+| Script audio replay | `scriptAudio.route.loadReplay`, `voice.replay.storageDownload` | 165-488ms / 120-429ms | Script audio storage download was the largest replay label. |
+| Evaluate mock pipeline | `evaluate.audioInput`, `recording.storageDownload`, `evaluate.persistenceRpc`, `evaluate.refetchStoredReview` | 570-723ms / 488-666ms / 124-294ms / 208-225ms | With mock providers, storage download plus persistence/refetch dominate evaluate. |
+
+### What this run suggests
+
+1. For page load speed, `/progress` should likely start with Audio Library deferral or selected-slot-only Audio Library reads. In this run, `progress.page.audioLibrary` was larger than `progress.page.overview`.
+2. For listen/record page load, selected-script summary is still a low-risk improvement, but the local warm `progress.overview` cost was around 100-180ms rather than multi-second.
+3. Review loading consolidation is justified because Review still loads stored review, comparison, and progress summary separately. The duplicate work is measurable, though not the single largest local cost.
+4. For evaluate wait, storage download and save/refetch are the mock-provider bottlenecks. Real OpenAI/Azure timing still needs a separate provider-latency run before changing provider behavior.
+5. Protected audio replay is variable enough to keep on the shortlist, especially `voice.replay.storageDownload` and `recording.storageDownload`.
+
+### Recommended next implementation order from this run
+
+1. Defer or narrow Progress Audio Library reads to selected slot / opened log details.
+2. Add selected-script summary for Listen and Record, preserving Progress as the broad overview page.
+3. Consolidate Review data loading so current / best / latest are derived through one script-scoped path.
+4. Add a separate real-provider timing run only if provider latency, not local mock route latency, becomes the next decision point.
