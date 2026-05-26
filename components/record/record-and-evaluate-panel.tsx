@@ -72,10 +72,10 @@ type RecordDecisionAction = {
 
 function getRecordDecisionButtonClasses(tone: RecordDecisionAction["tone"]) {
   if (tone === "primary") {
-    return "inline-flex items-center justify-center rounded-2xl bg-[var(--record-accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--record-accent-strong)]";
+    return "inline-flex items-center justify-center rounded-2xl bg-[var(--record-accent)] px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(242,109,91,0.22)] transition hover:bg-[var(--record-accent-strong)]";
   }
 
-  return "inline-flex items-center justify-center rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--surface-inset-strong)]";
+  return "inline-flex items-center justify-center rounded-2xl border border-[var(--line-dark)] bg-white/10 px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)] transition hover:bg-white/15";
 }
 
 function measureAudioDuration(file: File): Promise<number | null> {
@@ -476,7 +476,7 @@ export function RecordAndEvaluatePanel({
         ? "保存済み Take で評価を続ける"
       : "この Take で評価する";
   const canShowPrepareActions = !selectedFile && canSaveEvaluation;
-  const showNextAction = Boolean(selectedFile || recoveryGuidance || canShowPrepareActions || !canSaveEvaluation);
+  const showNextAction = Boolean(selectedFile || recoveryGuidance || !canSaveEvaluation);
   const nextActionActions: RecordDecisionAction[] = recoveryGuidance
     ? [
         {
@@ -615,14 +615,18 @@ export function RecordAndEvaluatePanel({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4 rounded-3xl border border-[var(--line-subtle)] bg-[var(--surface-primary)] p-5">
-        <div className="flex flex-wrap gap-3">
+      <div className="space-y-5 rounded-3xl border border-[var(--line-inset)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-studio-soft)]">
+        <div className="rounded-[1.75rem] border border-[var(--line-dark)] bg-[linear-gradient(135deg,var(--control-panel),var(--control-panel-soft))] p-4 text-[var(--cta-primary-text)] shadow-[0_20px_46px_rgba(24,23,34,0.18)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(255,241,221,0.62)]">録音パネル</p>
+          <h2 className="mt-2 text-xl font-semibold text-[var(--cta-primary-text)]">今日の Take を録る</h2>
+          <p className="mt-2 text-sm leading-6 text-[rgba(255,241,221,0.76)]">マイクで1本録って、納得したら評価へ進みます。</p>
+          <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
             onClick={isRecording ? handleStopRecording : handleStartRecording}
             disabled={isRecordButtonBusy}
             aria-busy={isStartingRecording}
-            className="inline-flex items-center justify-center rounded-2xl bg-[var(--studio-ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-2xl bg-[var(--record-accent)] px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(242,109,91,0.24)] transition hover:bg-[var(--record-accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isRecording ? "録音を止める" : isStartingRecording ? "マイクを準備中..." : "マイクで Take を録る"}
           </button>
@@ -632,14 +636,15 @@ export function RecordAndEvaluatePanel({
               type="button"
               onClick={handleClearSelectedRecording}
               disabled={isBusy}
-              className="inline-flex items-center justify-center rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--surface-inset-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-2xl border border-[var(--line-dark)] bg-white/10 px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)] transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Take を消す
             </button>
           ) : null}
+          </div>
         </div>
 
-        <details className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] px-4 py-3">
+        <details className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-secondary)] px-4 py-3">
           <summary className="cursor-pointer text-sm font-semibold text-ink-800">録音済みファイルを使う</summary>
           <p className="mt-3 text-sm leading-6 text-ink-600">手元に録音済みの音声がある場合だけ使います。</p>
           <label className="mt-3 inline-flex cursor-pointer items-center justify-center rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-sm font-semibold text-ink-800">
@@ -662,8 +667,8 @@ export function RecordAndEvaluatePanel({
         </details>
 
         {selectedFile ? (
-          <div data-testid="record-selected-file" className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] p-4">
-            <p className="text-xs font-semibold text-ink-500">今回の Take</p>
+          <div data-testid="record-selected-file" className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-take-paper)] p-4 shadow-[0_14px_34px_rgba(45,38,31,0.08)]">
+            <p className="text-xs font-semibold text-[var(--accent-strong)]">今回の Take</p>
             <p className="text-sm font-semibold text-ink-900">{selectedFile.name}</p>
             <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink-500">
               {selectedFile.type || "音声ファイル"} / {Math.round(selectedFile.size / 1024)}KB / {durationSeconds ?? "未計測"}秒
@@ -685,7 +690,7 @@ export function RecordAndEvaluatePanel({
             ) : null}
           </div>
         ) : (
-          <p className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] p-4 text-sm leading-6 text-ink-700">まだ Take はありません。</p>
+          <p className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-notice)] p-4 text-sm leading-6 text-ink-800">まだ Take はありません。まず1本、声を残します。</p>
         )}
 
         <label className="block space-y-2">
@@ -719,8 +724,8 @@ export function RecordAndEvaluatePanel({
         ) : null}
 
         {showNextAction ? (
-          <section className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] p-4">
-            <p className="inline-flex rounded-full border border-[var(--line-subtle)] bg-[var(--surface-secondary)] px-3 py-1 text-xs font-semibold text-ink-600">
+          <section className="rounded-2xl border border-[var(--line-dark)] bg-[var(--control-panel)] p-4 text-[var(--cta-primary-text)] shadow-[0_18px_44px_rgba(24,23,34,0.16)]">
+            <p className="inline-flex rounded-full border border-[var(--line-dark)] bg-white/10 px-3 py-1 text-xs font-semibold text-[rgba(255,241,221,0.78)]">
               ベータでは 評価は10回まで
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
@@ -794,7 +799,7 @@ export function RecordAndEvaluatePanel({
                 ? getGuidancePrimaryButtonLabel("retry_saved_evaluate")
                 : submitLabel}
             </button>
-            <p className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 py-1 text-xs font-semibold text-ink-600">
+            <p className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-notice)] px-3 py-1 text-xs font-semibold text-ink-700">
               ベータでは 評価は10回まで
             </p>
           </div>
