@@ -34,11 +34,11 @@ export default async function ProgressPage({ searchParams }: PageProps) {
   if (authState.kind === "config_error") {
     return (
       <section className="space-y-5">
-        <div className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">progress</p>
+        <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-6 shadow-[var(--shadow-studio-soft)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8c5f37]">声のログ</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900">設定を確認してください</h1>
           <p className="mt-3 text-sm leading-6 text-ink-600">{authState.message}</p>
-          <Link href={buildLoginHref("/progress", "supabase_not_configured", "/progress")} className="mt-5 inline-flex rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white">
+          <Link href={buildLoginHref("/progress", "supabase_not_configured", "/progress")} className="mt-5 inline-flex rounded-2xl bg-[var(--cta-primary-bg)] px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
             ログインへ
           </Link>
         </div>
@@ -64,10 +64,10 @@ export default async function ProgressPage({ searchParams }: PageProps) {
     return (
       <section className="space-y-5">
         <ProgressHeader slotCount={0} />
-        <div className="rounded-[2rem] border border-dashed border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-semibold tracking-tight text-ink-900">まだ練習がありません</h2>
-          <p className="mt-2 text-sm leading-6 text-ink-600">まず1本作ると、成果をここで見られます。</p>
-          <Link href="/scripts/new" className="mt-5 inline-flex rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white">
+        <div className="rounded-[2rem] border border-dashed border-[var(--line-inset)] bg-[var(--surface-secondary)] p-6 shadow-[var(--shadow-studio-soft)]">
+          <h2 className="text-2xl font-semibold tracking-tight text-ink-900">まだ声のログがありません</h2>
+          <p className="mt-2 text-sm leading-6 text-ink-600">まず1本作ると、最新 Take とベストテイクをここに残せます。</p>
+          <Link href="/scripts/new" className="mt-5 inline-flex rounded-2xl bg-[var(--cta-primary-bg)] px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
             新しい1分を作る
           </Link>
         </div>
@@ -89,12 +89,12 @@ export default async function ProgressPage({ searchParams }: PageProps) {
 
 function ProgressHeader({ slotCount }: { slotCount: number }) {
   return (
-    <div className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.14),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.92))] p-6 shadow-soft sm:p-8">
-      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">progress</p>
+    <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[linear-gradient(135deg,var(--surface-log-shelf),var(--surface-primary))] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8">
+      <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#8c5f37]">声のログ</p>
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">自分の成果</h1>
-          <p className="mt-2 text-sm font-semibold text-ink-600">練習スロット {slotCount} / 5</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">声のログ棚</h1>
+          <p className="mt-2 text-sm font-semibold text-ink-600">1分ストック {slotCount} / 5</p>
         </div>
       </div>
     </div>
@@ -111,16 +111,16 @@ function ProgressSlotSelector({
   const slotCells = Array.from({ length: 5 }, (_, index) => slots[index] ?? null);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-testid="progress-script-list">
       {slotCells.map((item, index) => {
         if (!item) {
           return (
             <div
               key={`empty-${index}`}
-              className="rounded-[1.25rem] border border-dashed border-[var(--line)] bg-white/70 p-4 text-sm text-ink-500"
+              className="rounded-[1.25rem] border border-dashed border-[var(--line-inset)] bg-[var(--surface-secondary)] p-4 text-sm text-ink-500"
             >
               <span className="font-semibold">空きスロット {index + 1}</span>
-              <span className="mt-2 block text-xs leading-5">Practice で追加</span>
+              <span className="mt-2 block text-xs leading-5">新しい1分を追加</span>
             </div>
           );
         }
@@ -132,15 +132,16 @@ function ProgressSlotSelector({
           <Link
             key={item.script.id}
             href={`/progress?scriptId=${item.script.id}`}
+            data-testid={`progress-script-card-${item.script.id}`}
             className={`rounded-[1.25rem] border p-4 text-left transition ${
               isSelected
-                ? "border-[var(--accent)] bg-white shadow-soft"
-                : "border-[var(--line)] bg-white/80 hover:border-[var(--accent)]"
+                ? "border-[var(--line-inset)] bg-[var(--surface-log-shelf)] shadow-[var(--shadow-studio-soft)]"
+                : "border-[var(--line-subtle)] bg-[var(--surface-secondary)] hover:border-[var(--line-inset)]"
             }`}
           >
-            <span className="text-xs font-semibold text-[var(--accent-strong)]">slot {index + 1}</span>
+            <span className="text-xs font-semibold text-[#8c5f37]">slot {index + 1}</span>
             <span className="mt-2 line-clamp-2 block text-sm font-semibold text-ink-900">{item.script.title}</span>
-            <span className="mt-3 block text-xs text-ink-600">{score === null ? "まだ結果なし" : `スコア ${score}`}</span>
+            <span className="mt-3 block text-xs text-ink-600">{score === null ? "まだ録っていない" : `ベスト ${score}`}</span>
           </Link>
         );
       })}
@@ -161,9 +162,9 @@ function ProgressSlotResult({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
+      <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-paper)] p-6 shadow-[var(--shadow-studio-soft)]">
         <div>
-          <p className="text-sm font-semibold text-[var(--accent-strong)]">選択中</p>
+          <p className="text-sm font-semibold text-[#8c5f37]">次に戻る1分</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink-900">{item.script.title}</h2>
           <p className="mt-3 line-clamp-2 text-sm leading-6 text-ink-600">{item.script.content}</p>
         </div>
@@ -171,13 +172,13 @@ function ProgressSlotResult({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ResultCard
-          label="最新結果"
+          label="最新テイク"
           take={item.latestTake}
           scriptTitle={item.script.title}
           reviewHref={item.latestTake ? getScriptReviewPath(item.script.id, item.latestTake.id) : null}
         />
         <ResultCard
-          label="ベスト結果"
+          label="ベストテイク"
           take={item.bestTake}
           scriptTitle={item.script.title}
           reviewHref={item.bestTake ? getScriptReviewPath(item.script.id, item.bestTake.id) : null}
@@ -185,8 +186,8 @@ function ProgressSlotResult({
         />
       </div>
 
-      <details className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-        <summary className="cursor-pointer text-sm font-semibold text-ink-800">過去の記録を見る</summary>
+      <details className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-log-shelf)] p-6 shadow-[var(--shadow-studio-soft)]">
+        <summary className="cursor-pointer text-sm font-semibold text-ink-800">声のログを開く</summary>
         <div className="mt-5 space-y-5">
           <PreviousTakeBlock item={item} />
           <SavedBestTakeSummaryList scriptId={item.script.id} items={library.savedBestTakes} loadFailed={library.loadFailed} />
@@ -211,23 +212,23 @@ function ResultCard({
   showExport?: boolean;
 }) {
   return (
-    <article className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-      <p className="text-sm font-semibold text-[var(--accent-strong)]">{label}</p>
+    <article className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-take-paper)] p-6 shadow-[var(--shadow-studio-soft)]">
+      <p className="text-sm font-semibold text-[#8c5f37]">{label}</p>
       {take ? (
         <div className="mt-4 space-y-4">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-5xl font-semibold tracking-tight text-ink-900">{take.score}</p>
+              <p className="text-4xl font-semibold tracking-tight text-ink-900">{take.score}</p>
               <p className="mt-1 text-xs font-semibold text-ink-500">{formatReviewDate(take.reviewedAt ?? take.createdAt)}</p>
             </div>
             {reviewHref ? (
-              <Link href={reviewHref} className="rounded-2xl border border-[var(--line)] px-4 py-3 text-sm font-semibold text-ink-800">
-                評価を見る
+              <Link href={reviewHref} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-paper)] px-4 py-3 text-sm font-semibold text-ink-800">
+                Take メモを見る
               </Link>
             ) : null}
           </div>
           <p className="text-sm leading-6 text-ink-700">{take.coach.summaryJa}</p>
-          <ProtectedAudioPlayer sourceUrl={`/api/takes/${take.id}/audio`} />
+          <ProtectedAudioPlayer sourceUrl={`/api/takes/${take.id}/audio`} variant="studio" />
           {showExport ? (
             <BestResultExportActions
               audioHref={`/api/takes/${take.id}/audio`}
@@ -235,13 +236,14 @@ function ResultCard({
               score={take.score}
               dateLabel={formatReviewDate(take.reviewedAt ?? take.createdAt)}
               comment={take.coach.summaryJa}
+              variant="studio"
             />
           ) : null}
         </div>
       ) : (
-        <div className="mt-4 rounded-2xl border border-dashed border-[var(--line)] bg-ink-50 p-4">
-          <p className="text-sm font-semibold text-ink-800">まだ録音結果がありません</p>
-          <p className="mt-2 text-sm leading-6 text-ink-600">練習を録音するとここに表示されます。</p>
+        <div className="mt-4 rounded-2xl border border-dashed border-[var(--line-inset)] bg-[var(--surface-inset)] p-4">
+          <p className="text-sm font-semibold text-ink-800">まだ録っていません</p>
+          <p className="mt-2 text-sm leading-6 text-ink-600">Take を録ると、この紙に残ります。</p>
         </div>
       )}
     </article>
@@ -250,18 +252,18 @@ function ResultCard({
 
 function PreviousTakeBlock({ item }: { item: ScriptProgressItem }) {
   if (!item.previousTake) {
-    return <p className="rounded-2xl bg-ink-50 p-4 text-sm leading-6 text-ink-600">前回結果はまだありません。</p>;
+    return <p className="rounded-2xl bg-[var(--surface-inset)] p-4 text-sm leading-6 text-ink-600">前回の Take はまだありません。</p>;
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
+    <div className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] p-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-ink-900">前回結果</p>
-        <p className="text-sm font-semibold text-ink-700">スコア {item.previousTake.score}</p>
+        <p className="text-sm font-semibold text-ink-900">前回の Take</p>
+        <p className="text-sm font-semibold text-ink-700">score {item.previousTake.score}</p>
       </div>
       <p className="mt-2 text-sm leading-6 text-ink-600">{item.previousTake.coach.summaryJa}</p>
       <div className="mt-4">
-        <ProtectedAudioPlayer sourceUrl={`/api/takes/${item.previousTake.id}/audio`} />
+        <ProtectedAudioPlayer sourceUrl={`/api/takes/${item.previousTake.id}/audio`} variant="studio" />
       </div>
     </div>
   );
@@ -281,23 +283,23 @@ function SavedBestTakeSummaryList({
   }
 
   if (items.length === 0) {
-    return <p className="text-sm leading-6 text-ink-600">保存済みベスト録音はまだありません。</p>;
+    return <p className="text-sm leading-6 text-ink-600">保存したベストテイクはまだありません。</p>;
   }
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-ink-900">保存済みベスト録音</h3>
+      <h3 className="text-sm font-semibold text-ink-900">保存したベストテイク</h3>
       {items.map((item) => (
-        <article key={item.id} className="rounded-2xl border border-[var(--line)] bg-white p-4">
+        <article key={item.id} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-take-paper)] p-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-semibold text-ink-900">{item.label ?? `ベスト録音 ${item.slot}`}</p>
-            <Link href={getScriptReviewPath(scriptId, item.take_id)} className="text-sm font-semibold text-[var(--accent-strong)]">
-              評価を見る
+            <p className="text-sm font-semibold text-ink-900">{item.label ?? `ベストテイク ${item.slot}`}</p>
+            <Link href={getScriptReviewPath(scriptId, item.take_id)} className="text-sm font-semibold text-[#8c5f37]">
+              Take メモを見る
             </Link>
           </div>
           <p className="mt-1 text-xs text-ink-500">{formatSavedAt(item.saved_at)}</p>
           <div className="mt-3">
-            <ProtectedAudioPlayer sourceUrl={`/api/takes/${item.take_id}/audio`} />
+            <ProtectedAudioPlayer sourceUrl={`/api/takes/${item.take_id}/audio`} variant="studio" />
           </div>
         </article>
       ))}
@@ -324,11 +326,11 @@ function SavedModelAudioSummaryList({
     <div className="space-y-3">
       <h3 className="text-sm font-semibold text-ink-900">保存済みお手本</h3>
       {items.map((item) => (
-        <article key={item.id} className="rounded-2xl border border-[var(--line)] bg-white p-4">
+        <article key={item.id} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-4">
           <p className="text-sm font-semibold text-ink-900">{item.label ?? `お手本 ${item.slot}`}</p>
           <p className="mt-1 text-xs text-ink-500">{formatSavedAt(item.saved_at)}</p>
           <div className="mt-3">
-            <ProtectedAudioPlayer sourceUrl={`/api/script-audio/${item.script_audio_id}`} />
+            <ProtectedAudioPlayer sourceUrl={`/api/script-audio/${item.script_audio_id}`} variant="studio" />
           </div>
           <ModelAudioMetadata metadata={item.metadata} />
         </article>
