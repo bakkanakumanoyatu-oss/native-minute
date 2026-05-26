@@ -195,7 +195,39 @@ These need targeted verification because they can affect correctness or perceive
    - Avoid duplicate full-history hydration by using one script-scoped data path for current / best / latest.
    - Preserve review data, canonical source, and best take ranking.
 
-## 12. Measurement gaps
+## 12. Step 1 timing instrumentation
+
+Development-only timing instrumentation now exists in `lib/performance/timing.ts`.
+
+- It logs `[timing] <label> <duration>ms`.
+- It is enabled automatically when `NODE_ENV !== "production"`.
+- In production it stays quiet unless `NATIVE_MINUTE_ENABLE_TIMING=1` is set for an intentional short measurement window.
+- Labels are static route / service / stage names only. Do not add user ids, script text, transcript text, raw provider payloads, storage paths, or audio metadata to timing labels.
+
+Initial timing points:
+
+- Page loads: `listen.page.*`, `record.page.*`, `review.page.*`, `progress.page.*`.
+- Progress services: `progress.overview`, `progress.hydratedReviews`, `progress.scriptTakeComparison`.
+- Evaluate route / service: `evaluate.route.*`, `evaluate.script`, `evaluate.audioInput`, `evaluate.transcription`, `evaluate.pronunciation`, `evaluate.coach`, `evaluate.persistenceRpc`, `evaluate.refetchStoredReview`.
+- Protected replay: `takesAudio.route.*`, `scriptAudio.route.*`, `recording.storageDownload`, `voice.replay.storageDownload`.
+- Voice/listen audio: `voice.setupState`, `voice.cachedListenAudio.*`, `voice.speakScript.*`.
+
+How to use locally:
+
+```bash
+NATIVE_MINUTE_ENABLE_TIMING=1 npm run dev
+```
+
+Then exercise authenticated routes and evaluate from the browser. Compare the stage labels before changing implementation. For production-like local checks:
+
+```bash
+npm run build
+NATIVE_MINUTE_ENABLE_TIMING=1 npm run start
+```
+
+The first optimization pass should use these logs to decide whether to start with selected-script progress summaries, Review loading consolidation, Progress audio-library deferral, or protected audio replay tuning.
+
+## 13. Measurement gaps
 
 - No authenticated production timing was measured in this audit.
 - No Supabase query timing was measured per table or per route.

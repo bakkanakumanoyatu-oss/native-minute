@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { formatWordListWithOverflow } from "@/lib/focus-words";
 import { getGuidanceActionBadgeLabel, getGuidancePrimaryButtonLabel } from "@/lib/guidance-ui";
 import { buildLoginHref } from "@/lib/navigation";
+import { timeAsync } from "@/lib/performance/timing";
 import { createPracticeChunks, findWeakWordPracticeChunks } from "@/lib/script-practice-chunks";
 import { getDuplicateScriptPath, getScriptListenPath, getScriptRecordPath, getScriptReviewPath } from "@/lib/script-routes";
 import { getReviewPracticeGuidance, type PracticeGuidance } from "@/lib/practice-guidance";
@@ -36,7 +37,7 @@ type PageParams = {
 
 export default async function ReviewPage({ params }: PageParams) {
   const { id, takeId } = await params;
-  const user = await getCurrentUser();
+  const user = await timeAsync("review.page.auth", () => getCurrentUser());
   const listenHref = getScriptListenPath(id);
   const recordHref = getScriptRecordPath(id);
   const currentReviewHref = getScriptReviewPath(id, takeId);
@@ -46,7 +47,7 @@ export default async function ReviewPage({ params }: PageParams) {
   }
 
   const supabase = createSupabaseServerClient();
-  const script = await getScript(supabase, user.id, id);
+  const script = await timeAsync("review.page.script", () => getScript(supabase, user.id, id));
 
   if (!script) {
     return (
@@ -118,7 +119,7 @@ export default async function ReviewPage({ params }: PageParams) {
     );
   }
 
-  const review = await getStoredReview(supabase, user.id, script.id, takeId);
+  const review = await timeAsync("review.page.storedReview", () => getStoredReview(supabase, user.id, script.id, takeId));
 
   if (!review) {
     return (
@@ -154,8 +155,8 @@ export default async function ReviewPage({ params }: PageParams) {
   const evaluation = hydratedReview.evaluation;
   const coach = hydratedReview.coach;
   const weakWords = hydratedReview.weakWords;
-  const comparison = await getScriptTakeComparison(supabase, user.id, script.id, takeId);
-  const progressOverview = await getProgressOverview(supabase, user.id);
+  const comparison = await timeAsync("review.page.comparison", () => getScriptTakeComparison(supabase, user.id, script.id, takeId));
+  const progressOverview = await timeAsync("review.page.progressOverview", () => getProgressOverview(supabase, user.id));
   const isPracticeEstimate = getPronunciationProviderName() === "mock";
   const progressItem = progressOverview.scripts.find((item) => item.script.id === script.id) ?? null;
   const latestReviewHref = progressItem?.latestTake ? getScriptReviewPath(script.id, progressItem.latestTake.id) : null;

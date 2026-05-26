@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
+import { timeAsync, timeSync } from "@/lib/performance/timing";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import type { Database, Json } from "@/types/database";
 import type { CoachFeedback } from "@/services/coach";
@@ -111,67 +112,77 @@ export async function createReviewArtifacts(
   userId: string,
   input: EvaluateRequestInput
 ): Promise<ReviewArtifacts> {
-  const takeId = input.takeId ?? randomUUID();
-  const transcription = createTranscriptionProvider();
-  const evaluator = createPronunciationEvaluator();
-  const script = await getScript(client, userId, input.scriptId);
+  return timeAsync("evaluate.artifacts", async () => {
+    const takeId = input.takeId ?? randomUUID();
+    const transcription = createTranscriptionProvider();
+    const evaluator = createPronunciationEvaluator();
+    const script = await timeAsync("evaluate.script", () => getScript(client, userId, input.scriptId));
 
-  if (!script) {
-    throw new AppError(404, "台本が見つかりませんでした。");
-  }
+    if (!script) {
+      throw new AppError(404, "台本が見つかりませんでした。");
+    }
 
-  const recording = await loadOwnedRecordingForEvaluation(client, userId, input.scriptId, {
-    audioPath: input.audioPath,
-    audioStorageKey: input.audioStorageKey
+    const recording = await timeAsync("evaluate.audioInput", () =>
+      loadOwnedRecordingForEvaluation(client, userId, input.scriptId, {
+        audioPath: input.audioPath,
+        audioStorageKey: input.audioStorageKey
+      })
+    );
+
+    const transcriptionResult = await timeAsync("evaluate.transcription", () =>
+      transcription.transcribe({
+        audioFile: recording
+          ? {
+              filename: recording.filename,
+              contentType: recording.contentType,
+              bytes: recording.bytes
+            }
+          : undefined,
+        audioPath: recording?.audioPath ?? input.audioPath,
+        audioStorageKey: recording?.audioStorageKey ?? input.audioStorageKey,
+        transcriptText: input.transcriptText,
+        locale: input.locale
+      })
+    );
+
+    const evaluation = await timeAsync("evaluate.pronunciation", () =>
+      evaluator.evaluate({
+        scriptText: script.content,
+        transcript: transcriptionResult.transcriptText,
+        durationSeconds: input.durationSeconds,
+        targetSeconds: script.targetSeconds,
+        locale: script.locale,
+        audioFile: recording
+          ? {
+              filename: recording.filename,
+              contentType: recording.contentType,
+              bytes: recording.bytes,
+              audioPath: recording.audioPath,
+              audioStorageKey: recording.audioStorageKey
+            }
+          : undefined,
+        audioPath: recording?.audioPath ?? input.audioPath,
+        audioStorageKey: recording?.audioStorageKey ?? input.audioStorageKey
+      })
+    );
+
+    const coach = timeSync("evaluate.coach", () =>
+      createMockCoachFeedback({
+        scriptText: script.content,
+        transcript: transcriptionResult.transcriptText,
+        evaluation,
+        locale: script.locale
+      } satisfies CoachInput)
+    );
+
+    return {
+      takeId,
+      audioPath: recording?.audioPath ?? toAudioPath(input, takeId),
+      transcriptText: transcriptionResult.transcriptText,
+      evaluation,
+      coach
+    };
   });
-
-  const transcriptionResult = await transcription.transcribe({
-    audioFile: recording
-      ? {
-          filename: recording.filename,
-          contentType: recording.contentType,
-          bytes: recording.bytes
-        }
-      : undefined,
-    audioPath: recording?.audioPath ?? input.audioPath,
-    audioStorageKey: recording?.audioStorageKey ?? input.audioStorageKey,
-    transcriptText: input.transcriptText,
-    locale: input.locale
-  });
-
-  const evaluation = await evaluator.evaluate({
-    scriptText: script.content,
-    transcript: transcriptionResult.transcriptText,
-    durationSeconds: input.durationSeconds,
-    targetSeconds: script.targetSeconds,
-    locale: script.locale,
-    audioFile: recording
-      ? {
-          filename: recording.filename,
-          contentType: recording.contentType,
-          bytes: recording.bytes,
-          audioPath: recording.audioPath,
-          audioStorageKey: recording.audioStorageKey
-        }
-      : undefined,
-    audioPath: recording?.audioPath ?? input.audioPath,
-    audioStorageKey: recording?.audioStorageKey ?? input.audioStorageKey
-  });
-
-  const coach = createMockCoachFeedback({
-    scriptText: script.content,
-    transcript: transcriptionResult.transcriptText,
-    evaluation,
-    locale: script.locale
-  } satisfies CoachInput);
-
-  return {
-    takeId,
-    audioPath: recording?.audioPath ?? toAudioPath(input, takeId),
-    transcriptText: transcriptionResult.transcriptText,
-    evaluation,
-    coach
-  };
 }
 
 async function persistReviewBundle(
@@ -204,7 +215,7 @@ async function persistReviewBundle(
   };
 
   const rpcClient = client as unknown as PersistReviewRpcClient;
-  const { data, error } = await rpcClient.rpc("persist_review_bundle", rpcArgs);
+  const { data, error } = await timeAsync("evaluate.persistenceRpc", () => rpcClient.rpc("persist_review_bundle", rpcArgs));
 
   if (error) {
     throw new AppError(500, `review の保存に失敗しました。${error.message}`);
@@ -218,10 +229,12 @@ async function persistReviewBundle(
 }
 
 async function loadStoredReview(client: AppSupabaseClient, take: TakeRow): Promise<StoredTakeReview> {
-  const [{ data: weakWords, error: weakWordsError }, { data: coachFeedback, error: coachFeedbackError }] = await Promise.all([
-    client.from("weak_words").select("*").eq("take_id", take.id).order("created_at", { ascending: true }),
-    client.from("coach_feedback").select("*").eq("take_id", take.id).maybeSingle()
-  ]);
+  const [{ data: weakWords, error: weakWordsError }, { data: coachFeedback, error: coachFeedbackError }] = await timeAsync("review.loadStoredReview", () =>
+    Promise.all([
+      client.from("weak_words").select("*").eq("take_id", take.id).order("created_at", { ascending: true }),
+      client.from("coach_feedback").select("*").eq("take_id", take.id).maybeSingle()
+    ])
+  );
 
   if (weakWordsError) {
     throw new AppError(500, `weak_words の取得に失敗しました。${weakWordsError.message}`);
@@ -239,62 +252,68 @@ async function loadStoredReview(client: AppSupabaseClient, take: TakeRow): Promi
 }
 
 export async function createPersistedReview(client: AppSupabaseClient, userId: string, input: EvaluateRequestInput) {
-  const reviewArtifacts = await createReviewArtifacts(client, userId, input);
-  const takeId = await persistReviewBundle(client, input, reviewArtifacts);
-  const storedReview = await getStoredReview(client, userId, input.scriptId, takeId);
+  return timeAsync("evaluate.persistedReview", async () => {
+    const reviewArtifacts = await createReviewArtifacts(client, userId, input);
+    const takeId = await persistReviewBundle(client, input, reviewArtifacts);
+    const storedReview = await timeAsync("evaluate.refetchStoredReview", () => getStoredReview(client, userId, input.scriptId, takeId));
 
-  if (!storedReview) {
-    throw new AppError(500, "保存した take を再取得できませんでした。");
-  }
+    if (!storedReview) {
+      throw new AppError(500, "保存した take を再取得できませんでした。");
+    }
 
-  const hydrated = hydrateStoredReview(storedReview);
+    const hydrated = hydrateStoredReview(storedReview);
 
-  return {
-    takeId: hydrated.take.id,
-    transcriptText: hydrated.take.transcript_text ?? reviewArtifacts.transcriptText,
-    evaluation: hydrated.evaluation,
-    coach: hydrated.coach,
-    storedReview: hydrated
-  };
+    return {
+      takeId: hydrated.take.id,
+      transcriptText: hydrated.take.transcript_text ?? reviewArtifacts.transcriptText,
+      evaluation: hydrated.evaluation,
+      coach: hydrated.coach,
+      storedReview: hydrated
+    };
+  });
 }
 
 export async function getStoredReview(client: AppSupabaseClient, userId: string, scriptId: string, takeId: string): Promise<StoredTakeReview | null> {
-  const { data: take, error } = await client
-    .from("takes")
-    .select("*")
-    .eq("id", takeId)
-    .eq("user_id", userId)
-    .eq("script_id", scriptId)
-    .maybeSingle();
+  return timeAsync("review.storedReview", async () => {
+    const { data: take, error } = await client
+      .from("takes")
+      .select("*")
+      .eq("id", takeId)
+      .eq("user_id", userId)
+      .eq("script_id", scriptId)
+      .maybeSingle();
 
-  if (error) {
-    throw new AppError(500, `take の取得に失敗しました。${error.message}`);
-  }
+    if (error) {
+      throw new AppError(500, `take の取得に失敗しました。${error.message}`);
+    }
 
-  if (!take) {
-    return null;
-  }
+    if (!take) {
+      return null;
+    }
 
-  return loadStoredReview(client, take);
+    return loadStoredReview(client, take);
+  });
 }
 
 export async function getStoredReviewByTakeId(client: AppSupabaseClient, userId: string, takeId: string): Promise<StoredTakeReview | null> {
-  const { data: take, error } = await client
-    .from("takes")
-    .select("*")
-    .eq("id", takeId)
-    .eq("user_id", userId)
-    .maybeSingle();
+  return timeAsync("review.storedReviewByTakeId", async () => {
+    const { data: take, error } = await client
+      .from("takes")
+      .select("*")
+      .eq("id", takeId)
+      .eq("user_id", userId)
+      .maybeSingle();
 
-  if (error) {
-    throw new AppError(500, `take の取得に失敗しました。${error.message}`);
-  }
+    if (error) {
+      throw new AppError(500, `take の取得に失敗しました。${error.message}`);
+    }
 
-  if (!take) {
-    return null;
-  }
+    if (!take) {
+      return null;
+    }
 
-  return loadStoredReview(client, take);
+    return loadStoredReview(client, take);
+  });
 }
 
 export async function getPersistedCoach(client: AppSupabaseClient, userId: string, takeId: string) {

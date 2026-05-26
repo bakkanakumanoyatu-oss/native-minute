@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { buildLoginHref } from "@/lib/navigation";
+import { timeAsync } from "@/lib/performance/timing";
 import { createPracticeChunks } from "@/lib/script-practice-chunks";
 import { getScriptListenPath, getScriptRecordPath, getScriptReviewPath } from "@/lib/script-routes";
 import { getCurrentUser } from "@/lib/supabase/auth";
@@ -25,7 +26,7 @@ type PageParams = {
 
 export default async function RecordPage({ params }: PageParams) {
   const { id } = await params;
-  const user = await getCurrentUser();
+  const user = await timeAsync("record.page.auth", () => getCurrentUser());
   const listenHref = getScriptListenPath(id);
   const recordHref = getScriptRecordPath(id);
 
@@ -34,10 +35,10 @@ export default async function RecordPage({ params }: PageParams) {
   }
 
   const supabase = createSupabaseServerClient();
-  const script = await getScript(supabase, user.id, id);
+  const script = await timeAsync("record.page.script", () => getScript(supabase, user.id, id));
   const transcriptionStatus = getTranscriptionProviderStatus();
   const pronunciationStatus = getPronunciationProviderStatus();
-  const overview = await getProgressOverview(supabase, user.id);
+  const overview = await timeAsync("record.page.progressOverview", () => getProgressOverview(supabase, user.id));
   const progressItem = overview.scripts.find((item) => item.script.id === id) ?? null;
   const latestReviewHref = progressItem?.latestTake ? getScriptReviewPath(id, progressItem.latestTake.id) : null;
   const practiceChunks = createPracticeChunks(script?.content ?? "");

@@ -3,6 +3,7 @@ import { requireCurrentUser } from "@/lib/supabase/auth";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { buildScriptAudioPlaybackPath } from "@/lib/voice-playback-path";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
+import { timeAsync } from "@/lib/performance/timing";
 import { loadOwnedScriptAudioReplay } from "@/services/voice";
 
 type RouteParams = {
@@ -65,10 +66,10 @@ export async function GET(request: Request, { params }: RouteParams) {
   try {
     const { audioId } = await params;
     const supabase = createSupabaseRouteClient();
-    await requireCurrentUser(supabase);
+    await timeAsync("scriptAudio.route.auth", () => requireCurrentUser(supabase));
 
     const storagePath = buildScriptAudioPlaybackPath(audioId);
-    const replay = await loadOwnedScriptAudioReplay(supabase, storagePath);
+    const replay = await timeAsync("scriptAudio.route.loadReplay", () => loadOwnedScriptAudioReplay(supabase, storagePath));
 
     if (!replay) {
       return new Response("Audio not found.", { status: 404 });

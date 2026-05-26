@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { timeAsync } from "@/lib/performance/timing";
 import { createSupabaseRouteClient } from "@/lib/supabase/route";
 import { requireCurrentUser } from "@/lib/supabase/auth";
 import { jsonError, jsonOk } from "@/lib/http";
@@ -14,16 +15,18 @@ export async function POST(request: NextRequest) {
 
   try {
     const supabase = createSupabaseRouteClient();
-    const user = await requireCurrentUser(supabase);
+    const user = await timeAsync("evaluate.route.auth", () => requireCurrentUser(supabase));
 
-    const payload = await request.json().catch(() => null);
-    const parsed = evaluateRequestSchema.safeParse(payload);
+    const parsed = await timeAsync("evaluate.route.validation", async () => {
+      const payload = await request.json().catch(() => null);
+      return evaluateRequestSchema.safeParse(payload);
+    });
 
     if (!parsed.success) {
       return jsonError(parsed.error.issues[0]?.message ?? "評価入力を確認してください。", 400);
     }
 
-    const review = await createPersistedReview(supabase, user.id, parsed.data);
+    const review = await timeAsync("evaluate.route.createPersistedReview", () => createPersistedReview(supabase, user.id, parsed.data));
     return jsonOk({
       takeId: review.takeId,
       evaluation: review.evaluation,

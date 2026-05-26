@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { buildLoginHref } from "@/lib/navigation";
+import { timeAsync } from "@/lib/performance/timing";
 import { getScriptReviewPath } from "@/lib/script-routes";
 import { getAuthState } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -30,7 +31,7 @@ type PageProps = {
 
 export default async function ProgressPage({ searchParams }: PageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const authState = await getAuthState();
+  const authState = await timeAsync("progress.page.auth", () => getAuthState());
 
   if (authState.kind === "config_error") {
     return (
@@ -51,16 +52,19 @@ export default async function ProgressPage({ searchParams }: PageProps) {
     redirect(buildLoginHref("/progress", "login_required", "/progress"));
   }
 
+  const user = authState.user;
   const supabase = createSupabaseServerClient();
-  const overview = await getProgressOverview(supabase, authState.user.id);
+  const overview = await timeAsync("progress.page.overview", () => getProgressOverview(supabase, user.id));
   const isPracticeEstimate = getPronunciationProviderName() === "mock";
   const slots = getVisibleProgressSlots(overview.scripts, resolvedSearchParams?.scriptId);
   const selectedItem = slots.find((item) => item.script.id === resolvedSearchParams?.scriptId) ?? slots[0] ?? null;
   const selectedSlotNumber = selectedItem ? slots.findIndex((item) => item.script.id === selectedItem.script.id) + 1 : null;
-  const audioLibraryByScriptId = await getProgressAudioLibraryByScriptId(
-    supabase,
-    authState.user.id,
-    slots.map((item) => item.script.id)
+  const audioLibraryByScriptId = await timeAsync("progress.page.audioLibrary", () =>
+    getProgressAudioLibraryByScriptId(
+      supabase,
+      user.id,
+      slots.map((item) => item.script.id)
+    )
   );
 
   if (overview.totalScripts === 0) {
@@ -388,22 +392,24 @@ function ModelAudioMetadata({ metadata }: { metadata: Json }) {
 }
 
 async function getProgressAudioLibraryByScriptId(client: AppSupabaseClient, userId: string, scriptIds: string[]) {
-  const entries = await Promise.all(
-    scriptIds.map(async (scriptId) => {
-      try {
-        const [savedModelAudios, savedBestTakes] = await Promise.all([
-          listSavedModelAudios(client, userId, scriptId),
-          listSavedBestTakes(client, userId, scriptId)
-        ]);
+  return timeAsync("progress.audioLibraryByScript", async () => {
+    const entries = await Promise.all(
+      scriptIds.map(async (scriptId) => {
+        try {
+          const [savedModelAudios, savedBestTakes] = await Promise.all([
+            listSavedModelAudios(client, userId, scriptId),
+            listSavedBestTakes(client, userId, scriptId)
+          ]);
 
-        return [scriptId, { savedModelAudios, savedBestTakes, loadFailed: false }] as const;
-      } catch {
-        return [scriptId, getEmptyProgressAudioLibraryState(true)] as const;
-      }
-    })
-  );
+          return [scriptId, { savedModelAudios, savedBestTakes, loadFailed: false }] as const;
+        } catch {
+          return [scriptId, getEmptyProgressAudioLibraryState(true)] as const;
+        }
+      })
+    );
 
-  return new Map<string, ProgressAudioLibraryState>(entries);
+    return new Map<string, ProgressAudioLibraryState>(entries);
+  });
 }
 
 function getEmptyProgressAudioLibraryState(loadFailed: boolean): ProgressAudioLibraryState {

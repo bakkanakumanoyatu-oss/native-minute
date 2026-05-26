@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import { timeAsync } from "@/lib/performance/timing";
 import { DEFAULT_VOICE_STYLE_PRESET } from "@/lib/voice-style";
 import { buildScriptAudioPlaybackPath } from "@/lib/voice-playback-path";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
@@ -312,23 +313,25 @@ export async function getDefaultVoice(client: AppSupabaseClient, userId: string)
 }
 
 export async function getVoiceSetupState(client: AppSupabaseClient, userId: string) {
-  const providerStatus = getVoiceProviderStatus();
-  const [consent, voices] = await Promise.all([
-    getLatestConsent(client, userId, providerStatus.provider),
-    listVoices(client, userId, providerStatus.provider)
-  ]);
+  return timeAsync("voice.setupState", async () => {
+    const providerStatus = getVoiceProviderStatus();
+    const [consent, voices] = await Promise.all([
+      getLatestConsent(client, userId, providerStatus.provider),
+      listVoices(client, userId, providerStatus.provider)
+    ]);
 
-  return {
-    provider: providerStatus.provider,
-    providerSupported: providerStatus.supported,
-    providerMessage: providerStatus.message,
-    providerReadiness: providerStatus.readiness,
-    providerRequirements: providerStatus.requirements,
-    providerDiagnostics: providerStatus.diagnostics,
-    consent,
-    voices,
-    defaultVoice: voices[0] ?? null
-  };
+    return {
+      provider: providerStatus.provider,
+      providerSupported: providerStatus.supported,
+      providerMessage: providerStatus.message,
+      providerReadiness: providerStatus.readiness,
+      providerRequirements: providerStatus.requirements,
+      providerDiagnostics: providerStatus.diagnostics,
+      consent,
+      voices,
+      defaultVoice: voices[0] ?? null
+    };
+  });
 }
 
 function assertProviderConsentRequirements(input: {
@@ -637,62 +640,67 @@ async function ensureScriptAudioPlaybackPath(client: AppSupabaseClient, scriptAu
 }
 
 export async function getCachedListenAudio(client: AppSupabaseClient, userId: string, scriptId: string) {
-  const [script, voice] = await Promise.all([getScript(client, userId, scriptId), getDefaultVoice(client, userId)]);
+  return timeAsync("voice.cachedListenAudio", async () => {
+    const [script, voice] = await Promise.all([getScript(client, userId, scriptId), getDefaultVoice(client, userId)]);
 
-  if (!script || !voice) {
-    return null;
-  }
+    if (!script || !voice) {
+      return null;
+    }
 
-  const cacheKey = buildScriptAudioCacheKey({
-    provider: voice.provider,
-    voiceId: voice.id,
-    scriptLocale: script.locale,
-    voiceStylePreset: DEFAULT_VOICE_STYLE_PRESET,
-    scriptContent: script.content
+    const cacheKey = buildScriptAudioCacheKey({
+      provider: voice.provider,
+      voiceId: voice.id,
+      scriptLocale: script.locale,
+      voiceStylePreset: DEFAULT_VOICE_STYLE_PRESET,
+      scriptContent: script.content
+    });
+
+    const cachedAudio = await timeAsync("voice.cachedListenAudio.cacheLookup", () => getCachedScriptAudio(client, script.id, voice.id, cacheKey));
+
+    if (!cachedAudio) {
+      return null;
+    }
+
+    const playableAudio = await timeAsync("voice.cachedListenAudio.ensurePlaybackPath", () => ensureScriptAudioPlaybackPath(client, cachedAudio));
+
+    return {
+      audioUrl: playableAudio.storage_path,
+      cached: true,
+      cacheKey,
+      voice
+    };
   });
-
-  const cachedAudio = await getCachedScriptAudio(client, script.id, voice.id, cacheKey);
-
-  if (!cachedAudio) {
-    return null;
-  }
-
-  const playableAudio = await ensureScriptAudioPlaybackPath(client, cachedAudio);
-
-  return {
-    audioUrl: playableAudio.storage_path,
-    cached: true,
-    cacheKey,
-    voice
-  };
 }
 
 export async function speakScript(client: AppSupabaseClient, userId: string, input: SpeakScriptRequestInput) {
-  const providerStatus = getVoiceProviderStatus();
-  const voiceStylePreset = input.voiceStylePreset ?? DEFAULT_VOICE_STYLE_PRESET;
+  return timeAsync("voice.speakScript", async () => {
+    const providerStatus = getVoiceProviderStatus();
+    const voiceStylePreset = input.voiceStylePreset ?? DEFAULT_VOICE_STYLE_PRESET;
 
-  if (!providerStatus.supported) {
-    await recordSkippedVoiceQuotaEvent(
-      createVoiceQuotaContext({
-        userId,
-        scriptId: input.scriptId,
-        voiceId: input.voiceId ?? null,
-        provider: providerStatus.provider,
-        providerModel: null,
-        locale: null,
-        voiceStylePreset,
-        cacheKey: null
-      }),
-      "provider_config"
+    if (!providerStatus.supported) {
+      await recordSkippedVoiceQuotaEvent(
+        createVoiceQuotaContext({
+          userId,
+          scriptId: input.scriptId,
+          voiceId: input.voiceId ?? null,
+          provider: providerStatus.provider,
+          providerModel: null,
+          locale: null,
+          voiceStylePreset,
+          cacheKey: null
+        }),
+        "provider_config"
+      );
+
+      throw new AppError(503, providerStatus.message ?? `VOICE_PROVIDER=${providerStatus.provider} は current repo では利用できません。`);
+    }
+
+    const [script, selectedVoice] = await timeAsync("voice.speakScript.ownershipLoad", () =>
+      Promise.all([
+        getScript(client, userId, input.scriptId),
+        input.voiceId ? getOwnedVoice(client, userId, input.voiceId) : getDefaultVoice(client, userId)
+      ])
     );
-
-    throw new AppError(503, providerStatus.message ?? `VOICE_PROVIDER=${providerStatus.provider} は current repo では利用できません。`);
-  }
-
-  const [script, selectedVoice] = await Promise.all([
-    getScript(client, userId, input.scriptId),
-    input.voiceId ? getOwnedVoice(client, userId, input.voiceId) : getDefaultVoice(client, userId)
-  ]);
 
   if (!script) {
     await recordFailedVoiceQuotaEvent(
@@ -770,14 +778,14 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   let cachedAudio: ScriptAudioRow | null;
 
   try {
-    cachedAudio = await getCachedScriptAudio(client, script.id, selectedVoice.id, cacheKey);
+    cachedAudio = await timeAsync("voice.speakScript.cacheLookup", () => getCachedScriptAudio(client, script.id, selectedVoice.id, cacheKey));
   } catch (error) {
     await recordFailedVoiceQuotaEvent(quotaContext, "cache_lookup");
     throw error;
   }
 
   if (cachedAudio) {
-    const playableAudio = await ensureScriptAudioPlaybackPath(client, cachedAudio);
+    const playableAudio = await timeAsync("voice.speakScript.ensurePlaybackPath", () => ensureScriptAudioPlaybackPath(client, cachedAudio));
 
     await withNonBlockingQuotaEventWrite("record cache hit voice generation quota event", () =>
       recordVoiceQuotaEventCacheHit({
@@ -822,12 +830,12 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   // script_audios points at the replay route reference.
   const synthesized = await (async () => {
     try {
-      return await provider.synthesize({
+      return await timeAsync("voice.speakScript.providerSynthesize", () => provider.synthesize({
         providerVoiceId: selectedVoice.provider_voice_id,
         text: script.content,
         locale: script.locale,
         voiceStylePreset
-      });
+      }));
     } catch (error) {
       await markFailedVoiceQuotaEvent(quotaEvent, quotaContext, "provider_request");
       throw error;
@@ -835,14 +843,14 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   })();
   const replayAsset = await (async () => {
     try {
-      return await stageScriptAudioForReplay({
+      return await timeAsync("voice.speakScript.stageReplay", () => stageScriptAudioForReplay({
         client,
         userId,
         scriptId: script.id,
         voiceId: selectedVoice.id,
         cacheKey,
         synthesized
-      });
+      }));
     } catch (error) {
       await markFailedVoiceQuotaEvent(quotaEvent, quotaContext, "storage_staging", {
         providerRequestId: synthesized.providerRequestId
@@ -853,7 +861,7 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
 
   let insertedAudio: ScriptAudioRow | null = null;
   try {
-    insertedAudio = await insertScriptAudio(client, {
+    const newAudio = await timeAsync("voice.speakScript.insertAudio", () => insertScriptAudio(client, {
       script_id: script.id,
       voice_id: selectedVoice.id,
       provider: selectedVoice.provider,
@@ -862,8 +870,8 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
       storage_path: replayAsset.storagePath,
       stored_asset: encodeStoredAssetMetadata(replayAsset.storedAsset),
       duration_seconds: null
-    });
-    insertedAudio = await ensureScriptAudioPlaybackPath(client, insertedAudio);
+    }));
+    insertedAudio = await timeAsync("voice.speakScript.ensureInsertedPlaybackPath", () => ensureScriptAudioPlaybackPath(client, newAudio));
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
 
@@ -881,7 +889,7 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   let storedAudio: ScriptAudioRow | null;
 
   try {
-    storedAudio = await getCachedScriptAudio(client, script.id, selectedVoice.id, cacheKey);
+    storedAudio = await timeAsync("voice.speakScript.finalCacheLookup", () => getCachedScriptAudio(client, script.id, selectedVoice.id, cacheKey));
   } catch (error) {
     await markFailedVoiceQuotaEvent(quotaEvent, quotaContext, "cache_lookup", {
       replayAsset,
@@ -891,7 +899,7 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
     throw error;
   }
 
-  const completedAudio = storedAudio ? await ensureScriptAudioPlaybackPath(client, storedAudio) : insertedAudio;
+  const completedAudio = storedAudio ? await timeAsync("voice.speakScript.ensureCompletedPlaybackPath", () => ensureScriptAudioPlaybackPath(client, storedAudio)) : insertedAudio;
   const completedContext = {
     ...quotaContext,
     scriptAudioId: completedAudio?.id ?? null
@@ -918,10 +926,11 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
     });
   }
 
-  return {
-    audioUrl: completedAudio?.storage_path ?? replayAsset.storagePath,
-    cached: Boolean(storedAudio),
-    cacheKey,
-    voice: selectedVoice
-  };
+    return {
+      audioUrl: completedAudio?.storage_path ?? replayAsset.storagePath,
+      cached: Boolean(storedAudio),
+      cacheKey,
+      voice: selectedVoice
+    };
+  });
 }

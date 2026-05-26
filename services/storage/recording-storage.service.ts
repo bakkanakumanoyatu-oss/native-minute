@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
+import { timeAsync } from "@/lib/performance/timing";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import { getScript } from "@/services/scripts/scripts.service";
 import { MAX_RECORDING_BYTES, RECORDINGS_BUCKET, RECORDING_MIME_TYPES } from "./constants";
@@ -168,42 +169,46 @@ export async function uploadOwnedRecording(
   userId: string,
   input: StorageUploadInput
 ): Promise<UploadedRecording> {
-  await ensureOwnedScript(client, userId, input.scriptId);
+  return timeAsync("recording.uploadOwned", async () => {
+    await ensureOwnedScript(client, userId, input.scriptId);
 
-  if (!input.file.size) {
-    throw new AppError(400, "録音ファイルが空です。録音を確認してください。");
-  }
+    if (!input.file.size) {
+      throw new AppError(400, "録音ファイルが空です。録音を確認してください。");
+    }
 
-  if (input.file.size > MAX_RECORDING_BYTES) {
-    throw new AppError(400, "録音ファイルが大きすぎます。1分以内の音声で再試行してください。");
-  }
+    if (input.file.size > MAX_RECORDING_BYTES) {
+      throw new AppError(400, "録音ファイルが大きすぎます。1分以内の音声で再試行してください。");
+    }
 
-  const contentType = normalizeRecordingContentType(inferContentType(input.file));
+    const contentType = normalizeRecordingContentType(inferContentType(input.file));
 
-  if (!RECORDING_MIME_TYPES.has(contentType)) {
-    throw new AppError(400, "対応していない録音形式です。webm / wav / m4a / mp3 / ogg を使用してください。");
-  }
+    if (!RECORDING_MIME_TYPES.has(contentType)) {
+      throw new AppError(400, "対応していない録音形式です。webm / wav / m4a / mp3 / ogg を使用してください。");
+    }
 
-  const extension = getExtension(contentType, input.file.name);
-  const objectKey = `${userId}/${input.scriptId}/${randomUUID()}.${extension}`;
-  const bytes = Buffer.from(await input.file.arrayBuffer());
+    const extension = getExtension(contentType, input.file.name);
+    const objectKey = `${userId}/${input.scriptId}/${randomUUID()}.${extension}`;
+    const bytes = await timeAsync("recording.fileToBuffer", async () => Buffer.from(await input.file.arrayBuffer()));
 
-  const { error } = await client.storage.from(RECORDINGS_BUCKET).upload(objectKey, bytes, {
-    contentType,
-    cacheControl: "3600",
-    upsert: false
+    const { error } = await timeAsync("recording.storageUpload", () =>
+      client.storage.from(RECORDINGS_BUCKET).upload(objectKey, bytes, {
+        contentType,
+        cacheControl: "3600",
+        upsert: false
+      })
+    );
+
+    if (error) {
+      throw new AppError(500, getStorageFailureMessage(error.message, "upload"));
+    }
+
+    return {
+      audioPath: createRecordingAudioPath(objectKey),
+      audioStorageKey: objectKey,
+      durationSeconds: input.durationSeconds ?? null,
+      contentType
+    };
   });
-
-  if (error) {
-    throw new AppError(500, getStorageFailureMessage(error.message, "upload"));
-  }
-
-  return {
-    audioPath: createRecordingAudioPath(objectKey),
-    audioStorageKey: objectKey,
-    durationSeconds: input.durationSeconds ?? null,
-    contentType
-  };
 }
 
 export async function loadOwnedRecordingForEvaluation(
@@ -215,30 +220,34 @@ export async function loadOwnedRecordingForEvaluation(
     audioStorageKey?: string;
   }
 ): Promise<RecordingFileReference | null> {
-  const audioStorageKey = parseRecordingAudioReference(input);
+  return timeAsync("recording.loadOwnedForEvaluation", async () => {
+    const audioStorageKey = parseRecordingAudioReference(input);
 
-  if (!audioStorageKey) {
-    return null;
-  }
+    if (!audioStorageKey) {
+      return null;
+    }
 
-  validateOwnedRecordingKey(userId, scriptId, audioStorageKey);
-  await ensureOwnedScript(client, userId, scriptId);
+    validateOwnedRecordingKey(userId, scriptId, audioStorageKey);
+    await ensureOwnedScript(client, userId, scriptId);
 
-  const { data, error } = await client.storage.from(RECORDINGS_BUCKET).download(audioStorageKey);
+    const { data, error } = await timeAsync("recording.storageDownload", () =>
+      client.storage.from(RECORDINGS_BUCKET).download(audioStorageKey)
+    );
 
-  if (error) {
-    throw new AppError(400, getStorageFailureMessage(error.message, "download"));
-  }
+    if (error) {
+      throw new AppError(400, getStorageFailureMessage(error.message, "download"));
+    }
 
-  const contentType = data.type || "application/octet-stream";
-  const bytes = Buffer.from(await data.arrayBuffer());
-  const filename = audioStorageKey.split("/").pop() ?? `recording-${randomUUID()}.webm`;
+    const contentType = data.type || "application/octet-stream";
+    const bytes = await timeAsync("recording.downloadToBuffer", async () => Buffer.from(await data.arrayBuffer()));
+    const filename = audioStorageKey.split("/").pop() ?? `recording-${randomUUID()}.webm`;
 
-  return {
-    audioPath: createRecordingAudioPath(audioStorageKey),
-    audioStorageKey,
-    filename,
-    contentType,
-    bytes
-  };
+    return {
+      audioPath: createRecordingAudioPath(audioStorageKey),
+      audioStorageKey,
+      filename,
+      contentType,
+      bytes
+    };
+  });
 }

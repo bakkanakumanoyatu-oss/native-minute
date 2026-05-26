@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { timeAsync } from "@/lib/performance/timing";
 import { buildLoginHref, buildScriptListenVoiceSetupHref } from "@/lib/navigation";
 import { createPracticeChunks } from "@/lib/script-practice-chunks";
 import { getScriptListenPath, getScriptRecordPath, getScriptReviewPath } from "@/lib/script-routes";
@@ -34,7 +35,7 @@ type PageParams = {
 export default async function ListenPage({ params, searchParams }: PageParams) {
   const { id } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const user = await getCurrentUser();
+  const user = await timeAsync("listen.page.auth", () => getCurrentUser());
   const listenHref = getScriptListenPath(id);
   const recordHref = getScriptRecordPath(id);
   const voiceSetupHref = buildScriptListenVoiceSetupHref(id, "/scripts");
@@ -45,7 +46,7 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
   }
 
   const supabase = createSupabaseServerClient();
-  const script = await getScript(supabase, user.id, id);
+  const script = await timeAsync("listen.page.script", () => getScript(supabase, user.id, id));
 
   if (!script) {
     return (
@@ -77,9 +78,9 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
   }
 
   const [voiceSetup, cachedAudio, overview] = await Promise.all([
-    getVoiceSetupState(supabase, user.id),
-    getCachedListenAudio(supabase, user.id, script.id),
-    getProgressOverview(supabase, user.id)
+    timeAsync("listen.page.voiceSetup", () => getVoiceSetupState(supabase, user.id)),
+    timeAsync("listen.page.cachedAudio", () => getCachedListenAudio(supabase, user.id, script.id)),
+    timeAsync("listen.page.progressOverview", () => getProgressOverview(supabase, user.id))
   ]);
   const progressItem = overview.scripts.find((item) => item.script.id === id) ?? null;
   const latestReviewHref = progressItem?.latestTake ? getScriptReviewPath(script.id, progressItem.latestTake.id) : null;

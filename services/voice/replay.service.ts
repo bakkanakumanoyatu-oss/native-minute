@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { AppError } from "@/lib/errors";
+import { timeAsync } from "@/lib/performance/timing";
 import { buildScriptAudioPlaybackPath, parseScriptAudioPlaybackPath } from "@/lib/voice-playback-path";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import type { SynthesizeResult } from "@/providers/voice";
@@ -227,112 +228,120 @@ export async function stageScriptAudioForReplay(input: {
   cacheKey: string;
   synthesized: SynthesizeResult;
 }): Promise<ScriptAudioReplayAsset> {
-  // Fixed boundary for real providers:
-  // 1. receive provider bytes in voice service
-  // 2. persist them under app ownership
-  // 3. return the stable app replay reference that script_audios.storage_path will store
-  //
-  // Chosen storage direction for real providers:
-  // - store the bytes in Supabase Storage under app ownership
-  // - keep script_audios.storage_path as the replay-route reference only
-  // - use the dedicated script audio bucket instead of recordings, because generated exemplars
-  //   have different lifecycle / cache semantics than user-uploaded takes
-  //
-  // Why not temp files / in-memory only:
-  // - script_audios is a persisted cache, so the bytes need to survive request boundaries
-  // - replay should keep working across deploys / server instances
-  // - signed URLs are intentionally out of scope for this flow
-  //
-  // Minimum metadata to carry alongside the stored bytes:
-  // - storageBucket
-  // - storageObjectKey
-  // - contentType
-  // - byteLength
-  //
-  // Chosen object key direction for real providers:
-  // - <userId>/<scriptId>/<voiceId>/<cacheKey>.<ext>
-  // - userId stays as the coarse storage boundary
-  // - scriptId / voiceId help inspect ownership without using provider IDs as storage identity
-  // - cacheKey keeps regenerated assets aligned with the same persisted cache slot
-  //
-  // duration, waveform, provider latency, or provider model/version are not required to replay the cached audio.
-  const resolved = resolveSynthesizeReplayInput(input.synthesized);
-  const objectKey = buildScriptAudioStorageObjectKey({
-    userId: input.userId,
-    scriptId: input.scriptId,
-    voiceId: input.voiceId,
-    cacheKey: input.cacheKey,
-    contentType: resolved.contentType
-  });
+  return timeAsync("voice.replay.stage", async () => {
+    // Fixed boundary for real providers:
+    // 1. receive provider bytes in voice service
+    // 2. persist them under app ownership
+    // 3. return the stable app replay reference that script_audios.storage_path will store
+    //
+    // Chosen storage direction for real providers:
+    // - store the bytes in Supabase Storage under app ownership
+    // - keep script_audios.storage_path as the replay-route reference only
+    // - use the dedicated script audio bucket instead of recordings, because generated exemplars
+    //   have different lifecycle / cache semantics than user-uploaded takes
+    //
+    // Why not temp files / in-memory only:
+    // - script_audios is a persisted cache, so the bytes need to survive request boundaries
+    // - replay should keep working across deploys / server instances
+    // - signed URLs are intentionally out of scope for this flow
+    //
+    // Minimum metadata to carry alongside the stored bytes:
+    // - storageBucket
+    // - storageObjectKey
+    // - contentType
+    // - byteLength
+    //
+    // Chosen object key direction for real providers:
+    // - <userId>/<scriptId>/<voiceId>/<cacheKey>.<ext>
+    // - userId stays as the coarse storage boundary
+    // - scriptId / voiceId help inspect ownership without using provider IDs as storage identity
+    // - cacheKey keeps regenerated assets aligned with the same persisted cache slot
+    //
+    // duration, waveform, provider latency, or provider model/version are not required to replay the cached audio.
+    const resolved = resolveSynthesizeReplayInput(input.synthesized);
+    const objectKey = buildScriptAudioStorageObjectKey({
+      userId: input.userId,
+      scriptId: input.scriptId,
+      voiceId: input.voiceId,
+      cacheKey: input.cacheKey,
+      contentType: resolved.contentType
+    });
 
-  const { error } = await input.client.storage.from(SCRIPT_AUDIO_STORAGE_BUCKET).upload(objectKey, resolved.bytes, {
-    contentType: resolved.contentType,
-    cacheControl: "3600",
-    upsert: false
-  });
+    const { error } = await timeAsync("voice.replay.storageUpload", () =>
+      input.client.storage.from(SCRIPT_AUDIO_STORAGE_BUCKET).upload(objectKey, resolved.bytes, {
+        contentType: resolved.contentType,
+        cacheControl: "3600",
+        upsert: false
+      })
+    );
 
-  if (error) {
-    const normalized = error.message.toLowerCase();
-    const isConflict = normalized.includes("duplicate") || normalized.includes("already exists");
+    if (error) {
+      const normalized = error.message.toLowerCase();
+      const isConflict = normalized.includes("duplicate") || normalized.includes("already exists");
 
-    if (!isConflict) {
-      throw new AppError(500, getScriptAudioStorageFailureMessage(error.message, "upload"));
+      if (!isConflict) {
+        throw new AppError(500, getScriptAudioStorageFailureMessage(error.message, "upload"));
+      }
     }
-  }
 
-  return {
-    storagePath: resolved.playbackPath,
-    storedAsset: {
-      storageBucket: SCRIPT_AUDIO_STORAGE_BUCKET,
-      storageObjectKey: objectKey,
-      contentType: resolved.contentType,
-      byteLength: resolved.bytes.length
-    }
-  };
+    return {
+      storagePath: resolved.playbackPath,
+      storedAsset: {
+        storageBucket: SCRIPT_AUDIO_STORAGE_BUCKET,
+        storageObjectKey: objectKey,
+        contentType: resolved.contentType,
+        byteLength: resolved.bytes.length
+      }
+    };
+  });
 }
 
 export async function loadOwnedScriptAudioReplay(
   client: AppSupabaseClient,
   playbackPath: string
 ): Promise<ScriptAudioReplayPayload | null> {
-  const record = await getOwnedScriptAudioByPlaybackPath(client, playbackPath);
+  return timeAsync("voice.replay.loadOwned", async () => {
+    const record = await getOwnedScriptAudioByPlaybackPath(client, playbackPath);
 
-  if (!record) {
-    return null;
-  }
+    if (!record) {
+      return null;
+    }
 
-  const audioId = parseScriptAudioPlaybackPath(record.storage_path);
+    const audioId = parseScriptAudioPlaybackPath(record.storage_path);
 
-  if (!audioId) {
-    throw new AppError(500, "見本音声の再生参照が不正です。");
-  }
+    if (!audioId) {
+      throw new AppError(500, "見本音声の再生参照が不正です。");
+    }
 
-  const storedAsset = decodeStoredAssetMetadata(record.stored_asset);
+    const storedAsset = decodeStoredAssetMetadata(record.stored_asset);
 
-  // Fixed boundary for real providers:
-  // replay routes read app-owned bytes from the reference stored in script_audios.storage_path.
-  // The intended production read path is an app-owned Supabase Storage object referenced by storedAsset metadata.
-  // Route handlers stay thin: auth + playback-path parsing happen at the route edge,
-  // while the owned row lookup and storage download stay in services.
-  if (storedAsset) {
-    const { data, error } = await client.storage
-      .from(storedAsset.storageBucket)
-      .download(storedAsset.storageObjectKey);
+    // Fixed boundary for real providers:
+    // replay routes read app-owned bytes from the reference stored in script_audios.storage_path.
+    // The intended production read path is an app-owned Supabase Storage object referenced by storedAsset metadata.
+    // Route handlers stay thin: auth + playback-path parsing happen at the route edge,
+    // while the owned row lookup and storage download stay in services.
+    if (storedAsset) {
+      const { data, error } = await timeAsync("voice.replay.storageDownload", () =>
+        client.storage
+          .from(storedAsset.storageBucket)
+          .download(storedAsset.storageObjectKey)
+      );
 
-    if (error) {
-      throw new AppError(500, getScriptAudioStorageFailureMessage(error.message, "download"));
+      if (error) {
+        throw new AppError(500, getScriptAudioStorageFailureMessage(error.message, "download"));
+      }
+
+      return {
+        bytes: await timeAsync("voice.replay.downloadToBuffer", async () => Buffer.from(await data.arrayBuffer())),
+        contentType: storedAsset.contentType,
+        storagePath: record.storage_path
+      };
     }
 
     return {
-      bytes: Buffer.from(await data.arrayBuffer()),
-      contentType: storedAsset.contentType,
+      bytes: createMockWave(audioId),
+      contentType: "audio/wav",
       storagePath: record.storage_path
     };
-  }
-
-  return {
-    bytes: createMockWave(audioId),
-    contentType: "audio/wav",
-    storagePath: record.storage_path
-  };
+  });
 }

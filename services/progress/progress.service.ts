@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import { timeAsync } from "@/lib/performance/timing";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import type { CoachFeedback } from "@/services/coach";
@@ -131,67 +132,69 @@ function getImprovementTrend(latest: ProgressTakeSummary | null, previous: Progr
 }
 
 async function getHydratedReviews(client: AppSupabaseClient, userId: string) {
-  const [{ data: takes, error: takesError }, { data: weakWords, error: weakWordsError }, { data: coachFeedback, error: coachFeedbackError }] =
-    await Promise.all([
-      asMany<TakeRow>(await client.from("takes").select("*").eq("user_id", userId).order("created_at", { ascending: false })),
-      client
-        .from("weak_words")
-        .select("*, takes!inner(user_id)")
-        .eq("takes.user_id", userId)
-        .order("created_at", { ascending: true }),
-      client.from("coach_feedback").select("*, takes!inner(user_id)").eq("takes.user_id", userId)
-    ]);
+  return timeAsync("progress.hydratedReviews", async () => {
+    const [{ data: takes, error: takesError }, { data: weakWords, error: weakWordsError }, { data: coachFeedback, error: coachFeedbackError }] =
+      await Promise.all([
+        asMany<TakeRow>(await client.from("takes").select("*").eq("user_id", userId).order("created_at", { ascending: false })),
+        client
+          .from("weak_words")
+          .select("*, takes!inner(user_id)")
+          .eq("takes.user_id", userId)
+          .order("created_at", { ascending: true }),
+        client.from("coach_feedback").select("*, takes!inner(user_id)").eq("takes.user_id", userId)
+      ]);
 
-  if (takesError) {
-    throw mapProgressError("take 一覧取得", takesError);
-  }
+    if (takesError) {
+      throw mapProgressError("take 一覧取得", takesError);
+    }
 
-  if (weakWordsError) {
-    throw mapProgressError("weak_words 取得", weakWordsError);
-  }
+    if (weakWordsError) {
+      throw mapProgressError("weak_words 取得", weakWordsError);
+    }
 
-  if (coachFeedbackError) {
-    throw mapProgressError("coach_feedback 取得", coachFeedbackError);
-  }
+    if (coachFeedbackError) {
+      throw mapProgressError("coach_feedback 取得", coachFeedbackError);
+    }
 
-  const weakWordsByTakeId = new Map<string, WeakWordRow[]>();
-  for (const row of (weakWords ?? []) as Array<WeakWordRow & { takes: { user_id: string } }>) {
-    const list = weakWordsByTakeId.get(row.take_id) ?? [];
-    list.push({
-      id: row.id,
-      take_id: row.take_id,
-      word: row.word,
-      score: row.score,
-      note: row.note,
-      created_at: row.created_at
-    });
-    weakWordsByTakeId.set(row.take_id, list);
-  }
+    const weakWordsByTakeId = new Map<string, WeakWordRow[]>();
+    for (const row of (weakWords ?? []) as Array<WeakWordRow & { takes: { user_id: string } }>) {
+      const list = weakWordsByTakeId.get(row.take_id) ?? [];
+      list.push({
+        id: row.id,
+        take_id: row.take_id,
+        word: row.word,
+        score: row.score,
+        note: row.note,
+        created_at: row.created_at
+      });
+      weakWordsByTakeId.set(row.take_id, list);
+    }
 
-  const coachByTakeId = new Map<string, CoachFeedbackRow>();
-  for (const row of (coachFeedback ?? []) as Array<CoachFeedbackRow & { takes: { user_id: string } }>) {
-    coachByTakeId.set(row.take_id, {
-      id: row.id,
-      take_id: row.take_id,
-      locale: row.locale,
-      title: row.title,
-      summary: row.summary,
-      bullets: row.bullets,
-      next_step: row.next_step,
-      focus_words: row.focus_words,
-      created_at: row.created_at
-    });
-  }
+    const coachByTakeId = new Map<string, CoachFeedbackRow>();
+    for (const row of (coachFeedback ?? []) as Array<CoachFeedbackRow & { takes: { user_id: string } }>) {
+      coachByTakeId.set(row.take_id, {
+        id: row.id,
+        take_id: row.take_id,
+        locale: row.locale,
+        title: row.title,
+        summary: row.summary,
+        bullets: row.bullets,
+        next_step: row.next_step,
+        focus_words: row.focus_words,
+        created_at: row.created_at
+      });
+    }
 
-  return (takes ?? []).map((take) =>
-    hydrateStoredReview(
-      toStoredTakeReview(
-        take,
-        weakWordsByTakeId.get(take.id) ?? [],
-        coachByTakeId.get(take.id) ?? null
+    return (takes ?? []).map((take) =>
+      hydrateStoredReview(
+        toStoredTakeReview(
+          take,
+          weakWordsByTakeId.get(take.id) ?? [],
+          coachByTakeId.get(take.id) ?? null
+        )
       )
-    )
-  );
+    );
+  });
 }
 
 function toScriptProgressItem(script: ScriptListItem, reviews: HydratedTakeReview[]): ScriptProgressItem {
@@ -221,42 +224,46 @@ function toScriptProgressItem(script: ScriptListItem, reviews: HydratedTakeRevie
 }
 
 export async function getProgressOverview(client: AppSupabaseClient, userId: string): Promise<ProgressOverview> {
-  const [scripts, hydratedReviews] = await Promise.all([listScripts(client, userId), getHydratedReviews(client, userId)]);
-  const reviewsByScriptId = new Map<string, HydratedTakeReview[]>();
+  return timeAsync("progress.overview", async () => {
+    const [scripts, hydratedReviews] = await Promise.all([listScripts(client, userId), getHydratedReviews(client, userId)]);
+    const reviewsByScriptId = new Map<string, HydratedTakeReview[]>();
 
-  for (const review of hydratedReviews) {
-    const list = reviewsByScriptId.get(review.take.script_id) ?? [];
-    list.push(review);
-    reviewsByScriptId.set(review.take.script_id, list);
-  }
+    for (const review of hydratedReviews) {
+      const list = reviewsByScriptId.get(review.take.script_id) ?? [];
+      list.push(review);
+      reviewsByScriptId.set(review.take.script_id, list);
+    }
 
-  const scriptItems = scripts.map((script) => toScriptProgressItem(script, reviewsByScriptId.get(script.id) ?? []));
+    const scriptItems = scripts.map((script) => toScriptProgressItem(script, reviewsByScriptId.get(script.id) ?? []));
 
-  return {
-    scripts: scriptItems,
-    totalScripts: scripts.length,
-    totalReviewedTakes: hydratedReviews.length,
-    bestTakeCount: scriptItems.filter((item) => item.bestTake).length
-  };
+    return {
+      scripts: scriptItems,
+      totalScripts: scripts.length,
+      totalReviewedTakes: hydratedReviews.length,
+      bestTakeCount: scriptItems.filter((item) => item.bestTake).length
+    };
+  });
 }
 
 export async function getScriptTakeComparison(client: AppSupabaseClient, userId: string, scriptId: string, takeId: string) {
-  const reviews = (await getHydratedReviews(client, userId)).filter((review) => review.take.script_id === scriptId);
-  const current = reviews.find((review) => review.take.id === takeId);
+  return timeAsync("progress.scriptTakeComparison", async () => {
+    const reviews = (await getHydratedReviews(client, userId)).filter((review) => review.take.script_id === scriptId);
+    const current = reviews.find((review) => review.take.id === takeId);
 
-  if (!current) {
-    return null;
-  }
+    if (!current) {
+      return null;
+    }
 
-  const best = pickBestTake(reviews);
-  const currentSummary = toProgressTakeSummary(current);
-  const bestSummary = best ? toProgressTakeSummary(best) : null;
+    const best = pickBestTake(reviews);
+    const currentSummary = toProgressTakeSummary(current);
+    const bestSummary = best ? toProgressTakeSummary(best) : null;
 
-  return {
-    current: currentSummary,
-    best: bestSummary,
-    isBest: Boolean(bestSummary && bestSummary.id === currentSummary.id),
-    diff: bestSummary && bestSummary.id !== currentSummary.id ? buildTakeDiff(currentSummary, bestSummary) : null,
-    takeCount: reviews.length
-  };
+    return {
+      current: currentSummary,
+      best: bestSummary,
+      isBest: Boolean(bestSummary && bestSummary.id === currentSummary.id),
+      diff: bestSummary && bestSummary.id !== currentSummary.id ? buildTakeDiff(currentSummary, bestSummary) : null,
+      takeCount: reviews.length
+    };
+  });
 }
