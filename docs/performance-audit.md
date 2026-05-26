@@ -465,3 +465,45 @@ Measured on 2026-05-26 with `NATIVE_MINUTE_ENABLE_TIMING=1`, mock providers, an 
 | take audio replay client duration | 646ms | 347ms | 328ms | Audio replay remains a separate visible cost. |
 
 The warm result shows Review no longer emits `review.page.storedReview`, `review.page.comparison`, or `review.page.progressOverview`. The remaining visible cost after page load is protected take audio replay.
+
+## Protected take audio replay feedback step
+
+The fourth optimization pass improves the perceived wait for saved take playback without changing the protected replay route or storage policy.
+
+Before this step, `ProtectedAudioPlayer` fetched `/api/takes/[takeId]/audio`, converted the response to a Blob URL, and only then rendered native audio controls. This protects owned recordings, but on mobile the user could see only a short text message while the client fetch, server ownership check, storage download, blob conversion, and audio element setup happened.
+
+After this step, the player still uses the same protected URL and the same client-side Blob URL flow, but it now shows explicit states:
+
+- `準備中`: fetch/blob preparation has started.
+- `準備できました`: the Blob URL is ready and native audio controls are visible.
+- Error state: failed playback fetch shows a retry button.
+
+Development-only client timing labels were added:
+
+- `protectedAudio.client.fetch`: client fetch duration for the protected replay route.
+- `protectedAudio.client.blob`: browser Blob conversion duration.
+- `protectedAudio.client.ready`: total time from player mount to Blob URL readiness.
+
+The labels are static and do not include take ids, storage paths, script text, transcript text, cookies, raw audio, or response bodies. They only log when `NODE_ENV !== "production"`, so production user-facing behavior and logs stay quiet unless a local/dev timing run is being performed.
+
+This does not change DB schema, API contracts, auth, ownership checks, storage access, storage policy, Range behavior, signed URL strategy, or audio replay authorization.
+
+### Post-change local timing
+
+Measured on 2026-05-26 with `NATIVE_MINUTE_ENABLE_TIMING=1`, mock providers, an authenticated local timing smoke, and a freshly evaluated E2E seed take.
+
+| Target / label | Run 1 | Run 2 | Run 3 | Notes |
+| --- | ---: | ---: | ---: | --- |
+| take audio replay client request | 596ms | 342ms | 337ms | Route-level request timing from `performance:timing-smoke`; run 1 includes compile. |
+| `takesAudio.route.storedReview` | 112ms | 116ms | 105ms | Stored review lookup remains part of the protected ownership path. |
+| `takesAudio.route.recordingDownload` | 158ms | 123ms | 127ms | Storage download remains the server-side replay cost. |
+| `recording.storageDownload` | 96ms | 75ms | 74ms | Supabase Storage download inside the protected route. |
+
+A browser smoke of Review confirmed the player renders audio controls, the `準備できました` state appears, and the development-only client labels `protectedAudio.client.fetch`, `protectedAudio.client.blob`, and `protectedAudio.client.ready` are emitted. Progress with a selected script also rendered saved recording audio controls, but it can mount multiple saved-take players at once. If replay remains a perceived bottleneck there, the next low-risk candidate is to load saved-take players only when the user opens or requests them.
+
+### Follow-up candidates
+
+- If `takesAudio.route.recordingDownload` / `recording.storageDownload` remain dominant, consider Range support for `/api/takes/[takeId]/audio` as a medium-risk change with ownership tests.
+- If Progress mounts several saved-take players, consider lazy loading the audio blob only after the user asks to hear a take.
+- If client `protectedAudio.client.blob` dominates on large recordings, consider streaming or a signed-download strategy only after a separate security review.
+- If latency is acceptable but still feels slow, add more staged copy around Review / Progress playback rather than changing storage behavior.

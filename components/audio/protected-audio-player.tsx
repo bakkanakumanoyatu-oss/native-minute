@@ -11,6 +11,22 @@ type ProtectedAudioPlayerProps = {
   variant?: "default" | "studio";
 };
 
+function formatDuration(durationMs: number) {
+  if (durationMs < 10) {
+    return `${durationMs.toFixed(1)}ms`;
+  }
+
+  return `${Math.round(durationMs)}ms`;
+}
+
+function logClientTiming(label: string, startMs: number) {
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+
+  console.info(`[timing] ${label} ${formatDuration(performance.now() - startMs)}`);
+}
+
 export function ProtectedAudioPlayer({
   sourceUrl,
   className = "w-full",
@@ -22,27 +38,34 @@ export function ProtectedAudioPlayer({
   const [resolvedAudioUrl, setResolvedAudioUrl] = useState<string | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [playbackRate, setPlaybackRate] = useState<PlaybackRate>(1);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const isStudio = variant === "studio";
 
   useEffect(() => {
     let active = true;
     let objectUrl: string | null = null;
     const controller = new AbortController();
+    const totalStart = performance.now();
 
     setResolvedAudioUrl(null);
     setLoadFailed(false);
 
     async function resolveAudioUrl() {
       try {
+        const fetchStart = performance.now();
         const response = await fetch(sourceUrl, {
           credentials: "same-origin",
           signal: controller.signal
         });
+        logClientTiming("protectedAudio.client.fetch", fetchStart);
 
         if (!response.ok) {
           throw new Error(`audio_fetch_failed_${response.status}`);
         }
 
+        const blobStart = performance.now();
         const audioBlob = await response.blob();
+        logClientTiming("protectedAudio.client.blob", blobStart);
         objectUrl = URL.createObjectURL(audioBlob);
 
         if (!active) {
@@ -51,6 +74,7 @@ export function ProtectedAudioPlayer({
         }
 
         setResolvedAudioUrl(objectUrl);
+        logClientTiming("protectedAudio.client.ready", totalStart);
       } catch {
         if (!active || controller.signal.aborted) {
           return;
@@ -70,7 +94,7 @@ export function ProtectedAudioPlayer({
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [sourceUrl]);
+  }, [sourceUrl, loadAttempt]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -78,16 +102,54 @@ export function ProtectedAudioPlayer({
     }
   }, [playbackRate, resolvedAudioUrl]);
 
+  const feedbackPanelClass = isStudio
+    ? "rounded-2xl border border-[var(--line-dark)] bg-white/10 p-4 text-[rgba(255,241,221,0.78)] shadow-[0_18px_44px_rgba(0,0,0,0.12)]"
+    : "rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] p-4 text-ink-700 shadow-[var(--shadow-studio-soft)]";
+  const subtleTextClass = isStudio ? "text-[rgba(255,241,221,0.66)]" : "text-ink-600";
+  const statusPillClass = isStudio
+    ? "border-[var(--line-dark)] bg-[rgba(255,241,221,0.1)] text-[rgba(255,241,221,0.78)]"
+    : "border-[var(--line-inset)] bg-[rgba(255,241,221,0.42)] text-ink-700";
+
   if (loadFailed) {
-    return <p className={`text-sm leading-6 ${variant === "studio" ? "text-[#ffd3a3]" : "text-amber-800"}`}>{errorMessage}</p>;
+    return (
+      <div className={feedbackPanelClass} role="status" aria-live="polite">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className={`text-sm leading-6 ${isStudio ? "text-[#ffd3a3]" : "text-amber-900"}`}>{errorMessage}</p>
+          <button
+            type="button"
+            className={`inline-flex shrink-0 items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
+              isStudio
+                ? "border-[rgba(255,241,221,0.24)] bg-[rgba(255,241,221,0.1)] text-[var(--script-paper)] hover:bg-[rgba(255,241,221,0.16)]"
+                : "border-[var(--line-inset)] bg-[var(--control-panel)] text-[var(--script-paper)] hover:bg-[var(--control-panel-soft)]"
+            }`}
+            onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+          >
+            もう一度読み込む
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!resolvedAudioUrl) {
-    return <p className={`text-sm leading-6 ${variant === "studio" ? "text-[rgba(255,241,221,0.72)]" : "text-ink-600"}`}>{loadingMessage}</p>;
+    return (
+      <div className={feedbackPanelClass} role="status" aria-live="polite">
+        <div className="flex items-center gap-3">
+          <span className={`h-2.5 w-2.5 shrink-0 animate-pulse rounded-full ${isStudio ? "bg-[#ffd3a3]" : "bg-[var(--quiet-accent)]"}`} />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold leading-6">{loadingMessage}</p>
+            <p className={`text-xs leading-5 ${subtleTextClass}`}>保存済み録音を安全に読み込んでいます。</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-3">
+      <div className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusPillClass}`} role="status" aria-live="polite">
+        準備できました
+      </div>
       <PlaybackRateControl
         testId="protected-audio-playback-rate"
         value={playbackRate}
