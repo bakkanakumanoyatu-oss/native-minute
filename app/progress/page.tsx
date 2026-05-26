@@ -259,7 +259,7 @@ function ResultCard({
             </p>
           ) : null}
           <p className="text-sm leading-6 text-ink-700">{take.coach.summaryJa}</p>
-          <ProtectedAudioPlayer sourceUrl={`/api/takes/${take.id}/audio`} variant="studio" />
+          <ProtectedAudioPlayer sourceUrl={`/api/takes/${take.id}/audio`} variant="studio" lazy revealLabel="この Take を聞く" />
           {showExport ? (
             <BestResultExportActions
               audioHref={`/api/takes/${take.id}/audio`}
@@ -296,7 +296,7 @@ function PreviousTakeBlock({ item }: { item: ScriptProgressItem }) {
       </div>
       <p className="mt-2 text-sm leading-6 text-ink-600">{previousTake.coach.summaryJa}</p>
       <div className="mt-4">
-        <ProtectedAudioPlayer sourceUrl={`/api/takes/${previousTake.id}/audio`} variant="studio" />
+        <ProtectedAudioPlayer sourceUrl={`/api/takes/${previousTake.id}/audio`} variant="studio" lazy revealLabel="前回の Take を聞く" />
       </div>
     </div>
   );
@@ -332,7 +332,7 @@ function SavedBestTakeSummaryList({
           </div>
           <p className="mt-1 text-xs text-ink-500">{formatSavedAt(item.saved_at)}</p>
           <div className="mt-3">
-            <ProtectedAudioPlayer sourceUrl={`/api/takes/${item.take_id}/audio`} variant="studio" />
+            <ProtectedAudioPlayer sourceUrl={`/api/takes/${item.take_id}/audio`} variant="studio" lazy revealLabel="保存した Take を聞く" />
           </div>
         </article>
       ))}
@@ -363,7 +363,7 @@ function SavedModelAudioSummaryList({
           <p className="text-sm font-semibold text-ink-900">{item.label ?? `お手本 ${item.slot}`}</p>
           <p className="mt-1 text-xs text-ink-500">{formatSavedAt(item.saved_at)}</p>
           <div className="mt-3">
-            <ProtectedAudioPlayer sourceUrl={`/api/script-audio/${item.script_audio_id}`} variant="studio" />
+            <ProtectedAudioPlayer sourceUrl={`/api/script-audio/${item.script_audio_id}`} variant="studio" lazy revealLabel="保存済みお手本を聞く" />
           </div>
           <ModelAudioMetadata metadata={item.metadata} />
         </article>

@@ -507,3 +507,35 @@ A browser smoke of Review confirmed the player renders audio controls, the `準�
 - If Progress mounts several saved-take players, consider lazy loading the audio blob only after the user asks to hear a take.
 - If client `protectedAudio.client.blob` dominates on large recordings, consider streaming or a signed-download strategy only after a separate security review.
 - If latency is acceptable but still feels slow, add more staged copy around Review / Progress playback rather than changing storage behavior.
+
+## Progress audio player lazy-load step
+
+The second performance round keeps the protected replay route unchanged and delays Progress audio blob preparation until the user asks to hear a specific item.
+
+Before this step, `/progress` rendered `ProtectedAudioPlayer` for the selected script's latest take, best take, previous take, saved best takes, and saved model audios as soon as those sections mounted. Each mounted player immediately fetched the protected URL and converted it into a Blob URL. A selected script with several saved recordings could therefore start multiple protected fetches at once.
+
+After this step:
+
+- `ProtectedAudioPlayer` supports an opt-in `lazy` mode.
+- Progress passes `lazy` for latest / best / previous / saved best take / saved model audio players.
+- Lazy players initially render a `聞く` button and do not fetch the protected audio.
+- Pressing the button mounts the same fetch/blob flow, preserving `準備中`, `準備できました`, error, retry, playback rate, and development-only client timing states.
+- Review keeps immediate playback behavior, because the first-view saved recording is part of the main Review task.
+
+This does not change DB schema, API contracts, auth, ownership checks, storage access, storage policy, Range behavior, signed URL strategy, best-take logic, progress aggregation, or audio replay authorization.
+
+### Expected measurement impact
+
+Route-level `/progress` timing is not expected to change much because this is a client-side fetch deferral. The expected win is fewer immediate `takesAudio.route.*`, `scriptAudio.route.*`, `recording.storageDownload`, and `voice.replay.storageDownload` calls after `/progress` renders. In dev, those labels should appear only after the corresponding Progress `聞く` button is pressed.
+
+### Post-change local smoke
+
+Measured on 2026-05-26 with `NATIVE_MINUTE_ENABLE_TIMING=1`, mock providers, and an authenticated local Playwright smoke.
+
+| Check | Result |
+| --- | --- |
+| `/progress?scriptId=...` initial render | `audio` elements: 0, protected audio requests: 0 |
+| After pressing `この Take を聞く` | `audio` elements: 1, `準備できました`: 1, one `/api/takes/[takeId]/audio` request |
+| Review saved recording | immediate audio player still appears; lazy button count: 0 |
+
+The smoke confirms Progress no longer starts protected audio blob preparation on initial render, while Review keeps immediate playback.

@@ -8,6 +8,8 @@ type ProtectedAudioPlayerProps = {
   className?: string;
   loadingMessage?: string;
   errorMessage?: string;
+  lazy?: boolean;
+  revealLabel?: string;
   variant?: "default" | "studio";
 };
 
@@ -32,6 +34,8 @@ export function ProtectedAudioPlayer({
   className = "w-full",
   loadingMessage = "録音を準備しています...",
   errorMessage = "保存済み録音の取得に失敗しました。ページを再読込してからもう一度お試しください。",
+  lazy = false,
+  revealLabel = "この音声を聞く",
   variant = "default"
 }: ProtectedAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -39,9 +43,17 @@ export function ProtectedAudioPlayer({
   const [loadFailed, setLoadFailed] = useState(false);
   const [playbackRate, setPlaybackRate] = useState<PlaybackRate>(1);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [activatedSourceUrl, setActivatedSourceUrl] = useState<string | null>(lazy ? null : sourceUrl);
   const isStudio = variant === "studio";
+  const shouldResolveAudio = !lazy || activatedSourceUrl === sourceUrl;
 
   useEffect(() => {
+    if (!shouldResolveAudio) {
+      setResolvedAudioUrl(null);
+      setLoadFailed(false);
+      return;
+    }
+
     let active = true;
     let objectUrl: string | null = null;
     const controller = new AbortController();
@@ -94,7 +106,7 @@ export function ProtectedAudioPlayer({
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [sourceUrl, loadAttempt]);
+  }, [sourceUrl, loadAttempt, shouldResolveAudio]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -109,6 +121,25 @@ export function ProtectedAudioPlayer({
   const statusPillClass = isStudio
     ? "border-[var(--line-dark)] bg-[rgba(255,241,221,0.1)] text-[rgba(255,241,221,0.78)]"
     : "border-[var(--line-inset)] bg-[rgba(255,241,221,0.42)] text-ink-700";
+
+  if (!shouldResolveAudio) {
+    return (
+      <div className={feedbackPanelClass}>
+        <button
+          type="button"
+          className={`inline-flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+            isStudio
+              ? "border border-[rgba(255,241,221,0.24)] bg-[rgba(255,241,221,0.1)] text-[var(--script-paper)] hover:bg-[rgba(255,241,221,0.16)]"
+              : "bg-[var(--control-panel)] text-[var(--script-paper)] hover:bg-[var(--control-panel-soft)]"
+          }`}
+          onClick={() => setActivatedSourceUrl(sourceUrl)}
+        >
+          {revealLabel}
+        </button>
+        <p className={`mt-2 text-xs leading-5 ${subtleTextClass}`}>押した音声だけを準備します。</p>
+      </div>
+    );
+  }
 
   if (loadFailed) {
     return (
