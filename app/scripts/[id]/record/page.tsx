@@ -104,20 +104,6 @@ export default async function RecordPage({ params }: PageParams) {
         </div>
       </div>
 
-      <details className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-notice)] p-6 shadow-[var(--shadow-studio-soft)]">
-        <summary className="cursor-pointer text-sm font-semibold text-ink-800">録音前の区切りを見る</summary>
-        <div className="mt-5 space-y-5">
-          <ScriptPracticeChunks
-            testId="record-practice-chunks"
-            chunks={practiceChunks}
-            focusWords={practiceFocusWords}
-            summary="録音では全文を一気に急がず、意味の塊ごとに息継ぎします。速さより区切りを優先し、最後の語尾まで落とさず言い切ります。"
-            actionCue="録る前に、区切り1から声に出して確認"
-          />
-
-        </div>
-      </details>
-
       <div className="grid gap-4">
         <div id="record-evaluate-panel" className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--studio-surface-secondary)] p-4 shadow-[var(--shadow-studio-soft)] sm:p-6">
           <div className="text-sm font-semibold">
@@ -157,6 +143,20 @@ export default async function RecordPage({ params }: PageParams) {
           </div>
         </div>
       </div>
+
+      <details className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-notice)] p-6 shadow-[var(--shadow-studio-soft)]">
+        <summary className="cursor-pointer text-sm font-semibold text-ink-800">録音前の区切りを見る</summary>
+        <div className="mt-5 space-y-5">
+          <ScriptPracticeChunks
+            testId="record-practice-chunks"
+            chunks={practiceChunks}
+            focusWords={practiceFocusWords}
+            summary="録音では全文を一気に急がず、意味の塊ごとに息継ぎします。速さより区切りを優先し、最後の語尾まで落とさず言い切ります。"
+            actionCue="録る前に、区切り1から声に出して確認"
+          />
+
+        </div>
+      </details>
     </section>
   );
 }

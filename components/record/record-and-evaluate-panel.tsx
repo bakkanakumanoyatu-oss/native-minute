@@ -356,7 +356,7 @@ export function RecordAndEvaluatePanel({
     }
 
     if (needsDevFallback && transcriptionSupported && transcriptText.trim().length === 0) {
-      setErrorMessage("開発用の入力が必要です。詳細を開いて入力してから再試行してください。", "evaluate", 400);
+      setErrorMessage("ローカル確認用の入力が必要です。開発用入力を入れてから再試行してください。", "evaluate", 400);
       return;
     }
 
@@ -746,17 +746,17 @@ export function RecordAndEvaluatePanel({
           </section>
         ) : null}
 
-        {canSaveEvaluation ? (
-          <details className="rounded-2xl border border-dashed border-[var(--line-inset)] bg-[var(--surface-secondary)] p-4">
-            <summary className="cursor-pointer text-sm font-semibold text-ink-800">詳細</summary>
+        {canSaveEvaluation && needsDevFallback ? (
+          <details open className="rounded-2xl border border-dashed border-[var(--line-inset)] bg-[var(--surface-secondary)] p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-ink-800">開発用入力</summary>
             <p className="mt-2 text-sm leading-6 text-ink-600">
-              通常は空欄で大丈夫です。開発用の評価設定で必要なときだけ使います。
+              ローカル確認用です。本番の録音では表示されません。
             </p>
             <textarea
               data-testid="record-transcript-fallback"
               value={transcriptText}
               onChange={(event) => setTranscriptText(event.target.value)}
-              placeholder={needsDevFallback ? "開発用の評価設定では入力が必要です。" : "通常は空欄のままで大丈夫です。"}
+              placeholder="ローカル確認用の読み取り結果を入力"
               rows={5}
               className="mt-3 w-full rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-4 py-3 text-sm outline-none transition focus:border-[var(--record-accent)]"
             />
@@ -772,7 +772,7 @@ export function RecordAndEvaluatePanel({
             ) : null}
             {isMissingRequiredFallback ? (
               <p data-testid="record-transcript-fallback-warning" className="mt-3 text-sm text-amber-700">
-                開発用の評価設定では、この入力が必要です。
+                ローカル確認では、この入力が必要です。
               </p>
             ) : null}
           </details>
