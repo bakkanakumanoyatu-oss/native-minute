@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <div className="mx-auto min-h-screen max-w-6xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-          <header className="mb-6 flex flex-col gap-4 rounded-3xl border border-[var(--line-subtle)] bg-[rgba(230,210,189,0.88)] px-4 py-4 shadow-[0_16px_42px_rgba(45,38,31,0.08)] backdrop-blur sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <header className="mb-6 flex flex-col gap-4 rounded-3xl border border-[var(--line-inset)] bg-[var(--chrome-surface)] px-4 py-4 shadow-[var(--shadow-chrome)] backdrop-blur sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--studio-accent-strong)]">Native Minute</p>
               <p className="text-sm text-ink-600">今日の1分を練習する</p>
@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <AppNav />
           </header>
           <main>{children}</main>
-          <footer className="mt-10 rounded-3xl border border-[var(--line-subtle)] bg-[rgba(230,210,189,0.74)] px-4 py-4 text-sm text-ink-600 shadow-[0_14px_36px_rgba(45,38,31,0.06)] sm:mt-12 sm:px-5">
+          <footer className="mt-10 rounded-3xl border border-[var(--line-subtle)] bg-[var(--chrome-surface-strong)] px-4 py-4 text-sm text-ink-600 shadow-[0_14px_36px_rgba(45,38,31,0.06)] backdrop-blur sm:mt-12 sm:px-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p>Web beta draft. Practice-first core with public support links.</p>
               <nav className="flex flex-wrap gap-3 font-semibold text-ink-700">

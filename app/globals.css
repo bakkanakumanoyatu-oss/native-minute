@@ -4,39 +4,66 @@
 
 :root {
   color-scheme: light;
-  --bg: #e9dccd;
-  --panel: #efe1d1;
-  --panel-strong: #dac4ad;
+  --booth-wall: #e7d7c4;
+  --booth-wall-deep: #d7bea3;
+  --booth-wall-soft: #f0e2d2;
+  --booth-glow-amber: rgba(200, 121, 63, 0.18);
+  --booth-glow-ink: rgba(43, 45, 68, 0.14);
+  --studio-surface-primary: #ead8c3;
+  --studio-surface-secondary: #dfc5aa;
+  --studio-surface-inset: #d2ad8c;
+  --studio-surface-inset-strong: #c39a76;
+  --script-paper: #fff1dd;
+  --take-paper: #fbe8cf;
+  --control-panel: #181722;
+  --control-panel-soft: #2b2d44;
+  --control-panel-muted: rgba(24, 23, 34, 0.68);
+  --coach-note: #edc997;
+  --log-shelf: #c7b5d8;
+  --quiet-accent: #c8793f;
+  --saved-success: #6f8f76;
+  --chrome-surface: rgba(223, 197, 170, 0.78);
+  --chrome-surface-strong: rgba(210, 173, 140, 0.64);
+  --nav-control: rgba(210, 173, 140, 0.66);
+  --nav-control-hover: rgba(195, 154, 118, 0.72);
+  --bg: var(--booth-wall);
+  --panel: var(--studio-surface-primary);
+  --panel-strong: var(--studio-surface-inset);
   --ink: #181722;
   --muted: #675f58;
   --line: rgba(45, 38, 31, 0.2);
-  --accent: #c8793f;
+  --accent: var(--quiet-accent);
   --accent-strong: #7e432e;
-  --studio-bg: #e9dccd;
-  --studio-panel: #efe1d1;
-  --studio-surface: #e6d2bd;
-  --studio-surface-strong: #d8bea3;
-  --surface-primary: #efe1d1;
-  --surface-secondary: #e6d2bd;
-  --surface-inset: #dcc4aa;
-  --surface-inset-strong: #cfad8d;
-  --surface-paper: #fff3e3;
-  --surface-notice: #f1d4ad;
-  --studio-ink: #181722;
-  --studio-ink-soft: #2b2d44;
+  --studio-bg: var(--booth-wall);
+  --studio-panel: var(--studio-surface-primary);
+  --studio-surface: var(--studio-surface-secondary);
+  --studio-surface-strong: var(--studio-surface-inset);
+  --surface-primary: var(--studio-surface-primary);
+  --surface-secondary: var(--studio-surface-secondary);
+  --surface-inset: var(--studio-surface-inset);
+  --surface-inset-strong: var(--studio-surface-inset-strong);
+  --surface-paper: var(--script-paper);
+  --surface-take-paper: var(--take-paper);
+  --surface-notice: var(--coach-note);
+  --surface-log-shelf: var(--log-shelf);
+  --studio-ink: var(--control-panel);
+  --studio-ink-soft: var(--control-panel-soft);
   --studio-muted: #675f58;
   --studio-line: rgba(45, 38, 31, 0.2);
   --line-subtle: rgba(45, 38, 31, 0.12);
   --line-inset: rgba(117, 82, 54, 0.24);
   --line-dark: rgba(255, 243, 227, 0.18);
-  --studio-accent: #c8793f;
+  --studio-accent: var(--quiet-accent);
   --studio-accent-strong: #7e432e;
+  --cta-primary-bg: var(--control-panel);
+  --cta-primary-text: var(--script-paper);
   --record-accent: #f26d5b;
   --record-accent-strong: #dc5b4b;
-  --saved-accent: #7772c6;
-  --success-accent: #2f8f7a;
+  --saved-accent: var(--log-shelf);
+  --success-accent: var(--saved-success);
   --shadow-studio-soft: 0 20px 55px rgba(45, 38, 31, 0.12);
   --shadow-studio-lift: 0 24px 70px rgba(45, 38, 31, 0.16);
+  --shadow-chrome: 0 18px 52px rgba(45, 38, 31, 0.1);
 }
 
 html,
@@ -47,9 +74,9 @@ body {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(200, 121, 63, 0.18), transparent 34%),
-    radial-gradient(circle at top right, rgba(43, 45, 68, 0.14), transparent 32%),
-    linear-gradient(180deg, rgba(240, 225, 209, 0.92), rgba(233, 220, 205, 0.98) 42%),
+    radial-gradient(circle at top left, var(--booth-glow-amber), transparent 34%),
+    radial-gradient(circle at top right, var(--booth-glow-ink), transparent 32%),
+    linear-gradient(180deg, rgba(232, 211, 190, 0.94), rgba(215, 190, 163, 0.42) 44%, rgba(231, 215, 196, 0.98)),
     var(--bg);
   color: var(--ink);
   font-feature-settings: "ss01" 1, "ss02" 1;
