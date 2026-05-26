@@ -329,7 +329,7 @@
 - Review data loading consolidation として、`/scripts/[id]/review/[takeId]` は current take、best/latest comparison、status card 用 context を対象 script の hydrated reviews 1回から組み立てるようにした。canonical source、score、best take 判定、DB / API / auth / storage policy は変えていない。
 - Protected take audio replay は、保存済み録音の client fetch / blob URL 化が終わるまで native controls を出さない前提を維持しつつ、準備中 / 準備完了 / 失敗 / 再読み込みの feedback と development-only client timing を追加した。take audio route、ownership check、storage policy、API contract は変えていない。
 - Progress の保存済み録音 / 保存済みお手本は、初期表示では見やすい `聞く` ボタンだけを出し、押した音声だけ `ProtectedAudioPlayer` を mount して protected fetch / blob URL 化する。Review first view の録音再生は即時確認を優先し、lazy load にはしていない。auth / ownership / storage policy / replay route は変えていない。
-- 次の速度改善は、DB / API / auth / storage / provider contract を変えずに、evaluate 待ち UX や provider stage feedback を小さく進める。
+- Record の evaluate 待ち UX は、client 側の時間経過メッセージで `Take を送っています` -> `声を文字にしています` -> `発音の目安を見ています` -> `次の1点をまとめています` -> `Take メモを保存しています` を出す。これは正確な進捗率ではなく待ち体験の feedback で、`/api/evaluate` response shape、評価処理、review persistence、DB / provider contract は変えていない。
 - Gate1b の protected replay / cross-user ownership proof は human browser で PASS。User A の script-audio / take-audio replay は 200 相当で再生でき、User B では同じ音声が 403/404 相当で再生できなかった。raw URL / raw id / signed URL / user id / storage path は記録していない。
 - main loop の retry UX と、次の一手の分かりやすさを small diff で上げ続ける。
 - voice provider 本接続の準備を、小さい差分で進める。

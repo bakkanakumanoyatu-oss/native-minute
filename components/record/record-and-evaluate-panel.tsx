@@ -30,6 +30,34 @@ type UploadedRecordingReference = NonNullable<UploadResponse["data"]>;
 type MessagePhase = "record" | "upload" | "evaluate" | null;
 type MessageKind = "info" | "error";
 
+const EVALUATE_WAIT_STAGES = [
+  {
+    label: "Take を送っています",
+    helper: "録音を保存して、評価の準備をしています。",
+    afterMs: 0
+  },
+  {
+    label: "声を文字にしています",
+    helper: "聞こえた言葉を確認しています。",
+    afterMs: 2800
+  },
+  {
+    label: "発音の目安を見ています",
+    helper: "お手本との近さを見ています。",
+    afterMs: 6500
+  },
+  {
+    label: "次の1点をまとめています",
+    helper: "Focus words と Take メモを作っています。",
+    afterMs: 10500
+  },
+  {
+    label: "Take メモを保存しています",
+    helper: "Review に移動する準備をしています。",
+    afterMs: 15000
+  }
+] as const;
+
 type RecordAndEvaluatePanelProps = {
   scriptId: string;
   targetSeconds: number;
@@ -195,6 +223,7 @@ export function RecordAndEvaluatePanel({
   const [messagePhase, setMessagePhase] = useState<MessagePhase>(null);
   const [messageStatus, setMessageStatus] = useState<number | null>(null);
   const [messageKind, setMessageKind] = useState<MessageKind>("info");
+  const [evaluateWaitStageIndex, setEvaluateWaitStageIndex] = useState(0);
 
   useEffect(() => {
     return () => {
@@ -452,6 +481,27 @@ export function RecordAndEvaluatePanel({
   const shortRecordingPrompt = isMeasuringDuration ? null : getShortRecordingPrompt(durationSeconds, targetSeconds);
   const azureRequiresWavUpload = isAzurePronunciationProvider(pronunciationProvider);
   const azureNeedsNormalization = Boolean(selectedFile && azureRequiresWavUpload && !isLikelyWaveRecording(selectedFile));
+  const evaluateWaitStage = EVALUATE_WAIT_STAGES[Math.min(evaluateWaitStageIndex, EVALUATE_WAIT_STAGES.length - 1)];
+
+  useEffect(() => {
+    if (!isBusy) {
+      setEvaluateWaitStageIndex(0);
+      return;
+    }
+
+    setEvaluateWaitStageIndex(0);
+
+    const timers = EVALUATE_WAIT_STAGES.slice(1).map((stage, index) =>
+      window.setTimeout(() => {
+        setEvaluateWaitStageIndex(index + 1);
+      }, stage.afterMs)
+    );
+
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+    };
+  }, [isBusy]);
+
   const recoveryGuidance =
     message && messageKind === "error" && messagePhase
         ? getRecordRecoveryGuidance({
@@ -735,6 +785,34 @@ export function RecordAndEvaluatePanel({
             <p className="inline-flex rounded-full border border-[var(--line-dark)] bg-white/10 px-3 py-1 text-xs font-semibold text-[rgba(255,241,221,0.78)]">
               ベータでは 評価は10回まで
             </p>
+            {isBusy ? (
+              <div
+                data-testid="record-evaluate-staged-feedback"
+                className="mt-4 rounded-2xl border border-[rgba(255,241,221,0.22)] bg-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[var(--record-accent)]" aria-hidden="true" />
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[rgba(255,241,221,0.64)]">評価を進めています</p>
+                </div>
+                <p data-testid="record-evaluate-stage-label" className="mt-3 text-base font-semibold text-[var(--cta-primary-text)]">
+                  {evaluateWaitStage.label}
+                </p>
+                <p className="mt-1 text-sm leading-6 text-[rgba(255,241,221,0.76)]">{evaluateWaitStage.helper}</p>
+                <div className="mt-4 flex gap-1.5" aria-hidden="true">
+                  {EVALUATE_WAIT_STAGES.map((stage, index) => (
+                    <span
+                      key={stage.label}
+                      className={`h-1.5 flex-1 rounded-full transition ${
+                        index <= evaluateWaitStageIndex ? "bg-[var(--record-accent)]" : "bg-white/20"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="mt-3 text-xs leading-5 text-[rgba(255,241,221,0.62)]">
+                  少し時間がかかることがあります。画面を閉じずにお待ちください。
+                </p>
+              </div>
+            ) : null}
             <div className="mt-4 flex flex-wrap gap-3">
               {nextActionActions.map((action) => (
                 <button

@@ -540,3 +540,19 @@ Measured on 2026-05-26 with `NATIVE_MINUTE_ENABLE_TIMING=1`, mock providers, and
 | Review saved recording | immediate audio player still appears; lazy button count: 0 |
 
 The smoke confirms Progress no longer starts protected audio blob preparation on initial render, while Review keeps immediate playback.
+
+## Record evaluate wait staged feedback step
+
+Record now improves perceived speed during the synchronous `upload -> evaluate -> review` wait without changing the evaluate pipeline.
+
+After the user presses `この Take で評価する`, the client shows elapsed-time guidance:
+
+- `Take を送っています`
+- `声を文字にしています`
+- `発音の目安を見ています`
+- `次の1点をまとめています`
+- `Take メモを保存しています`
+
+These labels are intentionally not a precise progress bar. `/api/evaluate` still returns the same response shape, and transcription, pronunciation evaluation, coach artifact creation, review persistence, score calculation, DB schema, auth, ownership, storage access, and provider contracts are unchanged. Existing server-side timing labels remain the source of truth for actual bottleneck analysis.
+
+The expected win is user-perceived responsiveness: longer waits should no longer look like a frozen button, and errors should still fall back to the existing retry / recovery UI.
