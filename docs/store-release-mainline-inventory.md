@@ -66,6 +66,8 @@ Store submission remains blocked until account/data deletion completion is prove
 
 Goal: verify production provider roles, env, budget controls, kill switches, monitoring, and safe failure recovery.
 
+Status: checklist/design plan is captured in `docs/store-release-gate3-provider-readiness-cost-guard.md`. Repo confirms provider guard, preflight scripts, kill switches, safe provider boundaries, app-owned replay, and non-blocking quota metadata. Store v1 still requires refreshed human confirmation for dashboard/billing/quota/model availability, production env presence, kill-switch operation, provider retention/deletion behavior, and provider cleanup proof.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation

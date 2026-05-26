@@ -1,0 +1,94 @@
+{
+  "gate": "Gate 3",
+  "title": "OpenAI / Azure / ElevenLabs provider production readiness and cost guard",
+  "status": "design_checklist_complete",
+  "generatedFor": "store-release-mainline",
+  "implementationChanged": false,
+  "scope": {
+    "providerApiCallsRun": false,
+    "dashboardChanged": false,
+    "envValuesDisplayed": false,
+    "dbSchemaChanged": false,
+    "apiContractChanged": false,
+    "providerImplementationChanged": false,
+    "brushUpImplemented": false,
+    "uiChanged": false,
+    "infraChanged": false
+  },
+  "repoConfirmed": [
+    "Strict production provider policy requires ElevenLabs voice, OpenAI transcription, Azure pronunciation, and OpenAI Script Studio.",
+    "Production preflight, voice preflight, and pronunciation preflight scripts exist.",
+    "Cost kill switches exist for OpenAI, Azure, ElevenLabs, and Storage uploads.",
+    "Upload routes check the Storage upload kill switch before storing new audio.",
+    "OpenAI transcription, Azure pronunciation, and ElevenLabs voice provider paths use server-side boundaries.",
+    "Generated voice audio is normalized into app-owned replay.",
+    "Quota events are non-blocking operational metadata, not hard enforcement.",
+    "ElevenLabs provider cleanup boundary exists behind destructive guard, but normal checks do not execute real delete."
+  ],
+  "humanConfirmationRequired": [
+    "OpenAI project, billing, usage limit, alert owner, and model availability.",
+    "Azure Speech resource, region, quota, billing, and pronunciation assessment availability.",
+    "ElevenLabs plan, credits, voice cloning availability, API availability, and deletion capability.",
+    "Provider dashboard usage, quota, and budget alert visibility.",
+    "Production env presence only for required provider keys and model settings.",
+    "Kill switch operation proof for OpenAI, Azure, ElevenLabs, and Storage uploads.",
+    "Support escalation owner and provider outage communication path.",
+    "Provider cleanup and retention behavior for account deletion and Brush-up revoke."
+  ],
+  "providerReadiness": {
+    "openai": {
+      "repoStatus": "ready_as_code_path_with_human_dashboard_warnings",
+      "productionReadiness": "WARN",
+      "storeBlockers": [
+        "Refresh dashboard/billing/alert proof for the exact release environment.",
+        "Refresh kill switch operation proof.",
+        "Confirm production model availability."
+      ]
+    },
+    "azure": {
+      "repoStatus": "ready_as_code_path_with_human_dashboard_warnings",
+      "productionReadiness": "WARN",
+      "storeBlockers": [
+        "Refresh Speech resource/quota/billing/region proof.",
+        "Refresh mobile/WebView recording and PCM normalization smoke.",
+        "Refresh kill switch operation proof."
+      ]
+    },
+    "elevenlabs": {
+      "repoStatus": "normal_voice_happy_path_documented",
+      "productionReadiness": "WARN",
+      "brushUpReadiness": "BLOCKED_UNTIL_BRUSHUP_PROVIDER_CLEANUP_AND_COST_CONFIRMED",
+      "storeBlockers": [
+        "Refresh plan/credits/alert proof.",
+        "Prove provider cleanup/deletion with disposable account flow.",
+        "Confirm Brush-up create/delete/retention/cost behavior before Gate 3.5 implementation."
+      ]
+    }
+  },
+  "killSwitches": [
+    "NATIVE_MINUTE_DISABLE_OPENAI",
+    "NATIVE_MINUTE_DISABLE_AZURE",
+    "NATIVE_MINUTE_DISABLE_ELEVENLABS",
+    "NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS"
+  ],
+  "workerQueueVpsDecision": {
+    "introduceNow": false,
+    "conditions": [
+      "Provider clone/material creation exceeds Vercel Function timeout.",
+      "Provider retry/backoff must continue after user leaves the page.",
+      "Cleanup/revoke must be guaranteed without operator action.",
+      "Batch retention/deletion jobs are required.",
+      "Audio conversion becomes CPU-heavy or large-file-heavy.",
+      "Concurrent Brush-up requests need durable locking beyond DB constraints."
+    ]
+  },
+  "redactionPolicy": {
+    "containsSecrets": false,
+    "containsRawProviderResponse": false,
+    "containsPrivateUserData": false,
+    "containsTranscriptText": false,
+    "containsAudioPaths": false,
+    "containsProviderVoiceIds": false,
+    "containsBillingDetails": false
+  }
+}
