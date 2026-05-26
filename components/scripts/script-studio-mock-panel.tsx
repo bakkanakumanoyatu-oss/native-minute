@@ -175,11 +175,11 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
       const payload = (await response.json().catch(() => null)) as JsonApiResponse<ScriptStudioGenerateResponse> | null;
 
       if (!payload) {
-        throw new Error("Script Studio draft を作れませんでした。");
+        throw new Error("AI下書きを作れませんでした。");
       }
 
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.ok ? "Script Studio draft を作れませんでした。" : payload.message);
+        throw new Error(payload.ok ? "AI下書きを作れませんでした。" : payload.message);
       }
 
       setGenerationResult(payload.data);
@@ -187,7 +187,7 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
       setSelectedDraftIndex(0);
       setCopyMessage(null);
     } catch (error) {
-      setGenerationError(error instanceof Error && error.message ? error.message : "Script Studio draft を作れませんでした。");
+      setGenerationError(error instanceof Error && error.message ? error.message : "AI下書きを作れませんでした。");
     } finally {
       setIsGenerating(false);
     }
@@ -207,16 +207,16 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
   }
 
   return (
-    <section className="rounded-2xl border border-dashed border-[var(--accent)] bg-ink-50 px-4 py-5 text-sm leading-6 text-ink-700">
+    <section className="rounded-[1.75rem] border border-[var(--line-inset)] bg-[linear-gradient(180deg,var(--surface-secondary),var(--surface-inset))] px-4 py-5 text-sm leading-6 text-ink-700 shadow-[var(--shadow-studio-soft)]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-semibold text-[var(--accent-strong)]">下書き</p>
+          <p className="text-xs font-semibold text-[var(--studio-accent-strong)]">下書き</p>
           <h2 className="mt-2 text-xl font-semibold text-ink-900">AIに1分スクリプトを書かせる</h2>
           <p className="mt-2 text-sm leading-6 text-ink-600">
             言いたいことから、1分英語の候補と日本語の意味を出します。完成品ではないので、保存前に必ずフォームで編集します。
           </p>
         </div>
-        <span className="shrink-0 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+        <span className="shrink-0 rounded-full border border-[var(--line-inset)] bg-[var(--coach-note)] px-3 py-1 text-xs font-semibold text-ink-800">
           編集前提
         </span>
       </div>
@@ -229,20 +229,20 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
             onChange={(event) => setUserSeedText(event.target.value)}
             rows={4}
             placeholder="日本語でも短文でもOK。例: 最近、英語学習を続ける理由について話したい。"
-            className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-[var(--line-inset)] bg-[var(--script-paper)] px-4 py-3 text-sm shadow-[0_10px_24px_rgba(45,38,31,0.08)] outline-none transition focus:border-[var(--studio-accent)]"
           />
           <span className="block text-xs leading-5 text-ink-500">
             短くても大丈夫です。場面や気分を自分の言葉で書きます。
           </span>
-          <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
-            <summary className="cursor-pointer text-xs font-semibold text-ink-700">seed 例を見る</summary>
+          <details className="rounded-2xl border border-[var(--line-inset)] bg-[var(--coach-note)] px-4 py-3">
+            <summary className="cursor-pointer text-xs font-semibold text-ink-700">書き出しの例を見る</summary>
             <div className="mt-3 grid gap-2">
               {AI_SEED_EXAMPLES.map((example) => (
                 <button
                   key={example.label}
                   type="button"
                   onClick={() => setUserSeedText(example.text)}
-                  className="rounded-2xl border border-[var(--line)] bg-ink-50 px-3 py-3 text-left text-xs leading-5 text-ink-700 transition hover:bg-white"
+                  className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 py-3 text-left text-xs leading-5 text-ink-700 transition hover:bg-[var(--surface-inset-strong)]"
                 >
                   <span className="block font-semibold text-ink-900">{example.label}</span>
                   <span className="mt-1 block">{example.text}</span>
@@ -267,7 +267,7 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
             <select
               value={targetLengthSeconds}
               onChange={(event) => setTargetLengthSeconds(Number(event.target.value))}
-              className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-sm outline-none transition focus:border-[var(--studio-accent)]"
             >
               {SCRIPT_STUDIO_LENGTH_OPTIONS.map((option) => (
                 <option key={option.id} value={option.targetLengthSeconds}>
@@ -290,7 +290,7 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
               value={mustInclude}
               onChange={(event) => setMustInclude(event.target.value)}
               placeholder="例: learning, confidence"
-              className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-[var(--line-inset)] bg-[var(--script-paper)] px-4 py-3 text-sm shadow-[0_10px_24px_rgba(45,38,31,0.08)] outline-none transition focus:border-[var(--studio-accent)]"
             />
             <span className="block text-xs leading-5 text-ink-500">カンマ区切りで最大3個まで。</span>
           </label>
@@ -300,20 +300,20 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
               value={avoid}
               onChange={(event) => setAvoid(event.target.value)}
               placeholder="例: too formal, long sentence"
-              className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-[var(--line-inset)] bg-[var(--script-paper)] px-4 py-3 text-sm shadow-[0_10px_24px_rgba(45,38,31,0.08)] outline-none transition focus:border-[var(--studio-accent)]"
             />
             <span className="block text-xs leading-5 text-ink-500">長すぎる文、硬すぎる言い方など。</span>
           </label>
         </div>
 
-        <div className="rounded-2xl border border-[var(--line)] bg-white px-4 py-4">
+        <div className="rounded-2xl border border-[var(--line-dark)] bg-[var(--control-panel)] px-4 py-4 text-[var(--cta-primary-text)]">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-semibold text-ink-500">AI生成</p>
-              <p className="mt-2 text-sm leading-6 text-ink-600">
+              <p className="text-xs font-semibold text-[rgba(255,241,221,0.66)]">AI生成</p>
+              <p className="mt-2 text-sm leading-6 text-[rgba(255,241,221,0.76)]">
                 結果は保存されません。良さそうな候補だけフォームへコピーします。
               </p>
-              <p className="mt-2 inline-flex rounded-full border border-[var(--line)] bg-ink-50 px-3 py-1 text-xs font-semibold text-ink-600">
+              <p className="mt-2 inline-flex rounded-full border border-[var(--line-dark)] bg-[rgba(255,241,221,0.1)] px-3 py-1 text-xs font-semibold text-[rgba(255,241,221,0.76)]">
                 ベータでは AIスクリプト生成は10回まで
               </p>
             </div>
@@ -322,26 +322,26 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
               onClick={handleGenerateDraft}
               disabled={isGenerating}
               aria-busy={isGenerating}
-              className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-2xl bg-[var(--cta-primary-text)] px-4 py-3 text-sm font-semibold text-[var(--control-panel)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isGenerating ? "作成中..." : generationResult ? "AIに1分スクリプトを書かせる" : "AIに1分スクリプトを書かせる"}
             </button>
           </div>
           {generationError ? (
             <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-              <p className="font-semibold">draft を作れませんでした</p>
+              <p className="font-semibold">AI下書きを作れませんでした</p>
               <p className="mt-1">{generationError}</p>
-              <p className="mt-1 text-xs">ログイン状態やサーバー側の設定を確認してから再試行します。</p>
+              <p className="mt-1 text-xs">ログイン状態を確認してから、もう一度試します。</p>
             </div>
           ) : null}
           {hasInputChangedAfterGenerate ? (
-            <p className="mt-3 text-xs leading-5 text-amber-700">入力が変わっています。表示中の draft は前回の request 結果なので、必要なら作り直してください。</p>
+            <p className="mt-3 text-xs leading-5 text-amber-700">入力が変わっています。必要なら下書きを作り直してください。</p>
           ) : null}
         </div>
       </div>
 
       <div className="mt-5 grid gap-4">
-        <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
+        <details className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3">
           <summary className="cursor-pointer text-sm font-semibold text-ink-700">入力内容のまとめを見る</summary>
           <div className="mt-4">
           <div className="grid gap-2 sm:grid-cols-2">
@@ -351,7 +351,7 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
             <Metric label="priority" value={briefInput.priority ?? "未指定"} />
           </div>
           <p className="mt-3 text-xs leading-5 text-ink-500">
-            seed: {briefInput.userSeedText ? `入力済み（${briefInput.userSeedText.trim().length}文字）` : "未入力。placeholder seed として扱います。"}
+            メモ: {briefInput.userSeedText ? `入力済み（${briefInput.userSeedText.trim().length}文字）` : "未入力。短い仮メモとして扱います。"}
           </p>
           </div>
         </details>
@@ -360,34 +360,33 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
           <p className="text-sm leading-6 text-ink-600">
             英文と日本語訳を見比べて、良さそうならフォームへコピーします。日本語訳は英文と突き合わせやすさを優先します。
           </p>
-          <details className="mt-3 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-xs leading-5 text-ink-600">
+          <details className="mt-3 rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-xs leading-5 text-ink-600">
             <summary className="cursor-pointer font-semibold text-ink-800">詳しい見方</summary>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               <li>45〜75秒で、1テーマに絞れている。</li>
               <li>自分が本当に言いそうな英語になっている。</li>
               <li>1文が長すぎず、意味の塊でまねしやすい。</li>
-              <li>long chunk warning はエラーではなく、コピー後に comma や period で区切る目安。</li>
-              <li>固有名詞や難しい語が多いときは、フォームへコピー後に削る。</li>
+              <li>長い塊の注意はエラーではなく、コピー後に comma や period で区切る目安。</li>
               <li>固有名詞や難しい語が多いときは、フォームへコピー後に削る。</li>
             </ul>
           </details>
           {generationResult ? (
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
+              <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--coach-note)] px-4 py-3">
                 <p className="text-xs font-semibold text-ink-500">作成状態</p>
                 <p className="mt-2 text-sm font-semibold text-ink-900">作成済み</p>
                 <p className="mt-1 text-xs leading-5 text-ink-500">
                   {generationResult.provider === "mock"
                     ? "確認用の下書きです。"
-                    : "サーバー側で作成しました。"}
+                    : "下書きを作りました。"}
                 </p>
               </div>
-              <div className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
+              <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--coach-note)] px-4 py-3">
                 <p className="text-xs font-semibold text-ink-500">候補数</p>
                 <p className="mt-2 text-sm font-semibold text-ink-900">
-                  {generationResult.promptPackSummary.requestedVariants} / max {generationResult.promptPackSummary.maxVariants}
+                  {generationResult.promptPackSummary.requestedVariants} / {generationResult.promptPackSummary.maxVariants}
                 </p>
-                <p className="mt-1 text-xs leading-5 text-ink-500">候補数は server 側の上限内に収めます。</p>
+                <p className="mt-1 text-xs leading-5 text-ink-500">候補はこの画面で確認してから使います。</p>
               </div>
             </div>
           ) : null}
@@ -408,14 +407,14 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
         </InfoBlock>
 
         {generationResult && !selectedDraft ? (
-          <InfoBlock title="Draft result">
+          <InfoBlock title="下書き結果">
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-              accepted draft がありません。raw candidate は表示せず、issues だけを確認します。
+              使える下書きがありません。気になる点だけ確認します。
             </div>
-            <ListBlock title="rejected candidates" emptyLabel="rejected candidate はありません。">
+            <ListBlock title="使わなかった候補" emptyLabel="使わなかった候補はありません。">
               {generationResult.rejectedCandidates.map((candidate) => (
-                <li key={candidate.candidateIndex} className="rounded-2xl border border-[var(--line)] bg-white px-3 py-3">
-                  <p className="text-xs font-semibold text-ink-500">candidate #{candidate.candidateIndex + 1}</p>
+                <li key={candidate.candidateIndex} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 py-3">
+                  <p className="text-xs font-semibold text-ink-500">候補 #{candidate.candidateIndex + 1}</p>
                   {candidate.issues.map((issue) => (
                     <p key={`${issue.code}-${issue.messageJa}`} className="mt-1 text-xs leading-5 text-ink-700">
                       ・{issue.severity}: {issue.messageJa}
@@ -432,14 +431,14 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
             <InfoBlock title={selectedDraft.title}>
               {acceptedDrafts.length > 1 ? (
                 <label className="mb-4 block space-y-2">
-                  <span className="text-sm font-medium text-ink-700">draft を選ぶ</span>
+                  <span className="text-sm font-medium text-ink-700">下書きを選ぶ</span>
                   <select
                     value={selectedDraftIndex}
                     onChange={(event) => {
                       setSelectedDraftIndex(Number(event.target.value));
                       setCopyMessage(null);
                     }}
-                    className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
+                    className="w-full rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-sm outline-none transition focus:border-[var(--studio-accent)]"
                   >
                     {acceptedDrafts.map((draft, index) => (
                       <option key={`${draft.candidateIndex}-${draft.title}`} value={index}>
@@ -450,10 +449,10 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
                 </label>
               ) : null}
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900">{MOCK_NOTE}</div>
-              <p className="mt-4 whitespace-pre-wrap rounded-2xl border border-[var(--line)] bg-white px-4 py-4 text-sm leading-7 text-ink-800">
+              <p className="mt-4 whitespace-pre-wrap rounded-2xl border border-[var(--line-inset)] bg-[var(--script-paper)] px-4 py-4 text-sm leading-7 text-ink-800 shadow-[0_10px_24px_rgba(45,38,31,0.08)]">
                 {selectedDraft.englishScript}
               </p>
-              <div className="mt-3 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4">
+              <div className="mt-3 rounded-2xl border border-[var(--line-inset)] bg-[var(--coach-note)] px-4 py-4">
                 <p className="text-xs font-semibold text-ink-500">日本語訳</p>
                 <p className="mt-2 text-sm leading-6 text-ink-700">{selectedDraft.japaneseSummary}</p>
               </div>
@@ -463,32 +462,32 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
                 ))}
               </ul>
               {onCopyDraft ? (
-                <div className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4">
+                <div className="mt-4 rounded-2xl border border-[var(--line-dark)] bg-[var(--control-panel)] px-4 py-4 text-[var(--cta-primary-text)]">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-xs font-semibold text-ink-500">フォームへコピー</p>
-                      <p className="mt-2 text-sm leading-6 text-ink-600">
+                      <p className="text-xs font-semibold text-[rgba(255,241,221,0.66)]">フォームへコピー</p>
+                      <p className="mt-2 text-sm leading-6 text-[rgba(255,241,221,0.76)]">
                         タイトル、英文、目標秒数だけを下のフォームへコピーします。日本語訳は確認用です。
                       </p>
-                      <p className="mt-1 text-xs leading-5 text-ink-500">
+                      <p className="mt-1 text-xs leading-5 text-[rgba(255,241,221,0.58)]">
                         コピー後に編集したフォーム内容が、保存される最終版です。
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={handleCopySelectedDraft}
-                      className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50"
+                      className="inline-flex items-center justify-center rounded-2xl bg-[var(--cta-primary-text)] px-4 py-3 text-sm font-semibold text-[var(--control-panel)] transition hover:opacity-90"
                     >
                       この下書きを使う
                     </button>
                   </div>
-                  <p className="mt-3 text-xs leading-5 text-ink-500">コピー後にフォーム内で編集してから保存します。</p>
-                  {copyMessage ? <p className="mt-2 text-sm leading-6 text-ink-700">{copyMessage}</p> : null}
+                  <p className="mt-3 text-xs leading-5 text-[rgba(255,241,221,0.58)]">コピー後にフォーム内で編集してから保存します。</p>
+                  {copyMessage ? <p className="mt-2 text-sm leading-6 text-[var(--cta-primary-text)]">{copyMessage}</p> : null}
                 </div>
               ) : null}
             </InfoBlock>
 
-            <InfoBlock title="Quality report">
+            <InfoBlock title="話しやすさメモ">
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <Metric label="words" value={`${qualityReport.wordCount}`} />
                 <Metric
@@ -504,17 +503,17 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
                 <Metric label="息継ぎ" value={`${qualityReport.breathPointCount}`} compact />
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <ListBlock title="chunks" emptyLabel="chunk はまだありません。">
+                <ListBlock title="区切り" emptyLabel="区切りはまだありません。">
                   {qualityReport.chunks.slice(0, 5).map((chunk) => (
-                    <li key={chunk.index} className="rounded-2xl border border-[var(--line)] bg-white px-3 py-3">
+                    <li key={chunk.index} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--script-paper)] px-3 py-3">
                       <p className="text-xs font-semibold text-ink-500">#{chunk.index} / {chunk.wordCount} words / {chunk.cueJa}</p>
                       <p className="mt-1 text-sm leading-6 text-ink-800">{chunk.text}</p>
                     </li>
                   ))}
                 </ListBlock>
-                <ListBlock title="revision hints" emptyLabel="大きな hint はありません。">
+                <ListBlock title="直すヒント" emptyLabel="大きなヒントはありません。">
                   {qualityReport.revisionHints.map((hint: ScriptStudioRevisionHint) => (
-                    <li key={`${hint.kind}-${hint.labelJa}-${hint.summaryJa}`} className="rounded-2xl border border-[var(--line)] bg-white px-3 py-3">
+                    <li key={`${hint.kind}-${hint.labelJa}-${hint.summaryJa}`} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--coach-note)] px-3 py-3">
                       <p className="text-xs font-semibold text-ink-500">{hint.labelJa} / {hint.blockingLevel}</p>
                       <p className="mt-1 text-sm leading-6 text-ink-800">{hint.summaryJa}</p>
                       {hint.excerptJa ? <p className="mt-1 text-xs leading-5 text-ink-500">{hint.excerptJa}</p> : null}
@@ -523,14 +522,14 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
                 </ListBlock>
               </div>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <ListBlock title="focus words" emptyLabel="must include を入れると候補が出ます。">
+                <ListBlock title="Focus words" emptyLabel="入れたい言葉を入れると候補が出ます。">
                   {selectedDraft.focusWords.map((word) => (
-                    <li key={word.text} className="rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-ink-800">
+                    <li key={word.text} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 py-2 text-sm text-ink-800">
                       {word.text}
                     </li>
                   ))}
                 </ListBlock>
-                <ListBlock title="placeholder checks" emptyLabel="">
+                <ListBlock title="確認メモ" emptyLabel="">
                   {[...qualityReport.ttsFriendliness.notesJa, ...qualityReport.userIntentPreservation.notesJa].map((note) => (
                     <li key={note} className="text-xs leading-5 text-ink-600">
                       ・{note}
@@ -549,13 +548,9 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
                   <p className="mt-1 text-sm leading-6 text-ink-600">次にやること: {selectedDraft.freezePreflight.nextAction}</p>
                   {generationResult ? <p className="mt-1 text-xs leading-5 text-ink-500">画面の案内: {generationResult.nextAction}</p> : null}
                 </div>
-                <button
-                  type="button"
-                  disabled
-                  className="inline-flex cursor-not-allowed items-center justify-center rounded-2xl bg-ink-300 px-4 py-3 text-sm font-semibold text-white opacity-70"
-                >
-                  この台本で練習開始（未接続）
-                </button>
+                <span className="inline-flex items-center justify-center rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-sm font-semibold text-ink-700">
+                  フォームへコピーして保存
+                </span>
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 <ListBlock title="確認が必要な点" emptyLabel="大きな問題はありません。">
@@ -570,9 +565,7 @@ export function ScriptStudioMockPanel({ onCopyDraft }: ScriptStudioMockPanelProp
                 </ListBlock>
               </div>
               <p className="mt-3 text-xs leading-5 text-ink-500">
-                これは下書きの保存前チェックです。コピー後にフォームで編集した場合は、下のフォーム側の保存前チェックが最終候補の目安になります。
-                実際の保存や音声生成は、下のフォームで保存したあとに進みます。
-                保存前に、英文の長さや話しやすさをもう一度確認します。
+                これは下書きの保存前チェックです。コピー後にフォームで編集した内容が、保存される最終版です。
               </p>
             </InfoBlock>
           </>
@@ -601,7 +594,7 @@ function SelectField<TValue extends string>({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value as TValue)}
-        className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
+        className="w-full rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-sm outline-none transition focus:border-[var(--studio-accent)]"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -616,7 +609,7 @@ function SelectField<TValue extends string>({
 
 function InfoBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-white px-4 py-4">
+    <div className="rounded-2xl border border-[var(--line-inset)] bg-[var(--coach-note)] px-4 py-4">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">{title}</p>
       <div className="mt-3">{children}</div>
     </div>
@@ -625,7 +618,7 @@ function InfoBlock({ title, children }: { title: string; children: React.ReactNo
 
 function Metric({ label, value, compact = false }: { label: string; value: string; compact?: boolean }) {
   return (
-    <div className={`rounded-2xl border border-[var(--line)] bg-ink-50 px-3 ${compact ? "py-2" : "py-3"}`}>
+    <div className={`rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 ${compact ? "py-2" : "py-3"}`}>
       <p className="text-[10px] uppercase tracking-[0.16em] text-ink-500">{label}</p>
       <p className={`${compact ? "mt-1 text-sm" : "mt-2 text-base"} font-semibold text-ink-900`}>{value}</p>
     </div>
@@ -636,7 +629,7 @@ function ListBlock({ title, emptyLabel, children }: { title: string; emptyLabel:
   const childCount = Array.isArray(children) ? children.filter(Boolean).length : children ? 1 : 0;
 
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3">
+    <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">{title}</p>
       {childCount > 0 ? <ul className="mt-3 space-y-2 text-sm leading-6 text-ink-700">{children}</ul> : <p className="mt-2 text-sm text-ink-500">{emptyLabel}</p>}
     </div>

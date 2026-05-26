@@ -96,17 +96,17 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
   }
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-4 rounded-[1.75rem] border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-5 shadow-[var(--shadow-studio-soft)] sm:p-6" onSubmit={handleSubmit}>
       {sourceTitle ? (
-        <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
-          「{sourceTitle}」を複製しています。元の保存済み結果はそのまま残り、新しい script として保存されます。
+        <div className="rounded-2xl border border-[var(--line-inset)] bg-[var(--coach-note)] px-4 py-4 text-sm leading-6 text-ink-700">
+          「{sourceTitle}」をもとに、新しい1分として保存します。元の Take はそのまま残ります。
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
+      <div className="rounded-2xl border border-[var(--line-inset)] bg-[var(--coach-note)] px-4 py-4 text-sm leading-6 text-ink-700">
         <p className="text-xs font-semibold text-ink-500">最後に整える</p>
-        <p className="mt-2 font-semibold text-ink-900">ここで自分の言葉に直して保存します。</p>
-        <p className="mt-1 text-xs leading-5 text-ink-500">保存後はそのまま「聞く」へ進みます。</p>
+        <p className="mt-2 font-semibold text-ink-900">声に出したい1分にしてから保存します。</p>
+        <p className="mt-1 text-xs leading-5 text-ink-500">保存すると、お手本を聞く画面へ移動します。</p>
       </div>
 
       <label className="block space-y-2">
@@ -116,7 +116,7 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
           onChange={(event) => setTitle(event.target.value)}
           required
           placeholder="朝の1分練習"
-          className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
+          className="w-full rounded-2xl border border-[var(--line-inset)] bg-[var(--script-paper)] px-4 py-3 text-sm shadow-[0_10px_24px_rgba(45,38,31,0.08)] outline-none transition focus:border-[var(--studio-accent)]"
         />
       </label>
 
@@ -128,7 +128,7 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
           required
           rows={8}
           placeholder="ここに1分で話したい英文を入れます。"
-          className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
+          className="w-full rounded-2xl border border-[var(--line-inset)] bg-[var(--script-paper)] px-4 py-3 text-base leading-7 shadow-[0_10px_24px_rgba(45,38,31,0.08)] outline-none transition focus:border-[var(--studio-accent)]"
         />
       </label>
 
@@ -141,7 +141,7 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
             type="number"
             min={15}
             max={120}
-            className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-sm outline-none transition focus:border-[var(--studio-accent)]"
           />
         </label>
 
@@ -151,7 +151,7 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
             value={locale}
             onChange={(event) => setLocale(event.target.value)}
             placeholder="en-US"
-            className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-[var(--accent)]"
+            className="w-full rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-sm outline-none transition focus:border-[var(--studio-accent)]"
           />
         </label>
       </div>
@@ -171,30 +171,31 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
             setLocale(initialValues.locale);
             setMessage(null);
           }}
-          className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50"
+          className="inline-flex items-center justify-center rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--surface-inset-strong)]"
         >
           複製元の内容に戻す
         </button>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={loading || isMissingRequiredFields}
-        aria-busy={loading}
-        className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {loading ? "保存中..." : "保存して聞くへ進む"}
-      </button>
-
-      <p className="text-xs leading-5 text-ink-500">
-        保存後は、そのまま新しい台本の「聞く」に移動します。
-      </p>
+      <div className="rounded-2xl border border-[var(--line-dark)] bg-[var(--control-panel)] px-4 py-4 text-[var(--cta-primary-text)]">
+        <button
+          type="submit"
+          disabled={loading || isMissingRequiredFields}
+          aria-busy={loading}
+          className="inline-flex w-full items-center justify-center rounded-2xl bg-[var(--cta-primary-text)] px-4 py-3 text-sm font-semibold text-[var(--control-panel)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        >
+          {loading ? "保存中..." : "保存してお手本へ"}
+        </button>
+        <p className="mt-3 text-xs leading-5 text-[rgba(255,241,221,0.68)]">
+          この台本を1分ストックに置いて、お手本を聞く画面へ進みます。
+        </p>
+      </div>
 
       {message ? (
         <button
           type="button"
           onClick={() => setMessage(null)}
-          className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50"
+          className="inline-flex items-center justify-center rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--surface-inset-strong)]"
         >
           メッセージを閉じる
         </button>

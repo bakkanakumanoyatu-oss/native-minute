@@ -32,7 +32,7 @@ export function NewScriptWorkspace({ initialValues, sourceTitle = null }: NewScr
       content: input.content,
       targetSeconds: input.targetSeconds,
       locale: "en-US",
-      sourceLabel: "Script Studio draft"
+      sourceLabel: "AI下書き"
     });
     setEntryMode("freewriting");
     scrollFormIntoView();
@@ -53,7 +53,7 @@ export function NewScriptWorkspace({ initialValues, sourceTitle = null }: NewScr
 
   return (
     <>
-      <div className="mt-8">
+      <div>
         <ScriptStudioEntryModes activeMode={entryMode} onModeChange={setEntryMode} onUseTemplate={handleUseTemplate} />
       </div>
       {entryMode === "ai" ? (
