@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { formatWordListWithOverflow } from "@/lib/focus-words";
-import { getGuidanceActionBadgeLabel, getGuidancePrimaryButtonLabel, getGuidanceToneClasses } from "@/lib/guidance-ui";
+import { getGuidanceActionBadgeLabel, getGuidancePrimaryButtonLabel } from "@/lib/guidance-ui";
 import { buildLoginHref } from "@/lib/navigation";
 import { createPracticeChunks, findWeakWordPracticeChunks } from "@/lib/script-practice-chunks";
 import { getDuplicateScriptPath, getScriptListenPath, getScriptRecordPath, getScriptReviewPath } from "@/lib/script-routes";
@@ -79,8 +79,8 @@ export default async function ReviewPage({ params }: PageParams) {
   if (takeId === PHASE1_PLACEHOLDER_TAKE_ID) {
     return (
       <section className="space-y-6">
-        <div className="rounded-[2rem] border border-[var(--line)] bg-white p-8 shadow-soft">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">結果確認</p>
+        <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-take-paper)] p-8 shadow-[var(--shadow-studio-soft)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">今回の Take</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900">{script.title}</h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-ink-700">{script.content}</p>
           <p className="mt-4 text-sm leading-6 text-ink-600">
@@ -216,34 +216,34 @@ export default async function ReviewPage({ params }: PageParams) {
         exportComment={reviewOneLineAdvice}
       />
 
-      <details data-testid="review-detail-panel" className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-sm">
-        <summary className="cursor-pointer list-none rounded-[1.5rem] bg-ink-50 px-5 py-4 text-sm font-semibold text-ink-900">
-          詳細分析を見る
+      <details data-testid="review-detail-panel" className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-5 shadow-[var(--shadow-studio-soft)]">
+        <summary className="cursor-pointer list-none rounded-[1.5rem] border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-5 py-4 text-sm font-semibold text-ink-900">
+          細かいメモを見る
           <span className="ml-3 font-normal text-ink-600">
-            文字起こし、細かいスコア、比較を開く
+            文字起こし、スコア、ベストとの差を開く
           </span>
         </summary>
         <div className="mt-6 space-y-6">
-      <div className="rounded-[2rem] border border-[var(--line)] bg-white p-8 shadow-soft">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">結果確認</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900">{script.title}</h1>
-        <p className="mt-4 max-w-3xl text-base leading-7 text-ink-700">{script.content}</p>
-        <div className="mt-6 flex flex-wrap gap-3 text-xs uppercase tracking-[0.2em] text-ink-500">
-          <span>録音ID: {review.take.id}</span>
-          <span>状態: {review.take.status}</span>
-          <span>保存時刻: {review.take.reviewed_at ?? "未保存"}</span>
-          {isCurrentLatest ? <span className="rounded-full bg-ink-50 px-3 py-1 text-[var(--accent-strong)]">最新</span> : null}
-          {!isCurrentLatest && latestReviewHref ? <span>最新結果あり</span> : null}
-          {isCurrentBest ? <span className="rounded-full bg-ink-50 px-3 py-1 text-[var(--accent-strong)]">ベスト</span> : null}
-        </div>
-        <p className="mt-4 text-sm leading-6 text-ink-600">
-          {isCurrentLatest
-            ? "この結果を確認したら、そのまま listen / record / progress のどこへ戻るかを決めれば十分です。"
-            : latestReviewHref
-              ? "これは履歴内の 1 件です。通常利用へ戻るときは、必要なら最新結果を見直してから listen / record へ切り替えられます。"
-              : "この結果を起点に、listen / record / progress のどこへ戻るかを決められます。"}
-        </p>
-      </div>
+          <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-take-paper)] p-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">今回の Take メモ</p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900">{script.title}</h1>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-ink-700">{script.content}</p>
+            <div className="mt-6 flex flex-wrap gap-3 text-xs uppercase tracking-[0.2em] text-ink-500">
+              <span>録音ID: {review.take.id}</span>
+              <span>状態: {review.take.status}</span>
+              <span>保存時刻: {review.take.reviewed_at ?? "未保存"}</span>
+              {isCurrentLatest ? <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 py-1 text-[var(--accent-strong)]">最新</span> : null}
+              {!isCurrentLatest && latestReviewHref ? <span>最新結果あり</span> : null}
+              {isCurrentBest ? <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 py-1 text-[var(--accent-strong)]">ベスト</span> : null}
+            </div>
+            <p className="mt-4 text-sm leading-6 text-ink-600">
+              {isCurrentLatest
+                ? "この結果を確認したら、そのまま聞く / 録る / 声のログのどこへ戻るかを決めれば十分です。"
+                : latestReviewHref
+                  ? "これは履歴内の 1 件です。通常利用へ戻るときは、必要なら最新テイクを見直してから聞く / 録るへ切り替えられます。"
+                  : "この結果を起点に、聞く / 録る / 声のログのどこへ戻るかを決められます。"}
+            </p>
+          </div>
 
       <ScriptLoopStatusCard
         currentStep="review"
@@ -262,15 +262,15 @@ export default async function ReviewPage({ params }: PageParams) {
         <Metric label="流暢さ" value={evaluation.fluencyScore} />
       </div>
 
-      <section className={`rounded-[2rem] border p-6 shadow-sm ${getGuidanceToneClasses(currentStep.tone)}`}>
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Current step</p>
+      <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-notice)] p-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">次はここだけ</p>
         <h2 className="mt-2 text-2xl font-semibold text-ink-900">{currentStep.titleJa}</h2>
         <p className="mt-3 text-sm leading-6 text-ink-700">{currentStep.summaryJa}</p>
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">{currentTakeLabel}</h2>
+        <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-take-paper)] p-6">
+          <h2 className="text-lg font-semibold text-ink-900">今回の Take</h2>
           <div className="mt-4">
             <TakeSummarySnapshot
               eyebrow={currentTakeLabel}
@@ -281,8 +281,8 @@ export default async function ReviewPage({ params }: PageParams) {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">ベスト結果の要点</h2>
+        <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-log-shelf)] p-6">
+          <h2 className="text-lg font-semibold text-ink-900">ベストテイクとの差</h2>
           {bestTakeSummary ? (
             <div className="mt-4">
               <TakeSummarySnapshot
@@ -290,7 +290,7 @@ export default async function ReviewPage({ params }: PageParams) {
                 take={bestTakeSummary}
                 lead={
                   isCurrentBest
-                    ? "いま見ている review が現在のベストです。"
+                    ? "いま見ている Take が現在のベストです。"
                     : "比較対象として見返すベスト結果です。"
                 }
                 showStrengths
@@ -298,18 +298,18 @@ export default async function ReviewPage({ params }: PageParams) {
             </div>
           ) : (
             <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Current step</p>
+              <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-ink-500">まだ比較なし</p>
                 <p className="mt-2 text-sm leading-6 text-ink-700">ベスト結果の比較はまだありません。いまはこの結果の要点を確認して、次の 1 本を足す段階です。</p>
               </div>
-              <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next action</p>
+              <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-ink-500">次の一手</p>
                 <div className="mt-3 flex flex-wrap gap-3">
-                  <Link href={recordHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                    record
+                  <Link href={recordHref} className="rounded-2xl bg-[var(--cta-primary-bg)] px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
+                    もう一度録る
                   </Link>
-                  <Link href={listenHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                    listen
+                  <Link href={listenHref} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-paper)] px-4 py-3 text-sm font-semibold text-ink-800">
+                    リズムを聞く
                   </Link>
                 </div>
               </div>
@@ -319,28 +319,28 @@ export default async function ReviewPage({ params }: PageParams) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">保存済み録音</h2>
+        <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--control-panel)] p-6 text-[var(--cta-primary-text)] shadow-[var(--shadow-studio-soft)]">
+          <h2 className="text-lg font-semibold text-[var(--cta-primary-text)]">今回の録音</h2>
           {canPlaybackRecording ? (
             <div data-testid="review-recording-block" className="mt-4 space-y-3">
-              <ProtectedAudioPlayer sourceUrl={`/api/takes/${review.take.id}/audio`} />
-              <p className="text-sm leading-6 text-ink-600">保存済みの録音を聞き返して、weak words と coach の指摘を照らし合わせられます。</p>
+              <ProtectedAudioPlayer sourceUrl={`/api/takes/${review.take.id}/audio`} variant="studio" />
+              <p className="text-sm leading-6 text-[rgba(255,241,221,0.72)]">録った声を短く聞き返して、Focus words と次の1点を照らし合わせます。</p>
               <SavedBestTakeControl scriptId={script.id} takeId={review.take.id} isScoreBest={isCurrentBest} />
             </div>
           ) : (
             <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Current step</p>
-              <p className="mt-2 text-sm leading-6 text-ink-700">この結果では再生可能な録音ファイルを表示できません。いまは transcript と weak words を中心に確認する段階です。</p>
+              <div className="rounded-2xl border border-[var(--line-dark)] bg-white/10 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-[rgba(255,241,221,0.6)]">録音なし</p>
+              <p className="mt-2 text-sm leading-6 text-[rgba(255,241,221,0.78)]">この結果では再生可能な録音ファイルを表示できません。いまは文字起こしと Focus words を中心に確認します。</p>
               </div>
-              <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next action</p>
+              <div className="rounded-2xl border border-[var(--line-dark)] bg-white/10 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-[rgba(255,241,221,0.6)]">次の一手</p>
                 <div className="mt-3 flex flex-wrap gap-3">
-                  <Link href={listenHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                    listen
+                  <Link href={listenHref} className="rounded-2xl border border-[var(--line-dark)] bg-white/10 px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
+                    リズムを聞く
                   </Link>
-                  <Link href={recordHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                    record
+                  <Link href={recordHref} className="rounded-2xl bg-[var(--record-accent)] px-4 py-3 text-sm font-semibold text-white">
+                    もう一度録る
                   </Link>
                 </div>
               </div>
@@ -348,7 +348,7 @@ export default async function ReviewPage({ params }: PageParams) {
           )}
         </section>
 
-        <section data-testid="review-transcript-block" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
+        <section data-testid="review-transcript-block" className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-paper)] p-6">
           <h2 className="text-lg font-semibold text-ink-900">文字起こし</h2>
           <p className="mt-3 text-sm leading-7 text-ink-700">{hydratedReview.take.transcript_text ?? "まだ文字起こしは保存されていません。"}</p>
           <p className="mt-4 text-xs uppercase tracking-[0.2em] text-ink-500">
@@ -356,8 +356,8 @@ export default async function ReviewPage({ params }: PageParams) {
           </p>
         </section>
 
-        <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">強みと評価コメント</h2>
+        <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-notice)] p-6">
+          <h2 className="text-lg font-semibold text-ink-900">よかったところ</h2>
           <p className="mt-3 text-sm leading-7 text-ink-700">{evaluation.summaryJa}</p>
           {evaluation.strengthsJa.length > 0 ? (
             <ul className="mt-4 space-y-2 text-sm leading-6 text-ink-700">
@@ -366,28 +366,28 @@ export default async function ReviewPage({ params }: PageParams) {
               ))}
             </ul>
           ) : (
-            <p className="mt-4 text-sm leading-6 text-ink-600">今回は大きく崩れていない点が多いため、次は weak words と coach の一言だけ見れば十分です。</p>
+            <p className="mt-4 text-sm leading-6 text-ink-600">今回は大きく崩れていない点が多いため、次は Focus words と次の1点だけ見れば十分です。</p>
           )}
         </section>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">弱点語</h2>
+        <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-notice)] p-6">
+          <h2 className="text-lg font-semibold text-ink-900">Focus words</h2>
           {weakWords.length === 0 ? (
             <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Current step</p>
-                <p className="mt-2 text-sm leading-6 text-ink-700">今回は大きい weak word は見えていません。いまは coach の一言と「{comparisonSectionTitle}」を見ながら次の 1 本を決める段階です。</p>
+              <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Focus words</p>
+                <p className="mt-2 text-sm leading-6 text-ink-700">今回は大きい Focus words は見えていません。いまは次の1点と「{comparisonSectionTitle}」を見ながら次の 1 本を決めます。</p>
               </div>
-              <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next action</p>
+              <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-ink-500">次の一手</p>
                 <div className="mt-3 flex flex-wrap gap-3">
-                  <Link href={recordHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                    record
+                  <Link href={recordHref} className="rounded-2xl bg-[var(--cta-primary-bg)] px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
+                    もう一度録る
                   </Link>
-                  <Link href={listenHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                    listen
+                  <Link href={listenHref} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-paper)] px-4 py-3 text-sm font-semibold text-ink-800">
+                    リズムを聞く
                   </Link>
                 </div>
               </div>
@@ -395,7 +395,7 @@ export default async function ReviewPage({ params }: PageParams) {
           ) : (
             <ul className="mt-4 space-y-3">
               {weakWords.map((word) => (
-                <li key={word.id} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3">
+                <li key={word.id} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3">
                   <p className="text-sm font-semibold text-ink-900">{word.word}</p>
                   <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink-500">score {word.score ?? "未算出"}</p>
                   <p className="mt-2 text-sm leading-6 text-ink-700">{word.note ?? "補足なし"}</p>
@@ -405,8 +405,8 @@ export default async function ReviewPage({ params }: PageParams) {
           )}
         </section>
 
-        <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">coach の一言</h2>
+        <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-notice)] p-6">
+          <h2 className="text-lg font-semibold text-ink-900">次はここだけ</h2>
           <p className="mt-2 text-xs uppercase tracking-[0.18em] text-ink-500">{coach.titleJa}</p>
           <p className="mt-3 text-sm leading-7 text-ink-700">{coach.summaryJa}</p>
           <ul className="mt-4 space-y-2 text-sm leading-6 text-ink-700">
@@ -414,7 +414,7 @@ export default async function ReviewPage({ params }: PageParams) {
               <li key={item}>• {item}</li>
             ))}
           </ul>
-          <p className="mt-4 rounded-2xl bg-ink-50 p-4 text-sm leading-6 text-ink-700">{coach.nextStepJa}</p>
+          <p className="mt-4 rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-paper)] p-4 text-sm leading-6 text-ink-700">{coach.nextStepJa}</p>
         </section>
       </div>
 
@@ -440,56 +440,56 @@ export default async function ReviewPage({ params }: PageParams) {
         latestReviewHref={!isCurrentLatest ? latestReviewHref : null}
       />
 
-      <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
+      <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-log-shelf)] p-6">
         <h2 className="text-lg font-semibold text-ink-900">{comparisonSectionTitle}</h2>
         {!comparison ? (
           <div className="mt-4 space-y-4">
-            <div className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Current step</p>
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">声のログ</p>
               <p className="mt-2 text-sm leading-6 text-ink-700">比較データを読み込めませんでした。いまは保存済み結果単体の内容を確認する段階です。</p>
             </div>
-            <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next action</p>
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">次の一手</p>
               <div className="mt-3 flex flex-wrap gap-3">
-                <Link href={recordHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                  record
+                <Link href={recordHref} className="rounded-2xl bg-[var(--cta-primary-bg)] px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
+                  もう一度録る
                 </Link>
-                <Link href="/progress" className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                  progress
+                <Link href="/progress" className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-paper)] px-4 py-3 text-sm font-semibold text-ink-800">
+                  声のログ
                 </Link>
               </div>
             </div>
           </div>
         ) : comparison.takeCount < 2 ? (
           <div className="mt-4 space-y-4">
-            <div className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Current step</p>
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">声のログ</p>
               <p className="mt-2 text-sm leading-6 text-ink-700">この script の結果はまだ 1 件だけです。いまは比較より、次の 1 本を足す段階です。</p>
             </div>
-            <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next action</p>
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">次の一手</p>
               <div className="mt-3 flex flex-wrap gap-3">
-                <Link href={recordHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                  record
+                <Link href={recordHref} className="rounded-2xl bg-[var(--cta-primary-bg)] px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
+                  もう一度録る
                 </Link>
               </div>
             </div>
           </div>
         ) : comparison.isBest ? (
           <div className="mt-4 space-y-4">
-            <div className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Current step</p>
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">ベストテイク</p>
               <p className="mt-2 text-sm leading-6 text-ink-700">この結果が現在のベストです。いまは結果を崩さずに次の 1 本を足すかを決める段階です。</p>
               {practiceGuidance.changeSummaryJa ? <p className="mt-2 text-sm leading-6 text-ink-700">{practiceGuidance.changeSummaryJa}</p> : null}
             </div>
-            <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next action</p>
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">次の一手</p>
               <div className="mt-3 flex flex-wrap gap-3">
-                <Link href={recordHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                  record
+                <Link href={recordHref} className="rounded-2xl bg-[var(--cta-primary-bg)] px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
+                  もう一度録る
                 </Link>
-                <Link href={listenHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                  listen
+                <Link href={listenHref} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-paper)] px-4 py-3 text-sm font-semibold text-ink-800">
+                  リズムを聞く
                 </Link>
               </div>
             </div>
@@ -511,7 +511,7 @@ export default async function ReviewPage({ params }: PageParams) {
               />
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-2xl bg-ink-50 p-4">
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-ink-500">点数差</p>
               <ul className="mt-3 space-y-2 text-sm text-ink-700">
                 <li>総合: {formatDelta(comparison.diff.scoreDelta)}</li>
@@ -520,8 +520,8 @@ export default async function ReviewPage({ params }: PageParams) {
                 <li>リズム: {formatDelta(comparison.diff.rhythmDelta)}</li>
               </ul>
             </div>
-            <div className="rounded-2xl bg-ink-50 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">弱点語の差</p>
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Focus words の差</p>
               <p className="mt-3 text-sm leading-6 text-ink-700">
                 改善した単語: {formatWordListWithOverflow(comparison.diff.improvedWeakWords)}
               </p>
@@ -534,20 +534,20 @@ export default async function ReviewPage({ params }: PageParams) {
               {practiceGuidance.changeSummaryJa ? <p className="mt-3 text-sm leading-6 text-ink-700">{practiceGuidance.changeSummaryJa}</p> : null}
               <p className="mt-3 text-sm leading-6 text-ink-700">{getComparisonPriorityText(comparison.diff)}</p>
             </div>
-            <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">今回の coach</p>
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-notice)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">今回のコーチメモ</p>
               <p className="mt-3 text-sm leading-6 text-ink-700">{comparison.diff.coachShift.currentSummary}</p>
             </div>
-            <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">ベスト時の coach</p>
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-notice)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">ベスト時のコーチメモ</p>
               <p className="mt-3 text-sm leading-6 text-ink-700">{comparison.diff.coachShift.bestSummary}</p>
             </div>
-            <div className="lg:col-span-2 rounded-2xl border border-[var(--line)] bg-white p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Other actions</p>
+            <div className="lg:col-span-2 rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">必要なときだけ</p>
               <p className="mt-2 text-sm leading-6 text-ink-600">いまは差分を見るのが主で、ベスト結果の詳細確認は必要なときだけで十分です。</p>
               <Link
                 href={getScriptReviewPath(script.id, comparison.best.id)}
-                className="mt-3 inline-flex rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800"
+                className="mt-3 inline-flex rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-paper)] px-4 py-3 text-sm font-semibold text-ink-800"
               >
                 ベスト結果も見る
               </Link>
@@ -556,18 +556,18 @@ export default async function ReviewPage({ params }: PageParams) {
           </div>
         ) : (
           <div className="mt-4 space-y-4">
-            <div className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Current step</p>
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">声のログ</p>
               <p className="mt-2 text-sm leading-6 text-ink-700">比較対象のベスト結果はまだありません。いまは今回の結果をもとに次の 1 本を決める段階です。</p>
             </div>
-            <div className="rounded-2xl border border-[var(--line)] bg-white p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Next action</p>
+            <div className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-ink-500">次の一手</p>
               <div className="mt-3 flex flex-wrap gap-3">
-                <Link href={recordHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                  record
+                <Link href={recordHref} className="rounded-2xl bg-[var(--cta-primary-bg)] px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
+                  もう一度録る
                 </Link>
-                <Link href={listenHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800">
-                  listen
+                <Link href={listenHref} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-paper)] px-4 py-3 text-sm font-semibold text-ink-800">
+                  リズムを聞く
                 </Link>
               </div>
             </div>
@@ -575,19 +575,19 @@ export default async function ReviewPage({ params }: PageParams) {
         )}
       </section>
 
-      <section className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
+      <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-6">
         <p className="text-sm font-semibold text-[var(--accent-strong)]">その他の操作</p>
         <p className="mt-2 text-sm leading-6 text-ink-600">結果の確認と次の戻り先は上で完結できます。ここではベスト確認や台本管理だけ使います。</p>
         <div className="mt-4 flex flex-wrap gap-3">
         {!isCurrentBest && bestReviewHref ? (
-          <Link href={bestReviewHref} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-medium text-ink-700">
+          <Link href={bestReviewHref} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-paper)] px-4 py-3 text-sm font-medium text-ink-700">
             ベストを確認
           </Link>
         ) : null}
-        <Link href="/scripts" className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-medium text-ink-700">
-          練習一覧
+        <Link href="/scripts" className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-paper)] px-4 py-3 text-sm font-medium text-ink-700">
+          1分ストック
         </Link>
-        <Link href={getDuplicateScriptPath(script.id)} className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-medium text-ink-700">
+        <Link href={getDuplicateScriptPath(script.id)} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-paper)] px-4 py-3 text-sm font-medium text-ink-700">
           この台本を磨く
         </Link>
         </div>
@@ -630,31 +630,32 @@ function ReviewSummaryFirst({
   exportComment: string;
 }) {
   return (
-    <section data-testid="review-summary-first" className="rounded-[2rem] border border-[var(--line)] bg-[radial-gradient(circle_at_top_left,rgba(28,160,138,0.14),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,248,255,0.94))] p-6 shadow-soft lg:p-8">
+    <section data-testid="review-summary-first" className="rounded-[2rem] border border-[var(--line-inset)] bg-[linear-gradient(135deg,var(--surface-notice),var(--surface-primary))] p-6 shadow-[var(--shadow-studio-soft)] lg:p-8">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-start">
         <div>
-          <p className="text-sm font-semibold text-[var(--accent-strong)]">直す</p>
+          <p className="text-sm font-semibold text-[var(--accent-strong)]">今回の Take</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900">{scriptTitle}</h1>
           <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-ink-600">
-            {isCurrentLatest ? <span className="rounded-full bg-ink-50 px-3 py-1 text-[var(--accent-strong)]">最新結果</span> : null}
-            {isCurrentBest ? <span className="rounded-full bg-ink-50 px-3 py-1 text-[var(--accent-strong)]">ベスト結果</span> : null}
-            <span className="rounded-full bg-ink-50 px-3 py-1">練習 {takeCount} 回</span>
+            {isCurrentLatest ? <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-3 py-1 text-[var(--accent-strong)]">最新テイク</span> : null}
+            {isCurrentBest ? <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-3 py-1 text-[var(--accent-strong)]">ベストテイク</span> : null}
+            <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-3 py-1">Take {takeCount}</span>
           </div>
         </div>
 
-        <div className="rounded-[1.5rem] bg-[var(--accent)] p-5 text-center text-white shadow-sm">
-          <p className="text-xs font-semibold text-white/75">スコア</p>
-          <p className="mt-2 text-5xl font-semibold tracking-tight">{score}</p>
+        <div className="rounded-[1.5rem] border border-[var(--line-subtle)] bg-[var(--surface-take-paper)] p-5 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">score</p>
+          <p className="mt-2 text-4xl font-semibold tracking-tight text-ink-900">{score}</p>
+          <p className="mt-2 text-xs leading-5 text-ink-600">採点表ではなく、次の1点を決める目印です。</p>
         </div>
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.7fr)]">
-        <section className="rounded-[1.5rem] border border-[var(--line)] bg-white/85 p-5">
-          <h2 className="text-base font-semibold text-ink-900">今日の直すポイント</h2>
+        <section className="rounded-[1.5rem] border border-[var(--line-inset)] bg-[var(--surface-paper)] p-5">
+          <h2 className="text-base font-semibold text-ink-900">次はここだけ</h2>
           <ol className="mt-3 space-y-2 text-sm leading-6 text-ink-700">
             {focusPoints.map((point, index) => (
               <li key={point} className="flex gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-50 text-xs font-semibold text-[var(--accent-strong)]">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface-notice)] text-xs font-semibold text-[var(--accent-strong)]">
                   {index + 1}
                 </span>
                 <span>{point}</span>
@@ -663,34 +664,37 @@ function ReviewSummaryFirst({
           </ol>
         </section>
 
-        <section className="rounded-[1.5rem] border border-[var(--line)] bg-white/85 p-5">
-          <h2 className="text-base font-semibold text-ink-900">一言アドバイス</h2>
+        <section className="rounded-[1.5rem] border border-[var(--line-inset)] bg-[var(--surface-paper)] p-5">
+          <h2 className="text-base font-semibold text-ink-900">コーチメモ</h2>
           <p className="mt-3 text-sm leading-6 text-ink-700">{advice}</p>
         </section>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
-        <Link href={recordHref} className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-5 py-3 text-white shadow-sm sm:w-auto">
-          もう一回録る
+      <div className="mt-6 rounded-[1.75rem] border border-[var(--line-dark)] bg-[var(--control-panel)] p-4 text-sm font-semibold shadow-[var(--shadow-studio-soft)]">
+        <p className="mb-3 text-xs uppercase tracking-[0.18em] text-[rgba(255,241,221,0.62)]">次の操作</p>
+        <div className="flex flex-wrap gap-3">
+        <Link href={recordHref} className="inline-flex w-full justify-center rounded-2xl bg-[var(--record-accent)] px-5 py-3 text-white shadow-sm sm:w-auto">
+          もう一度録る
         </Link>
-        <Link href={brushUpHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-ink-800 sm:w-auto">
+        <Link href={brushUpHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line-dark)] bg-white/10 px-5 py-3 text-[var(--cta-primary-text)] sm:w-auto">
           この台本を磨く
         </Link>
         {bestReviewHref ? (
-          <Link href={bestReviewHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-ink-800 sm:w-auto">
+          <Link href={bestReviewHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line-dark)] bg-white/10 px-5 py-3 text-[var(--cta-primary-text)] sm:w-auto">
             ベストを確認
           </Link>
         ) : null}
-        <Link href="/progress" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-ink-800 sm:w-auto">
-          進み具合
+        <Link href="/progress" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line-dark)] bg-white/10 px-5 py-3 text-[var(--cta-primary-text)] sm:w-auto">
+          声のログ
         </Link>
-        <Link href="/scripts" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-ink-800 sm:w-auto">
-          練習一覧
+        <Link href="/scripts" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line-dark)] bg-white/10 px-5 py-3 text-[var(--cta-primary-text)] sm:w-auto">
+          1分ストック
         </Link>
+        </div>
       </div>
 
       <p className="mt-4 text-sm leading-6 text-ink-600">
-        細かい分析は下にまとめています。まずはこの 1〜3 点だけ見て、次の録音へ戻れば十分です。
+        細かいメモは下にまとめています。まずはこの 1〜3 点だけ見て、次の Take に戻れば十分です。
       </p>
       {isCurrentBest ? (
         <BestResultExportActions
@@ -699,6 +703,7 @@ function ReviewSummaryFirst({
           score={score}
           dateLabel={formatReviewDate(reviewedAt)}
           comment={exportComment}
+          variant="studio"
         />
       ) : null}
     </section>
@@ -768,24 +773,24 @@ function getReviewCurrentStep({
       titleJa: "結果を確認し終えて、次の 1 本を決める段階",
       summaryJa: canPlaybackRecording
         ? "この結果は現在のベストです。必要なら保存済み録音を短く聞き返し、感覚を崩さずに次の 1 本を足すかを決める段階です。"
-        : "この結果は現在のベストです。coach と weak words を確認し、感覚を崩さずに次の 1 本を足すかを決める段階です。"
+        : "この結果は現在のベストです。コーチメモと Focus words を確認し、感覚を崩さずに次の 1 本を足すかを決める段階です。"
     };
   }
 
   if (comparison?.diff) {
     return {
       tone: "focus" as const,
-      titleJa: "結果を見て、listen か record かを決める段階",
+      titleJa: "結果を見て、聞き直すか録り直すかを決める段階",
       summaryJa: canPlaybackRecording
-        ? "保存済み録音と weak words を照らし合わせながら、まず listen で戻すか、そのまま record に戻るかをここで決めます。"
-        : "weak words と coach を見ながら、まず listen で戻すか、そのまま record に戻るかをここで決めます。"
+        ? "保存済み録音と Focus words を照らし合わせながら、まず聞き直すか、そのまま録り直すかをここで決めます。"
+        : "Focus words とコーチメモを見ながら、まず聞き直すか、そのまま録り直すかをここで決めます。"
     };
   }
 
   return {
     tone: "info" as const,
     titleJa: "最初の結果を確認して次へ戻る段階",
-    summaryJa: "比較はまだ少ないので、この結果の weak words と coach を見て、そのまま次の listen / record に戻る段階です。"
+    summaryJa: "比較はまだ少ないので、この結果の Focus words とコーチメモを見て、そのまま次の聞く / 録るに戻る段階です。"
   };
 }
 
@@ -870,8 +875,8 @@ function PracticeGuidanceSection({
   comparisonSectionTitle: string;
 }) {
   return (
-    <section className={`rounded-[2rem] border p-6 shadow-sm ${getGuidanceToneClasses(guidance.tone)}`}>
-      <p className="text-sm font-semibold text-[var(--accent-strong)]">次にやること</p>
+    <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-notice)] p-6">
+      <p className="text-sm font-semibold text-[var(--accent-strong)]">次はここだけ</p>
       <h2 className="mt-2 text-2xl font-semibold text-ink-900">{guidance.actionLabelJa}</h2>
       <p className="mt-2 text-xs uppercase tracking-[0.18em] text-ink-500">{getGuidanceActionBadgeLabel(guidance.actionKind)}</p>
       <p className="mt-4 text-sm leading-6 text-ink-800">{guidance.summaryJa}</p>
@@ -883,7 +888,7 @@ function PracticeGuidanceSection({
       {guidance.focusWords.length > 0 ? (
         <div className="mt-4 flex flex-wrap gap-2">
           {guidance.focusWords.map((word) => (
-            <span key={word} className="rounded-full border border-[var(--line)] bg-white px-3 py-1 text-xs font-semibold text-ink-700">
+            <span key={word} className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-3 py-1 text-xs font-semibold text-ink-700">
               {word}
             </span>
           ))}
@@ -925,41 +930,41 @@ function ReviewNextActionSection({
   const decisionText =
     guidance.actionKind === "listen"
       ? latestReviewHref
-        ? "耳を合わせ直したいなら聞くへ戻ります。最新結果を見直したいときだけ別導線を使います。"
-        : "耳を合わせ直したいなら聞くへ戻り、十分ならそのまま録音へ進めます。"
+        ? "耳を合わせ直したいならリズムを聞き直します。最新テイクを見直したいときだけ別導線を使います。"
+        : "耳を合わせ直したいならリズムを聞き直し、十分ならそのまま録音へ進めます。"
       : latestReviewHref
-        ? "そのまま録音へ戻るのが主導線です。最新結果を見直したいときだけ別導線を使います。"
-        : "そのまま録音へ戻るのが主導線です。迷うときだけ聞くを1回挟みます。";
+        ? "そのまま録音へ戻るのが主導線です。最新テイクを見直したいときだけ別導線を使います。"
+        : "そのまま録音へ戻るのが主導線です。迷うときだけリズム確認を1回挟みます。";
 
   return (
-    <section className={`rounded-[2rem] border p-6 shadow-sm ${getGuidanceToneClasses("steady")}`}>
-      <p className="text-sm font-semibold text-[var(--accent-strong)]">次にやること</p>
-      <h2 className="mt-2 text-2xl font-semibold text-ink-900">次に戻る先を決める</h2>
-      <p className="mt-3 text-sm leading-6 text-ink-700">{decisionText}</p>
+    <section className="rounded-[2rem] border border-[var(--line-dark)] bg-[var(--control-panel)] p-6 text-[var(--cta-primary-text)] shadow-[var(--shadow-studio-soft)]">
+      <p className="text-sm font-semibold text-[rgba(255,241,221,0.68)]">次の操作</p>
+      <h2 className="mt-2 text-2xl font-semibold text-[var(--cta-primary-text)]">次に戻る先を決める</h2>
+      <p className="mt-3 text-sm leading-6 text-[rgba(255,241,221,0.78)]">{decisionText}</p>
       <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
-        <Link href={primaryHref} className="rounded-2xl bg-[var(--accent)] px-4 py-3 text-white">
+        <Link href={primaryHref} className="rounded-2xl bg-[var(--record-accent)] px-4 py-3 text-white">
           {getGuidancePrimaryButtonLabel(guidance.actionKind)}
         </Link>
-        <Link href={secondaryHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
+        <Link href={secondaryHref} className="rounded-2xl border border-[var(--line-dark)] bg-white/10 px-4 py-3 text-[var(--cta-primary-text)]">
           {secondaryLabel}
         </Link>
         {latestReviewHref ? (
-          <Link href={latestReviewHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
+          <Link href={latestReviewHref} className="rounded-2xl border border-[var(--line-dark)] bg-white/10 px-4 py-3 text-[var(--cta-primary-text)]">
             最新結果を見る
           </Link>
         ) : null}
-        <Link href={progressHref} className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-ink-800">
+        <Link href={progressHref} className="rounded-2xl border border-[var(--line-dark)] bg-white/10 px-4 py-3 text-[var(--cta-primary-text)]">
           ベストを確認
         </Link>
       </div>
-      <p className="mt-3 text-sm leading-6 text-ink-600">迷ったら、戻り先だけ決めます。台本管理や別の結果確認は必要なときだけで十分です。</p>
+      <p className="mt-3 text-sm leading-6 text-[rgba(255,241,221,0.68)]">迷ったら、戻り先だけ決めます。台本管理や別の結果確認は必要なときだけで十分です。</p>
     </section>
   );
 }
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[2rem] border border-[var(--line)] bg-white px-5 py-4 shadow-sm">
+    <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-take-paper)] px-5 py-4">
       <div className="text-xs font-medium uppercase tracking-[0.18em] text-ink-500">{label}</div>
       <div className="mt-2 text-3xl font-semibold text-ink-900">{value}</div>
     </div>

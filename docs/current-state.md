@@ -203,6 +203,7 @@
 - UI/UX small diff でも、DB schema / migration、API contract、auth / ownership / storage access、provider 本接続、Listen fixed audio bar、main loop、UI direction docs に影響する場合は停止して報告する。
 
 ## 直近の変更
+- Review は「今回の Take から次の1点を見つける場所」として、summary / score / Focus words / コーチメモ / 次の操作を小さな録音ブースの surface system に寄せた。score は残しつつ通知表っぽく主役にしすぎず、review data / canonical source / audio replay logic は変えていない。
 - Record は「今日の Take を残す場所」として、hero / 今日の台本 / 録音パネル / 録音前の区切り / 今回の Take 表示を小さな録音ブースの surface system に寄せた。開発用 transcript 入力は mock 確認時だけにし、録音、upload、evaluate、review 遷移ロジックは変えていない。
 - Listen は「お手本のリズムを耳に入れる場所」として、hero / お手本ボイス area / script paper / 区切り表示 / 下部固定 audio bar を小さな録音ブースの surface system に寄せた。単一 audioRef、protected replay URL、seek / play / pause の音声ロジックは変えていない。
 - `/scripts/new` は「今日の台本を用意する場所」として、入口を studio surface、テンプレートと英文入力を script paper、ヒントを coach note、保存 / AI生成の action area を control panel に寄せた。script 作成 API / contract / 保存後の listen 遷移は変えていない。

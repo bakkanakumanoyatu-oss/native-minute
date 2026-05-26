@@ -122,7 +122,7 @@ export function SavedBestTakeControl({ scriptId, takeId, isScoreBest = false }: 
         const withoutDuplicate = current.filter((take) => take.id !== savedBestTake.id);
         return [...withoutDuplicate, savedBestTake].sort((a, b) => a.slot - b.slot);
       });
-      setMessage("Audio Library にベスト保存しました。保存操作は quota 消費ではありません。");
+      setMessage("ベストテイクとして保存しました。");
     } catch {
       setErrorMessage("録音をベスト保存できませんでした。通信状態を確認してもう一度お試しください。");
     } finally {
@@ -155,7 +155,7 @@ export function SavedBestTakeControl({ scriptId, takeId, isScoreBest = false }: 
       }
 
       setSavedBestTakes((current) => current.filter((take) => take.id !== currentSavedTake.id));
-      setMessage("Audio Library から外しました。元の take / weak words / coach / 録音ファイルは削除していません。");
+      setMessage("ベストテイクから外しました。元の録音は残っています。");
     } catch {
       setErrorMessage("ベスト保存を外せませんでした。通信状態を確認してもう一度お試しください。");
     } finally {
@@ -164,22 +164,19 @@ export function SavedBestTakeControl({ scriptId, takeId, isScoreBest = false }: 
   }
 
   return (
-    <div data-testid="saved-best-take-control" className="border-t border-[var(--line)] pt-4">
+    <div data-testid="saved-best-take-control" className="border-t border-[var(--line-dark)] pt-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Audio Library</p>
-          <p className="mt-2 text-sm leading-6 text-ink-700">
+          <p className="text-xs uppercase tracking-[0.18em] text-[rgba(255,241,221,0.58)]">ベストテイク</p>
+          <p className="mt-2 text-sm leading-6 text-[rgba(255,241,221,0.78)]">
             {currentSavedTake
-              ? `この録音は slot ${currentSavedTake.slot} にベスト保存済みです。`
-              : "あとで聞き返したい録音だけを、学習用のベスト録音として pin できます。"}
+              ? `この録音は ${currentSavedTake.slot} 番目のベストテイクとして保存済みです。`
+              : "あとで聞き返したい録音だけを、ベストテイクとして残せます。"}
           </p>
-          <p className="mt-1 text-xs leading-5 text-ink-500">
+          <p className="mt-1 text-xs leading-5 text-[rgba(255,241,221,0.58)]">
             {isScoreBest
-              ? "この結果は現在の score 上のベストですが、Audio Library のベスト保存は別操作です。"
-              : "score 上の best は自動判定、ベスト保存は自分で残したい録音の pin です。"}
-          </p>
-          <p className="mt-1 text-xs leading-5 text-ink-500">
-            保存 / 保存解除は quota 消費ではありません。保存を外しても take / weak words / coach / 録音ファイルは残ります。
+              ? "この結果は現在のスコア上のベストです。残したいときは自分で保存します。"
+              : "スコア上のベストとは別に、自分で残したい録音を選びます。"}
           </p>
         </div>
         {currentSavedTake ? (
@@ -187,7 +184,7 @@ export function SavedBestTakeControl({ scriptId, takeId, isScoreBest = false }: 
             type="button"
             onClick={handleUnsave}
             disabled={mutating}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--line-dark)] bg-white/10 px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)] transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <X aria-hidden className="h-4 w-4" />
             {mutating ? "処理中..." : "保存を外す"}
@@ -197,16 +194,16 @@ export function SavedBestTakeControl({ scriptId, takeId, isScoreBest = false }: 
             type="button"
             onClick={handleSave}
             disabled={mutating || loading}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--record-accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--record-accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? <BookmarkCheck aria-hidden className="h-4 w-4" /> : <BookmarkPlus aria-hidden className="h-4 w-4" />}
             {mutating ? "保存中..." : "この録音をベスト保存"}
           </button>
         )}
       </div>
-      {loading ? <p className="mt-3 text-sm text-ink-500">保存状態を確認しています。</p> : null}
-      {message ? <p className="mt-3 text-sm leading-6 text-ink-600">{message}</p> : null}
-      {errorMessage ? <p className="mt-3 text-sm leading-6 text-amber-800">{errorMessage}</p> : null}
+      {loading ? <p className="mt-3 text-sm text-[rgba(255,241,221,0.62)]">保存状態を確認しています。</p> : null}
+      {message ? <p className="mt-3 text-sm leading-6 text-[rgba(255,241,221,0.72)]">{message}</p> : null}
+      {errorMessage ? <p className="mt-3 text-sm leading-6 text-[#ffd3a3]">{errorMessage}</p> : null}
     </div>
   );
 }

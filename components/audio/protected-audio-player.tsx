@@ -8,13 +8,15 @@ type ProtectedAudioPlayerProps = {
   className?: string;
   loadingMessage?: string;
   errorMessage?: string;
+  variant?: "default" | "studio";
 };
 
 export function ProtectedAudioPlayer({
   sourceUrl,
   className = "w-full",
   loadingMessage = "録音を準備しています...",
-  errorMessage = "保存済み録音の取得に失敗しました。ページを再読込してからもう一度お試しください。"
+  errorMessage = "保存済み録音の取得に失敗しました。ページを再読込してからもう一度お試しください。",
+  variant = "default"
 }: ProtectedAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [resolvedAudioUrl, setResolvedAudioUrl] = useState<string | null>(null);
@@ -77,11 +79,11 @@ export function ProtectedAudioPlayer({
   }, [playbackRate, resolvedAudioUrl]);
 
   if (loadFailed) {
-    return <p className="text-sm leading-6 text-amber-800">{errorMessage}</p>;
+    return <p className={`text-sm leading-6 ${variant === "studio" ? "text-[#ffd3a3]" : "text-amber-800"}`}>{errorMessage}</p>;
   }
 
   if (!resolvedAudioUrl) {
-    return <p className="text-sm leading-6 text-ink-600">{loadingMessage}</p>;
+    return <p className={`text-sm leading-6 ${variant === "studio" ? "text-[rgba(255,241,221,0.72)]" : "text-ink-600"}`}>{loadingMessage}</p>;
   }
 
   return (
@@ -92,6 +94,7 @@ export function ProtectedAudioPlayer({
         onChange={setPlaybackRate}
         label="保存済み録音の聞き返し速度"
         description="再生速度だけを変えます。保存済み録音の内容や評価結果は変わりません。"
+        variant={variant}
       />
       <audio
         ref={audioRef}
