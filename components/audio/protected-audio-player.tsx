@@ -121,22 +121,22 @@ export function ProtectedAudioPlayer({
   const statusPillClass = isStudio
     ? "border-[var(--line-dark)] bg-[rgba(255,241,221,0.1)] text-[rgba(255,241,221,0.78)]"
     : "border-[var(--line-inset)] bg-[rgba(255,241,221,0.42)] text-ink-700";
+  const lazyPanelClass =
+    "rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] p-4 text-ink-800 shadow-[var(--shadow-studio-soft)]";
+  const lazyButtonClass =
+    "inline-flex w-full items-center justify-center rounded-2xl border border-[rgba(24,23,34,0.16)] bg-[var(--control-panel)] px-4 py-3 text-sm font-semibold text-[var(--script-paper)] shadow-[0_14px_32px_rgba(24,23,34,0.18)] transition hover:bg-[var(--control-panel-soft)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--quiet-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-inset)]";
 
   if (!shouldResolveAudio) {
     return (
-      <div className={feedbackPanelClass}>
+      <div className={lazyPanelClass}>
         <button
           type="button"
-          className={`inline-flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-            isStudio
-              ? "border border-[rgba(255,241,221,0.24)] bg-[rgba(255,241,221,0.1)] text-[var(--script-paper)] hover:bg-[rgba(255,241,221,0.16)]"
-              : "bg-[var(--control-panel)] text-[var(--script-paper)] hover:bg-[var(--control-panel-soft)]"
-          }`}
+          className={lazyButtonClass}
           onClick={() => setActivatedSourceUrl(sourceUrl)}
         >
           {revealLabel}
         </button>
-        <p className={`mt-2 text-xs leading-5 ${subtleTextClass}`}>押した音声だけを準備します。</p>
+        <p className="mt-2 text-xs font-medium leading-5 text-ink-700">タップすると音声を準備します。</p>
       </div>
     );
   }

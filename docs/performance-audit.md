@@ -521,6 +521,7 @@ After this step:
 - Lazy players initially render a `聞く` button and do not fetch the protected audio.
 - Pressing the button mounts the same fetch/blob flow, preserving `準備中`, `準備できました`, error, retry, playback rate, and development-only client timing states.
 - Review keeps immediate playback behavior, because the first-view saved recording is part of the main Review task.
+- After production feedback, the lazy pre-load state uses a high-contrast control-panel button on a warm inset surface so it reads as an intentional `聞く` action instead of an unloaded or broken player.
 
 This does not change DB schema, API contracts, auth, ownership checks, storage access, storage policy, Range behavior, signed URL strategy, best-take logic, progress aggregation, or audio replay authorization.
 
