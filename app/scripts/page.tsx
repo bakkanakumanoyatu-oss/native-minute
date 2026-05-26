@@ -106,22 +106,22 @@ export default async function ScriptsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="overflow-hidden rounded-[2rem] border border-[var(--line-subtle)] bg-[linear-gradient(135deg,var(--surface-primary),var(--surface-secondary)_58%,var(--surface-inset))] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8 lg:p-10">
+      <div className="overflow-hidden rounded-[2rem] border border-[var(--line-inset)] bg-[linear-gradient(135deg,var(--studio-surface-secondary),var(--studio-surface-inset)_62%,var(--booth-wall-deep))] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8 lg:p-10">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
           <div>
             <div aria-hidden="true" className="mb-5 flex max-w-xs gap-2">
               {[0, 1, 2, 3, 4].map((slot) => (
-                <span key={slot} className={`h-2 flex-1 rounded-full ${slot < Math.min(scripts.length, MAX_VISIBLE_PRACTICES) ? "bg-[var(--studio-ink)]" : "bg-[rgba(45,38,31,0.12)]"}`} />
+                <span key={slot} className={`h-2 flex-1 rounded-full ${slot < Math.min(scripts.length, MAX_VISIBLE_PRACTICES) ? "bg-[var(--control-panel)]" : "bg-[rgba(45,38,31,0.14)]"}`} />
               ))}
             </div>
             <p className="text-sm font-semibold text-[var(--studio-accent-strong)]">1分ストック</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">今日録る1本を選ぶ</h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-ink-700">5本まで置いて、今日の Take を残す1本を選びます。</p>
           </div>
-          <div className="rounded-[1.75rem] border border-[var(--studio-ink)] bg-[var(--studio-ink)] p-6 text-white shadow-[0_18px_44px_rgba(24,23,34,0.2)]">
-            <p className="text-sm font-semibold text-white/80">今日の1分</p>
-            <p className="mt-2 text-4xl font-semibold tracking-tight text-white">1分ストック {Math.min(scripts.length, MAX_VISIBLE_PRACTICES)} / {MAX_VISIBLE_PRACTICES}</p>
-            <p className="mt-1 text-sm leading-6 text-white/70">
+          <div className="rounded-[1.75rem] border border-[var(--line-dark)] bg-[var(--control-panel)] p-6 text-[var(--cta-primary-text)] shadow-[0_18px_44px_rgba(24,23,34,0.22)]">
+            <p className="text-sm font-semibold text-[rgba(255,241,221,0.78)]">棚の空き</p>
+            <p className="mt-2 text-4xl font-semibold tracking-tight text-[var(--cta-primary-text)]">1分ストック {Math.min(scripts.length, MAX_VISIBLE_PRACTICES)} / {MAX_VISIBLE_PRACTICES}</p>
+            <p className="mt-1 text-sm leading-6 text-[rgba(255,241,221,0.68)]">
               {scripts.length === 0 ? "まず1テイク用の1本を作ります。" : hiddenScriptCount > 0 ? `表示は5個まで。ほか ${hiddenScriptCount} 件は絞っています。` : "5本まで置けます。"}
             </p>
           </div>
@@ -131,11 +131,11 @@ export default async function ScriptsPage() {
             {scripts.length > 0 ? "今ある1分から選びます。" : "まずは新しい1分を作ります。"}
           </p>
           {scripts.length < MAX_VISIBLE_PRACTICES ? (
-            <Link href="/scripts/new" className="inline-flex w-full justify-center rounded-2xl bg-[var(--studio-ink)] px-5 py-4 text-white shadow-[0_12px_28px_rgba(24,23,34,0.18)] transition hover:opacity-90 sm:w-auto">
+            <Link href="/scripts/new" className="inline-flex w-full justify-center rounded-2xl bg-[var(--cta-primary-bg)] px-5 py-4 text-[var(--cta-primary-text)] shadow-[0_12px_28px_rgba(24,23,34,0.18)] transition hover:opacity-90 sm:w-auto">
               新しい1分を作る
             </Link>
           ) : (
-            <span className="inline-flex w-full justify-center rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] px-5 py-4 text-ink-500 sm:w-auto">
+            <span className="inline-flex w-full justify-center rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-5 py-4 text-ink-500 sm:w-auto">
               5本あります。整理してから追加
             </span>
           )}
@@ -143,7 +143,7 @@ export default async function ScriptsPage() {
       </div>
 
       {!voiceReady ? (
-        <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-notice)] px-5 py-4 text-sm leading-6 text-ink-700">
+        <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--coach-note)] px-5 py-4 text-sm leading-6 text-ink-700">
           <p className="font-semibold text-ink-900">お手本ボイスを聞く前に、声の準備が必要です。</p>
           <p className="mt-1">台本は先に作れます。練習開始時に必要な分だけ案内します。</p>
           <Link href={candidateScript ? buildScriptListenVoiceSetupHref(candidateScript.script.id, "/scripts") : buildVoiceSetupHref("/scripts", "/scripts")} className="mt-3 inline-flex font-semibold text-[var(--studio-accent-strong)]">
@@ -153,17 +153,17 @@ export default async function ScriptsPage() {
       ) : null}
 
       {!canRecord ? (
-        <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-notice)] px-5 py-4 text-sm leading-6 text-ink-700">
+        <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--coach-note)] px-5 py-4 text-sm leading-6 text-ink-700">
           <p className="font-semibold text-ink-900">録音評価の準備がまだです。</p>
           <p className="mt-1">お手本を聞くところまでは進められます。評価保存に入る前に設定を確認します。</p>
         </div>
       ) : null}
 
       {scripts.length === 0 ? (
-        <div className="rounded-[2rem] border border-[var(--line-subtle)] bg-[var(--surface-primary)] p-6 shadow-[var(--shadow-studio-soft)]">
+        <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[linear-gradient(180deg,var(--studio-surface-secondary),var(--studio-surface-inset))] p-6 shadow-[var(--shadow-studio-soft)]">
           <h2 className="text-2xl font-semibold text-ink-900">最初の1分を作りましょう。</h2>
-          <p className="mt-3 text-sm leading-6 text-ink-600">映画やドラマのセリフっぽい言い回し、仕事、旅行、自己紹介など、話してみたいテーマから始められます。</p>
-          <Link href="/scripts/new" className="mt-5 inline-flex rounded-2xl bg-[var(--studio-ink)] px-5 py-3 text-sm font-semibold text-white">
+          <p className="mt-3 rounded-2xl border border-[var(--line-subtle)] bg-[var(--script-paper)] px-4 py-3 text-sm leading-6 text-ink-700">映画やドラマのセリフっぽい言い回し、仕事、旅行、自己紹介など、話してみたいテーマから始められます。</p>
+          <Link href="/scripts/new" className="mt-5 inline-flex rounded-2xl bg-[var(--cta-primary-bg)] px-5 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
             1分を作る
           </Link>
         </div>
@@ -174,18 +174,19 @@ export default async function ScriptsPage() {
             const primaryLabel = getCardPrimaryLabel(item, { voiceReady, canRecord });
 
             return (
-              <article key={item.script.id} className="rounded-[2rem] border border-[var(--line-subtle)] bg-[linear-gradient(180deg,var(--surface-primary),var(--surface-secondary))] p-6 transition hover:-translate-y-0.5 hover:border-[var(--line-inset)] hover:shadow-[var(--shadow-studio-soft)] sm:p-7">
+              <article key={item.script.id} className="overflow-hidden rounded-[2rem] border border-[var(--line-inset)] bg-[linear-gradient(180deg,var(--studio-surface-secondary),var(--studio-surface-inset))] p-6 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-studio-soft)] sm:p-7">
+                <div aria-hidden="true" className="mb-5 h-1.5 rounded-full bg-[rgba(24,23,34,0.12)]" />
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-start">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-2xl font-semibold text-ink-900">{item.script.title}</h2>
-                      <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-3 py-1 text-xs font-semibold text-ink-600">
+                      <span className="rounded-full border border-[var(--line-subtle)] bg-[var(--take-paper)] px-3 py-1 text-xs font-semibold text-ink-600">
                         {item.takeCount > 0 ? `Take ${item.takeCount}回` : "まだ録っていない"}
                       </span>
                     </div>
-                    <p className="mt-4 rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-4 py-3 text-base leading-7 text-ink-700">{getFirstLine(item.script.content)}</p>
+                    <p className="mt-4 rounded-2xl border border-[var(--line-subtle)] bg-[var(--script-paper)] px-4 py-3 text-base leading-7 text-ink-700">{getFirstLine(item.script.content)}</p>
                   </div>
-                  <div className="rounded-[1.5rem] border border-[var(--line-inset)] bg-[var(--surface-inset)] p-5">
+                  <div className="rounded-[1.5rem] border border-[var(--line-inset)] bg-[var(--coach-note)] p-5">
                     <p className="text-xs font-semibold text-ink-500">最新テイク</p>
                     <p className="mt-1 text-4xl font-semibold text-ink-900">{item.latestTake?.score ?? "-"}</p>
                     <p className="mt-3 text-xs font-semibold text-ink-500">次はここだけ</p>
@@ -193,20 +194,20 @@ export default async function ScriptsPage() {
                   </div>
                 </div>
                 <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
-                  <Link href={primaryHref} className="inline-flex w-full justify-center rounded-2xl bg-[var(--studio-ink)] px-5 py-4 text-white shadow-[0_12px_28px_rgba(24,23,34,0.18)] transition hover:opacity-90 sm:w-auto">
+                  <Link href={primaryHref} className="inline-flex w-full justify-center rounded-2xl bg-[var(--cta-primary-bg)] px-5 py-4 text-[var(--cta-primary-text)] shadow-[0_12px_28px_rgba(24,23,34,0.18)] transition hover:opacity-90 sm:w-auto">
                     {primaryLabel}
                   </Link>
                 </div>
-                <details className="mt-4 rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-secondary)] px-4 py-3">
+                <details className="mt-4 rounded-2xl border border-[var(--line-subtle)] bg-[rgba(223,197,170,0.58)] px-4 py-3">
                   <summary className="cursor-pointer text-sm font-semibold text-ink-700">その他の操作</summary>
                   <div className="mt-4 grid gap-2 text-sm font-semibold sm:max-w-xs">
-                    <Link href={getScriptListenPath(item.script.id)} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-ink-700">
+                    <Link href={getScriptListenPath(item.script.id)} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-ink-700">
                       お手本へ
                     </Link>
-                    <Link href={getScriptRecordPath(item.script.id)} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-ink-700">
+                    <Link href={getScriptRecordPath(item.script.id)} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-ink-700">
                       録る
                     </Link>
-                    <Link href={getDuplicateScriptPath(item.script.id)} className="rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-ink-700">
+                    <Link href={getDuplicateScriptPath(item.script.id)} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-ink-700">
                       この台本を磨く
                     </Link>
                     <DeleteScriptButton scriptId={item.script.id} scriptTitle={item.script.title} />
