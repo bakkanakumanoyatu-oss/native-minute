@@ -54,13 +54,13 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] border border-[var(--line-dark)] bg-[rgba(255,241,221,0.1)] p-4 shadow-[0_16px_44px_rgba(0,0,0,0.16)] backdrop-blur">
-            <div className="rounded-[1.25rem] border border-[rgba(255,241,221,0.18)] bg-[rgba(255,241,221,0.12)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">today</p>
-              <p className="mt-2 text-lg font-semibold tracking-tight text-white">台本を選ぶ</p>
-              <p className="mt-2 text-xs leading-5 text-white/70">5本までの1分ストックから、今日録る1本へ。</p>
+          <div className="rounded-[1.5rem] border border-[rgba(255,241,221,0.14)] bg-[rgba(255,241,221,0.06)] p-4 backdrop-blur">
+            <div className="border-l border-[rgba(255,241,221,0.22)] pl-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/55">flow</p>
+              <p className="mt-2 text-lg font-semibold tracking-tight text-white">今日の流れ</p>
+              <p className="mt-2 text-xs leading-5 text-white/70">台本を選び、リズムを聞いて、Take を残します。</p>
             </div>
-            <div aria-hidden="true" className="mt-4 flex h-10 items-end gap-1.5 text-[var(--studio-accent)]">
+            <div aria-hidden="true" className="mt-4 flex h-10 items-end gap-1.5 text-[var(--studio-accent)] opacity-70">
               {[18, 28, 14, 34, 22, 30].map((height, index) => (
                 <span key={index} className="w-2 rounded-full bg-current" style={{ height }} />
               ))}
