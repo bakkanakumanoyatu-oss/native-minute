@@ -1,0 +1,47 @@
+{
+  "schema": "native-minute.store-release.gate1_5.voice-brushup-architecture.v1",
+  "status": "design_only",
+  "gate": "Gate 1.5",
+  "decision": {
+    "brushupV1Direction": "adoption_candidate",
+    "minimumScope": "script_scoped_explicit_consent_best_take_to_brushup_candidate",
+    "serverArchitecture": "vercel_route_handler_api_route_plus_supabase_storage_db",
+    "noNewInfraNow": true
+  },
+  "nonGoals": [
+    "code_change",
+    "db_schema_or_migration_change",
+    "api_contract_change",
+    "provider_integration_change",
+    "ui_change",
+    "capacitor",
+    "vps_worker_queue"
+  ],
+  "requiredConsent": [
+    "explicit_use_of_selected_best_take_as_voice_material",
+    "script_scoped_use_only",
+    "provider_disclosure",
+    "derived_voice_audio_disclosure",
+    "revoke_and_delete_behavior"
+  ],
+  "futureModels": [
+    "brushup_consents",
+    "script_voice_variants_or_brushup_voice_variants",
+    "brushup_audio_candidates",
+    "brushup_quota_events"
+  ],
+  "replayPolicy": "app_owned_replay_only_no_provider_direct_url",
+  "workerQueueVpsTriggers": [
+    "provider_clone_exceeds_vercel_timeout",
+    "async_provider_job_or_retry_required",
+    "guaranteed_background_cleanup_required",
+    "batch_retention_or_deletion_jobs_required",
+    "large_audio_conversion_required",
+    "concurrency_dedupe_requires_durable_jobs"
+  ],
+  "nextGates": {
+    "gate2": "privacy_terms_consent_revoke_delete_copy_and_policy",
+    "gate3": "provider_latency_cost_failure_cleanup_readiness",
+    "gate3_5": "brushup_mvp_implementation_and_revoke_delete_proof_before_capacitor"
+  }
+}

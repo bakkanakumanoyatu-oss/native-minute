@@ -14,11 +14,11 @@ This document is docs-only. It does not change auth, DB schema, API contracts, p
 
 ## Git / Deploy Snapshot
 
-- Current HEAD: `10e4c83 Add staged feedback for evaluate wait`
-- Local `main` and `origin/main` have no diff.
-- No unpushed commits were present at inventory time.
-- No staged, unstaged, or untracked changes were present before this docs-only inventory work.
-- Git alone cannot prove whether this exact commit is deployed to production. Confirm the production URL, Vercel build ref, and post-deploy smoke before treating production as current.
+- Store release inventory started at `10e4c83 Add staged feedback for evaluate wait`.
+- Gate 1 Web beta smoke evidence is pushed at `4e99304 Record Gate 1 web beta smoke pass evidence`.
+- Local `main` and `origin/main` had no diff before this Gate 1.5 docs/design work.
+- No staged, unstaged, or untracked changes were present before this Gate 1.5 docs/design work.
+- Git alone does not prove deployment state; Gate 1 production smoke evidence is the human-confirmed production record.
 
 ## Gate Map
 
@@ -46,11 +46,13 @@ Confirm:
 - provider env and kill switch readiness
 - no secret, raw provider response, raw audio, signed URL, or raw storage path appears in UI or docs
 
-### Gate 1.5: Voice Consent / Clone Voice Server-Side Architecture Review
+### Gate 1.5: Voice Consent / Clone Voice / Brush-up Server-Side Architecture Review
 
-Goal: review voice consent, sample audio, clone voice, provider identifiers, storage, replay, and cleanup architecture before expanding Store-facing voice functionality.
+Goal: review voice consent, sample audio, clone voice, Brush-up, provider identifiers, storage, replay, and cleanup architecture before expanding Store-facing voice functionality.
 
 This is an architecture review gate, not a provider implementation gate.
+
+Status: design review is captured in `docs/store-release-gate1_5-voice-brushup-architecture.md`. Brush-up is treated as a v1 adoption candidate, but implementation requires later schema/API/provider/UI work.
 
 ### Gate 2: Privacy / Terms / Consent / Delete
 
@@ -68,6 +70,10 @@ Provider roles:
 - OpenAI: transcription, Script Studio generation, and coaching-adjacent generation
 - Azure: pronunciation evaluator
 - Supabase: Auth, DB, private Storage, and protected replay
+
+### Gate 3.5: Brush-up MVP Implementation / Revoke Delete Proof
+
+Goal: if Brush-up remains v1 scope, implement and prove the script-scoped best-take-to-Brush-up loop after Gate 2 consent/deletion policy and Gate 3 provider readiness are settled.
 
 ### Gate 4: Capacitor iOS / Android
 
@@ -137,6 +143,8 @@ The following is the current server / clone voice direction:
 - Generated audio should not depend on provider direct URLs; normalize provider bytes or references into app-owned replay.
 - Continue to prefer private buckets and authenticated replay routes.
 - Provider voice identifiers are provider call inputs, not ownership or cache authority.
+- Brush-up best take audio must be read from app-owned `recordings` server-side and sent to the provider only after explicit script-scoped consent.
+- Brush-up should use script-scoped voice variants and app-owned generated replay; it must not replace the default voice or reuse best-take material across scripts.
 - Consider VPS / worker / queue only if Vercel Functions prove insufficient for timeout, retry, provider latency, long-running cleanup, or scheduled job requirements during Gate 1.5 through Gate 3.
 
 Gate 1.5 review questions:
@@ -147,6 +155,7 @@ Gate 1.5 review questions:
 - Does account deletion cover voice samples, consent recordings, generated model audio, local voice rows, and provider-side cloned voices?
 - Is provider retry / failure behavior safe without adding a queue yet?
 - Is Vercel Function runtime enough for expected sample upload, clone creation, TTS generation, and cleanup proof?
+- Can Gate 3.5 prove Brush-up consent, generated audio, revoke, and deletion behavior before Capacitor work starts?
 
 ## Store Submission Blockers
 
