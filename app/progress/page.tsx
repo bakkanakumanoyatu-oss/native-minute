@@ -59,12 +59,10 @@ export default async function ProgressPage({ searchParams }: PageProps) {
   const slots = getVisibleProgressSlots(overview.scripts, resolvedSearchParams?.scriptId);
   const selectedItem = slots.find((item) => item.script.id === resolvedSearchParams?.scriptId) ?? slots[0] ?? null;
   const selectedSlotNumber = selectedItem ? slots.findIndex((item) => item.script.id === selectedItem.script.id) + 1 : null;
-  const audioLibraryByScriptId = await timeAsync("progress.page.audioLibrary", () =>
-    getProgressAudioLibraryByScriptId(
-      supabase,
-      user.id,
-      slots.map((item) => item.script.id)
-    )
+  const selectedAudioLibrary = await timeAsync("progress.page.audioLibrary", () =>
+    selectedItem
+      ? getProgressAudioLibraryForScript(supabase, user.id, selectedItem.script.id)
+      : Promise.resolve(getEmptyProgressAudioLibraryState(false))
   );
 
   if (overview.totalScripts === 0) {
@@ -90,7 +88,7 @@ export default async function ProgressPage({ searchParams }: PageProps) {
         item={selectedItem}
         slotNumber={selectedSlotNumber}
         isPracticeEstimate={isPracticeEstimate}
-        library={selectedItem ? audioLibraryByScriptId.get(selectedItem.script.id) ?? getEmptyProgressAudioLibraryState(false) : getEmptyProgressAudioLibraryState(false)}
+        library={selectedAudioLibrary}
       />
     </section>
   );
@@ -391,24 +389,18 @@ function ModelAudioMetadata({ metadata }: { metadata: Json }) {
   );
 }
 
-async function getProgressAudioLibraryByScriptId(client: AppSupabaseClient, userId: string, scriptIds: string[]) {
-  return timeAsync("progress.audioLibraryByScript", async () => {
-    const entries = await Promise.all(
-      scriptIds.map(async (scriptId) => {
-        try {
-          const [savedModelAudios, savedBestTakes] = await Promise.all([
-            listSavedModelAudios(client, userId, scriptId),
-            listSavedBestTakes(client, userId, scriptId)
-          ]);
+async function getProgressAudioLibraryForScript(client: AppSupabaseClient, userId: string, scriptId: string) {
+  return timeAsync("progress.audioLibrarySelectedScript", async () => {
+    try {
+      const [savedModelAudios, savedBestTakes] = await Promise.all([
+        listSavedModelAudios(client, userId, scriptId),
+        listSavedBestTakes(client, userId, scriptId)
+      ]);
 
-          return [scriptId, { savedModelAudios, savedBestTakes, loadFailed: false }] as const;
-        } catch {
-          return [scriptId, getEmptyProgressAudioLibraryState(true)] as const;
-        }
-      })
-    );
-
-    return new Map<string, ProgressAudioLibraryState>(entries);
+      return { savedModelAudios, savedBestTakes, loadFailed: false };
+    } catch {
+      return getEmptyProgressAudioLibraryState(true);
+    }
   });
 }
 

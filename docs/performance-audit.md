@@ -278,7 +278,7 @@ The helper prints HTTP status and request duration only. It does not print cooki
    - Watch: `takesAudio.route.auth`, `takesAudio.route.storedReview`, `takesAudio.route.recordingDownload`, `recording.storageDownload`.
    - If this dominates, consider take audio replay / Range / loading UX work.
 7. Open `/progress`.
-   - Watch: `progress.page.overview`, `progress.page.audioLibrary`, `progress.audioLibraryByScript`, `progress.overview`, `progress.hydratedReviews`.
+   - Watch: `progress.page.overview`, `progress.page.audioLibrary`, `progress.audioLibrarySelectedScript`, `progress.overview`, `progress.hydratedReviews`.
    - If audio library labels dominate first view, consider deferring library detail reads.
 8. Play saved recordings or saved model audio from Progress.
    - Take audio: `takesAudio.route.*`, `recording.storageDownload`.
@@ -304,7 +304,7 @@ Notes should describe stage names only, for example "progress overview dominates
 
 - `progress.overview` / `progress.hydratedReviews` dominate Listen or Record: implement selected-script summary service first.
 - `review.page.comparison` plus `review.page.progressOverview` both hydrate all history: consolidate Review data loading.
-- `progress.page.audioLibrary` / `progress.audioLibraryByScript` dominate `/progress`: defer or selected-script-scope Audio Library reads.
+- `progress.page.audioLibrary` / `progress.audioLibrarySelectedScript` dominate `/progress`: defer Audio Library details further or move them behind the opened log details.
 - `takesAudio.route.recordingDownload` / `recording.storageDownload` dominate replay: inspect take audio replay strategy, Range support, or player loading UX.
 - `evaluate.transcription` / `evaluate.pronunciation` dominate: prioritize staged feedback / async-feel UI before provider or scoring changes.
 - `voice.speakScript.providerSynthesize` dominates cache miss: improve generation feedback and cache-hit reuse visibility before provider contract changes.
@@ -371,3 +371,31 @@ The first route hit may include `next dev` compile cost. Warm runs are more usef
 2. Add selected-script summary for Listen and Record, preserving Progress as the broad overview page.
 3. Consolidate Review data loading so current / best / latest are derived through one script-scoped path.
 4. Add a separate real-provider timing run only if provider latency, not local mock route latency, becomes the next decision point.
+
+## Progress Audio Library deferral step
+
+The first optimization pass narrows `/progress` Audio Library reads to the selected script only.
+
+Before this step, `/progress` loaded saved model audios and saved best takes for every visible slot on initial render. With five visible slots, that meant up to five `listSavedModelAudios()` calls and five `listSavedBestTakes()` calls before the page could finish rendering.
+
+After this step, `/progress` still loads the broad progress overview for the five-slot shelf, but Audio Library details are loaded only for the selected script. The selected script's latest take, best take, saved best takes, and saved model audios remain available in the detail area. Other slots keep their lightweight shelf cards until selected.
+
+Timing labels:
+
+- `progress.page.audioLibrary`: preserved for before/after comparison, now measuring selected-script Audio Library loading.
+- `progress.audioLibrarySelectedScript`: nested timing for the selected script's saved model audio and saved best take reads.
+
+This does not change DB schema, API contracts, ownership checks, storage policy, best-take semantics, or progress aggregation.
+
+### Post-change local timing
+
+Measured on 2026-05-26 with `NATIVE_MINUTE_ENABLE_TIMING=1`, mock providers, and an authenticated local timing smoke.
+
+| Target / label | Run 1 | Run 2 | Run 3 | Notes |
+| --- | ---: | ---: | ---: | --- |
+| `/progress` client duration | 1519ms | 444ms | 352ms | Run 1 includes dev compile. |
+| `progress.page.overview` | 430ms | 154ms | 119ms | Overview is unchanged broad progress loading. |
+| `progress.page.audioLibrary` | 243ms | 167ms | 118ms | Now selected-script only; previous warm range was 174-249ms for all visible slots. |
+| `progress.audioLibrarySelectedScript` | 243ms | 167ms | 118ms | New nested label for selected script library reads. |
+
+The warm result shows the Audio Library stage is now scoped to one selected script. It is still visible enough that moving saved audio details behind the opened log details could be a later refinement, but the initial all-slot fan-out is removed.
