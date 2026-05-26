@@ -203,6 +203,7 @@
 - UI/UX small diff でも、DB schema / migration、API contract、auth / ownership / storage access、provider 本接続、Listen fixed audio bar、main loop、UI direction docs に影響する場合は停止して報告する。
 
 ## 直近の変更
+- Listen は「お手本のリズムを耳に入れる場所」として、hero / お手本ボイス area / script paper / 区切り表示 / 下部固定 audio bar を小さな録音ブースの surface system に寄せた。単一 audioRef、protected replay URL、seek / play / pause の音声ロジックは変えていない。
 - `/scripts/new` は「今日の台本を用意する場所」として、入口を studio surface、テンプレートと英文入力を script paper、ヒントを coach note、保存 / AI生成の action area を control panel に寄せた。script 作成 API / contract / 保存後の listen 遷移は変えていない。
 - listen の音声再生は、client-side fetch で Blob URL 化せず、単一の audio element が protected replay URL を直接読む形へ戻した。`/api/script-audio/[audioId]` は Range request に 206 で返せるため、mobile Safari でも metadata / seek / play が通りやすい。
 - listen の見えている音声操作は下部固定 audio bar に一本化した。hidden audio element は単一の audioRef を維持し、再生 / 一時停止は音声 URL があれば押せ、3秒 / 5秒の seek は metadata 準備後に有効になる。

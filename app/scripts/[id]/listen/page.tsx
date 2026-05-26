@@ -115,19 +115,20 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
 
   return (
     <section className="space-y-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
-      <div data-testid="listen-practice-first-view" className="rounded-[2rem] border border-[var(--line-subtle)] bg-[radial-gradient(circle_at_top_left,rgba(200,121,63,0.18),transparent_34%),linear-gradient(135deg,var(--surface-primary),var(--surface-secondary))] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8">
-        <p className="text-sm font-semibold text-[var(--accent-strong)]">聞いてまねる</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">お手本を聞いて、声に出す</h1>
+      <div data-testid="listen-practice-first-view" className="overflow-hidden rounded-[2rem] border border-[var(--line-inset)] bg-[radial-gradient(circle_at_top_left,rgba(200,121,63,0.2),transparent_34%),linear-gradient(135deg,var(--studio-surface-secondary),var(--booth-wall-soft)_58%,var(--studio-surface-inset))] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8">
+        <p className="text-sm font-semibold text-[var(--studio-accent-strong)]">耳を合わせる</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">お手本のリズムを耳に入れる</h1>
         <p className="mt-3 text-base font-semibold text-ink-800">{script.title}</p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-700">台本を見ながら、下の操作バーで何度も戻してまねます。</p>
         <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold">
-          <a href="#listen-panel-shell" className="inline-flex w-full justify-center rounded-2xl bg-[var(--studio-ink)] px-4 py-3 text-white shadow-[0_12px_28px_rgba(24,23,34,0.18)] sm:w-auto">
-            {showCreatedHandoff ? "お手本へ進む" : "お手本を聞く"}
+          <a href="#listen-panel-shell" className="inline-flex w-full justify-center rounded-2xl bg-[var(--cta-primary-bg)] px-4 py-3 text-[var(--cta-primary-text)] shadow-[0_12px_28px_rgba(24,23,34,0.18)] transition hover:opacity-90 sm:w-auto">
+            {showCreatedHandoff ? "お手本へ進む" : "リズムを聞く"}
           </a>
         </div>
       </div>
 
       <div className="grid gap-4">
-        <div className="rounded-[2rem] border border-[var(--line-subtle)] bg-[var(--surface-primary)] p-6 shadow-[var(--shadow-studio-soft)]">
+        <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[linear-gradient(180deg,var(--surface-secondary),var(--surface-inset))] p-5 shadow-[var(--shadow-studio-soft)] sm:p-6">
           {listenBlockedKind ? (
             <>
               <ListenRecoverySection
@@ -180,13 +181,13 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
               />
             </div>
           )}
-          <section id="listen-practice-area" className="mt-6 rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-5">
-            <div className="rounded-[1.5rem] border border-[var(--line-subtle)] bg-[var(--surface-paper)] p-5">
+          <section id="listen-practice-area" className="mt-6 rounded-[2rem] border border-[var(--line-inset)] bg-[rgba(223,197,170,0.58)] p-5">
+            <div className="rounded-[1.5rem] border border-[var(--line-inset)] bg-[var(--script-paper)] p-5 shadow-[0_10px_24px_rgba(45,38,31,0.08)]">
               <p className="text-xs font-semibold text-ink-500">英文スクリプト</p>
               <p className="mt-3 whitespace-pre-wrap text-lg leading-9 text-ink-900">{script.content}</p>
             </div>
-            <Link href={recordHref} className="mt-5 inline-flex w-full justify-center rounded-2xl bg-[var(--record-accent)] px-5 py-4 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(220,91,75,0.2)] sm:w-auto">
-              録音して評価へ進む
+            <Link href={recordHref} className="mt-5 inline-flex w-full justify-center rounded-2xl bg-[var(--record-accent)] px-5 py-4 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(220,91,75,0.2)] transition hover:bg-[var(--record-accent-strong)] sm:w-auto">
+              Take を録る
             </Link>
           </section>
         </div>

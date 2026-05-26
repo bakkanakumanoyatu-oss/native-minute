@@ -92,12 +92,10 @@ function getModelAudioConditionSummary(audio: SavedModelAudio | null) {
   }
 
   const styleLabel = getMetadataString(audio.metadata, "voice_style_label");
-  const provider = getMetadataString(audio.metadata, "provider");
   const voiceLabel = getMetadataString(audio.metadata, "voice_label");
   const parts = [
-    styleLabel ? `style: ${styleLabel}` : "style: 旧データ / 詳細なし",
-    provider ? `provider: ${provider}` : "provider: 不明",
-    voiceLabel ? `voice: ${voiceLabel}` : null
+    styleLabel ? `話し方: ${styleLabel}` : "話し方: 詳細なし",
+    voiceLabel ? `声: ${voiceLabel}` : null
   ];
 
   return parts.filter(Boolean).join(" / ");
@@ -107,21 +105,19 @@ function getModelAudioConditionDetails(audio: SavedModelAudio) {
   const targetSpeed = getMetadataString(audio.metadata, "target_speed");
   const targetWpm = getMetadataNumber(audio.metadata, "target_wpm");
   const pauseDensity = getMetadataString(audio.metadata, "pause_density");
-  const cacheKeyPrefix = getMetadataString(audio.metadata, "cache_key_prefix");
   const contentType = getMetadataString(audio.metadata, "content_type");
   const byteLength = getMetadataNumber(audio.metadata, "byte_length");
   const generatedAt = formatSavedAt(getMetadataString(audio.metadata, "generated_at"));
   const savedAt = formatSavedAt(audio.saved_at);
 
   return [
-    targetSpeed ? `speed intent: ${targetSpeed}` : null,
-    targetWpm ? `target: ${targetWpm} wpm` : null,
-    pauseDensity ? `pause: ${pauseDensity}` : null,
-    generatedAt ? `generated: ${generatedAt}` : null,
-    savedAt ? `saved: ${savedAt}` : null,
-    contentType ? `type: ${contentType}` : null,
-    byteLength ? `${Math.round(byteLength / 1024)}KB` : null,
-    cacheKeyPrefix ? `cache ref: ${cacheKeyPrefix}` : null
+    targetSpeed ? `速さ: ${targetSpeed}` : null,
+    targetWpm ? `目安: ${targetWpm} wpm` : null,
+    pauseDensity ? `間: ${pauseDensity}` : null,
+    generatedAt ? `作成: ${generatedAt}` : null,
+    savedAt ? `保存: ${savedAt}` : null,
+    contentType ? `形式: ${contentType}` : null,
+    byteLength ? `${Math.round(byteLength / 1024)}KB` : null
   ].filter(Boolean);
 }
 
@@ -214,7 +210,7 @@ export function SavedModelAudioControl({ scriptId, audioUrl }: SavedModelAudioCo
         const withoutDuplicate = current.filter((audio) => audio.id !== savedModelAudio.id);
         return [...withoutDuplicate, savedModelAudio].sort((a, b) => a.slot - b.slot);
       });
-      setMessage("Audio Library に保存しました。保存操作は quota 消費ではありません。");
+      setMessage("お手本を保存しました。あとで聞き返せます。");
     } catch {
       setErrorMessage("お手本ボイスを保存できませんでした。通信状態を確認してもう一度お試しください。");
     } finally {
@@ -260,30 +256,30 @@ export function SavedModelAudioControl({ scriptId, audioUrl }: SavedModelAudioCo
   }
 
   return (
-    <div data-testid="saved-model-audio-control" className="border-t border-[var(--line-subtle)] pt-4" aria-busy={mutating || loading}>
+    <div data-testid="saved-model-audio-control" className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] p-4 text-ink-800" aria-busy={mutating || loading}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">Audio Library</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-ink-500">保存するお手本</p>
           <p className="mt-2 text-sm leading-6 text-ink-700">
             {currentSavedAudio
-              ? `このお手本ボイスは slot ${currentSavedAudio.slot} に保存済みです。`
+              ? `このお手本は ${currentSavedAudio.slot} 番目に保存済みです。`
               : "あとで聞き返したいお手本だけを保存できます。"}
           </p>
           <p data-testid="saved-model-audio-condition-summary" className="mt-1 text-xs leading-5 text-ink-600">
             {currentSavedAudio
-              ? `保存条件: ${conditionSummary}`
-              : "保存後に style / provider / voice がここに表示されます。"}
+              ? `保存メモ: ${conditionSummary}`
+              : "保存後に話し方や声のメモを表示します。"}
           </p>
           <details className="mt-2 text-xs leading-5 text-ink-500">
-            <summary className="cursor-pointer font-semibold text-ink-600">保存条件を見る</summary>
+            <summary className="cursor-pointer font-semibold text-ink-600">詳しく見る</summary>
             {conditionDetails.length > 0 ? (
-              <p className="mt-1">作成条件: {conditionDetails.join(" / ")}</p>
+              <p className="mt-1">作成メモ: {conditionDetails.join(" / ")}</p>
             ) : null}
             {currentSavedAudio && !hasStyleMetadata ? (
-              <p className="mt-1">style: 旧データ / 詳細なし。新しく保存し直したお手本ボイスでは、分かる範囲で generation style を表示します。</p>
+              <p className="mt-1">古い保存データのため、話し方の詳細はありません。</p>
             ) : null}
             <p className="mt-1">
-              保存 / 保存解除は quota 消費ではなく、保存を外しても元のお手本ボイスは残ります。聞く速さは今この画面だけの設定で、保存済み音声の identity には含めません。
+              保存を外しても元のお手本は残ります。聞く速さは、この画面で聞くときだけ変わります。
             </p>
           </details>
         </div>
@@ -292,7 +288,7 @@ export function SavedModelAudioControl({ scriptId, audioUrl }: SavedModelAudioCo
             type="button"
             onClick={handleUnsave}
             disabled={mutating}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--surface-inset-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--line-subtle)] bg-[var(--take-paper)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--script-paper)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <X aria-hidden className="h-4 w-4" />
             {mutating ? "保存解除中..." : "保存を外す"}
@@ -302,7 +298,7 @@ export function SavedModelAudioControl({ scriptId, audioUrl }: SavedModelAudioCo
             type="button"
             onClick={handleSave}
             disabled={mutating || loading || !scriptAudioId}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--studio-ink)] px-4 py-3 text-sm font-semibold text-white shadow-[var(--shadow-studio-soft)] transition hover:bg-[var(--studio-ink-soft)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--cta-primary-bg)] px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)] shadow-[var(--shadow-studio-soft)] transition hover:bg-[var(--studio-ink-soft)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {scriptAudioId ? <BookmarkPlus aria-hidden className="h-4 w-4" /> : <BookmarkCheck aria-hidden className="h-4 w-4" />}
             {mutating ? "保存中..." : loading ? "確認中..." : "このお手本ボイスを保存"}
