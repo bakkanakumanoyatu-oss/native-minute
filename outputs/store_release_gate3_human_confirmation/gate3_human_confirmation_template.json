@@ -1,0 +1,490 @@
+{
+  "schema": "native-minute.gate3-human-confirmation.v1",
+  "status": "template_not_filled",
+  "redactionPolicy": {
+    "recordSecrets": false,
+    "recordPartialCredentials": false,
+    "recordRawProviderBodies": false,
+    "recordDashboardJson": false,
+    "recordPrivateUserData": false,
+    "recordTranscriptText": false,
+    "recordScriptText": false,
+    "recordRawAudio": false,
+    "recordObjectKeysOrStoragePaths": false,
+    "recordSignedUrls": false,
+    "recordProviderVoiceIdentifiers": false,
+    "recordAccountProjectResourceSubscriptionIdentifiers": false,
+    "recordInvoicesOrDetailedBillingAmounts": false
+  },
+  "metadata": {
+    "checkedAt": "unknown",
+    "reviewerRole": "unknown",
+    "environment": "unknown",
+    "productionUrl": "unknown",
+    "deploymentProvider": "unknown",
+    "deploymentProject": "unknown",
+    "deploymentIdOrName": "unknown",
+    "deploymentStatus": "unknown",
+    "commitOrBuildRef": "unknown",
+    "overallResult": "unknown"
+  },
+  "statusLegend": [
+    "repo_confirmed",
+    "human_confirmed",
+    "unknown",
+    "warning",
+    "blocker",
+    "not_applicable"
+  ],
+  "providers": {
+    "openai": {
+      "items": [
+        {
+          "id": "openai_project_billing_usage_alert",
+          "label": "Project, billing, usage visibility, and alert owner",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "openai_transcription_model",
+          "label": "Transcription model availability",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "openai_script_generation_model",
+          "label": "Script Studio and coaching-adjacent model availability",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "openai_env_presence_only",
+          "label": "Production env presence only for OpenAI env names",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "openai_kill_switch",
+          "label": "Kill switch proof for NATIVE_MINUTE_DISABLE_OPENAI",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "openai_safe_logging",
+          "label": "Safe error and logging boundary",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "openai_support_escalation",
+          "label": "Support escalation owner",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        }
+      ]
+    },
+    "azure": {
+      "items": [
+        {
+          "id": "azure_speech_resource_region",
+          "label": "Speech resource and region readiness",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "azure_pronunciation_assessment",
+          "label": "Pronunciation Assessment availability",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "azure_quota_billing_alert",
+          "label": "Quota, billing, and alert owner",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "azure_env_presence_only",
+          "label": "Production env presence only for Azure env names",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "azure_kill_switch",
+          "label": "Kill switch proof for NATIVE_MINUTE_DISABLE_AZURE",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "azure_mobile_webview_audio",
+          "label": "Mobile and WebView recording plus PCM normalization risk",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "azure_safe_logging",
+          "label": "Safe error and logging boundary",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        }
+      ]
+    },
+    "elevenlabs": {
+      "items": [
+        {
+          "id": "elevenlabs_plan_credits_api",
+          "label": "Plan, credits, and API availability",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "elevenlabs_normal_tts",
+          "label": "Normal TTS readiness",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "elevenlabs_clone_voice",
+          "label": "Clone voice availability and verification requirements",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "elevenlabs_voice_cleanup",
+          "label": "Voice create, delete, and cleanup semantics",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "elevenlabs_retention_deletion",
+          "label": "Retention and deletion semantics for source material and generated audio",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "elevenlabs_brushup_script_scoped_feasibility",
+          "label": "Brush-up script-scoped voice or material feasibility",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "elevenlabs_brushup_cost_latency_retry",
+          "label": "Brush-up cost, latency, and retry risk",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "elevenlabs_env_presence_only",
+          "label": "Production env presence only for ElevenLabs and service role env names",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "elevenlabs_kill_switch",
+          "label": "Kill switch proof for NATIVE_MINUTE_DISABLE_ELEVENLABS",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "elevenlabs_safe_logging",
+          "label": "Safe error and logging boundary",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        }
+      ]
+    },
+    "supabase": {
+      "items": [
+        {
+          "id": "supabase_storage_buckets",
+          "label": "Storage bucket presence for recordings, script-audios, voice-samples, and voice-consents",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "supabase_rls_ownership",
+          "label": "DB, RLS, and ownership proof status",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "supabase_protected_replay",
+          "label": "Protected replay proof status",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "supabase_account_deletion_cleanup",
+          "label": "Account deletion cleanup proof status",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "supabase_service_role_boundary",
+          "label": "Service role server-side only, presence-only confirmation",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "supabase_storage_upload_kill_switch",
+          "label": "Storage upload kill switch proof for NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        }
+      ]
+    },
+    "vercel": {
+      "items": [
+        {
+          "id": "vercel_production_deployment",
+          "label": "Production deployment current and ready",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "vercel_commit_build_ref",
+          "label": "Deployment commit or build ref",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "vercel_env_presence_only",
+          "label": "Production env presence only for provider and kill switch env names",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "vercel_kill_switch_proof_approach",
+          "label": "Kill switch proof approach",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "vercel_logs_boundary",
+          "label": "Logs do not expose forbidden evidence",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        },
+        {
+          "id": "vercel_rollback_redeploy",
+          "label": "Rollback and redeploy owner and path",
+          "status": "unknown",
+          "safeEvidence": "unknown",
+          "followUp": "unknown"
+        }
+      ]
+    }
+  },
+  "killSwitchProof": [
+    {
+      "surface": "openai",
+      "envName": "NATIVE_MINUTE_DISABLE_OPENAI",
+      "proofMode": "unknown",
+      "result": "unknown",
+      "safeEvidence": "unknown",
+      "followUp": "unknown"
+    },
+    {
+      "surface": "azure",
+      "envName": "NATIVE_MINUTE_DISABLE_AZURE",
+      "proofMode": "unknown",
+      "result": "unknown",
+      "safeEvidence": "unknown",
+      "followUp": "unknown"
+    },
+    {
+      "surface": "elevenlabs",
+      "envName": "NATIVE_MINUTE_DISABLE_ELEVENLABS",
+      "proofMode": "unknown",
+      "result": "unknown",
+      "safeEvidence": "unknown",
+      "followUp": "unknown"
+    },
+    {
+      "surface": "supabase_storage_uploads",
+      "envName": "NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS",
+      "proofMode": "unknown",
+      "result": "unknown",
+      "safeEvidence": "unknown",
+      "followUp": "unknown"
+    }
+  ],
+  "billingQuotaAlertProof": [
+    {
+      "provider": "openai",
+      "dashboardVisibility": "unknown",
+      "usageQuotaVisibility": "unknown",
+      "alertOrOwner": "unknown",
+      "result": "unknown",
+      "safeNotes": "unknown"
+    },
+    {
+      "provider": "azure",
+      "dashboardVisibility": "unknown",
+      "usageQuotaVisibility": "unknown",
+      "alertOrOwner": "unknown",
+      "result": "unknown",
+      "safeNotes": "unknown"
+    },
+    {
+      "provider": "elevenlabs",
+      "dashboardVisibility": "unknown",
+      "usageQuotaVisibility": "unknown",
+      "alertOrOwner": "unknown",
+      "result": "unknown",
+      "safeNotes": "unknown"
+    },
+    {
+      "provider": "supabase",
+      "dashboardVisibility": "unknown",
+      "usageQuotaVisibility": "unknown",
+      "alertOrOwner": "unknown",
+      "result": "unknown",
+      "safeNotes": "unknown"
+    },
+    {
+      "provider": "vercel",
+      "dashboardVisibility": "unknown",
+      "usageQuotaVisibility": "unknown",
+      "alertOrOwner": "unknown",
+      "result": "unknown",
+      "safeNotes": "unknown"
+    }
+  ],
+  "cleanupRetentionProof": [
+    {
+      "surface": "openai",
+      "retentionKnown": "unknown",
+      "deletionCleanupAvailable": "unknown",
+      "brushUpImpact": "unknown",
+      "result": "unknown",
+      "followUp": "unknown"
+    },
+    {
+      "surface": "azure",
+      "retentionKnown": "unknown",
+      "deletionCleanupAvailable": "unknown",
+      "brushUpImpact": "unknown",
+      "result": "unknown",
+      "followUp": "unknown"
+    },
+    {
+      "surface": "elevenlabs_normal_voice",
+      "retentionKnown": "unknown",
+      "deletionCleanupAvailable": "unknown",
+      "brushUpImpact": "unknown",
+      "result": "unknown",
+      "followUp": "unknown"
+    },
+    {
+      "surface": "elevenlabs_brushup_script_scoped_material",
+      "retentionKnown": "unknown",
+      "deletionCleanupAvailable": "unknown",
+      "brushUpImpact": "unknown",
+      "result": "unknown",
+      "followUp": "unknown"
+    },
+    {
+      "surface": "supabase_storage",
+      "retentionKnown": "unknown",
+      "deletionCleanupAvailable": "unknown",
+      "brushUpImpact": "unknown",
+      "result": "unknown",
+      "followUp": "unknown"
+    },
+    {
+      "surface": "supabase_db_auth",
+      "retentionKnown": "unknown",
+      "deletionCleanupAvailable": "unknown",
+      "brushUpImpact": "unknown",
+      "result": "unknown",
+      "followUp": "unknown"
+    }
+  ],
+  "brushUpV1PreImplementation": [
+    {
+      "id": "brushup_script_scoped_create",
+      "label": "ElevenLabs script-scoped voice or material creation feasibility",
+      "status": "unknown",
+      "safeEvidence": "unknown",
+      "followUp": "unknown"
+    },
+    {
+      "id": "brushup_provider_delete_cleanup",
+      "label": "Provider deletion and cleanup for script-scoped variants or material",
+      "status": "unknown",
+      "safeEvidence": "unknown",
+      "followUp": "unknown"
+    },
+    {
+      "id": "brushup_retention_revoke",
+      "label": "Source material retention, revoke, and account deletion behavior",
+      "status": "unknown",
+      "safeEvidence": "unknown",
+      "followUp": "unknown"
+    },
+    {
+      "id": "brushup_cost_latency_retry",
+      "label": "Cost, latency, retry, and Vercel Function fit",
+      "status": "unknown",
+      "safeEvidence": "unknown",
+      "followUp": "unknown"
+    }
+  ],
+  "decision": {
+    "result": "unknown",
+    "blockers": [],
+    "warnings": [],
+    "releaseOwnerDecision": "unknown",
+    "nextAction": "unknown"
+  },
+  "redactionCheck": {
+    "containsSecrets": false,
+    "containsPartialCredentials": false,
+    "containsRawProviderBodies": false,
+    "containsPrivateUserData": false,
+    "containsTranscriptText": false,
+    "containsScriptText": false,
+    "containsRawAudio": false,
+    "containsObjectKeysOrStoragePaths": false,
+    "containsSignedUrls": false,
+    "containsProviderVoiceIdentifiers": false,
+    "containsAccountProjectResourceSubscriptionIdentifiers": false,
+    "containsInvoicesOrDetailedBillingAmounts": false
+  }
+}
