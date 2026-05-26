@@ -13,8 +13,7 @@ import { ProtectedAudioPlayer } from "@/components/audio/protected-audio-player"
 import { SavedBestTakeControl } from "@/components/audio-library/saved-best-take-control";
 import { getScript } from "@/services/scripts/scripts.service";
 import { getPronunciationProviderName } from "@/services/pronunciation";
-import { getStoredReview, hydrateStoredReview } from "@/services/review/review.service";
-import { getProgressOverview, getScriptTakeComparison, type ProgressTakeSummary } from "@/services/progress";
+import { getScriptReviewProgressSummary } from "@/services/progress";
 import { parseRecordingAudioReference } from "@/services/storage";
 import { PHASE1_PLACEHOLDER_TAKE_ID } from "@/lib/phase1";
 import { ScriptLoopStatusCard } from "@/components/guidance/script-loop-status-card";
@@ -119,9 +118,9 @@ export default async function ReviewPage({ params }: PageParams) {
     );
   }
 
-  const review = await timeAsync("review.page.storedReview", () => getStoredReview(supabase, user.id, script.id, takeId));
+  const reviewProgressSummary = await timeAsync("review.page.progressSummary", () => getScriptReviewProgressSummary(supabase, user.id, script, takeId));
 
-  if (!review) {
+  if (!reviewProgressSummary) {
     return (
       <section className="space-y-6">
         <StateStepSection
@@ -151,16 +150,15 @@ export default async function ReviewPage({ params }: PageParams) {
     );
   }
 
-  const hydratedReview = hydrateStoredReview(review);
-  const evaluation = hydratedReview.evaluation;
-  const coach = hydratedReview.coach;
-  const weakWords = hydratedReview.weakWords;
-  const comparison = await timeAsync("review.page.comparison", () => getScriptTakeComparison(supabase, user.id, script.id, takeId));
-  const progressOverview = await timeAsync("review.page.progressOverview", () => getProgressOverview(supabase, user.id));
+  const review = reviewProgressSummary.review;
+  const evaluation = review.evaluation;
+  const coach = review.coach;
+  const weakWords = review.weakWords;
+  const comparison = reviewProgressSummary.comparison;
   const isPracticeEstimate = getPronunciationProviderName() === "mock";
-  const progressItem = progressOverview.scripts.find((item) => item.script.id === script.id) ?? null;
-  const latestReviewHref = progressItem?.latestTake ? getScriptReviewPath(script.id, progressItem.latestTake.id) : null;
-  const bestReviewHref = progressItem?.bestTake ? getScriptReviewPath(script.id, progressItem.bestTake.id) : null;
+  const progressItem = reviewProgressSummary.progressItem;
+  const latestReviewHref = progressItem.latestTake ? getScriptReviewPath(script.id, progressItem.latestTake.id) : null;
+  const bestReviewHref = progressItem.bestTake ? getScriptReviewPath(script.id, progressItem.bestTake.id) : null;
   const isCurrentLatest = progressItem?.latestTake?.id === review.take.id;
   const isCurrentBest = progressItem?.bestTake?.id === review.take.id;
   const canPlaybackRecording = Boolean(parseRecordingAudioReference({ audioPath: review.take.audio_path }));
@@ -174,7 +172,7 @@ export default async function ReviewPage({ params }: PageParams) {
   });
   const practiceGuidance = getReviewPracticeGuidance({
     targetSeconds: script.targetSeconds,
-    durationSeconds: hydratedReview.take.duration_seconds,
+    durationSeconds: review.take.duration_seconds,
     weakWords,
     coach,
     comparison
@@ -183,7 +181,7 @@ export default async function ReviewPage({ params }: PageParams) {
     comparison,
     canPlaybackRecording
   });
-  const currentTakeSummary = comparison?.current ?? toProgressTakeSummaryFromReview(hydratedReview);
+  const currentTakeSummary = comparison.current;
   const bestTakeSummary = comparison?.best ?? null;
   const comparisonSectionTitle = getReviewComparisonSectionTitle({
     isCurrentLatest,
@@ -354,9 +352,9 @@ export default async function ReviewPage({ params }: PageParams) {
 
         <section data-testid="review-transcript-block" className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-paper)] p-6">
           <h2 className="text-lg font-semibold text-ink-900">文字起こし</h2>
-          <p className="mt-3 text-sm leading-7 text-ink-700">{hydratedReview.take.transcript_text ?? "まだ文字起こしは保存されていません。"}</p>
+          <p className="mt-3 text-sm leading-7 text-ink-700">{review.take.transcript_text ?? "まだ文字起こしは保存されていません。"}</p>
           <p className="mt-4 text-xs uppercase tracking-[0.2em] text-ink-500">
-            長さ: {hydratedReview.take.duration_seconds ?? "未計測"}秒 / 語数: {evaluation.transcriptWordCount}
+            長さ: {review.take.duration_seconds ?? "未計測"}秒 / 語数: {evaluation.transcriptWordCount}
           </p>
         </section>
 
@@ -837,23 +835,6 @@ function formatReviewDate(value: string | null) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
-}
-
-function toProgressTakeSummaryFromReview(review: ReturnType<typeof hydrateStoredReview>): ProgressTakeSummary {
-  return {
-    id: review.take.id,
-    scriptId: review.take.script_id,
-    score: review.evaluation.score,
-    accuracyScore: review.evaluation.accuracyScore,
-    fluencyScore: review.evaluation.fluencyScore,
-    rhythmScore: review.evaluation.rhythmScore,
-    reviewedAt: review.take.reviewed_at,
-    createdAt: review.take.created_at,
-    transcriptText: review.take.transcript_text,
-    weakWords: review.evaluation.weakWords,
-    coach: review.coach,
-    evaluation: review.evaluation
-  };
 }
 
 function getReviewComparisonSectionTitle(input: {

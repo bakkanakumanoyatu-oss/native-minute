@@ -326,7 +326,8 @@
 - 2026-05-26 の local authenticated timing では、mock provider 前提で Progress の Audio Library read、evaluate の storage download / persistence、protected audio replay、Review の複数 loading path が目立った。詳細は `docs/performance-audit.md` の timing run を見る。
 - Progress Audio Library deferral / selected-slot scope として、`/progress` の初期表示では選択中 script の保存済みお手本 / ベスト録音だけを読むようにした。slot 選択、latest / best、保存済み録音の表示意味は維持し、DB / API / auth / storage policy は変えていない。
 - Listen / Record 向け selected-script summary として、両画面の初期表示では全 script の `getProgressOverview()` を読まず、対象 script の take / weak words / coach feedback だけを hydrate するようにした。latest / best / next step / status card の意味は維持し、DB / API / auth / storage policy は変えていない。
-- 次の速度改善は、DB / API / auth / storage / provider contract を変えずに、Review data loading consolidation を小さく進める。
+- Review data loading consolidation として、`/scripts/[id]/review/[takeId]` は current take、best/latest comparison、status card 用 context を対象 script の hydrated reviews 1回から組み立てるようにした。canonical source、score、best take 判定、DB / API / auth / storage policy は変えていない。
+- 次の速度改善は、DB / API / auth / storage / provider contract を変えずに、protected audio replay / storage download と evaluate 待ち UX のどちらを優先するか timing で見て小さく進める。
 - Gate1b の protected replay / cross-user ownership proof は human browser で PASS。User A の script-audio / take-audio replay は 200 相当で再生でき、User B では同じ音声が 403/404 相当で再生できなかった。raw URL / raw id / signed URL / user id / storage path は記録していない。
 - main loop の retry UX と、次の一手の分かりやすさを small diff で上げ続ける。
 - voice provider 本接続の準備を、小さい差分で進める。

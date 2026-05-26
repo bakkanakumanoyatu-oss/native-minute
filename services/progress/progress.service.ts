@@ -301,8 +301,46 @@ function toScriptProgressItem(script: ScriptListItem, reviews: HydratedTakeRevie
   };
 }
 
+function getScriptTakeComparisonFromReviews(reviews: HydratedTakeReview[], takeId: string) {
+  const current = reviews.find((review) => review.take.id === takeId);
+
+  if (!current) {
+    return null;
+  }
+
+  const best = pickBestTake(reviews);
+  const currentSummary = toProgressTakeSummary(current);
+  const bestSummary = best ? toProgressTakeSummary(best) : null;
+
+  return {
+    current: currentSummary,
+    best: bestSummary,
+    isBest: Boolean(bestSummary && bestSummary.id === currentSummary.id),
+    diff: bestSummary && bestSummary.id !== currentSummary.id ? buildTakeDiff(currentSummary, bestSummary) : null,
+    takeCount: reviews.length
+  };
+}
+
 export async function getScriptProgressSummary(client: AppSupabaseClient, userId: string, script: ScriptListItem): Promise<ScriptProgressItem> {
   return timeAsync("progress.scriptSummary", async () => toScriptProgressItem(script, await getHydratedReviewsForScript(client, userId, script.id)));
+}
+
+export async function getScriptReviewProgressSummary(client: AppSupabaseClient, userId: string, script: ScriptListItem, takeId: string) {
+  return timeAsync("progress.scriptReviewSummary", async () => {
+    const reviews = await getHydratedReviewsForScript(client, userId, script.id);
+    const review = reviews.find((item) => item.take.id === takeId) ?? null;
+    const comparison = getScriptTakeComparisonFromReviews(reviews, takeId);
+
+    if (!review || !comparison) {
+      return null;
+    }
+
+    return {
+      review,
+      comparison,
+      progressItem: toScriptProgressItem(script, reviews)
+    };
+  });
 }
 
 export async function getProgressOverview(client: AppSupabaseClient, userId: string): Promise<ProgressOverview> {
@@ -329,23 +367,6 @@ export async function getProgressOverview(client: AppSupabaseClient, userId: str
 
 export async function getScriptTakeComparison(client: AppSupabaseClient, userId: string, scriptId: string, takeId: string) {
   return timeAsync("progress.scriptTakeComparison", async () => {
-    const reviews = (await getHydratedReviews(client, userId)).filter((review) => review.take.script_id === scriptId);
-    const current = reviews.find((review) => review.take.id === takeId);
-
-    if (!current) {
-      return null;
-    }
-
-    const best = pickBestTake(reviews);
-    const currentSummary = toProgressTakeSummary(current);
-    const bestSummary = best ? toProgressTakeSummary(best) : null;
-
-    return {
-      current: currentSummary,
-      best: bestSummary,
-      isBest: Boolean(bestSummary && bestSummary.id === currentSummary.id),
-      diff: bestSummary && bestSummary.id !== currentSummary.id ? buildTakeDiff(currentSummary, bestSummary) : null,
-      takeCount: reviews.length
-    };
+    return getScriptTakeComparisonFromReviews(await getHydratedReviewsForScript(client, userId, scriptId), takeId);
   });
 }
