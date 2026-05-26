@@ -1,0 +1,60 @@
+{
+  "schema": "native-minute.store-release.gate1.web-beta-smoke.v1",
+  "status": "human_confirmation_required",
+  "repoSnapshot": {
+    "commit": "10e4c838b83c3780c64d0eb13af08957ba8e3069",
+    "shortCommit": "10e4c83",
+    "branch": "main",
+    "upstream": "origin/main",
+    "repoConfirmedDeployState": "production_url_build_ref_deployed_at_not_confirmed_from_repo",
+    "vercelProjectMetadataInRepo": "not_found"
+  },
+  "metadata": {
+    "productionUrl": "<human confirmation required>",
+    "deployProvider": "<human confirmation required>",
+    "deployProjectOrEnvironment": "<safe name or masked>",
+    "deployBuildRef": "<human confirmation required>",
+    "deployedAt": "<human confirmation required>",
+    "smokeReviewer": "<role or initials>",
+    "deviceBrowser": "<device, os, browser>",
+    "launchMode": "<private_beta | small_cohort | blocked>",
+    "overallDecision": "<PASS | WARN | BLOCKED | FAIL>"
+  },
+  "checklist": [
+    { "area": "production_url", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "deploy_build_ref", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "login", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "session_refresh", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "home", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "scripts_list", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "script_creation", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "listen", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "record", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "evaluate", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "review", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "progress", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "second_take", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "latest_best_progress_continuity", "result": "pending", "safeEvidence": "", "notes": "" },
+    { "area": "provider_env_readiness", "result": "pending", "safeEvidence": "provider names and status only", "notes": "" },
+    { "area": "kill_switch_readiness", "result": "pending", "safeEvidence": "operation known or blocked", "notes": "" },
+    { "area": "redaction", "result": "pending", "safeEvidence": "no secrets or raw private data observed", "notes": "" },
+    { "area": "errors_warnings", "result": "pending", "safeEvidence": "", "notes": "" }
+  ],
+  "blockersOrWarnings": [
+    {
+      "type": "<BLOCKER | WARNING>",
+      "safeSummary": "",
+      "owner": "",
+      "followUp": ""
+    }
+  ],
+  "redactionConfirmation": {
+    "noSecretsRecorded": false,
+    "noRawProviderResponsesRecorded": false,
+    "noRawUserPrivateDataRecorded": false,
+    "noRawAudioOrTranscriptRecorded": false,
+    "noSignedUrlsObjectKeysOrStoragePathsRecorded": false,
+    "noProviderVoiceIdsAccountIdsProjectIdsOrBillingDetailsRecorded": false
+  },
+  "decisionNotes": []
+}
