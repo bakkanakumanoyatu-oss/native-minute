@@ -12,8 +12,8 @@
 
 ## Store release mainline
 - Native Minute は App Store / Google Play 掲載を長期ゴールにする `store-release-mainline` として進める。現在は Next.js Web core を維持し、UI/UX 改善フェーズはいったん区切って、公開に向けた安全性・運用性・ストア準備へ移る。
-- 現在のユーザー確認ではアプリは利用可能で、auth callback failure は現在ブロッカー扱いしない。Git snapshot は `10e4c83 Add staged feedback for evaluate wait`、`main` と `origin/main` の差分なし、未 push commit なし。production 反映済みかは git だけでは確定できないため、Web beta / Vercel deploy smoke で確認する。
-- Gate 1 Web beta / Vercel deploy smoke evidence は `docs/store-release-gate1-web-beta-smoke.md` と `outputs/store_release_gate1_web_beta_smoke/` のテンプレートに固定した。Repo 上では committed `vercel.json` / `.vercel` project metadata / production URL / build ref / `deployedAt` は確認できないため、production 状態は human confirmation required とする。
+- 現在のユーザー確認ではアプリは利用可能で、auth callback failure は現在ブロッカー扱いしない。Git snapshot は `10e4c83 Add staged feedback for evaluate wait`、`main` と `origin/main` の差分なし、未 push commit なしだった。
+- Gate 1 Web beta / Vercel deploy smoke evidence は `docs/store-release-gate1-web-beta-smoke.md` と `outputs/store_release_gate1_web_beta_smoke/` に固定した。`https://native-minute.vercel.app` の Vercel Production / Current deployment `b5c10e8` は human-confirmed smoke で PASS。Home、login、`/scripts`、`/scripts/new`、Listen、Record、Evaluate、Review、Progress、2回目 take、latest / best / progress continuity は PASS。exact `deployedAt` timestamp と exact device/browser は unknown として残す。
 - Gate map と store submission blocker は `docs/store-release-mainline-inventory.md` に固定した。Gate 1 は Web production core / Web beta deploy smoke、Gate 1.5 は Voice consent / clone voice server-side architecture review、Gate 2 以降で privacy / terms / delete、provider readiness、Capacitor、store assets、closed testing、提出、却下理由ごとの再提出へ進む。
 - Gate 1.5 では、ElevenLabs clone voice の consent recording / sample audio / `voice_id` 保存は server-side 処理が必要だが、現時点では VPS / EC2 / 専用サーバー / 常駐 worker は導入しない。初期方針は Vercel Route Handler / API Route + Supabase Storage / DB。provider key と service role key は client に出さず、sample / consent recording は app-owned Storage に保存して server-side route 経由で provider に渡し、生成音声は app-owned replay に寄せる。
 

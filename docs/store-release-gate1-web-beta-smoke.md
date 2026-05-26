@@ -62,6 +62,13 @@ Use these templates for the human production smoke record:
 
 The templates should be copied or filled only with safe metadata. If the smoke uncovers a production issue, record the blocker and stop before implementation work unless a follow-up task explicitly authorizes the fix.
 
+## Recorded Evidence
+
+- `outputs/store_release_gate1_web_beta_smoke/gate1_web_beta_smoke_evidence_b5c10e8.md`
+- `outputs/store_release_gate1_web_beta_smoke/gate1_web_beta_smoke_evidence_b5c10e8.json`
+
+Gate 1 Web beta production smoke is human-confirmed `PASS` for Vercel Production / Current build ref `b5c10e8`. Exact deploy timestamp and exact device/browser remain `unknown`.
+
 ## Decision Rules
 
 - `PASS`: all critical main-loop checks pass, redaction is clean, and deploy ref matches the intended release commit.

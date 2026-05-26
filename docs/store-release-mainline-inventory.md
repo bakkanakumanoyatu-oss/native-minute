@@ -28,6 +28,8 @@ Goal: prove the current Web core is deployed, usable, and recoverable.
 
 Gate 1 smoke checklist and safe evidence templates are fixed in `docs/store-release-gate1-web-beta-smoke.md` and `outputs/store_release_gate1_web_beta_smoke/`.
 
+Status: `PASS` for the human-confirmed Web beta production smoke on Vercel Production / Current, build ref `b5c10e8`. Evidence is recorded in `outputs/store_release_gate1_web_beta_smoke/gate1_web_beta_smoke_evidence_b5c10e8.md` and `.json`. Exact deploy timestamp and exact device/browser remain `unknown`.
+
 Confirm:
 
 - production URL
@@ -99,7 +101,7 @@ Goal: listing is live. Continue monitoring auth, provider cost, deletion request
 
 ## Web Beta / Vercel Deploy Smoke
 
-Current repo-only status: production URL, deploy provider project, build ref, and `deployedAt` are not confirmed from committed repo files. Treat them as human confirmation required and record the result in the Gate 1 smoke evidence template.
+Current status: production URL, deploy provider, project, deployment id/name, environment, deployment status, branch, and build ref have been human-confirmed. Exact `deployedAt` timestamp and exact device/browser remain `unknown`; do not infer them from repo data.
 
 Before claiming Web beta is current, record safe evidence for:
 

@@ -1,0 +1,52 @@
+{
+  "schema": "native-minute.store-release.gate1.web-beta-smoke.evidence.v1",
+  "status": "human_confirmed",
+  "overallDecision": "PASS",
+  "metadata": {
+    "productionUrl": "https://native-minute.vercel.app",
+    "deployProvider": "Vercel",
+    "projectName": "native-minute",
+    "deploymentIdOrName": "Cw9FXioAa",
+    "environment": "Production / Current",
+    "deploymentStatus": "Ready / Latest",
+    "branch": "main",
+    "commitBuildRef": "b5c10e8",
+    "commitMessage": "Add Gate 1 web beta smoke evidence template",
+    "deployedAtExactTimestamp": "unknown",
+    "humanConfirmedUiRelativeTime": "6m ago",
+    "smokeReviewer": "human / project owner",
+    "deviceBrowser": "unknown; human-confirmed browser smoke"
+  },
+  "smokeResults": [
+    { "area": "production_app_opened_from_vercel_visit", "result": "PASS", "safeEvidence": "human-confirmed" },
+    { "area": "home", "result": "PASS", "safeEvidence": "human-confirmed" },
+    { "area": "login", "result": "PASS", "safeEvidence": "human-confirmed" },
+    { "area": "scripts", "result": "PASS", "safeEvidence": "human-confirmed" },
+    { "area": "scripts_new", "result": "PASS", "safeEvidence": "human-confirmed" },
+    { "area": "listen", "result": "PASS", "safeEvidence": "human-confirmed" },
+    { "area": "record", "result": "PASS", "safeEvidence": "human-confirmed" },
+    { "area": "evaluate", "result": "PASS", "safeEvidence": "human-confirmed" },
+    { "area": "review", "result": "PASS", "safeEvidence": "human-confirmed" },
+    { "area": "progress", "result": "PASS", "safeEvidence": "human-confirmed" },
+    { "area": "second_take", "result": "PASS", "safeEvidence": "human-confirmed" },
+    { "area": "latest_best_progress_continuity", "result": "PASS", "safeEvidence": "human-confirmed" }
+  ],
+  "notes": [
+    "User confirmed steps 1 through 11 all OK.",
+    "No blocker was reported.",
+    "This was production deployment smoke for Gate 1.",
+    "Exact deployment timestamp is unknown from repo-side evidence; Vercel UI showed 6m ago at confirmation time.",
+    "Exact device/browser name is unknown and was not inferred."
+  ],
+  "redactionConfirmation": {
+    "noSecretsRecorded": true,
+    "noRawProviderResponsesRecorded": true,
+    "noPrivateUserDataRecorded": true,
+    "noTranscriptTextRecorded": true,
+    "noRawAudioRecorded": true,
+    "noAudioPathsRecorded": true,
+    "noStoragePathsRecorded": true,
+    "noApiKeysRecorded": true,
+    "noEnvValuesRecorded": true
+  }
+}
