@@ -320,6 +320,7 @@
 - OpenAI voice は manual smoke で provider-side consent 登録段階から entitlement 不足らしい失敗に到達した。repo 側の main flow 実装はここまでで止め、v1 mainline は ElevenLabs / mock fallback で続ける。
 
 ## 次に狙う方向
+- Performance audit は `docs/performance-audit.md` に固定した。現時点の主な速度懸念は巨大 bundle ではなく、`getProgressOverview()` の全履歴 hydrate が複数画面で走ること、Review の全履歴読み込み重複、Progress の slot 別 Audio Library query、protected audio の blob 化待ち、`upload -> storage download -> transcription -> pronunciation -> save` の同期待ちにある。次は DB / API / auth / storage / provider contract を変えず、development-only timing、selected-script summary、Review data loading consolidation から始める。
 - Gate1b の protected replay / cross-user ownership proof は human browser で PASS。User A の script-audio / take-audio replay は 200 相当で再生でき、User B では同じ音声が 403/404 相当で再生できなかった。raw URL / raw id / signed URL / user id / storage path は記録していない。
 - main loop の retry UX と、次の一手の分かりやすさを small diff で上げ続ける。
 - voice provider 本接続の準備を、小さい差分で進める。
