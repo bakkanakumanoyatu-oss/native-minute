@@ -58,7 +58,9 @@ Status: design review is captured in `docs/store-release-gate1_5-voice-brushup-a
 
 Goal: make privacy, terms, consent, support, and account deletion accurate enough for public distribution and store review.
 
-Store submission remains blocked until account/data deletion completion is proven with a disposable live proof.
+Status: design plan is captured in `docs/store-release-gate2-privacy-consent-deletion-plan.md`. Brush-up v1 requires explicit script-scoped consent before a selected best take is used as voice material, separate from normal recording/evaluation consent. Revoke and account deletion must cover provider cleanup, app-owned Storage, DB rows, generated Brush-up audio, and saved pins.
+
+Store submission remains blocked until account/data deletion completion is proven with a disposable live proof and App Privacy / Google Data Safety answers match the final implemented behavior.
 
 ### Gate 3: OpenAI / Azure / ElevenLabs Provider Production Readiness and Cost Guard
 
@@ -164,6 +166,7 @@ The Store path remains blocked until these are resolved or explicitly accepted f
 - account deletion disposable live proof
 - privacy / terms / legal final review
 - data handling and AI provider disclosure
+- Brush-up explicit consent, revoke, deletion, and provider cleanup proof if Brush-up ships in v1
 - support URL and privacy policy URL
 - reviewer account and reviewer instructions
 - Capacitor native packaging

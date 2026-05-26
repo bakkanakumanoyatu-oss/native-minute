@@ -1,0 +1,111 @@
+{
+  "gate": "Gate 2",
+  "title": "Privacy / consent / deletion plan",
+  "status": "design_only_complete",
+  "generatedFor": "store-release-mainline",
+  "implementationChanged": false,
+  "scope": {
+    "brushUpV1Assumption": true,
+    "finalLegalText": false,
+    "dbSchemaChanged": false,
+    "apiContractChanged": false,
+    "providerChanged": false,
+    "infraChanged": false,
+    "uiChanged": false
+  },
+  "decisions": [
+    "Normal recording/evaluation consent and Brush-up material consent must be separate.",
+    "Brush-up consent must be explicit, script-scoped, and tied to the selected best take.",
+    "Voice sample, consent recording, and best take audio must go to providers only through server-side routes.",
+    "Account deletion must cover provider cleanup, Storage cleanup, DB cleanup/anonymize, Supabase Auth deletion, and completion tracking.",
+    "Store submission remains blocked until actual account/data deletion is proven with a disposable live proof."
+  ],
+  "dataCategories": [
+    {
+      "name": "account_auth",
+      "storage": ["Supabase Auth", "profiles", "account_deletion_requests"],
+      "processors": ["Supabase"],
+      "accountDeletion": "Delete Auth last after provider, Storage, and DB cleanup; retain only safe anonymized deletion tracking if policy allows.",
+      "revoke": "not_applicable"
+    },
+    {
+      "name": "scripts",
+      "storage": ["scripts"],
+      "processors": ["OpenAI when script generation is enabled", "ElevenLabs for model audio generation", "Azure Speech as evaluation reference"],
+      "accountDeletion": "Delete user-owned scripts after dependent rows and Storage artifacts are cleaned.",
+      "revoke": "not_applicable"
+    },
+    {
+      "name": "recordings_takes_transcripts_scores",
+      "storage": ["recordings bucket", "takes", "weak_words", "coach_feedback"],
+      "processors": ["OpenAI transcription", "Azure Speech pronunciation"],
+      "accountDeletion": "Delete audio objects, take rows, transcripts, score rows, weak words, and coaching feedback.",
+      "revoke": "Original take/review remains unless account deletion or future granular take deletion applies."
+    },
+    {
+      "name": "generated_model_audio",
+      "storage": ["script_audios", "script-audios bucket", "script_saved_model_audios"],
+      "processors": ["ElevenLabs or approved voice provider"],
+      "accountDeletion": "Delete Storage objects, DB rows, saved pins, and provider-side artifacts if applicable.",
+      "revoke": "If generated from revoked Brush-up material, delete or hide the generated audio."
+    },
+    {
+      "name": "voice_setup_material",
+      "storage": ["voice-samples bucket", "voice-consents bucket", "voice_consents", "voices"],
+      "processors": ["ElevenLabs"],
+      "accountDeletion": "Delete samples, consent recordings, local voice rows, and provider-side cloned voices.",
+      "revoke": "Stop future use, delete or disable provider cloned voice, and remove consent-linked app-owned material if separate revoke is offered."
+    },
+    {
+      "name": "brush_up_material_and_variants",
+      "storage": ["recordings bucket", "future brushup consent/material rows", "future script voice variant rows", "script-audios bucket"],
+      "processors": ["ElevenLabs or approved provider through server-side route"],
+      "accountDeletion": "Delete future Brush-up consents, copied source material, provider-side variants, generated audio, and saved pins.",
+      "revoke": "Stop future use, delete or disable provider-side script-scoped variant, delete copied source material, and delete or hide generated Brush-up audio."
+    },
+    {
+      "name": "quota_processing_metadata",
+      "storage": ["quota_events", "safe logs"],
+      "processors": ["Native Minute services", "provider dashboards outside app"],
+      "accountDeletion": "Delete by v1 default unless a disclosed anonymized short retention policy is approved.",
+      "revoke": "Usually not separately revoked unless linked to deleted or revoked artifacts by policy."
+    }
+  ],
+  "brushUpConsentRequirements": [
+    "Identify the script and selected take.",
+    "State that the selected best take is used as voice material, not only as a practice recording.",
+    "Name the provider before submission.",
+    "Confirm server-side provider transfer through Native Minute, not direct client upload to provider.",
+    "Limit generated voice/audio to the script.",
+    "Explain revoke and account deletion coverage."
+  ],
+  "v1PreSubmitBlockers": [
+    "Final Privacy Policy / Terms / support copy review",
+    "Public privacy URL, support URL, and account deletion URL",
+    "Actual account/data deletion completion path",
+    "Disposable live proof for provider, Storage, DB, Auth, and completion",
+    "Brush-up consent/revoke/delete/provider cleanup proof if Brush-up ships in v1",
+    "App Privacy and Google Data Safety answers aligned with final behavior",
+    "Provider cost guard, monitoring, and incident/support readiness"
+  ],
+  "nextGateHandoff": {
+    "gate3": [
+      "Provider production readiness",
+      "Provider deletion and retention verification",
+      "Cost guard, monitoring, kill switch, and safe failure recovery"
+    ],
+    "gate3_5": [
+      "Brush-up MVP implementation scope",
+      "Future data model and API candidates",
+      "Consent to provider to app-owned replay to revoke/delete proof"
+    ]
+  },
+  "redactionPolicy": {
+    "containsSecrets": false,
+    "containsRawProviderResponse": false,
+    "containsPrivateUserData": false,
+    "containsTranscriptText": false,
+    "containsAudioPaths": false,
+    "containsProviderVoiceIds": false
+  }
+}
