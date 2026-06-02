@@ -74,6 +74,8 @@ Human confirmation result: `WARN`. OpenAI / Azure / ElevenLabs / Supabase / Verc
 
 Gate 3 WARN follow-up queue and Gate 3.5 entry criteria are captured in `docs/store-release-gate3-warn-followup-queue.md` and `outputs/store_release_gate3_warn_followup_queue/gate3_warn_followup_queue.json`. Gate 3.5 implementation must not start until ElevenLabs Brush-up feasibility, cleanup, retention, cost/latency/retry, ElevenLabs kill-switch proof, and Brush-up-aware account deletion cleanup proof are closed or explicitly deferred to v1.1.
 
+Brush-up v1 deferral decision is captured in `docs/store-release-brush-up-v1-deferral-decision.md` and `outputs/store_release_brush_up_v1_deferral_decision/brush_up_v1_deferral_decision.json`. Brush-up is no longer a v1 Store release blocker; Brush-up-specific provider cleanup, retention, revoke/delete, script-scoped voice material, account deletion proof, and cost/latency/retry work move to v1.1 entry criteria.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -81,9 +83,11 @@ Provider roles:
 - Azure: pronunciation evaluator
 - Supabase: Auth, DB, private Storage, and protected replay
 
-### Gate 3.5: Brush-up MVP Implementation / Revoke Delete Proof
+### Gate 3.5: v1 Core Readiness / Brush-up Deferral Check
 
-Goal: if Brush-up remains v1 scope, implement and prove the script-scoped best-take-to-Brush-up loop after Gate 2 consent/deletion policy and Gate 3 provider readiness are settled.
+Goal: align the v1 release scope after Gate 3 `WARN`, confirm Brush-up is deferred from v1, close or explicitly accept v1 provider kill switch gaps, and make sure privacy / deletion / consent claims match the v1 feature set before native packaging.
+
+Brush-up returns as v1.1 work only after ElevenLabs cleanup / retention / script-scoped feasibility / cost-latency-retry, `NATIVE_MINUTE_DISABLE_ELEVENLABS` proof, protected replay, and Brush-up-aware account deletion cleanup proof are ready.
 
 ### Gate 4: Capacitor iOS / Android
 

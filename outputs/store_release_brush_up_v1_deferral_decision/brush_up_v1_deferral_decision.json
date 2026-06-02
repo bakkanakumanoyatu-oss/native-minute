@@ -1,0 +1,118 @@
+{
+  "schema": "native-minute.brush-up-v1-deferral-decision.v1",
+  "status": "recorded",
+  "decision": {
+    "brushUpV1Scope": "deferred_to_v1_1",
+    "v1StoreReleasePriority": "App Store / Google Play listing",
+    "gate3Status": "WARN",
+    "gate3_5Redefined": true,
+    "summary": "Brush-up is not a v1 release blocker. Brush-up-specific provider, cleanup, retention, revoke, deletion, cost, latency, retry, and script-scoped feasibility requirements move to v1.1 entry criteria."
+  },
+  "sources": {
+    "gate3HumanConfirmation": "docs/store-release-gate3-human-confirmation-package.md",
+    "gate3WarnQueue": "docs/store-release-gate3-warn-followup-queue.md",
+    "gate3WarnQueueJson": "outputs/store_release_gate3_warn_followup_queue/gate3_warn_followup_queue.json"
+  },
+  "redactionPolicy": {
+    "recordSecrets": false,
+    "recordEnvValues": false,
+    "recordRawProviderResponses": false,
+    "recordTranscriptBody": false,
+    "recordPrivateAudioPath": false,
+    "recordProviderIdentifiers": false,
+    "recordBillingDetails": false
+  },
+  "deferredFromV1": [
+    "Brush-up UI",
+    "Best-take-to-script-scoped voice material provider submission",
+    "Brush-up-specific consent and revoke UI",
+    "Brush-up script-scoped voice variants",
+    "Brush-up generated audio candidate acceptance flow",
+    "Brush-up-specific provider cleanup proof",
+    "Brush-up-specific account deletion proof",
+    "Brush-up-specific cost, latency, and retry proof"
+  ],
+  "keptInV1": [
+    "Web core main loop",
+    "Normal voice setup",
+    "Normal model audio generation",
+    "App-owned Storage and protected replay for existing generated audio and recordings",
+    "OpenAI transcription",
+    "Azure pronunciation evaluation",
+    "ElevenLabs normal voice path",
+    "Supabase Auth, DB, and Storage",
+    "Vercel production deploy readiness",
+    "Privacy, consent, support, and account deletion readiness for the actual v1 feature set",
+    "Provider kill switch gap closure for v1 providers",
+    "Store assets, release QA, closed testing, submission, and rejection-fix loop"
+  ],
+  "unresolvedBrushUpItemsMovedToV1_1": [
+    {
+      "id": "elevenlabs_delete_cleanup",
+      "status": "deferred",
+      "requiredFor": "v1_1_brush_up_entry"
+    },
+    {
+      "id": "elevenlabs_retention_deletion",
+      "status": "deferred",
+      "requiredFor": "v1_1_brush_up_entry"
+    },
+    {
+      "id": "elevenlabs_script_scoped_brushup_feasibility",
+      "status": "deferred",
+      "requiredFor": "v1_1_brush_up_entry"
+    },
+    {
+      "id": "elevenlabs_brushup_cost_latency_retry",
+      "status": "deferred",
+      "requiredFor": "v1_1_brush_up_entry"
+    },
+    {
+      "id": "native_minute_disable_elevenlabs_proof",
+      "status": "deferred",
+      "requiredFor": "v1_1_brush_up_entry"
+    },
+    {
+      "id": "brushup_account_deletion_cleanup_proof",
+      "status": "pending",
+      "requiredFor": "v1_1_brush_up_entry"
+    }
+  ],
+  "gate3_5Redefinition": {
+    "oldMeaning": "Brush-up MVP implementation / revoke-delete proof if Brush-up remained v1 scope",
+    "newMeaning": "v1 core readiness and release-scope cleanup before native packaging",
+    "scope": [
+      "Confirm Brush-up is hidden, not implemented, and not marketed as v1 functionality",
+      "Close or explicitly accept remaining v1 provider kill switch gaps",
+      "Confirm normal v1 provider surfaces have safe failure and support paths",
+      "Confirm privacy, deletion, and consent claims match the v1 feature set without Brush-up",
+      "Park Brush-up v1.1 requirements with owners and entry criteria",
+      "Decide whether remaining Gate 3 WARN items block Gate 4 or move to Gate 6 release QA"
+    ],
+    "nonGoals": [
+      "Brush-up implementation",
+      "ElevenLabs API calls",
+      "Provider dashboard operation",
+      "Env additions or changes",
+      "DB schema or migration changes",
+      "Account deletion implementation",
+      "Capacitor introduction",
+      "Store submission"
+    ]
+  },
+  "v1_1BrushUpEntryCriteria": [
+    "ElevenLabs supports the chosen script-scoped best-take-to-voice-material approach.",
+    "ElevenLabs delete and cleanup semantics are known for normal cloned voices and script-scoped Brush-up material/variants.",
+    "ElevenLabs retention and deletion semantics are known enough for consent, revoke, Privacy Policy, Data Safety, and account deletion claims.",
+    "Brush-up cost, latency, and retry behavior is understood enough to decide whether Vercel Route Handlers remain sufficient.",
+    "NATIVE_MINUTE_DISABLE_ELEVENLABS env presence and safe operation proof are recorded.",
+    "Account deletion proof covers Brush-up material, provider variants, generated Brush-up audio, saved pins, app-owned Storage, DB rows, and provider cleanup.",
+    "Protected replay proof covers Brush-up generated audio and does not rely on provider direct URLs.",
+    "Brush-up consent and revoke copy are finalized before best take audio is sent to a provider as voice material."
+  ],
+  "notes": [
+    "Existing voice, clone voice, and Brush-up architecture documents are retained as future planning inputs.",
+    "Brush-up does not block Gate 4 if it remains non-user-facing and absent from v1 Store metadata.",
+    "No secrets, env values, raw provider responses, transcript body, private audio paths, provider identifiers, or billing details are recorded."
+  ]
+}
