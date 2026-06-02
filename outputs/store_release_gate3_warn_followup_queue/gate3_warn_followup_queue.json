@@ -1,0 +1,320 @@
+{
+  "schema": "native-minute.gate3-warn-followup-queue.v1",
+  "status": "recorded",
+  "source": {
+    "gate3OverallStatus": "WARN",
+    "humanConfirmationEvidence": "outputs/store_release_gate3_human_confirmation/gate3_human_confirmation_template.json",
+    "docs": [
+      "docs/store-release-gate3-human-confirmation-package.md",
+      "docs/store-release-mainline-inventory.md"
+    ]
+  },
+  "redactionPolicy": {
+    "recordSecrets": false,
+    "recordEnvValues": false,
+    "recordRawProviderResponses": false,
+    "recordTranscriptBody": false,
+    "recordPrivateAudioPath": false,
+    "recordProviderIdentifiers": false,
+    "recordBillingDetails": false
+  },
+  "classificationLegend": [
+    "gate3_5_before_implementation",
+    "gate3_5_during_implementation",
+    "gate6_release_qa",
+    "human_dashboard_confirmation_required",
+    "env_infrastructure_change_required",
+    "code_change_required",
+    "defer_possible"
+  ],
+  "providerStatuses": {
+    "openai": "WARN",
+    "azure": "WARN",
+    "elevenlabs": "WARN / deferred",
+    "supabase": "WARN",
+    "vercel": "WARN"
+  },
+  "items": [
+    {
+      "id": "openai_kill_switch_env_missing",
+      "provider": "openai",
+      "title": "OpenAI provider-specific kill switch env is missing in Vercel",
+      "currentStatus": "warning",
+      "classifications": [
+        "human_dashboard_confirmation_required",
+        "env_infrastructure_change_required"
+      ],
+      "gate3_5Impact": "Not a Brush-up blocker if OpenAI is not used for Brush-up, but Gate 3 PASS needs proof.",
+      "nextSafeAction": "Add env presence only, then record safe kill switch operation proof.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "openai_transcription_model_env_missing",
+      "provider": "openai",
+      "title": "OPENAI_TRANSCRIPTION_MODEL is absent from Vercel env",
+      "currentStatus": "warning",
+      "classifications": [
+        "defer_possible",
+        "human_dashboard_confirmation_required"
+      ],
+      "gate3_5Impact": "Not a blocker; the repo defaults to its transcription model when absent.",
+      "nextSafeAction": "Add env for explicitness or record accepted default.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "openai_support_owner_pending",
+      "provider": "openai",
+      "title": "OpenAI support escalation owner is not recorded",
+      "currentStatus": "pending",
+      "classifications": [
+        "gate6_release_qa",
+        "human_dashboard_confirmation_required"
+      ],
+      "gate3_5Impact": "Not a Brush-up implementation blocker.",
+      "nextSafeAction": "Assign provider outage owner before Store PASS.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "azure_kill_switch_env_missing",
+      "provider": "azure",
+      "title": "Azure provider-specific kill switch env is missing in Vercel",
+      "currentStatus": "warning",
+      "classifications": [
+        "human_dashboard_confirmation_required",
+        "env_infrastructure_change_required"
+      ],
+      "gate3_5Impact": "Not a voice-material blocker, but evaluate/review recovery proof should stay available.",
+      "nextSafeAction": "Add env presence only, then record safe kill switch operation proof.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "azure_alert_missing",
+      "provider": "azure",
+      "title": "Azure alert is not configured",
+      "currentStatus": "warning",
+      "classifications": [
+        "human_dashboard_confirmation_required",
+        "env_infrastructure_change_required"
+      ],
+      "gate3_5Impact": "Not a Brush-up implementation blocker, but cost guard remains WARN.",
+      "nextSafeAction": "Configure alert or record accepted manual owner.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "azure_pronunciation_assessment_pending",
+      "provider": "azure",
+      "title": "Azure Pronunciation Assessment availability is not confirmed",
+      "currentStatus": "pending",
+      "classifications": [
+        "human_dashboard_confirmation_required",
+        "gate6_release_qa"
+      ],
+      "gate3_5Impact": "Not a Brush-up voice-material blocker, but required before Store PASS.",
+      "nextSafeAction": "Confirm availability for the selected resource and region without recording identifiers.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "azure_mobile_webview_audio_risk_pending",
+      "provider": "azure",
+      "title": "Azure mobile/WebView audio risk is not confirmed",
+      "currentStatus": "pending",
+      "classifications": [
+        "gate6_release_qa",
+        "human_dashboard_confirmation_required"
+      ],
+      "gate3_5Impact": "Can wait until Capacitor/native QA unless Brush-up changes record/evaluate audio path.",
+      "nextSafeAction": "Test mobile browser or future WebView recording, upload, PCM normalization, evaluate, and recovery.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "elevenlabs_delete_cleanup_deferred",
+      "provider": "elevenlabs",
+      "title": "ElevenLabs delete and cleanup semantics are deferred",
+      "currentStatus": "deferred",
+      "classifications": [
+        "gate3_5_before_implementation",
+        "human_dashboard_confirmation_required"
+      ],
+      "gate3_5Impact": "Blocking for Brush-up implementation because script-scoped provider cleanup must be known.",
+      "nextSafeAction": "Confirm cleanup semantics without provider identifiers.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "elevenlabs_retention_deferred",
+      "provider": "elevenlabs",
+      "title": "ElevenLabs retention semantics are deferred",
+      "currentStatus": "deferred",
+      "classifications": [
+        "gate3_5_before_implementation",
+        "human_dashboard_confirmation_required"
+      ],
+      "gate3_5Impact": "Blocking for Brush-up consent, revoke, deletion, and policy claims.",
+      "nextSafeAction": "Confirm source material and generated audio retention/deletion behavior.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "elevenlabs_brushup_feasibility_deferred",
+      "provider": "elevenlabs",
+      "title": "ElevenLabs Brush-up script-scoped feasibility is deferred",
+      "currentStatus": "deferred",
+      "classifications": [
+        "gate3_5_before_implementation",
+        "human_dashboard_confirmation_required"
+      ],
+      "gate3_5Impact": "Blocking for Brush-up implementation.",
+      "nextSafeAction": "Confirm best-take-to-script-scoped voice/material feasibility under the intended plan.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "elevenlabs_brushup_cost_latency_retry_deferred",
+      "provider": "elevenlabs",
+      "title": "ElevenLabs Brush-up cost, latency, and retry are deferred",
+      "currentStatus": "deferred",
+      "classifications": [
+        "gate3_5_before_implementation",
+        "human_dashboard_confirmation_required"
+      ],
+      "gate3_5Impact": "Blocking for deciding whether Vercel Functions are sufficient.",
+      "nextSafeAction": "Confirm expected latency, retry behavior, and cost surface without recording values.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "elevenlabs_kill_switch_proof_deferred",
+      "provider": "elevenlabs",
+      "title": "ElevenLabs kill switch proof is deferred",
+      "currentStatus": "deferred",
+      "classifications": [
+        "gate3_5_before_implementation",
+        "human_dashboard_confirmation_required"
+      ],
+      "gate3_5Impact": "Blocking if ElevenLabs is the Brush-up provider.",
+      "nextSafeAction": "Confirm env presence and safe operation proof.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "supabase_policy_detail_pending",
+      "provider": "supabase",
+      "title": "Supabase policy SQL detail is not reviewed",
+      "currentStatus": "warning",
+      "classifications": [
+        "gate6_release_qa",
+        "human_dashboard_confirmation_required"
+      ],
+      "gate3_5Impact": "Not a blocker unless new Brush-up buckets/tables are introduced.",
+      "nextSafeAction": "Confirm RLS and Storage policy detail before Store PASS.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "supabase_protected_replay_pending",
+      "provider": "supabase",
+      "title": "Supabase protected replay behavior is not confirmed in this pass",
+      "currentStatus": "pending",
+      "classifications": [
+        "gate3_5_during_implementation",
+        "gate6_release_qa"
+      ],
+      "gate3_5Impact": "Brush-up generated audio must use app-owned replay, so proof is required during Brush-up candidate replay.",
+      "nextSafeAction": "Confirm replay for normal audio now and repeat for Brush-up generated audio in Gate 3.5.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "supabase_account_deletion_cleanup_pending",
+      "provider": "supabase",
+      "title": "Supabase account deletion cleanup proof is not confirmed",
+      "currentStatus": "pending",
+      "classifications": [
+        "gate3_5_before_implementation",
+        "human_dashboard_confirmation_required"
+      ],
+      "gate3_5Impact": "Brush-up cannot ship without cleanup proof covering Brush-up material and generated audio.",
+      "nextSafeAction": "Complete disposable cleanup proof or define a Gate 3.5 proof extension.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "vercel_provider_kill_switch_gaps",
+      "provider": "vercel",
+      "title": "Vercel provider-specific kill switch gaps remain",
+      "currentStatus": "warning",
+      "classifications": [
+        "human_dashboard_confirmation_required",
+        "env_infrastructure_change_required"
+      ],
+      "gate3_5Impact": "ElevenLabs gap blocks Brush-up implementation; OpenAI/Azure gaps can remain WARN only with explicit acceptance.",
+      "nextSafeAction": "Add or confirm missing env names and record safe proof.",
+      "requiresCodeChange": false
+    },
+    {
+      "id": "vercel_rollback_redeploy_owner_pending",
+      "provider": "vercel",
+      "title": "Vercel rollback/redeploy owner is not recorded",
+      "currentStatus": "pending",
+      "classifications": [
+        "gate6_release_qa",
+        "human_dashboard_confirmation_required"
+      ],
+      "gate3_5Impact": "Not a Brush-up implementation blocker.",
+      "nextSafeAction": "Assign owner before release QA or native packaging.",
+      "requiresCodeChange": false
+    }
+  ],
+  "killSwitchSupportInventory": [
+    {
+      "surface": "openai",
+      "envName": "NATIVE_MINUTE_DISABLE_OPENAI",
+      "codeSupport": "present",
+      "repoEvidence": [
+        "lib/cost-guard.ts",
+        "services/transcription/factory.ts",
+        "services/script-studio/script-generation.service.ts"
+      ],
+      "currentGap": "Vercel env presence and operation proof"
+    },
+    {
+      "surface": "azure",
+      "envName": "NATIVE_MINUTE_DISABLE_AZURE",
+      "codeSupport": "present",
+      "repoEvidence": [
+        "lib/cost-guard.ts",
+        "services/pronunciation/factory.ts"
+      ],
+      "currentGap": "Vercel env presence and operation proof"
+    },
+    {
+      "surface": "elevenlabs",
+      "envName": "NATIVE_MINUTE_DISABLE_ELEVENLABS",
+      "codeSupport": "present",
+      "repoEvidence": [
+        "lib/cost-guard.ts",
+        "providers/voice/factory.ts",
+        "services/account-deletion/account-deletion.service.ts"
+      ],
+      "currentGap": "Human proof deferred"
+    },
+    {
+      "surface": "storage_uploads",
+      "envName": "NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS",
+      "codeSupport": "present",
+      "repoEvidence": [
+        "lib/cost-guard.ts",
+        "app/api/uploads/recording/route.ts",
+        "app/api/uploads/voice-sample/route.ts",
+        "app/api/uploads/voice-consent/route.ts"
+      ],
+      "currentGap": "Operation proof optional for PASS"
+    }
+  ],
+  "gate3_5EntryCriteria": [
+    "Confirm ElevenLabs script-scoped Brush-up feasibility for the intended plan.",
+    "Confirm ElevenLabs delete and cleanup semantics for normal cloned voices and future script-scoped Brush-up variants/material.",
+    "Confirm ElevenLabs retention and deletion semantics enough for Brush-up consent, revoke, account deletion, Privacy Policy, and Store disclosure.",
+    "Confirm ElevenLabs cost, latency, and retry behavior enough to decide whether Vercel Route Handlers are sufficient.",
+    "Confirm NATIVE_MINUTE_DISABLE_ELEVENLABS env presence and safe operation proof.",
+    "Confirm Supabase account deletion cleanup proof plan covers Brush-up material, script-scoped variants, generated Brush-up audio, saved pins, and provider cleanup.",
+    "Confirm protected replay for the normal path or schedule it as the first proof during Gate 3.5."
+  ],
+  "notes": [
+    "OPENAI_TRANSCRIPTION_MODEL is optional in the current repo and defaults when absent.",
+    "OpenAI and Azure kill switch gaps should be closed before Gate 3 PASS, but do not block a docs/design-only Gate 3.5 planning task if Brush-up remains ElevenLabs-first.",
+    "No secrets, env values, raw provider responses, transcript body, private audio paths, provider identifiers, or billing details are recorded."
+  ]
+}

@@ -72,6 +72,8 @@ Human confirmation package and safe evidence templates are captured in `docs/sto
 
 Human confirmation result: `WARN`. OpenAI / Azure / ElevenLabs / Supabase / Vercel main dashboard / env / logs / storage surfaces are human-confirmed, but provider-specific kill switch gaps, Azure alert setup, Azure Pronunciation Assessment and mobile/WebView audio risk, ElevenLabs cleanup / retention / Brush-up feasibility, Supabase protected replay, and account deletion cleanup proof remain open.
 
+Gate 3 WARN follow-up queue and Gate 3.5 entry criteria are captured in `docs/store-release-gate3-warn-followup-queue.md` and `outputs/store_release_gate3_warn_followup_queue/gate3_warn_followup_queue.json`. Gate 3.5 implementation must not start until ElevenLabs Brush-up feasibility, cleanup, retention, cost/latency/retry, ElevenLabs kill-switch proof, and Brush-up-aware account deletion cleanup proof are closed or explicitly deferred to v1.1.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
