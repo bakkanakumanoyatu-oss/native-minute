@@ -1,0 +1,165 @@
+{
+  "schema": "native-minute.gate3-5-v1-core-readiness.v1",
+  "status": "recorded",
+  "decision": {
+    "gate": "Gate 3.5",
+    "name": "v1 core readiness / release scope lock",
+    "brushUpV1Scope": "excluded",
+    "brushUpMovedTo": "v1.1",
+    "purpose": "Lock the v1 Store release feature set and define entry criteria for privacy, deletion, and consent implementation."
+  },
+  "sources": {
+    "gate3HumanConfirmation": "docs/store-release-gate3-human-confirmation-package.md",
+    "gate3WarnQueue": "docs/store-release-gate3-warn-followup-queue.md",
+    "brushUpDeferral": "docs/store-release-brush-up-v1-deferral-decision.md",
+    "inventory": "docs/store-release-mainline-inventory.md"
+  },
+  "redactionPolicy": {
+    "recordSecrets": false,
+    "recordEnvValues": false,
+    "recordRawProviderResponses": false,
+    "recordTranscriptBody": false,
+    "recordPrivateAudioPath": false,
+    "recordProviderIdentifiers": false,
+    "recordBillingDetails": false
+  },
+  "v1Included": [
+    "Account login and session continuity",
+    "Home and practice entry points",
+    "Script creation and script library",
+    "Listen with normal model audio generation or cache reuse",
+    "Record with microphone or supported upload path",
+    "Evaluate with OpenAI transcription and Azure pronunciation evaluation",
+    "Review with persisted score, transcript, weak words, coach next step, and saved result playback",
+    "Progress with latest result, best result, saved best take and saved model audio summaries",
+    "Normal voice setup",
+    "Normal model audio generation through server-side provider boundary",
+    "Settings, support, privacy / terms draft routes, and account deletion request / dry-run / proof planning surfaces",
+    "Provider readiness for OpenAI, Azure, ElevenLabs normal voice path, Supabase, and Vercel",
+    "Store release operations and release QA"
+  ],
+  "v1Excluded": [
+    "Brush-up UI",
+    "Best-take-to-script-scoped voice material provider submission",
+    "Brush-up-specific consent and revoke UI",
+    "Brush-up script-scoped voice variants",
+    "Brush-up generated audio candidate creation or acceptance",
+    "Brush-up-specific provider cleanup proof",
+    "Brush-up-specific account deletion proof",
+    "Brush-up-specific quota, cost, latency, and retry proof",
+    "Any Store metadata or privacy copy that claims Brush-up is available in v1"
+  ],
+  "v1_1Scope": [
+    "Brush-up from selected best take",
+    "Script-scoped voice material or voice variant design and implementation",
+    "Brush-up explicit consent and revoke UX",
+    "Brush-up generated audio candidates and app-owned replay proof",
+    "Brush-up-specific provider cleanup, retention, and deletion proof",
+    "Brush-up account deletion coverage",
+    "Brush-up cost, latency, and retry proof"
+  ],
+  "providerWarnClassification": [
+    {
+      "provider": "openai",
+      "item": "NATIVE_MINUTE_DISABLE_OPENAI missing or unproven",
+      "classification": "v1_before_release",
+      "blockerStatus": "blocker_unless_accepted_for_narrow_test_phase"
+    },
+    {
+      "provider": "openai",
+      "item": "OPENAI_TRANSCRIPTION_MODEL absent",
+      "classification": "release_qa",
+      "blockerStatus": "non_blocker_if_default_is_accepted"
+    },
+    {
+      "provider": "azure",
+      "item": "NATIVE_MINUTE_DISABLE_AZURE missing or unproven",
+      "classification": "v1_before_release",
+      "blockerStatus": "blocker_unless_accepted_for_narrow_test_phase"
+    },
+    {
+      "provider": "azure",
+      "item": "Alert not configured",
+      "classification": "v1_before_release",
+      "blockerStatus": "blocker_unless_manual_owner_is_accepted"
+    },
+    {
+      "provider": "azure",
+      "item": "Pronunciation Assessment availability not refreshed",
+      "classification": "release_qa",
+      "blockerStatus": "must_close_before_store_submission"
+    },
+    {
+      "provider": "azure",
+      "item": "Mobile / WebView audio risk unconfirmed",
+      "classification": "release_qa",
+      "blockerStatus": "must_close_before_store_submission"
+    },
+    {
+      "provider": "elevenlabs",
+      "item": "Normal voice path",
+      "classification": "v1_scope",
+      "blockerStatus": "normal_voice_path_remains_in_v1"
+    },
+    {
+      "provider": "elevenlabs",
+      "item": "Brush-up cleanup / retention / script-scoped feasibility / cost-latency-retry",
+      "classification": "v1_1",
+      "blockerStatus": "not_v1_blocker_after_deferral"
+    },
+    {
+      "provider": "supabase",
+      "item": "Protected replay not confirmed in this pass",
+      "classification": "release_qa",
+      "blockerStatus": "must_close_for_normal_v1_audio_before_store_submission"
+    },
+    {
+      "provider": "supabase",
+      "item": "Account deletion cleanup proof pending",
+      "classification": "v1_before_release",
+      "blockerStatus": "store_blocker_for_actual_v1_data"
+    },
+    {
+      "provider": "vercel",
+      "item": "Provider-specific kill switch env gaps",
+      "classification": "v1_before_release",
+      "blockerStatus": "close_or_explicitly_accept_warn"
+    }
+  ],
+  "v1ReleaseBlockers": [
+    "Provider kill switch readiness for OpenAI, Azure, ElevenLabs normal voice, and Storage uploads",
+    "Azure alert or accepted manual monitoring owner",
+    "Actual account/data deletion completion path for the v1 feature set",
+    "Disposable deletion proof for actual v1 data and provider resources",
+    "Final Privacy Policy, Terms, support, and deletion request copy matching v1 without Brush-up",
+    "App Privacy and Google Data Safety answers matching actual v1 behavior",
+    "Support URL and privacy policy URL",
+    "Reviewer account and reviewer instructions",
+    "Release QA for Web core, mobile browser or future WebView audio path, protected replay, auth/session, provider failure recovery, account deletion, support, and monitoring"
+  ],
+  "v1NonBlockersOrReleaseQa": [
+    "OPENAI_TRANSCRIPTION_MODEL explicit env presence if default is accepted",
+    "OpenAI support escalation owner",
+    "Azure Pronunciation Assessment final refresh",
+    "Azure mobile / WebView audio risk",
+    "Supabase policy SQL detail review",
+    "Supabase protected replay proof for normal v1 audio",
+    "Vercel rollback / redeploy owner",
+    "Brush-up-specific cleanup, retention, script-scoped feasibility, revoke, and account deletion proof"
+  ],
+  "privacyDeletionConsentEntryCriteria": [
+    "v1 does not include Brush-up and does not send a best take to a provider as script-scoped voice material.",
+    "Recording consent covers normal practice recording upload, transcription, pronunciation evaluation, review, replay, and progress only.",
+    "AI provider explanation covers OpenAI transcription / Script Studio generation, Azure pronunciation evaluation, ElevenLabs normal voice generation, Supabase storage/auth/DB, and Vercel hosting.",
+    "Voice sample and consent recording copy covers normal voice setup and normal model audio generation only.",
+    "Account deletion scope covers actual v1 data and provider resources, excluding Brush-up-specific artifacts.",
+    "Storage cleanup proof covers v1 buckets and does not depend on Brush-up material buckets or rows.",
+    "Provider cleanup proof covers normal cloned voices / provider resources used by v1, not Brush-up variants.",
+    "Support URL, privacy policy URL, deletion request path, and reviewer instructions do not promise Brush-up.",
+    "Remaining Gate 3 WARN accepted for v1 is documented with an owner, mitigation, and Gate 6 verification point."
+  ],
+  "notes": [
+    "No code, DB, provider, env, infra, or dashboard changes were made.",
+    "No secrets, env values, raw provider responses, transcript body, private audio paths, provider identifiers, or billing details are recorded."
+  ]
+}

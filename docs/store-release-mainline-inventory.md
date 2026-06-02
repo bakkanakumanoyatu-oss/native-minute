@@ -76,6 +76,8 @@ Gate 3 WARN follow-up queue and Gate 3.5 entry criteria are captured in `docs/st
 
 Brush-up v1 deferral decision is captured in `docs/store-release-brush-up-v1-deferral-decision.md` and `outputs/store_release_brush_up_v1_deferral_decision/brush_up_v1_deferral_decision.json`. Brush-up is no longer a v1 Store release blocker; Brush-up-specific provider cleanup, retention, revoke/delete, script-scoped voice material, account deletion proof, and cost/latency/retry work move to v1.1 entry criteria.
 
+Gate 3.5 v1 core readiness and release scope lock are captured in `docs/store-release-gate3-5-v1-core-readiness.md` and `outputs/store_release_gate3_5_v1_core_readiness/gate3_5_v1_core_readiness.json`. v1 includes the fixed practice loop, normal voice setup/model audio, provider readiness, privacy/deletion readiness, support, and release QA. v1 excludes Brush-up UI, best-take provider submission, script-scoped voice variants, Brush-up generated candidates, and Brush-up-specific cleanup/deletion proof.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
