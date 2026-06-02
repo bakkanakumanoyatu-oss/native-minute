@@ -1,6 +1,6 @@
 {
   "schema": "native-minute.gate3-human-confirmation.v1",
-  "status": "template_not_filled",
+  "status": "human_confirmation_recorded",
   "redactionPolicy": {
     "recordSecrets": false,
     "recordPartialCredentials": false,
@@ -18,19 +18,33 @@
   },
   "metadata": {
     "checkedAt": "unknown",
-    "reviewerRole": "unknown",
-    "environment": "unknown",
+    "reviewerRole": "human / project owner",
+    "environment": "Production / human-confirmed",
     "productionUrl": "unknown",
     "deploymentProvider": "unknown",
     "deploymentProject": "unknown",
     "deploymentIdOrName": "unknown",
     "deploymentStatus": "unknown",
     "commitOrBuildRef": "unknown",
-    "overallResult": "unknown"
+    "overallResult": "WARN"
+  },
+  "overallResult": {
+    "status": "WARN",
+    "reason": "Major provider dashboard, env, logs, and storage surfaces are human-confirmed, but provider-specific kill switches, Azure alerting, ElevenLabs cleanup, retention, Brush-up checks, Supabase protected replay, and account deletion cleanup proof remain incomplete.",
+    "providerStatuses": {
+      "openai": "WARN",
+      "azure": "WARN",
+      "elevenlabs": "WARN / deferred",
+      "supabase": "WARN",
+      "vercel": "WARN"
+    }
   },
   "statusLegend": [
     "repo_confirmed",
     "human_confirmed",
+    "partial_human_confirmed",
+    "pending",
+    "deferred",
     "unknown",
     "warning",
     "blocker",
@@ -42,51 +56,51 @@
         {
           "id": "openai_project_billing_usage_alert",
           "label": "Project, billing, usage visibility, and alert owner",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Billing, usage alert, and dashboard availability confirmed without recording details.",
+          "followUp": "none"
         },
         {
           "id": "openai_transcription_model",
           "label": "Transcription model availability",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "warning",
+          "safeEvidence": "Main model availability confirmed; optional transcription model env presence is missing.",
+          "followUp": "Add or intentionally accept missing optional model env before Store PASS."
         },
         {
           "id": "openai_script_generation_model",
           "label": "Script Studio and coaching-adjacent model availability",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Model availability confirmed without recording model response data.",
+          "followUp": "none"
         },
         {
           "id": "openai_env_presence_only",
           "label": "Production env presence only for OpenAI env names",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "partial_human_confirmed",
+          "safeEvidence": "API key presence confirmed; OPENAI_TRANSCRIPTION_MODEL and NATIVE_MINUTE_DISABLE_OPENAI are not present in Vercel env.",
+          "followUp": "Add presence-only env confirmation for missing names or accept warning."
         },
         {
           "id": "openai_kill_switch",
           "label": "Kill switch proof for NATIVE_MINUTE_DISABLE_OPENAI",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "warning",
+          "safeEvidence": "Provider-specific kill switch env is not present, so operation proof cannot be closed.",
+          "followUp": "Add env and run safe proof."
         },
         {
           "id": "openai_safe_logging",
           "label": "Safe error and logging boundary",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Logs boundary confirmed without raw provider body or private data.",
+          "followUp": "none"
         },
         {
           "id": "openai_support_escalation",
           "label": "Support escalation owner",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "pending",
+          "safeEvidence": "Not recorded in this confirmation.",
+          "followUp": "Assign owner before Store PASS."
         }
       ]
     },
@@ -95,51 +109,51 @@
         {
           "id": "azure_speech_resource_region",
           "label": "Speech resource and region readiness",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Speech resource, region, and endpoint presence confirmed without recording identifiers.",
+          "followUp": "none"
         },
         {
           "id": "azure_pronunciation_assessment",
           "label": "Pronunciation Assessment availability",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "pending",
+          "safeEvidence": "Not confirmed in this pass.",
+          "followUp": "Confirm before Store PASS."
         },
         {
           "id": "azure_quota_billing_alert",
           "label": "Quota, billing, and alert owner",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "warning",
+          "safeEvidence": "Billing and quota surface confirmed, but alert is not configured.",
+          "followUp": "Configure alert or record accepted manual owner."
         },
         {
           "id": "azure_env_presence_only",
           "label": "Production env presence only for Azure env names",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Vercel env presence confirmed without values.",
+          "followUp": "none"
         },
         {
           "id": "azure_kill_switch",
           "label": "Kill switch proof for NATIVE_MINUTE_DISABLE_AZURE",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "warning",
+          "safeEvidence": "Provider-specific kill switch env is not present.",
+          "followUp": "Add env and run safe proof."
         },
         {
           "id": "azure_mobile_webview_audio",
           "label": "Mobile and WebView recording plus PCM normalization risk",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "pending",
+          "safeEvidence": "Not confirmed in this pass.",
+          "followUp": "Confirm before Capacitor or Store QA."
         },
         {
           "id": "azure_safe_logging",
           "label": "Safe error and logging boundary",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Safe boundary confirmed without raw provider detail.",
+          "followUp": "none"
         }
       ]
     },
@@ -148,72 +162,72 @@
         {
           "id": "elevenlabs_plan_credits_api",
           "label": "Plan, credits, and API availability",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Dashboard, plan, credits, and API availability confirmed without recording billing details.",
+          "followUp": "none"
         },
         {
           "id": "elevenlabs_normal_tts",
           "label": "Normal TTS readiness",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Normal TTS readiness confirmed.",
+          "followUp": "none"
         },
         {
           "id": "elevenlabs_clone_voice",
           "label": "Clone voice availability and verification requirements",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Clone voice availability confirmed without recording provider identifiers.",
+          "followUp": "none"
         },
         {
           "id": "elevenlabs_voice_cleanup",
           "label": "Voice create, delete, and cleanup semantics",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "deferred",
+          "safeEvidence": "Delete and cleanup confirmation deferred.",
+          "followUp": "Required before Brush-up v1 or Store PASS with cloned voice cleanup claim."
         },
         {
           "id": "elevenlabs_retention_deletion",
           "label": "Retention and deletion semantics for source material and generated audio",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "deferred",
+          "safeEvidence": "Retention confirmation deferred.",
+          "followUp": "Required before final privacy and deletion claims."
         },
         {
           "id": "elevenlabs_brushup_script_scoped_feasibility",
           "label": "Brush-up script-scoped voice or material feasibility",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "deferred",
+          "safeEvidence": "Brush-up feasibility deferred.",
+          "followUp": "Required before Gate 3.5 implementation."
         },
         {
           "id": "elevenlabs_brushup_cost_latency_retry",
           "label": "Brush-up cost, latency, and retry risk",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "deferred",
+          "safeEvidence": "Brush-up cost, latency, and retry confirmation deferred.",
+          "followUp": "Required before Gate 3.5 implementation."
         },
         {
           "id": "elevenlabs_env_presence_only",
           "label": "Production env presence only for ElevenLabs and service role env names",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Env presence confirmed without values.",
+          "followUp": "none"
         },
         {
           "id": "elevenlabs_kill_switch",
           "label": "Kill switch proof for NATIVE_MINUTE_DISABLE_ELEVENLABS",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "deferred",
+          "safeEvidence": "Kill switch proof deferred.",
+          "followUp": "Add proof before Store PASS."
         },
         {
           "id": "elevenlabs_safe_logging",
           "label": "Safe error and logging boundary",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Safe boundary confirmed without raw provider detail.",
+          "followUp": "none"
         }
       ]
     },
@@ -222,44 +236,44 @@
         {
           "id": "supabase_storage_buckets",
           "label": "Storage bucket presence for recordings, script-audios, voice-samples, and voice-consents",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Bucket presence confirmed without object paths.",
+          "followUp": "none"
         },
         {
           "id": "supabase_rls_ownership",
           "label": "DB, RLS, and ownership proof status",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "warning",
+          "safeEvidence": "Storage policies confirmed at a high level, but policy SQL detail is not reviewed here.",
+          "followUp": "Confirm policy detail before Store PASS."
         },
         {
           "id": "supabase_protected_replay",
           "label": "Protected replay proof status",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "pending",
+          "safeEvidence": "Not confirmed in this pass.",
+          "followUp": "Confirm protected replay behavior before Store PASS."
         },
         {
           "id": "supabase_account_deletion_cleanup",
           "label": "Account deletion cleanup proof status",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "pending",
+          "safeEvidence": "Not confirmed in this pass.",
+          "followUp": "Complete disposable cleanup proof before Store PASS."
         },
         {
           "id": "supabase_service_role_boundary",
           "label": "Service role server-side only, presence-only confirmation",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Env presence confirmed without values.",
+          "followUp": "none"
         },
         {
           "id": "supabase_storage_upload_kill_switch",
           "label": "Storage upload kill switch proof for NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Storage upload kill switch presence confirmed.",
+          "followUp": "Run operation proof if required for PASS."
         }
       ]
     },
@@ -268,44 +282,44 @@
         {
           "id": "vercel_production_deployment",
           "label": "Production deployment current and ready",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Production deployment confirmed without recording private dashboard data.",
+          "followUp": "none"
         },
         {
           "id": "vercel_commit_build_ref",
           "label": "Deployment commit or build ref",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Deployment/build status confirmed safely.",
+          "followUp": "none"
         },
         {
           "id": "vercel_env_presence_only",
           "label": "Production env presence only for provider and kill switch env names",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "warning",
+          "safeEvidence": "Main provider env presence confirmed; provider-specific kill switch gaps remain.",
+          "followUp": "Add missing provider kill switches."
         },
         {
           "id": "vercel_kill_switch_proof_approach",
           "label": "Kill switch proof approach",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "warning",
+          "safeEvidence": "Provider-specific kill switch proof is incomplete because some env names are missing or deferred.",
+          "followUp": "Add env and run safe proof."
         },
         {
           "id": "vercel_logs_boundary",
           "label": "Logs do not expose forbidden evidence",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "human_confirmed",
+          "safeEvidence": "Logs boundary confirmed without recording log contents.",
+          "followUp": "none"
         },
         {
           "id": "vercel_rollback_redeploy",
           "label": "Rollback and redeploy owner and path",
-          "status": "unknown",
-          "safeEvidence": "unknown",
-          "followUp": "unknown"
+          "status": "pending",
+          "safeEvidence": "Not recorded in this confirmation.",
+          "followUp": "Confirm before Store PASS."
         }
       ]
     }
@@ -315,163 +329,178 @@
       "surface": "openai",
       "envName": "NATIVE_MINUTE_DISABLE_OPENAI",
       "proofMode": "unknown",
-      "result": "unknown",
-      "safeEvidence": "unknown",
-      "followUp": "unknown"
+      "result": "warning",
+      "safeEvidence": "Env not present in Vercel.",
+      "followUp": "Add env and run safe proof."
     },
     {
       "surface": "azure",
       "envName": "NATIVE_MINUTE_DISABLE_AZURE",
       "proofMode": "unknown",
-      "result": "unknown",
-      "safeEvidence": "unknown",
-      "followUp": "unknown"
+      "result": "warning",
+      "safeEvidence": "Env not present in Vercel.",
+      "followUp": "Add env and run safe proof."
     },
     {
       "surface": "elevenlabs",
       "envName": "NATIVE_MINUTE_DISABLE_ELEVENLABS",
       "proofMode": "unknown",
-      "result": "unknown",
-      "safeEvidence": "unknown",
-      "followUp": "unknown"
+      "result": "deferred",
+      "safeEvidence": "Proof deferred.",
+      "followUp": "Add proof before Store PASS."
     },
     {
       "surface": "supabase_storage_uploads",
       "envName": "NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS",
       "proofMode": "unknown",
-      "result": "unknown",
-      "safeEvidence": "unknown",
-      "followUp": "unknown"
+      "result": "human_confirmed",
+      "safeEvidence": "Presence confirmed.",
+      "followUp": "Run operation proof if needed for PASS."
     }
   ],
   "billingQuotaAlertProof": [
     {
       "provider": "openai",
-      "dashboardVisibility": "unknown",
-      "usageQuotaVisibility": "unknown",
-      "alertOrOwner": "unknown",
-      "result": "unknown",
-      "safeNotes": "unknown"
+      "dashboardVisibility": "human_confirmed",
+      "usageQuotaVisibility": "human_confirmed",
+      "alertOrOwner": "human_confirmed",
+      "result": "WARN",
+      "safeNotes": "Confirmed without recording details; kill switch/env gap remains."
     },
     {
       "provider": "azure",
-      "dashboardVisibility": "unknown",
-      "usageQuotaVisibility": "unknown",
-      "alertOrOwner": "unknown",
-      "result": "unknown",
-      "safeNotes": "unknown"
+      "dashboardVisibility": "human_confirmed",
+      "usageQuotaVisibility": "human_confirmed",
+      "alertOrOwner": "warning",
+      "result": "WARN",
+      "safeNotes": "Alert is not configured."
     },
     {
       "provider": "elevenlabs",
-      "dashboardVisibility": "unknown",
-      "usageQuotaVisibility": "unknown",
-      "alertOrOwner": "unknown",
-      "result": "unknown",
-      "safeNotes": "unknown"
+      "dashboardVisibility": "human_confirmed",
+      "usageQuotaVisibility": "human_confirmed",
+      "alertOrOwner": "human_confirmed",
+      "result": "WARN / deferred",
+      "safeNotes": "Cleanup, retention, and Brush-up checks deferred."
     },
     {
       "provider": "supabase",
-      "dashboardVisibility": "unknown",
-      "usageQuotaVisibility": "unknown",
-      "alertOrOwner": "unknown",
-      "result": "unknown",
-      "safeNotes": "unknown"
+      "dashboardVisibility": "human_confirmed",
+      "usageQuotaVisibility": "human_confirmed",
+      "alertOrOwner": "pending",
+      "result": "WARN",
+      "safeNotes": "Protected replay and cleanup proof remain pending."
     },
     {
       "provider": "vercel",
-      "dashboardVisibility": "unknown",
-      "usageQuotaVisibility": "unknown",
-      "alertOrOwner": "unknown",
-      "result": "unknown",
-      "safeNotes": "unknown"
+      "dashboardVisibility": "human_confirmed",
+      "usageQuotaVisibility": "human_confirmed",
+      "alertOrOwner": "pending",
+      "result": "WARN",
+      "safeNotes": "Provider-specific kill switch gaps remain."
     }
   ],
   "cleanupRetentionProof": [
     {
       "surface": "openai",
-      "retentionKnown": "unknown",
-      "deletionCleanupAvailable": "unknown",
-      "brushUpImpact": "unknown",
-      "result": "unknown",
-      "followUp": "unknown"
+      "retentionKnown": "human_confirmed",
+      "deletionCleanupAvailable": "pending",
+      "brushUpImpact": "not_applicable",
+      "result": "WARN",
+      "followUp": "Close env and kill switch gaps."
     },
     {
       "surface": "azure",
-      "retentionKnown": "unknown",
-      "deletionCleanupAvailable": "unknown",
-      "brushUpImpact": "unknown",
-      "result": "unknown",
-      "followUp": "unknown"
+      "retentionKnown": "pending",
+      "deletionCleanupAvailable": "pending",
+      "brushUpImpact": "not_applicable",
+      "result": "WARN",
+      "followUp": "Confirm Pronunciation Assessment and mobile/WebView risk."
     },
     {
       "surface": "elevenlabs_normal_voice",
-      "retentionKnown": "unknown",
-      "deletionCleanupAvailable": "unknown",
-      "brushUpImpact": "unknown",
-      "result": "unknown",
-      "followUp": "unknown"
+      "retentionKnown": "deferred",
+      "deletionCleanupAvailable": "deferred",
+      "brushUpImpact": "warning",
+      "result": "WARN / deferred",
+      "followUp": "Confirm delete, cleanup, and retention."
     },
     {
       "surface": "elevenlabs_brushup_script_scoped_material",
-      "retentionKnown": "unknown",
-      "deletionCleanupAvailable": "unknown",
-      "brushUpImpact": "unknown",
-      "result": "unknown",
-      "followUp": "unknown"
+      "retentionKnown": "deferred",
+      "deletionCleanupAvailable": "deferred",
+      "brushUpImpact": "warning",
+      "result": "WARN / deferred",
+      "followUp": "Required before Gate 3.5."
     },
     {
       "surface": "supabase_storage",
-      "retentionKnown": "unknown",
-      "deletionCleanupAvailable": "unknown",
-      "brushUpImpact": "unknown",
-      "result": "unknown",
-      "followUp": "unknown"
+      "retentionKnown": "warning",
+      "deletionCleanupAvailable": "pending",
+      "brushUpImpact": "warning",
+      "result": "WARN",
+      "followUp": "Confirm protected replay and cleanup proof."
     },
     {
       "surface": "supabase_db_auth",
-      "retentionKnown": "unknown",
-      "deletionCleanupAvailable": "unknown",
-      "brushUpImpact": "unknown",
-      "result": "unknown",
-      "followUp": "unknown"
+      "retentionKnown": "warning",
+      "deletionCleanupAvailable": "pending",
+      "brushUpImpact": "warning",
+      "result": "WARN",
+      "followUp": "Confirm account deletion cleanup proof."
     }
   ],
   "brushUpV1PreImplementation": [
     {
       "id": "brushup_script_scoped_create",
       "label": "ElevenLabs script-scoped voice or material creation feasibility",
-      "status": "unknown",
-      "safeEvidence": "unknown",
-      "followUp": "unknown"
+      "status": "deferred",
+      "safeEvidence": "Brush-up script-scoped feasibility is not confirmed in this pass.",
+      "followUp": "Required before Gate 3.5 implementation."
     },
     {
       "id": "brushup_provider_delete_cleanup",
       "label": "Provider deletion and cleanup for script-scoped variants or material",
-      "status": "unknown",
-      "safeEvidence": "unknown",
-      "followUp": "unknown"
+      "status": "deferred",
+      "safeEvidence": "ElevenLabs delete and cleanup confirmation deferred.",
+      "followUp": "Required before Gate 3.5 implementation."
     },
     {
       "id": "brushup_retention_revoke",
       "label": "Source material retention, revoke, and account deletion behavior",
-      "status": "unknown",
-      "safeEvidence": "unknown",
-      "followUp": "unknown"
+      "status": "deferred",
+      "safeEvidence": "Retention and revoke confirmation deferred.",
+      "followUp": "Required before Gate 3.5 implementation."
     },
     {
       "id": "brushup_cost_latency_retry",
       "label": "Cost, latency, retry, and Vercel Function fit",
-      "status": "unknown",
-      "safeEvidence": "unknown",
-      "followUp": "unknown"
+      "status": "deferred",
+      "safeEvidence": "Cost, latency, retry, and function-fit confirmation deferred.",
+      "followUp": "Required before Gate 3.5 implementation."
     }
   ],
   "decision": {
-    "result": "unknown",
+    "result": "WARN",
     "blockers": [],
-    "warnings": [],
-    "releaseOwnerDecision": "unknown",
-    "nextAction": "unknown"
+    "warnings": [
+      "OpenAI provider-specific kill switch env gap",
+      "OpenAI optional transcription model env gap",
+      "Azure alert missing",
+      "Azure provider-specific kill switch env gap",
+      "Azure Pronunciation Assessment availability pending",
+      "Azure mobile/WebView audio risk pending",
+      "ElevenLabs cleanup deferred",
+      "ElevenLabs retention deferred",
+      "ElevenLabs Brush-up feasibility deferred",
+      "ElevenLabs kill switch proof deferred",
+      "Supabase policy SQL detail pending",
+      "Supabase protected replay proof pending",
+      "Supabase account deletion cleanup proof pending",
+      "Vercel provider-specific kill switch gaps"
+    ],
+    "releaseOwnerDecision": "Continue as WARN; do not claim Gate 3 PASS until pending and deferred items close.",
+    "nextAction": "Close Gate 3 warnings or carry explicit WARN into Gate 3.5 planning."
   },
   "redactionCheck": {
     "containsSecrets": false,

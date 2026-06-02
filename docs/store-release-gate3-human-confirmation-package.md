@@ -6,10 +6,22 @@ This is docs/evidence-template-only. It does not operate provider dashboards, ca
 
 ## Decision
 
-- Gate 3 remains Store-facing `WARN` until this package is filled by a human reviewer for the target production deployment.
+- Gate 3 human confirmation result is `WARN`.
+- Major provider dashboard / env / logs / storage surfaces are human-confirmed, but provider-specific kill switches, Azure alerting, ElevenLabs cleanup / retention / Brush-up checks, Supabase protected replay, and account deletion cleanup proof remain incomplete.
 - Repo-confirmed provider boundaries remain accepted: provider calls are server-side, app-owned replay is preferred, and secrets / service credentials must not be exposed to the client.
 - Human confirmation must record only safe status labels and short notes. It must not copy dashboard payloads, raw provider bodies, private user content, object keys, or credential values.
 - Brush-up v1 must not move to implementation until the ElevenLabs script-scoped create / delete / retention / cost confirmations are closed or explicitly accepted by the release owner.
+
+## Human Confirmation Result
+
+| Area | Status | Safe summary |
+| --- | --- | --- |
+| Overall Gate 3 | WARN | Main provider dashboard / env / logs / storage surfaces are human-confirmed; remaining warnings prevent PASS. |
+| OpenAI | WARN | Billing, usage alert, model availability, API key presence, and logs boundary are confirmed. `OPENAI_TRANSCRIPTION_MODEL` and `NATIVE_MINUTE_DISABLE_OPENAI` are not present in Vercel env. |
+| Azure | WARN | Speech resource, region, endpoint, and Vercel env presence are confirmed. Alert is not configured; `NATIVE_MINUTE_DISABLE_AZURE`, Pronunciation Assessment availability, and mobile/WebView audio risk remain unconfirmed. |
+| ElevenLabs | WARN / deferred | Dashboard, plan, credits, API availability, normal TTS, and clone voice availability are confirmed. Delete / cleanup, retention, script-scoped Brush-up feasibility, and kill switch proof are deferred. |
+| Supabase | WARN | Buckets, storage policies, env presence, and storage upload kill switch are confirmed. Policy SQL detail, protected replay behavior, and account deletion cleanup proof remain unconfirmed. |
+| Vercel | WARN | Production deployment, env presence, and logs boundary are confirmed. Provider-specific kill switch gaps remain. |
 
 ## Safe Evidence Policy
 
@@ -162,4 +174,4 @@ Deletion / retention / cleanup proof:
 - Markdown template: `outputs/store_release_gate3_human_confirmation/gate3_human_confirmation_template.md`
 - JSON template: `outputs/store_release_gate3_human_confirmation/gate3_human_confirmation_template.json`
 
-Keep filled evidence in the same directory only after a human reviewer confirms it. Leave unknown values as `unknown`; do not infer deployment, dashboard, billing, or provider state from repo data.
+The templates now carry the human-confirmed Gate 3 `WARN` result. Leave still-unknown values as `unknown`; do not infer deployment, dashboard, billing, or provider state from repo data.

@@ -70,6 +70,8 @@ Status: checklist/design plan is captured in `docs/store-release-gate3-provider-
 
 Human confirmation package and safe evidence templates are captured in `docs/store-release-gate3-human-confirmation-package.md` and `outputs/store_release_gate3_human_confirmation/`. They separate repo-confirmed facts, human-confirmation-required items, confirmed-by-human status, unknowns, warnings, and blockers without recording secrets, raw provider bodies, private user data, transcript text, audio paths, provider identifiers, or billing details.
 
+Human confirmation result: `WARN`. OpenAI / Azure / ElevenLabs / Supabase / Vercel main dashboard / env / logs / storage surfaces are human-confirmed, but provider-specific kill switch gaps, Azure alert setup, Azure Pronunciation Assessment and mobile/WebView audio risk, ElevenLabs cleanup / retention / Brush-up feasibility, Supabase protected replay, and account deletion cleanup proof remain open.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
