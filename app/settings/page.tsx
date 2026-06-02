@@ -68,7 +68,7 @@ export default async function SettingsPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-ink-500">Privacy and support</p>
         <h2 className="mt-2 text-2xl font-semibold text-ink-950">公開ドラフト</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
-          Web beta 用の privacy / terms / support draft です。正式公開や Store submission 前に最終レビューが必要です。
+          v1 Store release に向けた privacy / terms / support / account deletion の release candidate draft です。正式公開や Store submission 前に final human approval が必要です。
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link href="/privacy" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto">

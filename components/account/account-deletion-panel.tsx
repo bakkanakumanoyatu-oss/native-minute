@@ -22,7 +22,7 @@ const STATUS_COPY: Record<AccountDeletionRequestView["status"], { label: string;
   },
   confirmed: {
     label: "確認済み",
-    summary: "確認まで完了しました。実削除 job は次フェーズで有効化します。",
+    summary: "確認まで完了しました。現時点では実削除 job は走らず、次 Gate で actual deletion path と disposable proof を確認します。",
     tone: "warn"
   },
   processing: {
@@ -52,7 +52,7 @@ const STATUS_COPY: Record<AccountDeletionRequestView["status"], { label: string;
   },
   completed: {
     label: "完了",
-    summary: "削除処理は完了済みです。",
+    summary: "削除処理の完了状態です。Store release 前の proof では、provider / Storage / DB / Auth の安全な完了証跡を別途確認します。",
     tone: "steady"
   },
   cancelled: {
@@ -356,13 +356,16 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
       <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]">Account deletion</p>
       <h2 className="mt-2 text-xl font-semibold text-ink-900 sm:text-2xl">アカウント削除リクエスト</h2>
       <p className="mt-3 text-sm leading-6 text-ink-600">
-        この画面では削除リクエストの作成と確認状態の記録まで行います。実際の削除 job、storage cleanup、ElevenLabs voice cleanup、Supabase Auth deletion はまだ走りません。
+        この画面では削除リクエストの作成、確認状態、dry-run summary の表示まで行います。現時点の v1 scaffold では、実際の削除 job、Storage cleanup、ElevenLabs voice cleanup、Supabase Auth deletion はここから走りません。
       </p>
 
       <div className="mt-4 rounded-3xl border border-[var(--line)] bg-ink-50 p-4">
         <p className="text-sm font-semibold text-ink-900">削除対象になる予定のもの</p>
         <p className="mt-2 text-sm leading-6 text-ink-600">
           scripts、録音、transcript、発音 score、weak words、coach feedback、保存済み audio library、voice sample / consent recording、ElevenLabs の cloned voice などです。
+        </p>
+        <p className="mt-2 text-sm leading-6 text-ink-600">
+          Brush-up は v1.1 に延期しているため、v1 の削除対象説明には selected best take の script-scoped voice material や Brush-up generated audio を含めません。
         </p>
         <p className="mt-2 text-xs leading-5 text-ink-500">
           provider raw response、raw audio、script 本文、storage raw path、signed URL、secret、email は deletion request metadata に保存しません。

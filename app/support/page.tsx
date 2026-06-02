@@ -4,19 +4,19 @@ import { LegalPageShell, LegalSection } from "@/components/legal/beta-legal-page
 
 export const metadata: Metadata = {
   title: "Support Draft | Native Minute",
-  description: "Native Minute Web beta support draft"
+  description: "Native Minute v1 support release candidate draft"
 };
 
 export default function SupportPage() {
   return (
     <LegalPageShell
-      eyebrow="Support draft"
+      eyebrow="Support release candidate draft"
       title="Native Minute Support"
-      summary="Web beta / small cohort 用の support draft です。正式公開前に最終レビューが必要ですが、Web beta の問い合わせ先と削除 request の目安をここにまとめます。"
+      summary="Native Minute v1 Store release に向けた support draft です。正式公開前に final support URL / inbox、legal owner、reviewer instructions の human approval が必要です。"
     >
       <LegalSection
         title="問い合わせ先"
-        summary="Web beta の問い合わせ先は bakkanakuma@gmail.com です。正式公開前に support URL / inbox 運用は再レビューします。"
+        summary="現在の support contact は bakkanakuma@gmail.com です。Store release 用の final support URL / inbox 運用は human_required として残します。"
         items={[
           "account deletion request は、一次返信の目安が 3 business days、完了目安が 30 days です。",
           "問い合わせ時は、secret、API key、auth header、magic link URL、raw provider response を貼らないでください。",
@@ -49,6 +49,7 @@ export default function SupportPage() {
         summary="v1 mainline の voice provider は ElevenLabs です。OpenAI は voice provider ではなく、transcription / script generation / coaching 側で使います。"
         items={[
           "voice setup が未完了の場合、listen 画面や Settings から setup/voice に進めます。",
+          "voice sample / consent recording は通常のお手本ボイス作成のために扱います。Brush-up は v1.1 に延期しており、v1 support では利用可能機能として案内しません。",
           "ElevenLabs 側の rate limit、billing、verification、deleted voice などでお手本ボイス生成に失敗することがあります。",
           "provider kill switch が有効な場合は、お手本ボイス生成が一時停止されることがあります。"
         ]}
@@ -60,7 +61,17 @@ export default function SupportPage() {
           "ログイン済みの場合は Settings から account deletion request を開始できます。",
           "Web からの説明と support fallback は /support/account-deletion にまとめています。",
           "削除 request の一次返信目安は 3 business days、完了目安は 30 days です。",
-          "Web beta では request-based + support/manual cleanup の暫定運用で、actual destructive cleanup はまだ self-serve 完了していません。"
+          "現時点の scaffold では actual destructive cleanup はまだ self-serve 完了しません。Store submission 前に actual deletion path と disposable proof が必要です。"
+        ]}
+      />
+
+      <LegalSection
+        title="human_required"
+        items={[
+          "Final support URL / inbox: human_required",
+          "Legal owner: human_required",
+          "Store reviewer account and instructions: human_required",
+          "Account deletion disposable proof result: human_required"
         ]}
       />
 

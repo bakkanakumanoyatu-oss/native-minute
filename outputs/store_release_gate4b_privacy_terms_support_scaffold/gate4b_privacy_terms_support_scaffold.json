@@ -1,0 +1,102 @@
+{
+  "schema": "native-minute.gate4b-privacy-terms-support-scaffold.v1",
+  "status": "recorded",
+  "decision": {
+    "gate": "Gate 4b",
+    "name": "v1 privacy / terms / support / account deletion copy and route scaffold",
+    "scaffoldType": "minimal_ui_copy_scaffold",
+    "brushUpV1Scope": "excluded",
+    "brushUpMovedTo": "v1.1",
+    "actualDeletionImplemented": false
+  },
+  "sources": {
+    "gate4aPlan": "docs/store-release-gate4a-privacy-consent-deletion-implementation-plan.md",
+    "gate4aReport": "outputs/store_release_gate4a_privacy_consent_deletion_implementation_plan/gate4a_privacy_consent_deletion_implementation_plan.json",
+    "inventory": "docs/store-release-mainline-inventory.md",
+    "currentState": "docs/current-state.md"
+  },
+  "redactionPolicy": {
+    "recordSecrets": false,
+    "recordEnvValues": false,
+    "recordRawProviderResponses": false,
+    "recordTranscriptBody": false,
+    "recordPrivateAudioPath": false,
+    "recordStoragePathsOrObjectKeys": false,
+    "recordProviderIdentifiers": false,
+    "recordBillingDetails": false
+  },
+  "routeInventory": [
+    {
+      "route": "/privacy",
+      "statusBeforeGate4b": "existed",
+      "action": "updated_v1_release_candidate_copy"
+    },
+    {
+      "route": "/terms",
+      "statusBeforeGate4b": "existed",
+      "action": "updated_v1_release_candidate_copy"
+    },
+    {
+      "route": "/support",
+      "statusBeforeGate4b": "existed",
+      "action": "updated_v1_release_candidate_copy"
+    },
+    {
+      "route": "/support/account-deletion",
+      "statusBeforeGate4b": "existed",
+      "action": "updated_request_and_dry_run_only_copy"
+    },
+    {
+      "route": "/settings",
+      "statusBeforeGate4b": "existed",
+      "action": "updated_legal_support_deletion_navigation_copy"
+    }
+  ],
+  "copyCoverage": [
+    "Normal practice recordings",
+    "OpenAI transcription",
+    "Azure pronunciation evaluation",
+    "AI coaching / feedback and Script Studio generation",
+    "Normal model audio / voice setup",
+    "Voice sample / consent recording",
+    "Supabase Auth / DB / private Storage / protected replay",
+    "Account deletion request and dry-run status",
+    "Final human approval required before Store submission"
+  ],
+  "accountDeletionBoundary": {
+    "requestFlowVisible": true,
+    "dryRunSummaryVisible": true,
+    "actualDeletionExecuted": false,
+    "authUserDeletionExecuted": false,
+    "storageDeletionExecuted": false,
+    "providerCleanupExecuted": false,
+    "dbCleanupExecuted": false,
+    "destructiveGuardChanged": false
+  },
+  "brushUpV1Claims": {
+    "claimsBrushUpAvailableInV1": false,
+    "claimsBestTakeProviderSubmissionInV1": false,
+    "claimsBrushUpCleanupInV1": false,
+    "notes": "Brush-up is described only as v1.1 deferred planning and not as an available v1 feature."
+  },
+  "humanRequired": [
+    "Final Privacy Policy URL",
+    "Final Terms URL if used for Store distribution",
+    "Final Support URL / inbox",
+    "Final account deletion request URL",
+    "Legal owner and final legal approval",
+    "App Privacy and Google Data Safety final answers",
+    "Reviewer account and reviewer instructions",
+    "Actual account deletion disposable proof",
+    "Provider cleanup proof for normal v1 voice resources"
+  ],
+  "supportContact": {
+    "currentHumanConfirmedContact": "bakkanakuma@gmail.com",
+    "finalSupportUrlOrInbox": "human_required"
+  },
+  "notes": [
+    "No DB schema, migration, API contract, provider, env, dashboard, infra, Capacitor, Store submission, or Brush-up changes were made.",
+    "No actual destructive deletion path was executed or enabled.",
+    "No secrets, env values, raw provider responses, transcript body, private audio paths, storage object keys, provider identifiers, or billing details are recorded."
+  ]
+}

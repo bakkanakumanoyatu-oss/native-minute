@@ -80,6 +80,8 @@ Gate 3.5 v1 core readiness and release scope lock are captured in `docs/store-re
 
 Gate 4a v1 privacy / consent / deletion implementation planning is captured in `docs/store-release-gate4a-privacy-consent-deletion-implementation-plan.md` and `outputs/store_release_gate4a_privacy_consent_deletion_implementation_plan/gate4a_privacy_consent_deletion_implementation_plan.json`. It fixes the v1 implementation targets for Settings / Account, Privacy Policy, Terms, Support, recording consent, AI provider notice, normal voice sample / consent recording notice, account deletion request / proof, and Store disclosure source notes. Brush-up consent, revoke, best-take provider submission, script-scoped voice variants, and Brush-up cleanup proof remain v1.1.
 
+Gate 4b v1 privacy / terms / support scaffold is captured in `docs/store-release-gate4b-privacy-terms-support-scaffold.md` and `outputs/store_release_gate4b_privacy_terms_support_scaffold/gate4b_privacy_terms_support_scaffold.json`. Existing `/privacy`, `/terms`, `/support`, `/support/account-deletion`, and `/settings` surfaces now use v1 release candidate draft copy, mark final human approval as required, and state that account deletion is request / dry-run / proof-prep only. No actual deletion, provider cleanup, DB cleanup, Auth deletion, env, dashboard, infra, Capacitor, or Brush-up work was performed.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -98,6 +100,12 @@ Brush-up returns as v1.1 work only after ElevenLabs cleanup / retention / script
 Goal: fix the implementation contract for v1 privacy, terms, support, recording consent, AI provider notice, normal voice setup consent/notice, account deletion, cleanup proof, and Store disclosure inputs before implementation starts.
 
 Status: docs/design-only plan is captured in `docs/store-release-gate4a-privacy-consent-deletion-implementation-plan.md`. v1 planning excludes Brush-up and keeps Brush-up-specific consent, revoke, provider submission, script-scoped variants, generated Brush-up audio, and cleanup proof in v1.1.
+
+### Gate 4b: v1 Privacy / Terms / Support Route Scaffold
+
+Goal: publish the minimal v1 release candidate draft copy and navigation for Privacy Policy, Terms, Support, account deletion request explanation, and Settings / Account links.
+
+Status: implemented as small UI/copy scaffold. It does not claim final legal approval, does not claim actual deletion completion, and does not include Brush-up as a v1 feature.
 
 ### Gate 4: Capacitor iOS / Android
 

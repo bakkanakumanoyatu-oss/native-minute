@@ -4,15 +4,15 @@ import { LegalPageShell, LegalSection } from "@/components/legal/beta-legal-page
 
 export const metadata: Metadata = {
   title: "Terms Draft | Native Minute",
-  description: "Native Minute Web beta terms draft"
+  description: "Native Minute v1 terms release candidate draft"
 };
 
 export default function TermsPage() {
   return (
     <LegalPageShell
-      eyebrow="Terms draft"
+      eyebrow="Terms release candidate draft"
       title="Native Minute Terms"
-      summary="このページは Native Minute v1 Web beta / small cohort 用の利用条件ドラフトです。正式公開や Store submission の前に、最終レビューと正式文面化が必要です。"
+      summary="このページは Native Minute v1 Store release に向けた利用条件ドラフトです。正式公開や Store submission の前に、release owner と legal review による final human approval が必要です。"
     >
       <LegalSection
         title="サービスの位置づけ"
@@ -28,6 +28,7 @@ export default function TermsPage() {
         items={[
           "自分が使う権利のある script、録音、voice sample だけを使ってください。",
           "他人の声を clone する場合は、本人の明確な許可が必要です。v1 では自分の声を使う前提を推奨します。",
+          "voice sample / consent recording は、通常のお手本ボイス作成のために使います。通常録音の同意を、将来の Brush-up 素材利用の同意として扱いません。",
           "映画のセリフ、近年の有名スピーチ、著作権上危険な本文を大量に貼り付けたり、配布目的で使ったりしないでください。",
           "security、quota、provider guard、protected replay、account deletion flow を回避する操作をしないでください。",
           "違法、差別的、嫌がらせ、なりすまし、第三者の権利侵害につながる使い方をしないでください。"
@@ -45,12 +46,31 @@ export default function TermsPage() {
       />
 
       <LegalSection
+        title="v1 に含まれないもの"
+        summary="Brush-up は v1.1 に延期しています。v1 の Store metadata、screenshot、reviewer note、privacy / terms copy では、利用可能な v1 機能として扱いません。"
+        items={[
+          "best take を script 専用 voice material として provider に送る機能は v1 に含みません。",
+          "Brush-up 用の同意、revoke、script-scoped voice variant、generated Brush-up audio、Brush-up cleanup proof は v1.1 の対象です。",
+          "v1 の account deletion は実際に v1 で扱う通常録音、評価、通常 voice setup、normal model audio を対象にします。"
+        ]}
+      />
+
+      <LegalSection
         title="account deletion / support"
         items={[
           "Web beta では Settings から account deletion request を開始できます。",
-          "actual destructive cleanup はまだ self-serve 完了していません。Web beta では request-based + support/manual cleanup の暫定運用です。",
-          "Store submission 前には actual account/data deletion completion path が blocker です。",
+          "現時点の scaffold では actual destructive cleanup は self-serve 完了しません。削除 request と dry-run / proof の準備状態を確認する段階です。",
+          "Store submission 前には actual account/data deletion completion path、disposable proof、provider cleanup proof が blocker です。",
           "privacy、support、account deletion の詳細は公開 draft route で確認できます。"
+        ]}
+      />
+
+      <LegalSection
+        title="human_required"
+        items={[
+          "Terms final URL: human_required",
+          "Legal owner / final legal approval: human_required",
+          "Reviewer instructions final approval: human_required"
         ]}
       />
 
