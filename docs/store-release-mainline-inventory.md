@@ -78,6 +78,8 @@ Brush-up v1 deferral decision is captured in `docs/store-release-brush-up-v1-def
 
 Gate 3.5 v1 core readiness and release scope lock are captured in `docs/store-release-gate3-5-v1-core-readiness.md` and `outputs/store_release_gate3_5_v1_core_readiness/gate3_5_v1_core_readiness.json`. v1 includes the fixed practice loop, normal voice setup/model audio, provider readiness, privacy/deletion readiness, support, and release QA. v1 excludes Brush-up UI, best-take provider submission, script-scoped voice variants, Brush-up generated candidates, and Brush-up-specific cleanup/deletion proof.
 
+Gate 4a v1 privacy / consent / deletion implementation planning is captured in `docs/store-release-gate4a-privacy-consent-deletion-implementation-plan.md` and `outputs/store_release_gate4a_privacy_consent_deletion_implementation_plan/gate4a_privacy_consent_deletion_implementation_plan.json`. It fixes the v1 implementation targets for Settings / Account, Privacy Policy, Terms, Support, recording consent, AI provider notice, normal voice sample / consent recording notice, account deletion request / proof, and Store disclosure source notes. Brush-up consent, revoke, best-take provider submission, script-scoped voice variants, and Brush-up cleanup proof remain v1.1.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -90,6 +92,12 @@ Provider roles:
 Goal: align the v1 release scope after Gate 3 `WARN`, confirm Brush-up is deferred from v1, close or explicitly accept v1 provider kill switch gaps, and make sure privacy / deletion / consent claims match the v1 feature set before native packaging.
 
 Brush-up returns as v1.1 work only after ElevenLabs cleanup / retention / script-scoped feasibility / cost-latency-retry, `NATIVE_MINUTE_DISABLE_ELEVENLABS` proof, protected replay, and Brush-up-aware account deletion cleanup proof are ready.
+
+### Gate 4a: v1 Privacy / Consent / Deletion Implementation Plan
+
+Goal: fix the implementation contract for v1 privacy, terms, support, recording consent, AI provider notice, normal voice setup consent/notice, account deletion, cleanup proof, and Store disclosure inputs before implementation starts.
+
+Status: docs/design-only plan is captured in `docs/store-release-gate4a-privacy-consent-deletion-implementation-plan.md`. v1 planning excludes Brush-up and keeps Brush-up-specific consent, revoke, provider submission, script-scoped variants, generated Brush-up audio, and cleanup proof in v1.1.
 
 ### Gate 4: Capacitor iOS / Android
 

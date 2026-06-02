@@ -1,0 +1,249 @@
+{
+  "schema": "native-minute.gate4a-privacy-consent-deletion-implementation-plan.v1",
+  "status": "recorded",
+  "decision": {
+    "gate": "Gate 4a",
+    "name": "v1 privacy / consent / deletion implementation plan",
+    "planType": "docs_only_implementation_contract",
+    "brushUpV1Scope": "excluded",
+    "brushUpMovedTo": "v1.1",
+    "implementationStarted": false
+  },
+  "sources": {
+    "gate3HumanConfirmation": "docs/store-release-gate3-human-confirmation-package.md",
+    "gate3WarnQueue": "docs/store-release-gate3-warn-followup-queue.md",
+    "brushUpDeferral": "docs/store-release-brush-up-v1-deferral-decision.md",
+    "gate3_5ScopeLock": "docs/store-release-gate3-5-v1-core-readiness.md",
+    "gate3_5StructuredReport": "outputs/store_release_gate3_5_v1_core_readiness/gate3_5_v1_core_readiness.json",
+    "inventory": "docs/store-release-mainline-inventory.md"
+  },
+  "redactionPolicy": {
+    "recordSecrets": false,
+    "recordEnvValues": false,
+    "recordRawProviderResponses": false,
+    "recordTranscriptBody": false,
+    "recordPrivateAudioPath": false,
+    "recordStoragePathsOrObjectKeys": false,
+    "recordProviderIdentifiers": false,
+    "recordBillingDetails": false
+  },
+  "v1ImplementationTargets": [
+    "Final Privacy Policy content",
+    "Final Terms content",
+    "Support page and support expectations",
+    "Account deletion request page and completion expectations",
+    "Settings / Account legal, support, and deletion links",
+    "Recording consent / notice",
+    "AI provider usage notice",
+    "Normal voice sample / consent recording notice",
+    "Normal model audio generation notice",
+    "Account deletion request / confirmation / status flow",
+    "Safe inventory, dry-run, cleanup, and disposable proof for v1 data",
+    "App Privacy / Google Data Safety source notes",
+    "Reviewer account and reviewer instructions"
+  ],
+  "screensAndFlows": [
+    {
+      "surface": "Settings / Account",
+      "requirement": "Expose account, legal, support, deletion request, deletion status, and safe proof status where appropriate."
+    },
+    {
+      "surface": "Privacy Policy",
+      "requirement": "Publish final v1 data handling, provider, retention, deletion, and contact terms."
+    },
+    {
+      "surface": "Terms",
+      "requirement": "Publish final user responsibility, acceptable use, generated content, provider processing, and support boundaries."
+    },
+    {
+      "surface": "Support",
+      "requirement": "Publish contact, response expectations, provider outage guidance, deletion help, and reviewer-safe instructions."
+    },
+    {
+      "surface": "Account deletion request page",
+      "requirement": "Explain login-required and cannot-login deletion request paths without private data."
+    },
+    {
+      "surface": "Record flow",
+      "requirement": "Show normal recording consent / notice before upload and evaluation."
+    },
+    {
+      "surface": "Evaluate / Review flow",
+      "requirement": "Explain AI provider processing and safe failure boundaries."
+    },
+    {
+      "surface": "Listen flow",
+      "requirement": "Explain normal model audio generation, cache reuse, app-owned replay, and provider processing."
+    },
+    {
+      "surface": "Voice setup",
+      "requirement": "Explain normal voice sample and consent recording handling without Brush-up claims."
+    },
+    {
+      "surface": "Store reviewer notes",
+      "requirement": "Provide reviewer account, core loop, privacy, deletion, support, and no-Brush-up v1 instructions."
+    }
+  ],
+  "consentClassification": [
+    {
+      "id": "normal_recording",
+      "requiredForV1": true,
+      "scope": "Practice recording upload, storage, transcription, pronunciation evaluation, review, replay, progress, and deletion coverage.",
+      "providerProcessors": ["OpenAI", "Azure", "Supabase", "Vercel"],
+      "brushUpUse": false
+    },
+    {
+      "id": "ai_provider_usage_notice",
+      "requiredForV1": true,
+      "scope": "OpenAI transcription, Script Studio generation, coaching-adjacent generation, Azure pronunciation evaluation, ElevenLabs normal model audio, Supabase, and Vercel.",
+      "providerProcessors": ["OpenAI", "Azure", "ElevenLabs", "Supabase", "Vercel"],
+      "brushUpUse": false
+    },
+    {
+      "id": "normal_voice_setup",
+      "requiredForV1": true,
+      "scope": "Voice sample, consent recording, default voice, server-side provider processing, normal model audio generation, app-owned replay, and provider cleanup where relevant.",
+      "providerProcessors": ["ElevenLabs", "Supabase", "Vercel"],
+      "brushUpUse": false
+    },
+    {
+      "id": "voice_sample_and_consent_recording",
+      "requiredForV1": true,
+      "scope": "App-owned upload to Supabase Storage, server-side use for normal voice setup, retention, and deletion expectations.",
+      "providerProcessors": ["ElevenLabs", "Supabase", "Vercel"],
+      "brushUpUse": false
+    },
+    {
+      "id": "brush_up_material_use",
+      "requiredForV1": false,
+      "scope": "Future selected-best-take-as-script-scoped-voice-material flow.",
+      "providerProcessors": ["ElevenLabs", "Supabase", "Vercel"],
+      "brushUpUse": true,
+      "movedTo": "v1.1"
+    },
+    {
+      "id": "brush_up_revoke",
+      "requiredForV1": false,
+      "scope": "Future stop-use, provider cleanup, generated audio deletion or hiding, and account deletion extension.",
+      "providerProcessors": ["ElevenLabs", "Supabase", "Vercel"],
+      "brushUpUse": true,
+      "movedTo": "v1.1"
+    }
+  ],
+  "accountDeletionScope": {
+    "cleanupOrder": [
+      "server_side_request_and_owned_data_refetch",
+      "provider_cleanup_for_v1_resources",
+      "app_owned_storage_cleanup",
+      "db_delete_or_anonymize",
+      "supabase_auth_deletion_last",
+      "safe_completion_status"
+    ],
+    "dataTargets": [
+      "Supabase Auth user",
+      "Profile / account rows",
+      "Scripts and script ownership",
+      "Practice recordings",
+      "Takes, transcripts, pronunciation scores, weak words, coach feedback, and review/progress data",
+      "Saved best-take pins",
+      "Saved model-audio pins",
+      "Normal generated model audio and script_audios rows",
+      "Voice samples",
+      "Consent recordings",
+      "Voice consent rows, voice rows, default voice state, and normal provider voice metadata",
+      "Quota / processing metadata as policy allows",
+      "Minimal anonymized deletion tracking data if disclosed and necessary for support"
+    ],
+    "storageBuckets": [
+      "recordings",
+      "script-audios",
+      "voice-samples",
+      "voice-consents"
+    ],
+    "providerCleanupV1": [
+      "Normal ElevenLabs voice resources if created by v1",
+      "Normal model audio provider-side resources where deletion or cleanup semantics apply"
+    ],
+    "excludedBrushUpTargets": [
+      "Brush-up script-scoped voice variants",
+      "Brush-up source best-take provider material",
+      "Brush-up generated candidates",
+      "Brush-up-specific saved pins",
+      "Brush-up-specific provider cleanup proof"
+    ]
+  },
+  "storeSubmissionInputs": [
+    "Privacy Policy URL",
+    "Terms URL if required by distribution plan",
+    "Support URL",
+    "Account deletion request URL",
+    "Reviewer account",
+    "Reviewer instructions",
+    "App Privacy answers",
+    "Google Data Safety answers",
+    "AI provider disclosure",
+    "Account deletion support and completion expectations",
+    "No Brush-up v1 Store metadata, screenshots, or reviewer notes"
+  ],
+  "riskClassification": {
+    "releaseBlockers": [
+      "Final Privacy Policy, Terms, Support, and account deletion copy for the v1 feature set",
+      "Public Privacy Policy URL, Support URL, and account deletion request URL",
+      "App Privacy / Google Data Safety answers matching implemented v1 behavior",
+      "Actual account/data deletion completion path for v1",
+      "Disposable deletion proof for v1 data and provider resources",
+      "Provider cleanup proof or safe non-applicability for normal v1 voice resources",
+      "Provider kill switch readiness for OpenAI, Azure, ElevenLabs normal voice, and Storage uploads unless explicitly accepted",
+      "Reviewer account and reviewer instructions"
+    ],
+    "implementationBlockers": [
+      "Unscoped DB schema or API contract changes",
+      "Deletion stage cannot re-fetch owned data server-side",
+      "Cleanup stage would expose forbidden data in UI, logs, docs, or proof",
+      "Supabase Auth deletion would run before app-owned cleanup is complete",
+      "Provider cleanup requirement lacks a safe service boundary for v1"
+    ],
+    "humanConfirmationRequired": [
+      "Final support contact, support URL, privacy URL, and deletion URL",
+      "Legal or release-owner approval of Privacy Policy and Terms",
+      "Store reviewer account and reviewer notes",
+      "App Privacy / Google Data Safety answers",
+      "Provider kill switch operation proof",
+      "Provider cleanup / deletion / retention confirmation for normal voice resources",
+      "Disposable deletion proof result",
+      "Azure alert or accepted manual monitoring owner"
+    ],
+    "gate6ReleaseQa": [
+      "Mobile browser / future WebView recording and upload",
+      "Protected replay for normal generated model audio and saved recordings",
+      "Account deletion request and status flow",
+      "Provider failure recovery and safe error copy",
+      "Support links, legal links, and deletion request page smoke",
+      "Monitoring and logs redaction check",
+      "Reviewer account smoke"
+    ],
+    "v1_1Defer": [
+      "Brush-up UI and entry points",
+      "Selected best take used as script-scoped voice material",
+      "Brush-up explicit consent and revoke UI",
+      "Brush-up script-scoped voice variants",
+      "Brush-up generated audio candidates and acceptance",
+      "Brush-up-specific provider cleanup, retention, deletion, cost, latency, and retry proof",
+      "Brush-up-specific account deletion proof",
+      "Brush-up-specific App Privacy / Data Safety updates"
+    ]
+  },
+  "recommendedImplementationOrder": [
+    "Finalize docs and copy contract",
+    "Finish Settings / Account navigation and status copy",
+    "Add or revise consent and notice UI copy",
+    "Review account deletion request / confirmation / status behavior",
+    "Prepare deletion dry-run and proof checklist for v1 data",
+    "Run disposable deletion proof",
+    "Run Gate 6 release QA"
+  ],
+  "notes": [
+    "No code, DB, provider, env, infra, dashboard, Capacitor, Store, or Brush-up changes were made.",
+    "No secrets, env values, raw provider responses, transcript body, private audio paths, storage object keys, provider identifiers, or billing details are recorded."
+  ]
+}
