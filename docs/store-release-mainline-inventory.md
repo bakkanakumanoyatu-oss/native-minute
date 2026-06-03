@@ -102,6 +102,8 @@ Gate 4k provider kill switch smoke evidence is captured in `docs/store-release-g
 
 Gate 4l release blocker / remaining human action summary is captured in `docs/store-release-gate4l-release-blocker-human-action-summary.md` and `outputs/store_release_gate4l_release_blocker_human_action_summary/gate4l_release_blocker_human_action_summary.json`. It classifies remaining v1 blockers into human-required, Codex-can-proceed, disposable-account, dashboard/env, legal/support approval, future destructive approval, Gate 6 QA, and v1.1 defer buckets. Gate 4h remains blocked on `needs_human_disposable_account`, while Brush-up stays outside v1 release scope.
 
+Gate 5a release QA smoke execution plan is captured in `docs/store-release-gate5a-release-qa-smoke-execution-plan.md` and `outputs/store_release_gate5a_release_qa_smoke_execution_plan/gate5a_release_qa_smoke_execution_plan.json`. It defines the v1 QA scope, environment matrix, status values, Gate 4h dependencies, Gate 6 handoff items, execution order, and safe evidence package shape. It is planning only: no QA run, disposable account proof rerun, provider call, env/dashboard operation, deletion, cleanup, Capacitor, or Store submission occurred.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -196,6 +198,12 @@ Do not start Capacitor work before Gate 1.5 and the Store-facing privacy/deletio
 ### Gate 5: Store Assets / Metadata / Reviewer Account
 
 Goal: prepare screenshots, icons, descriptions, support URL, privacy policy URL, review account, demo notes, and store metadata.
+
+### Gate 5a: Release QA Smoke Execution Plan
+
+Goal: plan v1 release QA smoke across local, production Web, mobile browser, reviewer account, disposable account, provider disabled env, and provider normal env contexts before Store assets and native packaging move forward.
+
+Status: plan ready. Gate 5a does not execute QA. Gate 4h disposable account dry-run proof remains separate and blocked on human disposable account preparation. Gate 6 receives mobile/WebView audio risk, Azure final refresh, provider cleanup proof, App Privacy / Data Safety consistency, reviewer flow, Store URLs, production logs redaction, kill switch operation proof, protected replay proof, and final legal/support approval.
 
 ### Gate 6: Release QA
 

@@ -1,0 +1,205 @@
+{
+  "gate": "5a",
+  "title": "Release QA smoke execution plan",
+  "status": "plan_ready",
+  "created_at": "2026-06-03T11:54:19Z",
+  "source_commit": "5aa54b5",
+  "scope": {
+    "type": "docs_output_only",
+    "qa_executed": false,
+    "gate_4h_rerun_executed": false,
+    "actual_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_deletion_executed": false,
+    "db_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "db_schema_changed": false,
+    "api_contract_changed": false,
+    "env_changed": false,
+    "dashboard_changed": false,
+    "provider_api_called": false,
+    "brush_up_implemented": false,
+    "capacitor_started": false,
+    "store_submission_started": false
+  },
+  "qa_smoke_scope": [
+    "auth_login_logout",
+    "script_creation",
+    "listen",
+    "record",
+    "evaluate",
+    "review",
+    "progress",
+    "setup_voice",
+    "settings",
+    "privacy_terms_support_account_deletion",
+    "provider_kill_switch",
+    "logs_redaction",
+    "mobile_browser",
+    "production_url",
+    "reviewer_account_flow"
+  ],
+  "environments": [
+    {
+      "name": "local",
+      "purpose": "local route and main loop smoke planning",
+      "gate_5a_action": "plan_only"
+    },
+    {
+      "name": "production_web",
+      "purpose": "production URL and Web core smoke planning",
+      "gate_5a_action": "plan_only"
+    },
+    {
+      "name": "mobile_browser",
+      "purpose": "mobile audio and legal/support route smoke planning",
+      "gate_5a_action": "plan_only"
+    },
+    {
+      "name": "reviewer_account",
+      "purpose": "Store reviewer flow planning",
+      "gate_5a_action": "plan_only"
+    },
+    {
+      "name": "disposable_account",
+      "purpose": "Gate 4h dry-run proof planning",
+      "gate_5a_action": "plan_only",
+      "blocked_by": "needs_human_disposable_account"
+    },
+    {
+      "name": "provider_disabled_env_smoke",
+      "purpose": "kill switch operation proof planning",
+      "gate_5a_action": "plan_only"
+    },
+    {
+      "name": "provider_normal_env_smoke",
+      "purpose": "normal provider path smoke planning",
+      "gate_5a_action": "plan_only"
+    }
+  ],
+  "status_values": [
+    "pass",
+    "warn",
+    "blocked",
+    "not_applicable",
+    "human_required"
+  ],
+  "gate_4h_dependencies": [
+    "disposable_account_safe_alias",
+    "not_real_or_personal_account_confirmation",
+    "environment_label",
+    "authenticated_disposable_session",
+    "minimal_v1_data_creation",
+    "account_deletion_request_creation",
+    "typed_confirmation",
+    "inventory_dry_run_safe_summary",
+    "job_stage_dry_run_safe_summary",
+    "provider_cleanup_dry_run_safe_summary",
+    "storage_cleanup_dry_run_safe_summary",
+    "db_cleanup_dry_run_safe_summary",
+    "supabase_auth_deletion_dry_run_safe_summary",
+    "category_counts_status_reason_codes",
+    "redaction_confirmation",
+    "stop_point_before_actual_deletion"
+  ],
+  "gate_6_handoff": [
+    "mobile_webview_browser_audio_risk",
+    "azure_pronunciation_final_refresh",
+    "normal_v1_provider_cleanup_proof_or_safe_non_applicability",
+    "app_privacy_google_data_safety_consistency",
+    "reviewer_account_instructions_smoke",
+    "final_store_urls",
+    "production_logs_redaction",
+    "kill_switch_operation_proof",
+    "protected_replay_proof_normal_v1_audio",
+    "support_legal_deletion_copy_final_approval",
+    "gate_4h_disposable_account_dry_run_proof_rerun"
+  ],
+  "execution_order": [
+    "local_smoke",
+    "production_web_smoke",
+    "provider_kill_switch_smoke",
+    "privacy_support_deletion_smoke",
+    "mobile_browser_smoke",
+    "reviewer_account_smoke",
+    "disposable_account_deletion_dry_run_proof",
+    "final_release_qa_signoff"
+  ],
+  "evidence_package_shape": {
+    "run_id": "safe_alias",
+    "run_date": "timestamp_or_date",
+    "environment": [
+      "local",
+      "production_web",
+      "mobile_browser",
+      "reviewer_account",
+      "disposable_account",
+      "provider_disabled_env_smoke",
+      "provider_normal_env_smoke"
+    ],
+    "account_type": [
+      "owner",
+      "reviewer",
+      "disposable",
+      "none",
+      "unknown"
+    ],
+    "route_or_feature": "safe_route_or_feature_label",
+    "result": [
+      "pass",
+      "warn",
+      "blocked",
+      "not_applicable",
+      "human_required"
+    ],
+    "blocker": "safe_reason_code_only",
+    "warning": "safe_warning_label_only",
+    "redaction_status": [
+      "pass",
+      "warn",
+      "fail"
+    ],
+    "no_secret": true,
+    "no_raw_data": true,
+    "screenshot_allowed": "only_if_no_private_data",
+    "screenshot_notes": [
+      "not_captured",
+      "safe_capture_only"
+    ],
+    "next_action": "safe_next_action_label"
+  },
+  "forbidden_evidence": [
+    "secret_values",
+    "env_values",
+    "raw_provider_responses",
+    "billing_details",
+    "transcript_bodies",
+    "script_bodies",
+    "raw_audio",
+    "private_audio_paths",
+    "storage_object_keys_or_full_paths",
+    "signed_urls",
+    "provider_voice_identifiers",
+    "full_email_addresses",
+    "full_auth_user_ids"
+  ],
+  "redaction_policy": {
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "script_body_recorded": false,
+    "private_audio_path_recorded": false,
+    "storage_object_key_recorded": false,
+    "signed_url_recorded": false,
+    "provider_voice_id_recorded": false,
+    "email_recorded": false,
+    "auth_user_id_recorded": false
+  },
+  "next_work": [
+    "gate_5b_store_metadata_draft_without_brush_up",
+    "reviewer_instructions_draft",
+    "app_privacy_google_data_safety_draft_mapping",
+    "gate_4h_rerun_after_human_disposable_account_preparation"
+  ]
+}
