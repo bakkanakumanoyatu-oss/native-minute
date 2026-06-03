@@ -104,6 +104,8 @@ Gate 4l release blocker / remaining human action summary is captured in `docs/st
 
 Gate 5a release QA smoke execution plan is captured in `docs/store-release-gate5a-release-qa-smoke-execution-plan.md` and `outputs/store_release_gate5a_release_qa_smoke_execution_plan/gate5a_release_qa_smoke_execution_plan.json`. It defines the v1 QA scope, environment matrix, status values, Gate 4h dependencies, Gate 6 handoff items, execution order, and safe evidence package shape. It is planning only: no QA run, disposable account proof rerun, provider call, env/dashboard operation, deletion, cleanup, Capacitor, or Store submission occurred.
 
+Gate 5b Store metadata / reviewer instructions / App Privacy and Google Data Safety draft mapping is captured in `docs/store-release-gate5b-store-metadata-reviewer-privacy-draft.md` and `outputs/store_release_gate5b_store_metadata_reviewer_privacy_draft/gate5b_store_metadata_reviewer_privacy_draft.json`. It drafts v1 Store metadata, reviewer flow, data use purposes, data safety mapping, human-required final answers, screenshot candidates, age/category considerations, and claims to avoid. It is human-review-required draft only; no Store Console operation, final privacy/data safety submission, screenshot/icon creation, Capacitor work, deletion, cleanup, provider call, env/dashboard operation, or Brush-up occurred.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -204,6 +206,12 @@ Goal: prepare screenshots, icons, descriptions, support URL, privacy policy URL,
 Goal: plan v1 release QA smoke across local, production Web, mobile browser, reviewer account, disposable account, provider disabled env, and provider normal env contexts before Store assets and native packaging move forward.
 
 Status: plan ready. Gate 5a does not execute QA. Gate 4h disposable account dry-run proof remains separate and blocked on human disposable account preparation. Gate 6 receives mobile/WebView audio risk, Azure final refresh, provider cleanup proof, App Privacy / Data Safety consistency, reviewer flow, Store URLs, production logs redaction, kill switch operation proof, protected replay proof, and final legal/support approval.
+
+### Gate 5b: Store Metadata / Reviewer Instructions / Privacy Draft Mapping
+
+Goal: prepare human-review-required drafts for Store metadata, reviewer instructions, App Privacy mapping, and Google Data Safety mapping that match the v1 feature set without Brush-up.
+
+Status: draft ready. Final support / privacy / deletion URLs, reviewer account, App Privacy / Data Safety console answers, screenshots, countries/regions, category, keywords, and age rating remain human-required. Do not operate App Store Connect or Google Play Console until the draft is reviewed and release blockers are resolved.
 
 ### Gate 6: Release QA
 

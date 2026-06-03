@@ -1,0 +1,239 @@
+{
+  "gate": "5b",
+  "title": "Store metadata / reviewer instructions / privacy draft mapping",
+  "status": "draft_ready_human_review_required",
+  "created_at": "2026-06-03T12:02:15Z",
+  "source_commit": "f3be5e3",
+  "scope": {
+    "type": "docs_output_only",
+    "app_store_connect_operated": false,
+    "google_play_console_operated": false,
+    "app_privacy_submitted": false,
+    "google_data_safety_submitted": false,
+    "screenshots_created": false,
+    "app_icon_created": false,
+    "capacitor_started": false,
+    "qa_executed": false,
+    "gate_4h_rerun_executed": false,
+    "actual_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_deletion_executed": false,
+    "db_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "env_changed": false,
+    "dashboard_changed": false,
+    "provider_api_called": false,
+    "brush_up_implemented": false
+  },
+  "store_metadata_draft": {
+    "app_name_candidates": [
+      "Native Minute",
+      "Native Minute English",
+      "Native Minute: 1-Minute English"
+    ],
+    "subtitle_short_description_candidates": [
+      "Practice English speaking in one minute.",
+      "Listen, record, review, and improve.",
+      "A tiny English speaking practice loop."
+    ],
+    "category_candidates": [
+      "Education",
+      "Productivity"
+    ],
+    "recommended_category_draft": "Education",
+    "keywords_draft": [
+      "English speaking",
+      "pronunciation",
+      "listening",
+      "recording",
+      "shadowing",
+      "speaking practice",
+      "AI feedback",
+      "language learning",
+      "one minute practice",
+      "voice practice"
+    ],
+    "age_rating_considerations": [
+      "user_created_text",
+      "user_audio_recordings",
+      "ai_learning_feedback",
+      "no_known_adult_medical_gambling_location_claim",
+      "final_age_rating_answers_human_required"
+    ],
+    "required_urls": {
+      "support_url": "human_required",
+      "privacy_policy_url": "human_required",
+      "account_deletion_request_url": "human_required",
+      "terms_url": "human_required_if_used"
+    },
+    "screenshot_candidates": [
+      "home_practice_entry",
+      "scripts_practice_library",
+      "scripts_new_script_creation",
+      "listen_normal_model_audio",
+      "record_practice_take",
+      "review_feedback_summary",
+      "progress_latest_best",
+      "settings_legal_support_deletion"
+    ],
+    "avoid_claims": [
+      "native_app_before_native_packaging",
+      "guaranteed_improvement",
+      "perfect_pronunciation_scoring",
+      "official_ability_assessment",
+      "medical_or_institution_level_claims",
+      "native_speaker_replacement",
+      "brush_up_available_in_v1",
+      "account_deletion_complete_before_proof"
+    ]
+  },
+  "reviewer_instructions_draft": {
+    "reviewer_account_required": true,
+    "steps": [
+      "open_production_or_review_build_url",
+      "sign_in_with_provided_reviewer_account",
+      "open_scripts",
+      "create_or_use_review_script",
+      "open_listen_and_play_or_generate_normal_model_audio",
+      "open_record_and_create_short_practice_recording",
+      "run_evaluation",
+      "open_review",
+      "open_progress",
+      "optionally_open_setup_voice_if_instructions_include_voice_setup",
+      "open_settings",
+      "confirm_privacy_terms_support_account_deletion_request_are_reachable",
+      "do_not_expect_brush_up_in_v1"
+    ],
+    "provider_failure_note": "Provider-disabled proof is operator-only; reviewer should see safe recovery copy if a provider is unavailable.",
+    "account_deletion_note": "v1 surfaces request / confirmation / dry-run / proof-first paths; do not claim actual deletion completion until proof is complete."
+  },
+  "privacy_data_safety_mapping": [
+    {
+      "data_area": "account_data",
+      "v1_status": "yes",
+      "purposes": ["account_management", "support", "deletion_request"],
+      "storage_or_provider_path": ["supabase_auth", "supabase_db"],
+      "human_required": ["final_identifiers", "retention_wording"]
+    },
+    {
+      "data_area": "scripts",
+      "v1_status": "yes",
+      "purposes": ["app_functionality", "practice_content", "review_continuity"],
+      "storage_or_provider_path": ["supabase_db", "openai_optional_script_studio_generation"],
+      "redaction": "do_not_record_script_bodies_in_evidence"
+    },
+    {
+      "data_area": "recordings",
+      "v1_status": "yes",
+      "purposes": ["practice_evaluation", "review", "replay", "progress"],
+      "storage_or_provider_path": ["supabase_storage_recordings", "server_side_evaluation_flow"]
+    },
+    {
+      "data_area": "transcripts",
+      "v1_status": "yes",
+      "purposes": ["review", "feedback", "progress"],
+      "storage_or_provider_path": ["db_evaluation_result", "openai_transcription_possible"]
+    },
+    {
+      "data_area": "pronunciation_scores",
+      "v1_status": "yes",
+      "purposes": ["ai_evaluation", "learning_feedback"],
+      "storage_or_provider_path": ["db_review_progress", "azure_pronunciation_evaluation_possible"],
+      "claim_boundary": "learning_aid_not_official_assessment"
+    },
+    {
+      "data_area": "weak_words",
+      "v1_status": "yes",
+      "purposes": ["review", "practice_guidance"],
+      "storage_or_provider_path": ["db_review_progress"]
+    },
+    {
+      "data_area": "coaching_feedback",
+      "v1_status": "yes",
+      "purposes": ["learning_support"],
+      "storage_or_provider_path": ["db_review_progress", "openai_or_internal_provider_path_as_applicable"],
+      "claim_boundary": "learning_aid_not_guarantee"
+    },
+    {
+      "data_area": "normal_model_audio",
+      "v1_status": "yes_possible",
+      "purposes": ["listen_practice", "app_owned_replay"],
+      "storage_or_provider_path": ["elevenlabs_normal_voice_path", "supabase_storage_script_audios", "protected_replay"]
+    },
+    {
+      "data_area": "voice_samples_consent_recordings",
+      "v1_status": "possible_when_voice_setup_used",
+      "purposes": ["normal_voice_setup", "normal_model_audio", "consent_proof"],
+      "storage_or_provider_path": ["supabase_storage_voice_samples", "supabase_storage_voice_consents", "server_side_provider_boundary"],
+      "claim_boundary": "not_brush_up_or_best_take_material_in_v1"
+    },
+    {
+      "data_area": "support_metadata",
+      "v1_status": "possible",
+      "purposes": ["user_support", "deletion_help"],
+      "storage_or_provider_path": ["support_surface", "account_deletion_request_path"],
+      "human_required": ["final_support_workflow"]
+    },
+    {
+      "data_area": "account_deletion_request",
+      "v1_status": "yes",
+      "purposes": ["account_management", "deletion_support", "proof_first_flow"],
+      "storage_or_provider_path": ["supabase_db_request_status"],
+      "blocker": "actual_deletion_proof_pending"
+    },
+    {
+      "data_area": "brush_up_data",
+      "v1_status": "no_v1_1_deferred",
+      "purposes": ["not_applicable_in_v1"],
+      "storage_or_provider_path": ["not_applicable_in_v1"],
+      "claim_boundary": "exclude_from_v1_store_claims"
+    }
+  ],
+  "data_use_purposes": {
+    "app_functionality": "yes",
+    "ai_evaluation_learning_feedback": "yes",
+    "account_management": "yes",
+    "user_support": "yes_possible",
+    "storage_replay": "yes",
+    "analytics": "human_required",
+    "advertising": "no_known_v1_claim",
+    "tracking_across_apps_sites": "no_known_v1_claim_human_final_required"
+  },
+  "human_required": [
+    "final_legal_approval",
+    "final_support_email_url_owner",
+    "final_privacy_policy_url",
+    "final_account_deletion_request_url",
+    "final_terms_url_if_used",
+    "reviewer_account",
+    "reviewer_instructions_final",
+    "app_privacy_final_console_answers",
+    "google_data_safety_final_console_answers",
+    "screenshots_and_redaction_review",
+    "countries_regions",
+    "age_rating_answers",
+    "final_category_keywords",
+    "final_no_brush_up_v1_claim_confirmation",
+    "final_account_deletion_claim_matches_proof_status"
+  ],
+  "redaction_policy": {
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "script_body_recorded": false,
+    "private_audio_path_recorded": false,
+    "storage_object_key_recorded": false,
+    "signed_url_recorded": false,
+    "provider_voice_id_recorded": false,
+    "email_recorded": false,
+    "auth_user_id_recorded": false
+  },
+  "next_work": [
+    "human_review_gate_5b_drafts",
+    "gate_5c_screenshot_candidate_plan",
+    "gate_5d_reviewer_instructions_evidence_template",
+    "gate_4h_rerun_after_disposable_account_preparation",
+    "gate_6_release_qa_after_human_required_items_close"
+  ]
+}
