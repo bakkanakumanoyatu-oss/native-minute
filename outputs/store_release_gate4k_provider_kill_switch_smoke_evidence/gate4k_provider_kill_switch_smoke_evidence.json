@@ -1,0 +1,141 @@
+{
+  "gate": "4k",
+  "name": "provider_kill_switch_smoke_evidence",
+  "status": "PASS_local_non_provider_call",
+  "created_at": "2026-06-03T10:58:39Z",
+  "commit_ref": "338391d",
+  "smoke_method": {
+    "command": "npm run production:preflight",
+    "environment": "local_dummy_env",
+    "strict_production_guard": true,
+    "provider_api_call_executed": false,
+    "dashboard_changed": false,
+    "production_env_changed": false,
+    "secret_recorded": false
+  },
+  "surfaces": [
+    {
+      "provider": "OpenAI",
+      "surface": "transcription / Script Studio generation",
+      "env_name": "NATIVE_MINUTE_DISABLE_OPENAI",
+      "smoke_status": "pass",
+      "enabled_detected": true,
+      "provider_call_executed": false,
+      "expected_stop_point": "before_openai_provider_creation",
+      "user_facing_message_safe": true,
+      "unset_or_false_normal_path_ok": true,
+      "notes": "Local preflight detected the kill switch as enabled and did not call OpenAI."
+    },
+    {
+      "provider": "Azure",
+      "surface": "pronunciation evaluation",
+      "env_name": "NATIVE_MINUTE_DISABLE_AZURE",
+      "smoke_status": "pass",
+      "enabled_detected": true,
+      "provider_call_executed": false,
+      "expected_stop_point": "before_azure_evaluator_creation",
+      "user_facing_message_safe": true,
+      "unset_or_false_normal_path_ok": true,
+      "notes": "Local preflight detected the kill switch as enabled and did not call Azure."
+    },
+    {
+      "provider": "ElevenLabs",
+      "surface": "normal voice setup / model audio",
+      "env_name": "NATIVE_MINUTE_DISABLE_ELEVENLABS",
+      "smoke_status": "pass",
+      "enabled_detected": true,
+      "provider_call_executed": false,
+      "expected_stop_point": "before_elevenlabs_voice_provider_creation",
+      "user_facing_message_safe": true,
+      "unset_or_false_normal_path_ok": true,
+      "notes": "Local preflight detected the kill switch as enabled and did not call ElevenLabs."
+    },
+    {
+      "provider": "Supabase",
+      "surface": "Storage uploads",
+      "env_name": "NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS",
+      "smoke_status": "pass",
+      "enabled_detected": true,
+      "provider_call_executed": false,
+      "expected_stop_point": "before_recording_voice_sample_or_consent_recording_upload",
+      "user_facing_message_safe": true,
+      "unset_or_false_normal_path_ok": true,
+      "notes": "Local preflight detected the canonical Storage upload kill switch as enabled."
+    },
+    {
+      "provider": "Supabase",
+      "surface": "Storage uploads",
+      "env_name": "NATIVE_MINUTE_DISABLE_STORAGE_UPLOAD",
+      "canonical_env_name": "NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS",
+      "smoke_status": "pass",
+      "enabled_detected": true,
+      "provider_call_executed": false,
+      "expected_stop_point": "before_recording_voice_sample_or_consent_recording_upload",
+      "user_facing_message_safe": true,
+      "unset_or_false_normal_path_ok": true,
+      "notes": "Local preflight detected the alias as the same Storage upload kill switch surface."
+    }
+  ],
+  "baseline_results": [
+    {
+      "case": "all_kill_switches_unset",
+      "smoke_status": "pass",
+      "all_surfaces_reported_off": true,
+      "provider_call_executed": false
+    },
+    {
+      "case": "all_kill_switches_false",
+      "smoke_status": "pass",
+      "all_surfaces_reported_off": true,
+      "provider_call_executed": false
+    }
+  ],
+  "storage_upload_alias_result": {
+    "canonical_env_name": "NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS",
+    "alias_env_name": "NATIVE_MINUTE_DISABLE_STORAGE_UPLOAD",
+    "same_surface": true,
+    "canonical_only_disables_surface": true,
+    "alias_only_disables_surface": true
+  },
+  "redaction_check": {
+    "status": "PASS",
+    "records_secret": false,
+    "records_env_value": false,
+    "records_raw_provider_response": false,
+    "records_transcript_body": false,
+    "records_script_body": false,
+    "records_raw_audio": false,
+    "records_private_audio_path": false,
+    "records_storage_object_full_path": false,
+    "records_storage_object_key": false,
+    "records_signed_url": false,
+    "records_provider_voice_id": false,
+    "records_email": false,
+    "records_auth_user_id": false
+  },
+  "not_changed": {
+    "vercel_env_changed": false,
+    "provider_dashboard_operated": false,
+    "provider_api_called": false,
+    "actual_account_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "database_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "db_schema_or_migration_changed": false,
+    "api_contract_breaking_change": false,
+    "brush_up_implemented": false,
+    "capacitor_or_store_submission_started": false,
+    "disposable_account_dry_run_rerun": false
+  },
+  "human_required_remaining": [
+    "vercel_env_presence_only_confirmation",
+    "production_like_or_approved_production_safe_operation_proof",
+    "production_logs_redaction_confirmation_if_drill_runs",
+    "gate4h_disposable_account_preparation"
+  ],
+  "next_recommended_actions": [
+    "record_human_operator_kill_switch_operation_proof_without_values",
+    "rerun_gate4h_after_human_prepares_disposable_account"
+  ]
+}

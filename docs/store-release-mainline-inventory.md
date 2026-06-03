@@ -98,6 +98,8 @@ Gate 4i privacy / support / deletion release QA smoke checklist is captured in `
 
 Gate 4j provider kill switch readiness is captured in `docs/store-release-gate4j-provider-kill-switch-readiness.md` and `outputs/store_release_gate4j_provider_kill_switch_readiness/gate4j_provider_kill_switch_readiness.json`. OpenAI, Azure, and ElevenLabs provider call guards were repo-confirmed. Storage upload kill switch readiness now accepts both the existing canonical `NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS` and the alternate `NATIVE_MINUTE_DISABLE_STORAGE_UPLOAD` alias, without changing Vercel env or running provider/dashboard/destructive operations.
 
+Gate 4k provider kill switch smoke evidence is captured in `docs/store-release-gate4k-provider-kill-switch-smoke-evidence.md` and `outputs/store_release_gate4k_provider_kill_switch_smoke_evidence/gate4k_provider_kill_switch_smoke_evidence.json`. Local dummy-env `production:preflight` smoke confirms OpenAI, Azure, ElevenLabs, Storage upload canonical, and Storage upload alias kill switches are detected without provider API calls. Baseline unset / false cases remain off. Vercel env, dashboards, provider APIs, deletion, DB, Storage cleanup, provider cleanup, Brush-up, and Capacitor were not touched.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -170,6 +172,12 @@ Status: checklist ready. Gate 4i is docs/output only. It does not rerun Gate 4h,
 Goal: prove repo-side kill switch readiness for OpenAI, Azure, ElevenLabs, and Storage uploads before Store release QA, without operating dashboards or changing production env.
 
 Status: implemented non-destructively. OpenAI, Azure, and ElevenLabs already stop at provider factory / service boundaries before provider calls. Storage uploads now support both `NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS` and `NATIVE_MINUTE_DISABLE_STORAGE_UPLOAD` as the same upload pause. Human env presence and operation proof are still required before Store PASS.
+
+### Gate 4k: Provider Kill Switch Smoke Evidence
+
+Goal: capture local, non-provider-call smoke evidence that each v1 kill switch is detected and that unset / false values do not pause the normal path.
+
+Status: local smoke PASS. Evidence used `npm run production:preflight` with dummy env only. It confirms OpenAI, Azure, ElevenLabs, Storage upload canonical, and Storage upload alias detection, plus unset / false baseline. Human production-like or approved production-safe operation proof remains required before Store PASS.
 
 ### Gate 4: Capacitor iOS / Android
 
