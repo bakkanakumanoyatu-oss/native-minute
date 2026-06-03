@@ -1,0 +1,175 @@
+{
+  "gate": "4l",
+  "title": "Release blocker / remaining human action summary",
+  "status": "summary_ready",
+  "created_at": "2026-06-03T11:28:33Z",
+  "source_commit": "b28e665",
+  "scope": {
+    "type": "docs_output_only",
+    "code_changed": false,
+    "db_schema_changed": false,
+    "api_contract_changed": false,
+    "provider_api_called": false,
+    "dashboard_changed": false,
+    "production_env_changed": false,
+    "actual_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_deletion_executed": false,
+    "db_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "brush_up_implemented": false,
+    "capacitor_started": false,
+    "store_submission_started": false
+  },
+  "current_position": {
+    "gate_3": "WARN",
+    "gate_3_warn_followup_queue": "recorded",
+    "brush_up_v1_decision": "deferred_to_v1_1",
+    "gate_3_5": "v1_core_scope_locked_without_brush_up",
+    "gate_4a_to_4g": "completed",
+    "gate_4h": "blocked_needs_human_disposable_account",
+    "gate_4i": "checklist_ready",
+    "gate_4j": "implemented_non_destructive",
+    "gate_4k": "PASS_local_non_provider_call"
+  },
+  "release_blockers": [
+    {
+      "item": "disposable_account_dry_run_proof",
+      "classification": ["needs_disposable_account", "human_required"],
+      "status": "blocked",
+      "next_action": "human_prepare_disposable_account_then_codex_rerun_gate_4h"
+    },
+    {
+      "item": "actual_account_data_deletion_completion_path",
+      "classification": ["needs_future_actual_deletion_approval"],
+      "status": "not_executed",
+      "next_action": "do_not_start_until_explicit_destructive_gate"
+    },
+    {
+      "item": "provider_cleanup_proof_normal_v1_voice_resources",
+      "classification": ["human_required", "needs_future_actual_deletion_approval"],
+      "status": "pending",
+      "next_action": "human_confirm_cleanup_semantics_then_later_guarded_proof"
+    },
+    {
+      "item": "final_privacy_terms_support_deletion_copy",
+      "classification": ["needs_legal_support_final_approval"],
+      "status": "draft_release_candidate",
+      "next_action": "human_final_approval"
+    },
+    {
+      "item": "app_privacy_google_data_safety",
+      "classification": ["human_required"],
+      "status": "not_final",
+      "next_action": "codex_can_draft_mapping_human_finalizes"
+    },
+    {
+      "item": "reviewer_account_reviewer_instructions",
+      "classification": ["human_required"],
+      "status": "not_final",
+      "next_action": "human_prepare_account_codex_can_draft_instructions"
+    },
+    {
+      "item": "vercel_env_kill_switch_presence_operation_proof",
+      "classification": ["needs_dashboard_env_action", "human_required"],
+      "status": "local_smoke_pass_production_proof_pending",
+      "next_action": "human_presence_only_confirmation_and_safe_operation_proof"
+    },
+    {
+      "item": "azure_alert_monitoring_owner",
+      "classification": ["needs_dashboard_env_action", "human_required"],
+      "status": "warning",
+      "next_action": "human_configure_alert_or_accept_manual_owner"
+    },
+    {
+      "item": "gate_4i_release_qa_smoke",
+      "classification": ["gate_6_release_qa", "codex_can_proceed"],
+      "status": "checklist_ready",
+      "next_action": "run_manual_or_scoped_qa_without_private_data"
+    }
+  ],
+  "human_required": [
+    "disposable_test_account_safe_alias",
+    "disposable_account_environment_label",
+    "authenticated_disposable_session",
+    "minimal_v1_test_data",
+    "disposable_account_deletion_request_and_typed_confirmation",
+    "final_support_url_inbox_operator_owner",
+    "final_legal_owner_if_required",
+    "final_privacy_terms_support_deletion_urls",
+    "app_privacy_answers",
+    "google_data_safety_answers",
+    "reviewer_account_and_instructions",
+    "vercel_env_presence_only_confirmation_for_kill_switches",
+    "approved_kill_switch_operation_proof",
+    "azure_alert_or_manual_monitoring_owner",
+    "normal_v1_provider_cleanup_semantics",
+    "final_no_overclaim_confirmation"
+  ],
+  "codex_can_proceed": [
+    "gate_4h_rerun_after_disposable_account_prerequisites",
+    "gate_5_release_qa_smoke_execution_plan",
+    "store_metadata_draft_without_brush_up",
+    "reviewer_instructions_draft",
+    "app_privacy_google_data_safety_draft_mapping",
+    "privacy_support_deletion_qa_evidence_template",
+    "kill_switch_proof_runbook_docs_without_dashboard_operation",
+    "docs_alignment_after_human_confirmations"
+  ],
+  "do_not_proceed_yet": [
+    "actual_account_deletion",
+    "supabase_auth_user_deletion",
+    "supabase_storage_object_deletion",
+    "db_destructive_cleanup_or_anonymization_execution",
+    "provider_cleanup_execution",
+    "destructive_operator_path_exposure",
+    "db_schema_migration_changes",
+    "provider_api_calls_for_proof",
+    "vercel_env_changes_or_dashboard_operations_by_codex",
+    "brush_up_implementation",
+    "capacitor_introduction",
+    "app_store_google_play_submission"
+  ],
+  "v1_scope": [
+    "login_session_continuity",
+    "home_scripts_new_listen_record_evaluate_review_progress",
+    "openai_transcription_script_studio_generation",
+    "azure_pronunciation_evaluation",
+    "elevenlabs_normal_voice_setup_model_audio",
+    "supabase_auth_db_private_storage_protected_replay",
+    "settings_privacy_terms_support_account_deletion_request_dry_run",
+    "consent_provider_notices",
+    "provider_kill_switch_readiness_local_smoke",
+    "release_qa_store_metadata_reviewer_instructions_data_safety_mapping"
+  ],
+  "v1_1_deferred_scope": [
+    "brush_up_ui",
+    "selected_best_take_provider_submission",
+    "brush_up_consent_revoke",
+    "script_scoped_voice_variants",
+    "brush_up_generated_audio_candidates",
+    "brush_up_provider_cleanup_retention_deletion_proof",
+    "brush_up_account_deletion_proof",
+    "brush_up_store_claims"
+  ],
+  "redaction_policy": {
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "script_body_recorded": false,
+    "private_audio_path_recorded": false,
+    "storage_object_key_recorded": false,
+    "provider_voice_id_recorded": false,
+    "email_recorded": false,
+    "auth_user_id_recorded": false
+  },
+  "next_work_order": [
+    "human_prepares_disposable_account_prerequisites",
+    "codex_reruns_gate_4h_dry_run_proof_capture",
+    "codex_prepares_gate_5_release_qa_smoke_execution_plan",
+    "codex_drafts_store_metadata_reviewer_instructions_and_data_safety_mapping",
+    "human_final_legal_support_url_and_provider_dashboard_env_checks",
+    "later_scope_actual_deletion_under_explicit_destructive_boundary"
+  ]
+}

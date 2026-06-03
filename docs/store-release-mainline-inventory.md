@@ -100,6 +100,8 @@ Gate 4j provider kill switch readiness is captured in `docs/store-release-gate4j
 
 Gate 4k provider kill switch smoke evidence is captured in `docs/store-release-gate4k-provider-kill-switch-smoke-evidence.md` and `outputs/store_release_gate4k_provider_kill_switch_smoke_evidence/gate4k_provider_kill_switch_smoke_evidence.json`. Local dummy-env `production:preflight` smoke confirms OpenAI, Azure, ElevenLabs, Storage upload canonical, and Storage upload alias kill switches are detected without provider API calls. Baseline unset / false cases remain off. Vercel env, dashboards, provider APIs, deletion, DB, Storage cleanup, provider cleanup, Brush-up, and Capacitor were not touched.
 
+Gate 4l release blocker / remaining human action summary is captured in `docs/store-release-gate4l-release-blocker-human-action-summary.md` and `outputs/store_release_gate4l_release_blocker_human_action_summary/gate4l_release_blocker_human_action_summary.json`. It classifies remaining v1 blockers into human-required, Codex-can-proceed, disposable-account, dashboard/env, legal/support approval, future destructive approval, Gate 6 QA, and v1.1 defer buckets. Gate 4h remains blocked on `needs_human_disposable_account`, while Brush-up stays outside v1 release scope.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -178,6 +180,12 @@ Status: implemented non-destructively. OpenAI, Azure, and ElevenLabs already sto
 Goal: capture local, non-provider-call smoke evidence that each v1 kill switch is detected and that unset / false values do not pause the normal path.
 
 Status: local smoke PASS. Evidence used `npm run production:preflight` with dummy env only. It confirms OpenAI, Azure, ElevenLabs, Storage upload canonical, and Storage upload alias detection, plus unset / false baseline. Human production-like or approved production-safe operation proof remains required before Store PASS.
+
+### Gate 4l: Release Blocker / Human Action Summary
+
+Goal: summarize remaining release blockers, human actions, Codex-safe next work, no-go work, and the v1 / v1.1 boundary before moving into release QA planning or disposable account proof re-run.
+
+Status: summary ready. Gate 4h still needs a human-prepared disposable account before dry-run proof capture can proceed. Codex can next draft release QA, Store metadata, reviewer instructions, and App Privacy / Google Data Safety mapping, but must not start actual deletion, provider cleanup, env/dashboard operations, Capacitor, Store submission, or Brush-up.
 
 ### Gate 4: Capacitor iOS / Android
 
