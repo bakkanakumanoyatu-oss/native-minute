@@ -84,6 +84,8 @@ Gate 4b v1 privacy / terms / support scaffold is captured in `docs/store-release
 
 Gate 4c v1 consent / provider notice UI is captured in `docs/store-release-gate4c-consent-provider-notice-ui.md` and `outputs/store_release_gate4c_consent_provider_notice_ui/gate4c_consent_provider_notice_ui.json`. Listen, Record, Review, and setup voice now include short release candidate draft notices for recording use, OpenAI transcription, Azure pronunciation evaluation, AI coaching / feedback, normal model audio, voice samples / consent recordings, app-owned Storage, server-side provider boundaries, and legal/support links. Brush-up remains v1.1 deferred and is not claimed as a v1 feature.
 
+Gate 4d account deletion request / dry-run proof scaffold is captured in `docs/store-release-gate4d-account-deletion-request-dry-run-proof.md` and `outputs/store_release_gate4d_account_deletion_request_dry_run_proof/gate4d_account_deletion_request_dry_run_proof.json`. Existing Settings, support account deletion page, account deletion panel, account API routes, and account deletion service boundaries now have a documented v1 request / confirmation / dry-run / proof-first shape. The UI names v1 dry-run categories and proof phases, while actual deletion, Auth deletion, Storage deletion, DB destructive cleanup, provider cleanup execution, schema/API/env/infra changes, and Brush-up remain out of scope.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -114,6 +116,12 @@ Status: implemented as small UI/copy scaffold. It does not claim final legal app
 Goal: add small, flow-local consent and provider notices to listen, record, review, and voice setup without turning legal copy into the main screen.
 
 Status: implemented as release candidate draft UI/copy. It explains the v1 provider/data boundaries and links to Privacy, Terms, Support, and account deletion request pages. It does not implement destructive deletion, provider cleanup, DB schema changes, API contract changes, provider calls, env/dashboard changes, or Brush-up.
+
+### Gate 4d: Account Deletion Request / Dry-Run Proof Scaffold
+
+Goal: make the existing account deletion request, confirmation, dry-run, and proof-first boundaries understandable before any destructive implementation or disposable proof run.
+
+Status: implemented as a non-destructive UI/copy/docs scaffold. It clarifies v1 dry-run categories, future deletion phases, redaction boundaries, and v1.1 Brush-up exclusions. It does not execute deletion or change DB schema, API contracts, providers, env, dashboards, infrastructure, Capacitor, or Store submission state.
 
 ### Gate 4: Capacitor iOS / Android
 

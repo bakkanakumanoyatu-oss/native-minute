@@ -1,0 +1,104 @@
+{
+  "gate": "Gate 4d",
+  "name": "account deletion request / deletion dry-run proof scaffold",
+  "status": "implemented",
+  "scope": "request_dry_run_proof_first_only",
+  "existing_implementation_inventory": {
+    "settings": "/settings",
+    "public_account_deletion_page": "/support/account-deletion",
+    "component": "components/account/account-deletion-panel.tsx",
+    "api_routes": [
+      "/api/account/deletion-request",
+      "/api/account/deletion-confirm",
+      "/api/account/deletion-status",
+      "/api/account/deletion-inventory",
+      "/api/account/deletion-job-dry-run",
+      "/api/account/deletion-provider-dry-run",
+      "/api/account/deletion-storage-dry-run",
+      "/api/account/deletion-database-dry-run",
+      "/api/account/deletion-auth-dry-run"
+    ],
+    "service_boundary": "services/account-deletion"
+  },
+  "current_flow": [
+    "User reaches account deletion from Settings or the public support explanation page.",
+    "Authenticated user can create an account deletion request.",
+    "Authenticated user can confirm the request by typing DELETE.",
+    "After a request exists, the app shows safe dry-run summaries for inventory, job stages, provider cleanup, Storage cleanup, DB cleanup, and Auth deletion readiness.",
+    "The app does not run actual destructive deletion from the public UI."
+  ],
+  "updated_surfaces": [
+    "/settings",
+    "/support/account-deletion",
+    "components/account/account-deletion-panel.tsx",
+    "docs/current-state.md",
+    "docs/store-release-mainline-inventory.md"
+  ],
+  "dry_run_categories": [
+    "auth user",
+    "profile / account rows",
+    "scripts",
+    "recordings",
+    "takes",
+    "weak_words",
+    "coach_feedback",
+    "script-audios",
+    "voice-samples",
+    "voice-consents",
+    "voices",
+    "saved best-take pins",
+    "saved model-audio pins",
+    "quota / processing metadata",
+    "provider-side normal v1 voice resources",
+    "account deletion request tracking"
+  ],
+  "proof_first_phases": [
+    "request",
+    "confirmation",
+    "dry-run summary",
+    "disposable account proof",
+    "actual deletion implementation",
+    "provider cleanup",
+    "post-delete verification",
+    "Store release QA"
+  ],
+  "v1_1_deferred": [
+    "Brush-up-specific script-scoped voice material",
+    "Brush-up generated audio",
+    "Brush-up consent / revoke state",
+    "Brush-up provider cleanup",
+    "Brush-up-specific account deletion proof"
+  ],
+  "not_changed": [
+    "actual account deletion",
+    "Auth user deletion",
+    "Storage object deletion",
+    "DB destructive cleanup",
+    "provider cleanup execution",
+    "DB schema or migration",
+    "API contract",
+    "provider API call",
+    "env or dashboard",
+    "Brush-up implementation",
+    "Capacitor",
+    "App Store or Google Play submission"
+  ],
+  "human_required": [
+    "Final legal approval for account deletion copy",
+    "Final support URL / inbox and operator identity",
+    "Disposable account live proof before Store submission",
+    "Provider cleanup proof for normal v1 voice resources",
+    "Storage / DB / Auth actual cleanup proof",
+    "App Privacy / Google Data Safety wording alignment with final implemented behavior"
+  ],
+  "redaction_policy": {
+    "records_secret_values": false,
+    "records_env_values": false,
+    "records_raw_provider_response": false,
+    "records_transcript_body": false,
+    "records_private_audio_path": false,
+    "records_storage_object_key": false,
+    "records_provider_voice_id": false,
+    "records_email": false
+  }
+}

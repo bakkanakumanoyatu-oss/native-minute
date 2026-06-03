@@ -27,13 +27,25 @@ export default function AccountDeletionSupportPage() {
       <LegalSection
         title="削除対象の概要"
         items={[
-          "account / profile / scripts",
-          "recordings、transcripts、pronunciation scores、weak words、coaching feedback",
-          "saved best takes、saved model audios、generated script audios",
-          "voice samples、consent recordings、clone voice metadata",
+          "auth user、profile / account rows",
+          "scripts、recordings、takes、transcripts、pronunciation scores、weak words、coaching feedback",
+          "saved best takes、saved model audios、generated script audios / script-audios",
+          "voice samples、consent recordings、voices、normal v1 provider voice resources",
           "quota events、provider processing metadata、account deletion request records",
-          "ElevenLabs provider-side cloned voice は cleanup candidate として扱います。",
+          "ElevenLabs provider-side normal v1 voice resources は cleanup candidate として扱います。",
           "Brush-up-specific data は v1.1 の対象です。v1 では selected best take を script-scoped voice material として扱いません。"
+        ]}
+      />
+
+      <LegalSection
+        title="proof-first の進め方"
+        items={[
+          "1. request: Settings から account deletion request を作成します。",
+          "2. confirmation: 誤操作防止の確認 step を通します。",
+          "3. dry-run summary: provider / Storage / DB / Auth の候補件数と stage guard だけを確認します。",
+          "4. disposable account proof: Store submission 前に、使い捨て account で安全な proof package を残します。",
+          "5. actual deletion implementation: provider cleanup、Storage cleanup、DB cleanup / anonymize、Supabase Auth deletion を順序通りに扱います。",
+          "6. post-delete verification / Store release QA: 完了後の safe status と Store-facing claim の整合を確認します。"
         ]}
       />
 

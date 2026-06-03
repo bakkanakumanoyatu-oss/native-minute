@@ -52,7 +52,7 @@ const STATUS_COPY: Record<AccountDeletionRequestView["status"], { label: string;
   },
   completed: {
     label: "完了",
-    summary: "削除処理の完了状態です。Store release 前の proof では、provider / Storage / DB / Auth の安全な完了証跡を別途確認します。",
+    summary: "削除処理の完了状態として記録されている場合の表示です。この Gate では新たな実削除や完了更新は行わず、Store release 前に provider / Storage / DB / Auth の安全な完了証跡を別途確認します。",
     tone: "steady"
   },
   cancelled: {
@@ -93,6 +93,45 @@ function formatDate(value: string | null) {
 async function readJson<T>(response: Response): Promise<ApiResponse<T>> {
   return response.json() as Promise<ApiResponse<T>>;
 }
+
+const V1_DELETION_SCOPE_GROUPS = [
+  {
+    title: "Account",
+    items: ["Supabase Auth user", "profile / account rows"]
+  },
+  {
+    title: "Practice data",
+    items: ["scripts", "recordings", "takes", "weak_words", "coach_feedback"]
+  },
+  {
+    title: "Audio and voice",
+    items: ["script-audios", "voice-samples", "voice-consents", "voices", "normal v1 provider voice resources"]
+  },
+  {
+    title: "Metadata",
+    items: ["saved best-take pins", "saved model-audio pins", "quota / processing metadata", "account deletion request tracking"]
+  }
+] as const;
+
+const DELETION_PHASES = [
+  "request",
+  "confirmation",
+  "dry-run summary",
+  "disposable account proof",
+  "actual deletion implementation",
+  "provider cleanup",
+  "post-delete verification",
+  "Store release QA"
+] as const;
+
+const GATE4D_NOT_IMPLEMENTED = [
+  "actual account deletion",
+  "Supabase Auth user deletion",
+  "Storage object deletion",
+  "DB destructive cleanup / anonymization",
+  "provider cleanup execution",
+  "Brush-up-specific cleanup"
+] as const;
 
 export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeletionRequest: AccountDeletionRequestView | null }) {
   const [deletionRequest, setDeletionRequest] = useState<AccountDeletionRequestView | null>(initialDeletionRequest);
@@ -360,16 +399,49 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
       </p>
 
       <div className="mt-4 rounded-3xl border border-[var(--line)] bg-ink-50 p-4">
-        <p className="text-sm font-semibold text-ink-900">削除対象になる予定のもの</p>
+        <p className="text-sm font-semibold text-ink-900">v1 dry-run 対象カテゴリ</p>
         <p className="mt-2 text-sm leading-6 text-ink-600">
-          scripts、録音、transcript、発音 score、weak words、coach feedback、保存済み audio library、voice sample / consent recording、ElevenLabs の cloned voice などです。
+          ここでは削除対象の safe summary だけを確認します。件数と stage guard は表示しますが、raw data や削除 target reference は表示しません。
         </p>
-        <p className="mt-2 text-sm leading-6 text-ink-600">
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {V1_DELETION_SCOPE_GROUPS.map((group) => (
+            <div key={group.title} className="rounded-2xl border border-[var(--line)] bg-white px-3 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">{group.title}</p>
+              <ul className="mt-2 space-y-1 text-sm leading-6 text-ink-700">
+                {group.items.map((item) => (
+                  <li key={item}>- {item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-sm leading-6 text-ink-600">
           Brush-up は v1.1 に延期しているため、v1 の削除対象説明には selected best take の script-scoped voice material や Brush-up generated audio を含めません。
         </p>
         <p className="mt-2 text-xs leading-5 text-ink-500">
           provider raw response、raw audio、script 本文、storage raw path、signed URL、secret、email は deletion request metadata に保存しません。
         </p>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-3xl border border-[var(--line)] bg-white p-4">
+          <p className="text-sm font-semibold text-ink-900">proof-first phases</p>
+          <ol className="mt-3 space-y-2 text-sm leading-6 text-ink-700">
+            {DELETION_PHASES.map((phase, index) => (
+              <li key={phase}>
+                {index + 1}. {phase}
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-semibold text-amber-950">この Gate ではまだ実行しないこと</p>
+          <ul className="mt-3 space-y-2 text-sm leading-6 text-amber-900">
+            {GATE4D_NOT_IMPLEMENTED.map((item) => (
+              <li key={item}>- {item}</li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {statusCopy && deletionRequest ? (
