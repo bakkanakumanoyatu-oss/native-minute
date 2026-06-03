@@ -86,6 +86,8 @@ Gate 4c v1 consent / provider notice UI is captured in `docs/store-release-gate4
 
 Gate 4d account deletion request / dry-run proof scaffold is captured in `docs/store-release-gate4d-account-deletion-request-dry-run-proof.md` and `outputs/store_release_gate4d_account_deletion_request_dry_run_proof/gate4d_account_deletion_request_dry_run_proof.json`. Existing Settings, support account deletion page, account deletion panel, account API routes, and account deletion service boundaries now have a documented v1 request / confirmation / dry-run / proof-first shape. The UI names v1 dry-run categories and proof phases, while actual deletion, Auth deletion, Storage deletion, DB destructive cleanup, provider cleanup execution, schema/API/env/infra changes, and Brush-up remain out of scope.
 
+Gate 4e disposable account deletion proof checklist / operator proof package is captured in `docs/store-release-gate4e-disposable-account-deletion-proof-checklist.md` and `outputs/store_release_gate4e_disposable_account_deletion_proof_checklist/gate4e_disposable_account_deletion_proof_checklist.json`. It defines the disposable test account data setup, request / confirmation / dry-run capture sequence, safe proof package fields, redaction rules, and actual-deletion implementation blockers. It stops before actual deletion and does not change Auth, Storage, DB, provider cleanup, schema/API/env/infra, Capacitor, Store submission, or Brush-up.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -122,6 +124,12 @@ Status: implemented as release candidate draft UI/copy. It explains the v1 provi
 Goal: make the existing account deletion request, confirmation, dry-run, and proof-first boundaries understandable before any destructive implementation or disposable proof run.
 
 Status: implemented as a non-destructive UI/copy/docs scaffold. It clarifies v1 dry-run categories, future deletion phases, redaction boundaries, and v1.1 Brush-up exclusions. It does not execute deletion or change DB schema, API contracts, providers, env, dashboards, infrastructure, Capacitor, or Store submission state.
+
+### Gate 4e: Disposable Account Deletion Proof Checklist
+
+Goal: define the operator checklist and proof package shape for a future disposable account deletion proof, including test data creation, dry-run capture, redaction rules, and the stop point before actual deletion.
+
+Status: checklist ready. It is docs/output only and does not execute deletion, add destructive operations, or change DB schema, API contracts, providers, env, dashboards, infrastructure, Capacitor, Store submission state, or Brush-up scope.
 
 ### Gate 4: Capacitor iOS / Android
 

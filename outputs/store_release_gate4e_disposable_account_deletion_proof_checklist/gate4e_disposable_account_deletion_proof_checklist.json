@@ -1,0 +1,152 @@
+{
+  "gate": "Gate 4e",
+  "name": "disposable account deletion proof checklist / operator proof package",
+  "status": "checklist_ready",
+  "scope": "non_destructive_operator_checklist_only",
+  "brush_up_scope": {
+    "v1_claim_included": false,
+    "decision": "Brush-up remains deferred to v1.1",
+    "v1_1_deferred_categories": [
+      "script-scoped best-take voice material",
+      "Brush-up generated model audio",
+      "Brush-up consent / revoke state",
+      "Brush-up script-scoped voice variants",
+      "Brush-up provider cleanup",
+      "Brush-up-specific account deletion proof"
+    ]
+  },
+  "operator_checklist": [
+    "Create or choose a disposable test account.",
+    "Log in.",
+    "Create a script from /scripts/new.",
+    "Open /scripts.",
+    "Open /scripts/[id]/listen.",
+    "Generate or reuse normal model audio.",
+    "Record a take from /scripts/[id]/record.",
+    "Evaluate the take.",
+    "Open /scripts/[id]/review/[takeId].",
+    "Open /progress.",
+    "If needed, run /setup/voice to create normal v1 voice data.",
+    "Optionally save a model audio or best take pin if saved pin coverage is required.",
+    "Open /settings.",
+    "Create an account deletion request.",
+    "Confirm the request by typing DELETE.",
+    "Capture inventory dry-run, job stage dry-run, provider cleanup dry-run, Storage cleanup dry-run, DB cleanup dry-run, and Auth deletion dry-run safe summaries.",
+    "Stop before actual deletion."
+  ],
+  "proof_target_categories": [
+    "auth user",
+    "profile / account rows",
+    "scripts",
+    "recordings",
+    "takes",
+    "weak_words",
+    "coach_feedback",
+    "script-audios",
+    "voice-samples",
+    "voice-consents",
+    "voices",
+    "saved best-take pins",
+    "saved model-audio pins",
+    "quota / processing metadata",
+    "provider-side normal v1 voice resources",
+    "account deletion request tracking"
+  ],
+  "operator_proof_package_fields": [
+    "proof_id",
+    "executed_at",
+    "environment",
+    "operator",
+    "reviewer",
+    "test_account_summary",
+    "created_test_data_summary",
+    "voice_setup_summary",
+    "deletion_request_status",
+    "inventory_counts",
+    "provider_cleanup_dry_run",
+    "storage_cleanup_dry_run",
+    "database_cleanup_dry_run",
+    "auth_deletion_dry_run",
+    "skipped_items",
+    "deferred_items",
+    "human_required",
+    "redaction_check",
+    "stop_point",
+    "overall_result"
+  ],
+  "safe_recording_rules": {
+    "allowed": [
+      "counts",
+      "status labels",
+      "route names",
+      "PASS / WARN / BLOCKED / FAIL",
+      "safe reason codes",
+      "masked proof aliases",
+      "normal voice data exists yes/no/unknown"
+    ],
+    "forbidden": [
+      "script body",
+      "transcript body",
+      "raw audio",
+      "storage path",
+      "object key",
+      "signed URL",
+      "provider voice id",
+      "provider raw response",
+      "email",
+      "auth user id",
+      "API key",
+      "env value"
+    ]
+  },
+  "actual_deletion_blockers_before_execution": [
+    "DB schema / migration sufficiency for request tracking and anonymized completion tracking",
+    "Request tracking survives Auth user deletion without private identifiers",
+    "Destructive execution surface is scoped and operator-only",
+    "Supabase Auth user deletion runs last",
+    "Storage cleanup runs after provider cleanup and before DB/Auth cleanup",
+    "DB cleanup / anonymization runs after Storage cleanup",
+    "Provider cleanup can delete or safely mark normal v1 voice resources as not applicable",
+    "Post-delete verification can prove absence or safe anonymized retention",
+    "Proof package can be generated without raw user data or secrets"
+  ],
+  "not_changed": [
+    "actual account deletion",
+    "Auth user deletion",
+    "Storage object deletion",
+    "DB destructive cleanup",
+    "provider cleanup execution",
+    "DB schema or migration",
+    "API contract",
+    "provider API call",
+    "env or dashboard",
+    "Brush-up implementation",
+    "Capacitor",
+    "App Store or Google Play submission"
+  ],
+  "result_criteria": {
+    "PASS": "Disposable account data exists, request and confirmation work, dry-run summaries cover all v1 categories, redaction passes, and the stop point is before actual deletion.",
+    "WARN": "Dry-run works but some counts are zero, optional normal voice data is absent, or human confirmation remains before actual deletion proof.",
+    "BLOCKED": "Request cannot be created/confirmed, dry-run cannot load, a required boundary is unavailable, or the proof package cannot be made safely.",
+    "FAIL": "Secret, raw provider response, transcript body, private audio path, storage object key, provider voice id, raw account identifier, or private user data is recorded."
+  },
+  "human_required": [
+    "Disposable test account owner approval",
+    "Final operator and reviewer identity",
+    "Final environment selection",
+    "Confirmation that support URL / privacy URL / deletion URL are Store-ready",
+    "Provider cleanup semantics for normal v1 voice resources",
+    "Final legal approval for account deletion copy and proof language"
+  ],
+  "redaction_policy": {
+    "records_secret_values": false,
+    "records_env_values": false,
+    "records_raw_provider_response": false,
+    "records_transcript_body": false,
+    "records_private_audio_path": false,
+    "records_storage_object_key": false,
+    "records_provider_voice_id": false,
+    "records_email": false,
+    "records_auth_user_id": false
+  }
+}
