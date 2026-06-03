@@ -1,0 +1,276 @@
+{
+  "gate": "5e",
+  "title": "Store asset capture plan",
+  "status": "plan_ready_human_review_required",
+  "created_at": "2026-06-03T13:16:38Z",
+  "source_commit": "b5c9fe9",
+  "scope": {
+    "type": "docs_output_only",
+    "screenshots_captured": false,
+    "images_generated": false,
+    "app_icon_created": false,
+    "app_store_connect_operated": false,
+    "google_play_console_operated": false,
+    "app_privacy_submitted": false,
+    "google_data_safety_submitted": false,
+    "qa_executed": false,
+    "gate_4h_rerun_executed": false,
+    "actual_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_deletion_executed": false,
+    "db_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "env_changed": false,
+    "dashboard_changed": false,
+    "provider_api_called": false,
+    "capacitor_started": false,
+    "brush_up_implemented": false
+  },
+  "store_asset_plan": {
+    "screenshots": "human_required",
+    "app_icon": "human_required",
+    "app_name_subtitle": "human_required",
+    "short_description": "human_required",
+    "long_description": "human_required",
+    "preview_captions": "human_required",
+    "support_url": "human_required",
+    "privacy_url": "human_required",
+    "account_deletion_url": "human_required",
+    "reviewer_account_instructions": "human_required"
+  },
+  "screenshot_candidates": [
+    {
+      "id": "home_practice_entry",
+      "route_or_surface": "home",
+      "capture_purpose": "show_one_minute_practice_loop",
+      "store_safe_angle": "start_a_short_speaking_session"
+    },
+    {
+      "id": "scripts",
+      "route_or_surface": "/scripts",
+      "capture_purpose": "show_selecting_or_resuming_practice",
+      "store_safe_angle": "pick_todays_short_practice"
+    },
+    {
+      "id": "script_creation",
+      "route_or_surface": "/scripts/new",
+      "capture_purpose": "show_creating_a_short_script",
+      "store_safe_angle": "make_a_one_minute_english_script"
+    },
+    {
+      "id": "listen",
+      "route_or_surface": "/scripts/[id]/listen",
+      "capture_purpose": "show_normal_model_audio_and_replay",
+      "store_safe_angle": "listen_before_recording"
+    },
+    {
+      "id": "record",
+      "route_or_surface": "/scripts/[id]/record",
+      "capture_purpose": "show_recording_entry_and_notice",
+      "store_safe_angle": "record_your_own_take"
+    },
+    {
+      "id": "review",
+      "route_or_surface": "/scripts/[id]/review/[takeId]",
+      "capture_purpose": "show_learning_feedback_and_weak_words",
+      "store_safe_angle": "see_feedback_as_practice_support"
+    },
+    {
+      "id": "progress",
+      "route_or_surface": "/progress",
+      "capture_purpose": "show_latest_best_continuity",
+      "store_safe_angle": "track_latest_and_best_takes"
+    },
+    {
+      "id": "settings",
+      "route_or_surface": "/settings",
+      "capture_purpose": "show_account_support_legal_deletion_request_links",
+      "store_safe_angle": "manage_privacy_and_account_help"
+    },
+    {
+      "id": "privacy_support_account_deletion",
+      "route_or_surface": "/privacy / /support / /support/account-deletion",
+      "capture_purpose": "show_public_support_deletion_surfaces_if_needed",
+      "store_safe_angle": "find_privacy_support_deletion_request_info"
+    }
+  ],
+  "recommended_screenshot_sets": {
+    "minimum": [
+      "home_practice_entry",
+      "script_creation",
+      "listen",
+      "record",
+      "review",
+      "progress"
+    ],
+    "additional_if_slots_allow": [
+      "scripts",
+      "settings",
+      "privacy_support_account_deletion"
+    ],
+    "common_app_store_google_play": [
+      "home_practice_entry",
+      "script_creation",
+      "listen",
+      "record",
+      "review",
+      "progress"
+    ],
+    "iphone_android_capture_checks": [
+      "mobile_viewport_readability",
+      "bottom_audio_controls_do_not_hide_important_content",
+      "record_controls_and_permission_copy_visible_without_private_content",
+      "review_progress_text_legible_without_private_transcript_bodies",
+      "settings_legal_links_reachable_without_deletion_overclaim"
+    ]
+  },
+  "caption_candidates": {
+    "ja": [
+      "1分英語スクリプトを作る",
+      "お手本を聞く",
+      "自分の発音を録音する",
+      "発音・流暢さ・リズムを確認",
+      "弱点語と次の練習ポイントを見る",
+      "最新結果とベスト結果を確認"
+    ],
+    "en_working_alternatives": [
+      "Create a one-minute English script",
+      "Listen to model audio",
+      "Record your take",
+      "Check pronunciation, fluency, and rhythm",
+      "Find weak words and the next practice point",
+      "Compare latest and best takes"
+    ]
+  },
+  "avoid_store_claims": [
+    "become_native",
+    "guaranteed_improvement",
+    "perfect_pronunciation_judgment",
+    "medical_or_institution_level_claim",
+    "official_ability_assessment",
+    "native_speaker_replacement",
+    "brush_up_available_in_v1",
+    "voice_clone_improvement_available_in_v1",
+    "best_take_becomes_voice_material_in_v1",
+    "account_deletion_fully_complete_before_proof",
+    "native_app_before_native_packaging_complete"
+  ],
+  "capture_preparation_required": [
+    "final_app_name",
+    "final_subtitle",
+    "final_short_description_long_description_source",
+    "final_support_url",
+    "final_privacy_policy_url",
+    "final_account_deletion_request_url",
+    "final_terms_url_if_used",
+    "reviewer_account_safe_alias",
+    "clean_demo_or_reviewer_account",
+    "safe_demo_script_no_private_content",
+    "redaction_rule",
+    "mobile_viewport_device_selection",
+    "platform_specific_screenshot_sizes_device_frames",
+    "settings_deletion_request_screenshot_inclusion_decision",
+    "final_legal_approval_for_captions_and_claims"
+  ],
+  "do_not_show_in_screenshots": [
+    "full_email_addresses",
+    "reviewer_password",
+    "auth_user_ids",
+    "transcript_bodies",
+    "full_private_scripts",
+    "raw_recordings",
+    "private_user_audio",
+    "raw_provider_responses",
+    "provider_dashboard_or_billing_data",
+    "env_values",
+    "api_keys",
+    "private_storage_paths_or_object_keys",
+    "signed_urls",
+    "provider_voice_ids",
+    "actual_deletion_proof_before_it_exists",
+    "brush_up_v1_claims"
+  ],
+  "screenshot_capture_evidence_template": {
+    "asset_id": "operator_generated_safe_alias",
+    "screen": [
+      "home",
+      "scripts",
+      "script_creation",
+      "listen",
+      "record",
+      "review",
+      "progress",
+      "settings",
+      "privacy_support_deletion"
+    ],
+    "environment": [
+      "local",
+      "production_web",
+      "mobile_browser",
+      "native_review_build",
+      "unknown"
+    ],
+    "account_type": [
+      "demo",
+      "reviewer",
+      "owner",
+      "unknown"
+    ],
+    "safe_caption": "final_or_draft_caption_without_risky_claims",
+    "contains_personal_data": false,
+    "redaction_required": "boolean",
+    "v1_scope_ok": "boolean",
+    "brush_up_claim_absent": true,
+    "approved_for_store_submission": [
+      "false",
+      "pending_human_review",
+      "true_after_human_approval"
+    ],
+    "notes": "safe_notes_only_no_private_data"
+  },
+  "human_required": [
+    "final_screenshot_capture",
+    "app_icon_creation",
+    "final_app_name",
+    "final_subtitle",
+    "final_short_description",
+    "final_long_description",
+    "final_legal_approval",
+    "final_support_url",
+    "final_privacy_policy_url",
+    "final_account_deletion_request_url",
+    "final_terms_url_if_used",
+    "reviewer_account",
+    "demo_script",
+    "clean_demo_account",
+    "device_screenshot_size_selection",
+    "app_store_specific_asset_requirement_check",
+    "google_play_specific_asset_requirement_check",
+    "final_redaction_review",
+    "final_no_brush_up_v1_asset_claim_confirmation"
+  ],
+  "redaction_policy": {
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "script_body_recorded": false,
+    "raw_audio_recorded": false,
+    "private_audio_path_recorded": false,
+    "storage_object_key_recorded": false,
+    "signed_url_recorded": false,
+    "provider_voice_id_recorded": false,
+    "billing_detail_recorded": false,
+    "email_recorded": false,
+    "auth_user_id_recorded": false,
+    "reviewer_password_recorded": false
+  },
+  "next_work": [
+    "push_gate_5e_commit_if_needed",
+    "human_finalize_store_urls_and_reviewer_account",
+    "human_prepare_clean_demo_account_and_demo_script",
+    "gate_5f_store_asset_capture_evidence_template_or_capture_readiness_check",
+    "gate_4h_rerun_after_disposable_account_preparation",
+    "gate_6_release_qa_after_human_required_items_close"
+  ]
+}

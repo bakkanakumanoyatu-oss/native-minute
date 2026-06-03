@@ -110,6 +110,8 @@ Gate 5c screenshot candidate plan / reviewer evidence template is captured in `d
 
 Gate 5d reviewer instructions / evidence package draft is captured in `docs/store-release-gate5d-reviewer-instructions-evidence-package.md` and `outputs/store_release_gate5d_reviewer_instructions_evidence_package/gate5d_reviewer_instructions_evidence_package.json`. It turns the reviewer flow into practical draft instructions, defines reviewer account placeholders, evidence package fields, safe test script guidance, provider unavailable expectations, and show / do-not-show boundaries. It is draft/template only; no reviewer account creation, password recording, Store Console operation, screenshot capture, QA run, deletion, cleanup, provider call, env/dashboard operation, Capacitor work, or Brush-up occurred.
 
+Gate 5e Store asset capture plan is captured in `docs/store-release-gate5e-store-asset-capture-plan.md` and `outputs/store_release_gate5e_store_asset_capture_plan/gate5e_store_asset_capture_plan.json`. It defines the Store asset preparation scope, recommended screenshot sets, caption candidates, claims to avoid, capture prerequisites, screenshot evidence template, and redaction boundaries. It is planning/template only; no screenshot capture, image generation, app icon creation, Store Console operation, QA run, deletion, cleanup, provider call, env/dashboard operation, Capacitor work, or Brush-up occurred.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -228,6 +230,12 @@ Status: plan/template ready. Recommended v1 screenshot candidates are Home / pra
 Goal: prepare practical reviewer instructions and a safe reviewer evidence package shape before reviewer account creation, QA execution, screenshots, or Store Console operation.
 
 Status: draft ready. The reviewer flow covers login, script creation, listen, record, evaluate, review, progress, settings, privacy, terms, support, account deletion request, provider unavailable recovery, and the explicit no-Brush-up v1 boundary. Reviewer account creation, reviewer password transfer outside repo/docs/outputs, final URLs, final reviewer notes, final screenshots, and legal approval remain human-required.
+
+### Gate 5e: Store Asset Capture Plan
+
+Goal: prepare the capture plan for screenshots, app icon, app name/subtitle, descriptions, preview captions, Store URLs, reviewer account, and reviewer instructions before any asset capture or Store Console operation.
+
+Status: plan ready. Minimum screenshot set is Home / practice entry, script creation, listen, record, review, and progress. Optional additions are Scripts, Settings, and Privacy / Support / Account deletion request surfaces. Final screenshot capture, app icon, final app name/subtitle/descriptions, support/privacy/deletion URLs, reviewer account, demo account/script, device size selection, platform-specific asset requirements, legal approval, and redaction review remain human-required. Brush-up must not appear in v1 assets.
 
 ### Gate 6: Release QA
 
