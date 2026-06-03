@@ -191,6 +191,9 @@ export function CreateVoiceForm({
           className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-ink-100 file:px-3 file:py-2 file:text-sm file:font-medium focus:border-[var(--accent)]"
         />
         {sampleAudioFile ? <span className="block text-xs font-semibold text-[var(--accent-strong)]">選択済み: {sampleAudioFile.name}</span> : null}
+        <span className="block text-xs leading-5 text-ink-600">
+          この sample は normal model audio / default voice 用です。v1 では best take を Brush-up voice material として送信しません。
+        </span>
       </label>
 
       <button

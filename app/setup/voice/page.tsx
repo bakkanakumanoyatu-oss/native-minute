@@ -5,6 +5,7 @@ import { getAuthState } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CreateVoiceForm } from "@/components/voice/create-voice-form";
 import { VoiceConsentForm } from "@/components/voice/voice-consent-form";
+import { ConsentNotice } from "@/components/legal/consent-notice";
 import { getVoiceSetupState } from "@/services/voice";
 import type { Json } from "@/types/database";
 
@@ -120,6 +121,8 @@ export default async function VoiceSetupPage({
           ここでは、お手本ボイスに使う自分の声を準備します。普段の練習では必要な時だけここに戻ります。
         </p>
       </div>
+
+      <ConsentNotice kind="voice" />
 
       <section data-testid="voice-setup-state" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-ink-900">現在の声の状態</h2>

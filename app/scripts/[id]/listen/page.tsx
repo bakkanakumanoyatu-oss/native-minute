@@ -14,6 +14,7 @@ import { getCachedListenAudio, getVoiceSetupState } from "@/services/voice";
 import { ListenPanel } from "@/components/voice/listen-panel";
 import { ScriptLoopStatusCard } from "@/components/guidance/script-loop-status-card";
 import { StateActionSection, StateStepSection } from "@/components/guidance/state-sections";
+import { ConsentNotice } from "@/components/legal/consent-notice";
 
 type PageParams = {
   params:
@@ -126,6 +127,8 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
           </a>
         </div>
       </div>
+
+      <ConsentNotice kind="listen" />
 
       <div className="grid gap-4">
         <div className="rounded-[2rem] border border-[var(--line-inset)] bg-[linear-gradient(180deg,var(--surface-secondary),var(--surface-inset))] p-5 shadow-[var(--shadow-studio-soft)] sm:p-6">

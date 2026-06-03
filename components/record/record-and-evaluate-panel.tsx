@@ -7,6 +7,7 @@ import { getGuidancePrimaryButtonLabel, getGuidanceToneClasses } from "@/lib/gui
 import { getRecordRecoveryGuidance } from "@/lib/record-recovery-guidance";
 import { getShortRecordingPrompt } from "@/lib/recording";
 import { MAX_RECORDING_BYTES, RECORDING_FORMAT_LABEL, RECORDING_MIME_TYPES } from "@/services/storage/constants";
+import { ConsentNotice } from "@/components/legal/consent-notice";
 
 type UploadResponse = {
   ok: boolean;
@@ -665,6 +666,8 @@ export function RecordAndEvaluatePanel({
 
   return (
     <div className="space-y-6">
+      <ConsentNotice kind="record" />
+
       <div className="space-y-5 rounded-3xl border border-[var(--line-inset)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-studio-soft)]">
         <div className="rounded-[1.75rem] border border-[var(--line-dark)] bg-[linear-gradient(135deg,var(--control-panel),var(--control-panel-soft))] p-4 text-[var(--cta-primary-text)] shadow-[0_20px_46px_rgba(24,23,34,0.18)]">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[rgba(255,241,221,0.62)]">録音パネル</p>

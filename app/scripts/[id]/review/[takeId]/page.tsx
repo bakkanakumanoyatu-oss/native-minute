@@ -21,6 +21,7 @@ import { ReviewPracticeFocus } from "@/components/guidance/review-practice-focus
 import { TakeSummarySnapshot } from "@/components/guidance/take-summary-snapshot";
 import { StateActionSection, StateStepSection } from "@/components/guidance/state-sections";
 import { BestResultExportActions } from "@/components/export/best-result-export-actions";
+import { ConsentNotice } from "@/components/legal/consent-notice";
 
 type PageParams = {
   params:
@@ -217,6 +218,8 @@ export default async function ReviewPage({ params }: PageParams) {
         exportComment={reviewOneLineAdvice}
         isPracticeEstimate={isPracticeEstimate}
       />
+
+      <ConsentNotice kind="review" />
 
       <details data-testid="review-detail-panel" className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-5 shadow-[var(--shadow-studio-soft)]">
         <summary className="cursor-pointer list-none rounded-[1.5rem] border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-5 py-4 text-sm font-semibold text-ink-900">

@@ -82,6 +82,8 @@ Gate 4a v1 privacy / consent / deletion implementation planning is captured in `
 
 Gate 4b v1 privacy / terms / support scaffold is captured in `docs/store-release-gate4b-privacy-terms-support-scaffold.md` and `outputs/store_release_gate4b_privacy_terms_support_scaffold/gate4b_privacy_terms_support_scaffold.json`. Existing `/privacy`, `/terms`, `/support`, `/support/account-deletion`, and `/settings` surfaces now use v1 release candidate draft copy, mark final human approval as required, and state that account deletion is request / dry-run / proof-prep only. No actual deletion, provider cleanup, DB cleanup, Auth deletion, env, dashboard, infra, Capacitor, or Brush-up work was performed.
 
+Gate 4c v1 consent / provider notice UI is captured in `docs/store-release-gate4c-consent-provider-notice-ui.md` and `outputs/store_release_gate4c_consent_provider_notice_ui/gate4c_consent_provider_notice_ui.json`. Listen, Record, Review, and setup voice now include short release candidate draft notices for recording use, OpenAI transcription, Azure pronunciation evaluation, AI coaching / feedback, normal model audio, voice samples / consent recordings, app-owned Storage, server-side provider boundaries, and legal/support links. Brush-up remains v1.1 deferred and is not claimed as a v1 feature.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -106,6 +108,12 @@ Status: docs/design-only plan is captured in `docs/store-release-gate4a-privacy-
 Goal: publish the minimal v1 release candidate draft copy and navigation for Privacy Policy, Terms, Support, account deletion request explanation, and Settings / Account links.
 
 Status: implemented as small UI/copy scaffold. It does not claim final legal approval, does not claim actual deletion completion, and does not include Brush-up as a v1 feature.
+
+### Gate 4c: v1 Consent / Provider Notice UI
+
+Goal: add small, flow-local consent and provider notices to listen, record, review, and voice setup without turning legal copy into the main screen.
+
+Status: implemented as release candidate draft UI/copy. It explains the v1 provider/data boundaries and links to Privacy, Terms, Support, and account deletion request pages. It does not implement destructive deletion, provider cleanup, DB schema changes, API contract changes, provider calls, env/dashboard changes, or Brush-up.
 
 ### Gate 4: Capacitor iOS / Android
 

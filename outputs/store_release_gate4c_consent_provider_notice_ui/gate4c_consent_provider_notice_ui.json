@@ -1,0 +1,78 @@
+{
+  "gate": "Gate 4c",
+  "name": "v1 consent / provider notice UI",
+  "status": "implemented",
+  "copy_status": "release_candidate_draft_human_approval_required",
+  "brush_up_scope": {
+    "v1_claim_included": false,
+    "decision": "Brush-up remains deferred to v1.1",
+    "notes": [
+      "Best take audio is not presented as v1 provider voice material.",
+      "Brush-up voice variants are not presented as available in v1.",
+      "Brush-up consent, revoke, deletion, and provider cleanup remain v1.1 work."
+    ]
+  },
+  "updated_surfaces": [
+    {
+      "surface": "/scripts/[id]/listen",
+      "change": "Added model audio / app-owned replay notice"
+    },
+    {
+      "surface": "/scripts/[id]/record",
+      "change": "Added recording / upload / transcription / pronunciation notice"
+    },
+    {
+      "surface": "/scripts/[id]/review/[takeId]",
+      "change": "Added review result / AI feedback notice"
+    },
+    {
+      "surface": "/setup/voice",
+      "change": "Added voice sample / consent recording notice"
+    },
+    {
+      "surface": "voice consent and create voice forms",
+      "change": "Clarified normal model audio scope and no v1 best-take Brush-up reuse"
+    },
+    {
+      "surface": "best result export actions",
+      "change": "Re-labeled Brush-up as v1.1 memo and unavailable in v1"
+    }
+  ],
+  "notice_topics": [
+    "recording use for evaluation, review, and progress",
+    "OpenAI transcription may be used",
+    "Azure pronunciation evaluation may be used",
+    "AI coaching and feedback are learning aids, not official ability judgments",
+    "normal model audio and voice setup may use voice samples or consent recordings",
+    "voice samples and consent recordings use app-owned Storage first",
+    "provider processing happens through server-side routes",
+    "privacy, terms, support, and account deletion request links are available",
+    "Brush-up is v1.1 deferred"
+  ],
+  "not_changed": [
+    "actual account deletion",
+    "Auth user deletion",
+    "Storage deletion",
+    "provider cleanup execution",
+    "DB schema or migration",
+    "API contract",
+    "provider API call",
+    "env or dashboard",
+    "Brush-up implementation",
+    "Capacitor",
+    "App Store or Google Play submission"
+  ],
+  "human_required": [
+    "Final legal approval for Privacy Policy, Terms, and in-app notices",
+    "Final support email / operator identity / legal owner confirmation if Store metadata requires it",
+    "Final App Privacy and Google Data Safety wording alignment with implemented behavior",
+    "Release QA confirmation that notices do not block the main loop"
+  ],
+  "redaction_policy": {
+    "records_secret_values": false,
+    "records_env_values": false,
+    "records_raw_provider_response": false,
+    "records_transcript_body": false,
+    "records_private_audio_path": false
+  }
+}

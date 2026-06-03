@@ -126,7 +126,9 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
           type="checkbox"
           className="mt-1 size-4 rounded border-[var(--line)]"
         />
-        <span>お手本ボイスを作るために、自分の声を使うことに同意します。</span>
+        <span>
+          通常のお手本ボイスを作るために、自分の声、voice sample、必要な同意録音を使うことに同意します。v1 では Brush-up 用の best take reuse には使いません。
+        </span>
       </label>
 
       <label className="block space-y-2">
@@ -161,6 +163,9 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
           className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-ink-100 file:px-3 file:py-2 file:text-sm file:font-medium focus:border-[var(--accent)]"
         />
         {recordingFile ? <span className="block text-xs font-semibold text-[var(--accent-strong)]">選択済み: {recordingFile.name}</span> : null}
+        <span className="block text-xs leading-5 text-ink-600">
+          同意録音は app-owned Storage に保存し、必要な場合だけ server-side route 経由で voice provider へ渡します。
+        </span>
       </label>
 
       <button
