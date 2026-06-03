@@ -1,0 +1,273 @@
+{
+  "gate": "5d",
+  "title": "Reviewer instructions / evidence package draft",
+  "status": "draft_ready_human_review_required",
+  "created_at": "2026-06-03T12:47:42Z",
+  "source_commit": "ff2adf3",
+  "scope": {
+    "type": "docs_output_only",
+    "reviewer_account_created": false,
+    "reviewer_password_recorded": false,
+    "app_store_connect_operated": false,
+    "google_play_console_operated": false,
+    "screenshots_captured": false,
+    "qa_executed": false,
+    "gate_4h_rerun_executed": false,
+    "actual_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_deletion_executed": false,
+    "db_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "env_changed": false,
+    "dashboard_changed": false,
+    "provider_api_called": false,
+    "capacitor_started": false,
+    "brush_up_implemented": false
+  },
+  "reviewer_account_placeholder": {
+    "reviewer_account_required": true,
+    "reviewer_email": "human_required",
+    "reviewer_password": "never_record_here",
+    "reviewer_account_ready": "pending",
+    "reviewer_account_safe_alias": "human_required",
+    "reviewer_account_instructions_ready": "draft"
+  },
+  "reviewer_instructions_draft": {
+    "login": {
+      "steps": [
+        "open_production_url_or_native_review_build_url",
+        "sign_in_with_provided_reviewer_account",
+        "expect_scripts_or_safe_authenticated_practice_entry"
+      ],
+      "safe_failure_note": "If login fails, note safe error state and use support URL; do not expose auth internals."
+    },
+    "script_creation": {
+      "steps": [
+        "open_scripts",
+        "select_existing_reviewer_script_or_open_scripts_new",
+        "create_short_safe_one_minute_english_practice_script",
+        "expect_saved_script_can_open_listen"
+      ],
+      "safe_test_script_guidance": [
+        "neutral_non_private_content",
+        "short_enough_for_one_minute",
+        "no_personal_data",
+        "no_credentials_or_legal_identifiers",
+        "no_sensitive_work_or_medical_content",
+        "no_copyrighted_passages_or_public_speech_text"
+      ]
+    },
+    "listen": {
+      "steps": [
+        "open_listen_for_script",
+        "play_existing_model_audio_or_generate_normal_model_audio",
+        "expect_audio_playable_through_app_owned_replay"
+      ],
+      "v1_note": "normal_model_audio_only_no_brush_up"
+    },
+    "record": {
+      "steps": [
+        "open_record_for_script",
+        "record_short_practice_take_or_use_approved_recording_path",
+        "expect_safe_recording_notice_and_evaluate_action"
+      ],
+      "safety_note": "Do not record private speech, private identifiers, or sensitive content for review."
+    },
+    "evaluate": {
+      "steps": [
+        "start_evaluation_from_record_step",
+        "expect_processing_to_complete_and_open_review"
+      ],
+      "provider_note": "transcription_and_pronunciation_evaluation_use_server_side_provider_boundaries"
+    },
+    "review": {
+      "steps": [
+        "open_review_page_for_take",
+        "confirm_learning_feedback_appears"
+      ],
+      "expected_result": [
+        "transcript_summary_possible",
+        "pronunciation_fluency_rhythm_oriented_feedback",
+        "weak_words_possible",
+        "next_step_coaching_as_learning_support"
+      ],
+      "claim_boundary": [
+        "not_official_ability_assessment",
+        "not_perfect_pronunciation_judgment",
+        "not_guaranteed_improvement"
+      ]
+    },
+    "progress": {
+      "steps": [
+        "open_progress",
+        "select_reviewer_script_if_needed",
+        "confirm_latest_best_continuity_or_safe_empty_state"
+      ]
+    },
+    "settings_privacy_terms_support_deletion_request": {
+      "steps": [
+        "open_settings",
+        "confirm_privacy_terms_support_deletion_request_links",
+        "open_privacy_terms_support_account_deletion_if_requested"
+      ],
+      "expected_result": "routes_explain_v1_data_handling_and_request_paths_without_actual_deletion_overclaim"
+    },
+    "provider_unavailable_disabled": {
+      "expected_behavior": [
+        "safe_recovery_copy",
+        "no_dashboard_access_needed",
+        "no_env_access_needed",
+        "no_billing_access_needed",
+        "no_api_key_or_provider_account_needed"
+      ],
+      "operator_only": "provider_disabled_proof"
+    },
+    "v1_scope_note": {
+      "brush_up_expected_in_v1": false,
+      "excluded_from_v1_reviewer_steps": [
+        "best_take_provider_submission",
+        "script_scoped_brush_up_voice_material",
+        "voice_clone_improvement_from_best_take",
+        "brush_up_generated_model_audio",
+        "brush_up_specific_consent_revoke_deletion_proof"
+      ]
+    }
+  },
+  "reviewer_evidence_package_fields": {
+    "package_id": "operator_generated_safe_alias",
+    "prepared_for": [
+      "app_store_review",
+      "google_play_review",
+      "both"
+    ],
+    "prepared_at": "timestamp_or_date",
+    "reviewer_account_status": [
+      "pending",
+      "ready",
+      "blocked",
+      "human_required"
+    ],
+    "reviewer_account_safe_alias": "alias_only_no_full_email",
+    "reviewer_password_status": "never_record_here",
+    "reviewer_account_instructions_ready": [
+      "draft",
+      "ready",
+      "human_required"
+    ],
+    "build_or_url_status": [
+      "human_required",
+      "ready",
+      "blocked"
+    ],
+    "test_script_safe_summary": "safe_description_no_script_body",
+    "main_loop_result": [
+      "pass",
+      "warn",
+      "blocked",
+      "not_run",
+      "human_required"
+    ],
+    "privacy_terms_support_result": [
+      "pass",
+      "warn",
+      "blocked",
+      "not_run",
+      "human_required"
+    ],
+    "account_deletion_request_result": [
+      "pass",
+      "warn",
+      "blocked",
+      "not_run",
+      "human_required"
+    ],
+    "provider_notice_result": [
+      "pass",
+      "warn",
+      "blocked",
+      "not_run",
+      "human_required"
+    ],
+    "kill_switch_recovery_result": [
+      "pass",
+      "warn",
+      "blocked",
+      "not_applicable",
+      "human_required"
+    ],
+    "screenshot_reference": "safe_screenshot_set_alias_only",
+    "human_required": "list_of_remaining_human_owned_items",
+    "redaction_status": [
+      "pass",
+      "warn",
+      "fail"
+    ],
+    "brush_up_expected_in_v1": false,
+    "next_action": "safe_next_action_label"
+  },
+  "show_to_reviewers": [
+    "safe_operation_steps",
+    "safe_test_script_summary_or_approved_demo_script",
+    "route_flow_labels",
+    "expected_results",
+    "privacy_terms_support_account_deletion_request_locations",
+    "safe_provider_unavailable_recovery_explanation",
+    "short_v1_scope_note_no_brush_up"
+  ],
+  "do_not_show_to_reviewers": [
+    "api_keys",
+    "env_values",
+    "raw_provider_responses",
+    "provider_dashboard_or_billing_details",
+    "full_transcript_bodies",
+    "full_private_script_bodies",
+    "raw_audio_files",
+    "private_storage_paths_or_object_keys",
+    "signed_urls",
+    "provider_voice_ids",
+    "full_personal_email_addresses",
+    "auth_user_ids",
+    "personal_user_recordings",
+    "reviewer_password",
+    "internal_destructive_cleanup_steps"
+  ],
+  "human_required": [
+    "reviewer_account_creation",
+    "reviewer_account_safe_alias",
+    "reviewer_password_transfer_outside_repo_docs_outputs",
+    "final_reviewer_instructions",
+    "final_production_url_or_native_review_build_url",
+    "final_support_url",
+    "final_privacy_policy_url",
+    "final_terms_url_if_used",
+    "final_account_deletion_request_url",
+    "final_screenshots_or_screenshot_aliases",
+    "final_legal_approval_for_reviewer_notes",
+    "final_provider_unavailable_copy_acceptance",
+    "final_no_brush_up_v1_reviewer_claim_confirmation"
+  ],
+  "redaction_policy": {
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "script_body_recorded": false,
+    "raw_audio_recorded": false,
+    "private_audio_path_recorded": false,
+    "storage_object_key_recorded": false,
+    "signed_url_recorded": false,
+    "provider_voice_id_recorded": false,
+    "billing_detail_recorded": false,
+    "email_recorded": false,
+    "auth_user_id_recorded": false,
+    "reviewer_password_recorded": false
+  },
+  "next_work": [
+    "push_gate_5d_commit_if_needed",
+    "human_prepare_reviewer_account",
+    "human_finalize_support_privacy_terms_deletion_urls",
+    "gate_5e_store_asset_capture_plan_or_reviewer_note_finalization",
+    "gate_4h_rerun_after_disposable_account_preparation",
+    "gate_6_release_qa_after_human_required_items_close"
+  ]
+}

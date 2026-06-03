@@ -108,6 +108,8 @@ Gate 5b Store metadata / reviewer instructions / App Privacy and Google Data Saf
 
 Gate 5c screenshot candidate plan / reviewer evidence template is captured in `docs/store-release-gate5c-screenshot-reviewer-evidence-template.md` and `outputs/store_release_gate5c_screenshot_reviewer_evidence_template/gate5c_screenshot_reviewer_evidence_template.json`. It defines v1 screenshot candidate surfaces, safe caption directions, Store claims to avoid, reviewer evidence fields, reviewer flow, and the difference between internal QA evidence and Store reviewer evidence. It is planning/template only; no screenshot capture, image generation, Store Console operation, Capacitor work, deletion, cleanup, provider call, env/dashboard operation, or Brush-up occurred.
 
+Gate 5d reviewer instructions / evidence package draft is captured in `docs/store-release-gate5d-reviewer-instructions-evidence-package.md` and `outputs/store_release_gate5d_reviewer_instructions_evidence_package/gate5d_reviewer_instructions_evidence_package.json`. It turns the reviewer flow into practical draft instructions, defines reviewer account placeholders, evidence package fields, safe test script guidance, provider unavailable expectations, and show / do-not-show boundaries. It is draft/template only; no reviewer account creation, password recording, Store Console operation, screenshot capture, QA run, deletion, cleanup, provider call, env/dashboard operation, Capacitor work, or Brush-up occurred.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -220,6 +222,12 @@ Status: draft ready. Final support / privacy / deletion URLs, reviewer account, 
 Goal: prepare screenshot candidate surfaces, safe caption directions, claims-to-avoid, and Store reviewer evidence template before any screenshot capture or Store Console operation.
 
 Status: plan/template ready. Recommended v1 screenshot candidates are Home / practice entry, script creation, listen, record, review, and progress, with optional settings/legal and account deletion request surfaces. Final screenshots, app icon, app name, subtitle, reviewer account, support/privacy/deletion URLs, legal approval, platform-specific screenshot sizes, and redaction review remain human-required. Brush-up must not appear in v1 screenshots or reviewer notes.
+
+### Gate 5d: Reviewer Instructions / Evidence Package Draft
+
+Goal: prepare practical reviewer instructions and a safe reviewer evidence package shape before reviewer account creation, QA execution, screenshots, or Store Console operation.
+
+Status: draft ready. The reviewer flow covers login, script creation, listen, record, evaluate, review, progress, settings, privacy, terms, support, account deletion request, provider unavailable recovery, and the explicit no-Brush-up v1 boundary. Reviewer account creation, reviewer password transfer outside repo/docs/outputs, final URLs, final reviewer notes, final screenshots, and legal approval remain human-required.
 
 ### Gate 6: Release QA
 
