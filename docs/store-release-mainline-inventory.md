@@ -94,6 +94,8 @@ Gate 4g account deletion dry-run service hardening is captured in `docs/store-re
 
 Gate 4h disposable account dry-run proof capture is recorded in `docs/store-release-gate4h-disposable-account-dry-run-proof-capture.md` and `outputs/store_release_gate4h_disposable_account_dry_run_proof_capture/gate4h_disposable_account_dry_run_proof_capture.json`. Result: `BLOCKED: needs_human_disposable_account`. No explicit disposable account safe alias, authenticated disposable session, or confirmed disposable deletion request was provided, so no dry-run was executed. The proof package records only safe unknown / not_executed / human_required status and stops before actual deletion.
 
+Gate 4i privacy / support / deletion release QA smoke checklist is captured in `docs/store-release-gate4i-privacy-support-deletion-release-qa-checklist.md` and `outputs/store_release_gate4i_privacy_support_deletion_release_qa_checklist/gate4i_privacy_support_deletion_release_qa_checklist.json`. It defines human-confirmation-free QA targets for `/privacy`, `/terms`, `/support`, `/support/account-deletion`, `/settings`, record, listen, review, `/setup/voice`, footer / legal links, and Store submission support/privacy/deletion URL checks. Gate 4h disposable account dry-run proof remains blocked until a human prepares a disposable account; actual deletion and destructive cleanup stay in later gates.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -154,6 +156,12 @@ Status: implemented non-destructively. The job dry-run summary now covers Gate 4
 Goal: capture non-destructive dry-run evidence for a disposable account using safe counts, status, blockers, deferred items, human-required items, and redaction checks.
 
 Status: blocked pending human disposable account. Codex did not execute dry-run because the task did not provide a disposable account safe alias, authenticated disposable session, or confirmed request. Next attempt must use a disposable account only, record no raw identifiers, and stop before actual deletion.
+
+### Gate 4i: Privacy / Support / Deletion Release QA Smoke Checklist
+
+Goal: define a release QA smoke checklist for privacy, terms, support, account deletion request, consent notices, provider notices, and Store-facing URL/reviewer/data safety checks that can be reviewed without a disposable account.
+
+Status: checklist ready. Gate 4i is docs/output only. It does not rerun Gate 4h, target any account, execute actual deletion, add destructive routes, change DB schema/API/env/infra, or implement Brush-up. Disposable-account dry-run proof stays in Gate 4h re-run; actual deletion proof stays in later destructive gates.
 
 ### Gate 4: Capacitor iOS / Android
 

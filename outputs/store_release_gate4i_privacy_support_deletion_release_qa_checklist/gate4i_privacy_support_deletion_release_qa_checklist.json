@@ -1,0 +1,230 @@
+{
+  "gate": "4i",
+  "name": "privacy_support_deletion_release_qa_checklist",
+  "status": "checklist_ready",
+  "created_at": "2026-06-03T05:52:42Z",
+  "scope": [
+    "privacy_terms_support_deletion_release_qa_checklist",
+    "consent_provider_notice_smoke_checklist",
+    "store_submission_readiness_checklist",
+    "docs_and_output_report"
+  ],
+  "gate4h_status": {
+    "proof_status": "BLOCKED",
+    "blocker_code": "needs_human_disposable_account",
+    "dry_run_executed": false,
+    "stop_point": "before_actual_deletion"
+  },
+  "qa_status_values": [
+    "pass",
+    "warn",
+    "blocked",
+    "not_applicable",
+    "human_required"
+  ],
+  "target_screens": [
+    "/privacy",
+    "/terms",
+    "/support",
+    "/support/account-deletion",
+    "/settings",
+    "record",
+    "listen",
+    "review",
+    "/setup/voice",
+    "footer / legal links"
+  ],
+  "screen_checklists": [
+    {
+      "surface": "/privacy",
+      "checks": [
+        "page_loads_without_auth_only_dependency",
+        "draft_or_release_candidate_status_is_clear",
+        "v1_data_and_provider_disclosure_is_present",
+        "terms_support_and_account_deletion_links_are_reachable",
+        "actual_deletion_completion_is_not_claimed",
+        "brush_up_is_not_claimed_as_v1"
+      ]
+    },
+    {
+      "surface": "/terms",
+      "checks": [
+        "page_loads_without_auth_only_dependency",
+        "draft_or_release_candidate_status_is_clear",
+        "ai_feedback_learning_tool_limitation_is_present",
+        "privacy_and_support_links_are_reachable",
+        "legal_final_approval_is_not_claimed",
+        "brush_up_is_not_claimed_as_v1"
+      ]
+    },
+    {
+      "surface": "/support",
+      "checks": [
+        "account_deletion_help_path_is_reachable",
+        "privacy_and_terms_links_are_reachable",
+        "support_copy_does_not_request_raw_private_data",
+        "final_support_url_or_operator_ownership_is_marked_human_required_when_not_release_approved"
+      ]
+    },
+    {
+      "surface": "/support/account-deletion",
+      "checks": [
+        "request_confirmation_dry_run_proof_first_flow_is_explained",
+        "actual_deletion_completion_is_not_claimed",
+        "v1_deletion_categories_are_described_at_safe_category_level",
+        "cannot_login_support_path_avoids_raw_private_data",
+        "brush_up_specific_deletion_is_v1_1_deferred"
+      ]
+    },
+    {
+      "surface": "/settings",
+      "checks": [
+        "privacy_terms_support_and_account_deletion_links_are_reachable",
+        "account_deletion_panel_labels_request_confirmation_dry_run_proof_first_state",
+        "dry_run_summary_uses_safe_counts_status_reason_codes_only",
+        "public_actual_deletion_button_is_not_exposed",
+        "raw_private_fields_are_not_shown"
+      ]
+    },
+    {
+      "surface": "record",
+      "checks": [
+        "recording_notice_is_near_record_action",
+        "recording_use_for_evaluation_review_progress_is_disclosed",
+        "openai_transcription_may_be_used_notice_is_present",
+        "azure_pronunciation_evaluation_may_be_used_notice_is_present",
+        "ai_feedback_learning_aid_limitation_is_present",
+        "supabase_storage_or_app_owned_handling_notice_is_present",
+        "legal_and_support_links_are_reachable",
+        "best_take_brush_up_provider_submission_is_not_claimed_for_v1"
+      ]
+    },
+    {
+      "surface": "listen",
+      "checks": [
+        "model_audio_notice_is_near_listen_action",
+        "normal_model_audio_generation_or_replay_is_disclosed",
+        "app_owned_replay_boundary_is_preserved",
+        "legal_and_support_links_are_reachable",
+        "brush_up_voice_variants_are_not_claimed_for_v1"
+      ]
+    },
+    {
+      "surface": "review",
+      "checks": [
+        "review_notice_is_near_result_summary",
+        "transcript_score_weak_words_and_feedback_are_learning_aids",
+        "official_ability_judgment_is_not_claimed",
+        "support_and_privacy_links_are_reachable",
+        "raw_provider_response_or_transcript_body_is_not_shown"
+      ]
+    },
+    {
+      "surface": "/setup/voice",
+      "checks": [
+        "normal_v1_voice_setup_notice_is_present",
+        "voice_sample_and_consent_recording_notice_is_present",
+        "server_side_provider_boundary_is_disclosed_at_high_level",
+        "legal_and_support_links_are_reachable",
+        "selected_best_take_voice_material_is_not_claimed_for_v1"
+      ]
+    },
+    {
+      "surface": "footer / legal links",
+      "checks": [
+        "privacy_terms_support_account_deletion_and_settings_are_reachable",
+        "route_level_legal_links_are_acceptable_when_no_global_footer_exists",
+        "broken_legal_links_are_store_submission_blockers"
+      ]
+    }
+  ],
+  "store_submission_checks": [
+    "app_privacy_answers_match_implemented_v1_data_flow",
+    "google_data_safety_answers_match_implemented_v1_data_flow",
+    "reviewer_account_exists",
+    "reviewer_instructions_cover_v1_main_loop_and_deletion_request_path",
+    "privacy_policy_url_is_final_and_public",
+    "support_url_is_final_and_public",
+    "account_deletion_request_url_is_final_and_public",
+    "store_metadata_screenshots_and_reviewer_notes_do_not_claim_brush_up_as_v1",
+    "provider_disclosure_matches_v1_release_behavior"
+  ],
+  "gate4h_rerun_items": [
+    "disposable_account_safe_alias",
+    "disposable_account_not_real_or_personal_confirmation",
+    "environment_label",
+    "login_as_disposable_account",
+    "minimal_v1_test_data_creation",
+    "account_deletion_request_creation",
+    "typed_confirmation",
+    "inventory_dry_run_safe_summary",
+    "job_stage_dry_run_safe_summary",
+    "provider_cleanup_dry_run_safe_summary",
+    "storage_cleanup_dry_run_safe_summary",
+    "database_cleanup_dry_run_safe_summary",
+    "supabase_auth_deletion_dry_run_safe_summary",
+    "category_counts_status_reason_codes",
+    "redaction_confirmation",
+    "stop_point_before_actual_deletion"
+  ],
+  "gate4j_or_later_items": [
+    "actual_provider_cleanup_for_normal_v1_voice_resources",
+    "actual_storage_object_deletion",
+    "actual_database_cleanup_or_anonymization",
+    "supabase_auth_user_deletion",
+    "post_delete_verification",
+    "store_ready_disposable_deletion_proof",
+    "operator_only_destructive_execution_surface",
+    "public_actual_deletion_completion_claim"
+  ],
+  "human_required": [
+    "final_privacy_policy_approval",
+    "final_terms_approval",
+    "final_support_url_inbox_operator_ownership",
+    "final_account_deletion_request_url",
+    "legal_owner_or_operator_identity_for_store_metadata_if_required",
+    "app_privacy_final_answers",
+    "google_data_safety_final_answers",
+    "reviewer_account_and_reviewer_instructions",
+    "gate4h_disposable_account_preparation_and_rerun",
+    "provider_cleanup_semantics_for_normal_v1_voice_resources",
+    "final_no_overclaim_confirmation_for_deletion_completion_or_brush_up_availability"
+  ],
+  "non_destructive_boundary": {
+    "gate4h_rerun_executed": false,
+    "targeted_real_or_disposable_account": false,
+    "account_deletion_request_created": false,
+    "account_deletion_request_confirmed": false,
+    "actual_account_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "database_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "db_schema_or_migration_changed": false,
+    "api_contract_changed": false,
+    "env_or_dashboard_changed": false,
+    "brush_up_implemented": false,
+    "capacitor_or_store_submission_started": false
+  },
+  "redaction_policy": {
+    "records_secret": false,
+    "records_env_value": false,
+    "records_raw_provider_response": false,
+    "records_billing_detail": false,
+    "records_email": false,
+    "records_auth_user_id": false,
+    "records_transcript_body": false,
+    "records_script_body": false,
+    "records_raw_audio": false,
+    "records_private_audio_path": false,
+    "records_storage_object_full_path": false,
+    "records_storage_object_key": false,
+    "records_signed_url": false,
+    "records_provider_voice_id": false
+  },
+  "next_recommended_actions": [
+    "run_gate4i_release_qa_smoke_without_private_data",
+    "prepare_disposable_account_for_gate4h_rerun",
+    "keep_actual_deletion_for_later_destructive_gate_with_explicit_approval"
+  ]
+}
