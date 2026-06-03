@@ -88,6 +88,8 @@ Gate 4d account deletion request / dry-run proof scaffold is captured in `docs/s
 
 Gate 4e disposable account deletion proof checklist / operator proof package is captured in `docs/store-release-gate4e-disposable-account-deletion-proof-checklist.md` and `outputs/store_release_gate4e_disposable_account_deletion_proof_checklist/gate4e_disposable_account_deletion_proof_checklist.json`. It defines the disposable test account data setup, request / confirmation / dry-run capture sequence, safe proof package fields, redaction rules, and actual-deletion implementation blockers. It stops before actual deletion and does not change Auth, Storage, DB, provider cleanup, schema/API/env/infra, Capacitor, Store submission, or Brush-up.
 
+Gate 4f account deletion actual implementation planning is captured in `docs/store-release-gate4f-account-deletion-actual-implementation-plan.md` and `outputs/store_release_gate4f_account_deletion_actual_implementation_plan/gate4f_account_deletion_actual_implementation_plan.json`. It inventories the existing request UI, status UI, dry-run routes/services, and guarded actual service boundaries, then fixes the v1 destructive boundary and recommended order: provider cleanup, Storage cleanup, DB cleanup, Supabase Auth deletion, post-delete verification. It does not execute deletion or change Auth, Storage, DB, provider cleanup, schema/API/env/infra, Capacitor, Store submission, or Brush-up.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -130,6 +132,12 @@ Status: implemented as a non-destructive UI/copy/docs scaffold. It clarifies v1 
 Goal: define the operator checklist and proof package shape for a future disposable account deletion proof, including test data creation, dry-run capture, redaction rules, and the stop point before actual deletion.
 
 Status: checklist ready. It is docs/output only and does not execute deletion, add destructive operations, or change DB schema, API contracts, providers, env, dashboards, infrastructure, Capacitor, Store submission state, or Brush-up scope.
+
+### Gate 4f: Account Deletion Actual Implementation Plan / Destructive Boundary Decision
+
+Goal: decide the v1 actual deletion order, destructive boundary, DB schema/migration need, provider cleanup scope, and operator confirmation points before any destructive implementation or run.
+
+Status: plan ready. It is docs/output only. The existing request table appears sufficient for the v1 operator proof path, so no DB schema/migration is required for this planning gate. Actual cleanup remains separated into later gates and must not be exposed as a public UI button before guarded operator proof is accepted.
 
 ### Gate 4: Capacitor iOS / Android
 

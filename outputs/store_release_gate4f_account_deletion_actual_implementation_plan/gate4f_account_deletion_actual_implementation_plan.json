@@ -1,0 +1,224 @@
+{
+  "gate": "4f",
+  "name": "account_deletion_actual_implementation_plan",
+  "status": "decision_ready",
+  "scope": "docs_output_only",
+  "brush_up_scope": "v1_1_deferred",
+  "existing_code_inventory": {
+    "request_ui": {
+      "status": "present",
+      "files": [
+        "app/settings/page.tsx",
+        "components/account/account-deletion-panel.tsx",
+        "app/support/account-deletion/page.tsx"
+      ]
+    },
+    "request_api": {
+      "status": "present",
+      "files": [
+        "app/api/account/deletion-request/route.ts",
+        "app/api/account/deletion-confirm/route.ts",
+        "app/api/account/deletion-status/route.ts"
+      ]
+    },
+    "dry_run_api": {
+      "status": "present",
+      "files": [
+        "app/api/account/deletion-inventory/route.ts",
+        "app/api/account/deletion-job-dry-run/route.ts",
+        "app/api/account/deletion-provider-dry-run/route.ts",
+        "app/api/account/deletion-storage-dry-run/route.ts",
+        "app/api/account/deletion-database-dry-run/route.ts",
+        "app/api/account/deletion-auth-dry-run/route.ts"
+      ]
+    },
+    "dry_run_services": {
+      "status": "present",
+      "exports": [
+        "collectAccountDeletionInventory",
+        "planElevenLabsCleanupDryRun",
+        "planStorageCleanupDryRun",
+        "planDatabaseCleanupDryRun",
+        "planSupabaseAuthDeletionDryRun",
+        "runAccountDeletionJobDryRun"
+      ]
+    },
+    "guarded_actual_service_boundaries": {
+      "status": "present_not_publicly_exposed",
+      "guard_env": "NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE",
+      "exports": [
+        "runElevenLabsProviderCleanupActual",
+        "runStorageCleanupActual",
+        "runDatabaseCleanupActual",
+        "runSupabaseAuthDeletionActual"
+      ]
+    },
+    "post_delete_verification": {
+      "status": "checklist_only"
+    },
+    "operator_actual_execution_surface": {
+      "status": "not_finalized"
+    }
+  },
+  "recommended_v1_actual_deletion_order": [
+    "deletion_request_creation",
+    "user_typed_confirmation",
+    "full_dry_run_summary",
+    "provider_cleanup_dry_run",
+    "storage_cleanup_dry_run",
+    "database_cleanup_dry_run",
+    "supabase_auth_deletion_dry_run",
+    "disposable_account_dry_run_proof",
+    "actual_provider_cleanup_for_normal_v1_voice_resources",
+    "actual_storage_cleanup_for_app_owned_audio_objects",
+    "actual_database_cleanup_or_anonymized_retention",
+    "supabase_auth_user_deletion",
+    "post_delete_verification_and_safe_proof_package",
+    "store_release_qa_replay"
+  ],
+  "destructive_boundary": {
+    "preview_or_non_destructive_operations": [
+      "deletion_request_creation",
+      "typed_delete_confirmation",
+      "status_read",
+      "inventory_dry_run",
+      "job_stage_dry_run",
+      "provider_cleanup_dry_run",
+      "storage_cleanup_dry_run",
+      "database_cleanup_dry_run",
+      "supabase_auth_deletion_dry_run",
+      "safe_proof_package_preparation"
+    ],
+    "destructive_operations": [
+      "provider_voice_delete_call",
+      "supabase_storage_object_remove",
+      "database_row_delete_update_or_anonymize",
+      "cleanup_status_mutation_after_actual_cleanup",
+      "supabase_auth_admin_delete_user"
+    ],
+    "operator_confirmation_required": [
+      "enable_destructive_guard",
+      "connect_operator_route_or_cli_to_actual_services",
+      "run_actual_cleanup_against_disposable_account",
+      "rerun_failed_actual_cleanup_stage",
+      "mark_proof_store_ready"
+    ],
+    "user_confirmation_required": [
+      "create_deletion_request",
+      "typed_delete_confirmation",
+      "future_real_deletion_execution_after_preview",
+      "human_approved_irreversible_deletion_copy"
+    ],
+    "irreversible_or_rollback_limited": [
+      "provider_voice_deletion",
+      "storage_object_deletion",
+      "database_destructive_cleanup_or_anonymization",
+      "auth_user_deletion"
+    ]
+  },
+  "db_schema_migration_decision": {
+    "required_for_gate_4f": false,
+    "required_before_next_docs_only_gate": false,
+    "existing_request_tracking_sufficient_for_v1_operator_proof_path": true,
+    "proof_artifact_location_for_v1": "operator_evidence_package_and_docs_outputs",
+    "future_schema_decisions_if_needed": [
+      "durable_customer_visible_deletion_receipt",
+      "external_audit_log",
+      "in_app_proof_history",
+      "operator_run_table"
+    ]
+  },
+  "provider_cleanup_v1_scope": {
+    "openai": {
+      "provider_side_delete_required_for_v1": false,
+      "reason": "no app-created persistent provider resource is confirmed in the current v1 path",
+      "remaining": "policy_disclosure_and_retention_human_confirmation"
+    },
+    "azure": {
+      "provider_side_delete_required_for_v1": false,
+      "reason": "no app-created persistent provider resource is confirmed in the current v1 path",
+      "remaining": "policy_disclosure_and_retention_human_confirmation"
+    },
+    "elevenlabs": {
+      "provider_side_delete_required_for_v1": "if_normal_v1_owned_voice_resources_exist",
+      "scope": "normal_v1_voice_resources_only",
+      "excluded": "brush_up_resources"
+    },
+    "supabase_storage": {
+      "cleanup_required_for_v1": true,
+      "buckets": [
+        "recordings",
+        "script-audios",
+        "voice-samples",
+        "voice-consents"
+      ]
+    },
+    "supabase_db": {
+      "cleanup_required_for_v1": true,
+      "runs_after": "storage_cleanup"
+    },
+    "supabase_auth": {
+      "cleanup_required_for_v1": true,
+      "runs_last": true
+    }
+  },
+  "human_confirmation_required": [
+    "disposable_test_account_approval",
+    "destructive_implementation_start_approval",
+    "actual_deletion_execution_approval",
+    "operator_identity",
+    "reviewer_identity",
+    "normal_v1_elevenlabs_cleanup_semantics",
+    "openai_no_provider_side_resource_deletion_confirmation",
+    "azure_no_provider_side_resource_deletion_confirmation",
+    "support_legal_privacy_terms_copy_final_approval",
+    "store_disclosure_consistency"
+  ],
+  "next_gate_minimal_units": [
+    {
+      "gate": "4g",
+      "name": "account_deletion_dry_run_service_hardening",
+      "destructive": false
+    },
+    {
+      "gate": "4h",
+      "name": "disposable_account_dry_run_proof_capture",
+      "destructive": false
+    },
+    {
+      "gate": "4i",
+      "name": "guarded_operator_actual_deletion_wiring",
+      "destructive": "potentially_after_explicit_approval"
+    },
+    {
+      "gate": "4j",
+      "name": "disposable_live_deletion_proof_run",
+      "destructive": "requires_explicit_approval"
+    }
+  ],
+  "not_changed": [
+    "actual_account_deletion",
+    "supabase_auth_deletion",
+    "storage_object_deletion",
+    "database_destructive_cleanup",
+    "provider_cleanup_execution",
+    "db_schema_or_migration",
+    "api_contract",
+    "env",
+    "dashboard",
+    "brush_up",
+    "capacitor",
+    "store_submission"
+  ],
+  "redaction_policy": {
+    "records_secret": false,
+    "records_env_value": false,
+    "records_raw_provider_response": false,
+    "records_transcript_body": false,
+    "records_private_audio_path": false,
+    "records_storage_object_key": false,
+    "records_provider_voice_id": false,
+    "records_email": false,
+    "records_auth_user_id": false
+  }
+}
