@@ -2,11 +2,11 @@ import { AppError } from "@/lib/errors";
 
 export type CostGuardArea = "openai" | "azure" | "elevenlabs" | "storage_uploads";
 
-const COST_GUARD_ENV: Record<CostGuardArea, string> = {
-  openai: "NATIVE_MINUTE_DISABLE_OPENAI",
-  azure: "NATIVE_MINUTE_DISABLE_AZURE",
-  elevenlabs: "NATIVE_MINUTE_DISABLE_ELEVENLABS",
-  storage_uploads: "NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS"
+const COST_GUARD_ENV: Record<CostGuardArea, readonly [string, ...string[]]> = {
+  openai: ["NATIVE_MINUTE_DISABLE_OPENAI"],
+  azure: ["NATIVE_MINUTE_DISABLE_AZURE"],
+  elevenlabs: ["NATIVE_MINUTE_DISABLE_ELEVENLABS"],
+  storage_uploads: ["NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS", "NATIVE_MINUTE_DISABLE_STORAGE_UPLOAD"]
 };
 
 const COST_GUARD_LABEL: Record<CostGuardArea, string> = {
@@ -24,16 +24,25 @@ function isTruthyEnv(value: string | undefined) {
   return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
 }
 
+export function getCostGuardEnvNames(area: CostGuardArea) {
+  return [...COST_GUARD_ENV[area]];
+}
+
+function getTriggeredCostGuardEnvName(area: CostGuardArea, env: NodeJS.ProcessEnv = process.env) {
+  return COST_GUARD_ENV[area].find((envName) => isTruthyEnv(env[envName])) ?? null;
+}
+
 export function isCostGuardDisabled(area: CostGuardArea, env: NodeJS.ProcessEnv = process.env) {
-  return isTruthyEnv(env[COST_GUARD_ENV[area]]);
+  return Boolean(getTriggeredCostGuardEnvName(area, env));
 }
 
 export function getCostGuardIssue(area: CostGuardArea, env: NodeJS.ProcessEnv = process.env) {
-  if (!isCostGuardDisabled(area, env)) {
+  const envName = getTriggeredCostGuardEnvName(area, env);
+
+  if (!envName) {
     return null;
   }
 
-  const envName = COST_GUARD_ENV[area];
   const label = COST_GUARD_LABEL[area];
 
   return {

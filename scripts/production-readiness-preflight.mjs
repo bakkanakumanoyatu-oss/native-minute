@@ -33,19 +33,19 @@ const ALLOWED_PRODUCTION_LAUNCH_MODES = new Set(["private_beta", "small_cohort"]
 
 const COST_GUARD_KILL_SWITCHES = [
   {
-    envName: "NATIVE_MINUTE_DISABLE_OPENAI",
+    envNames: ["NATIVE_MINUTE_DISABLE_OPENAI"],
     label: "OpenAI transcription / script generation"
   },
   {
-    envName: "NATIVE_MINUTE_DISABLE_AZURE",
+    envNames: ["NATIVE_MINUTE_DISABLE_AZURE"],
     label: "Azure pronunciation evaluator"
   },
   {
-    envName: "NATIVE_MINUTE_DISABLE_ELEVENLABS",
+    envNames: ["NATIVE_MINUTE_DISABLE_ELEVENLABS"],
     label: "ElevenLabs voice clone / model audio"
   },
   {
-    envName: "NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS",
+    envNames: ["NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS", "NATIVE_MINUTE_DISABLE_STORAGE_UPLOAD"],
     label: "Supabase Storage uploads"
   }
 ];
@@ -120,9 +120,10 @@ printCheck(
     : "set to private_beta or small_cohort before production"
 );
 
-for (const { envName, label } of COST_GUARD_KILL_SWITCHES) {
-  const enabled = isTruthy(process.env[envName]);
-  console.log(`[OK] ${envName}: ${enabled ? `${label} disabled by kill switch` : "off"}`);
+for (const { envNames, label } of COST_GUARD_KILL_SWITCHES) {
+  const enabledEnvName = envNames.find((envName) => isTruthy(process.env[envName]));
+  const envLabel = envNames.join(" / ");
+  console.log(`[OK] ${envLabel}: ${enabledEnvName ? `${label} disabled by kill switch (${enabledEnvName})` : "off"}`);
 }
 
 console.log(

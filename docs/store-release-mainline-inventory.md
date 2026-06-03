@@ -96,6 +96,8 @@ Gate 4h disposable account dry-run proof capture is recorded in `docs/store-rele
 
 Gate 4i privacy / support / deletion release QA smoke checklist is captured in `docs/store-release-gate4i-privacy-support-deletion-release-qa-checklist.md` and `outputs/store_release_gate4i_privacy_support_deletion_release_qa_checklist/gate4i_privacy_support_deletion_release_qa_checklist.json`. It defines human-confirmation-free QA targets for `/privacy`, `/terms`, `/support`, `/support/account-deletion`, `/settings`, record, listen, review, `/setup/voice`, footer / legal links, and Store submission support/privacy/deletion URL checks. Gate 4h disposable account dry-run proof remains blocked until a human prepares a disposable account; actual deletion and destructive cleanup stay in later gates.
 
+Gate 4j provider kill switch readiness is captured in `docs/store-release-gate4j-provider-kill-switch-readiness.md` and `outputs/store_release_gate4j_provider_kill_switch_readiness/gate4j_provider_kill_switch_readiness.json`. OpenAI, Azure, and ElevenLabs provider call guards were repo-confirmed. Storage upload kill switch readiness now accepts both the existing canonical `NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS` and the alternate `NATIVE_MINUTE_DISABLE_STORAGE_UPLOAD` alias, without changing Vercel env or running provider/dashboard/destructive operations.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -162,6 +164,12 @@ Status: blocked pending human disposable account. Codex did not execute dry-run 
 Goal: define a release QA smoke checklist for privacy, terms, support, account deletion request, consent notices, provider notices, and Store-facing URL/reviewer/data safety checks that can be reviewed without a disposable account.
 
 Status: checklist ready. Gate 4i is docs/output only. It does not rerun Gate 4h, target any account, execute actual deletion, add destructive routes, change DB schema/API/env/infra, or implement Brush-up. Disposable-account dry-run proof stays in Gate 4h re-run; actual deletion proof stays in later destructive gates.
+
+### Gate 4j: Provider Kill Switch Readiness
+
+Goal: prove repo-side kill switch readiness for OpenAI, Azure, ElevenLabs, and Storage uploads before Store release QA, without operating dashboards or changing production env.
+
+Status: implemented non-destructively. OpenAI, Azure, and ElevenLabs already stop at provider factory / service boundaries before provider calls. Storage uploads now support both `NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS` and `NATIVE_MINUTE_DISABLE_STORAGE_UPLOAD` as the same upload pause. Human env presence and operation proof are still required before Store PASS.
 
 ### Gate 4: Capacitor iOS / Android
 

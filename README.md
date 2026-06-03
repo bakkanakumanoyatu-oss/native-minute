@@ -252,6 +252,8 @@ callback failure は、`PKCE verifier cookie が callback に届いていない`
 
 ### 実装済み
 
+- Provider kill switch は `NATIVE_MINUTE_DISABLE_OPENAI`、`NATIVE_MINUTE_DISABLE_AZURE`、`NATIVE_MINUTE_DISABLE_ELEVENLABS`、`NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS` で扱う。Storage upload は Gate 4j 以降、`NATIVE_MINUTE_DISABLE_STORAGE_UPLOAD` も同じ停止 alias として受ける。production env / dashboard の実変更と operation proof は人間確認で行い、secret や env value は記録しない。
+
 - Supabase Auth / DB / Storage を使った login と保存
 - script 作成、複製、削除
 - `recordings` bucket への録音 upload

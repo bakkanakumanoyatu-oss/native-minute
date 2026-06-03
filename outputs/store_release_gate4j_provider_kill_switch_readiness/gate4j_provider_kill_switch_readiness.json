@@ -1,0 +1,145 @@
+{
+  "gate": "4j",
+  "name": "provider_kill_switch_readiness",
+  "status": "implemented_non_destructive",
+  "created_at": "2026-06-03T06:00:49Z",
+  "scope": [
+    "provider_kill_switch_inventory",
+    "storage_upload_kill_switch_alias",
+    "production_preflight_alignment",
+    "docs_and_output_report"
+  ],
+  "provider_surfaces": [
+    {
+      "surface": "OpenAI transcription / Script Studio generation",
+      "env_names": [
+        "NATIVE_MINUTE_DISABLE_OPENAI"
+      ],
+      "code_support": "ready",
+      "guard_locations": [
+        "services/transcription/factory.ts",
+        "services/script-studio/script-generation.service.ts"
+      ],
+      "disabled_behavior": "blocks provider creation before OpenAI API calls with safe user-facing pause copy",
+      "human_required": [
+        "vercel_env_presence_only_confirmation",
+        "operation_proof"
+      ]
+    },
+    {
+      "surface": "Azure pronunciation evaluation",
+      "env_names": [
+        "NATIVE_MINUTE_DISABLE_AZURE"
+      ],
+      "code_support": "ready",
+      "guard_locations": [
+        "services/pronunciation/factory.ts"
+      ],
+      "disabled_behavior": "blocks evaluator creation before Azure SDK/provider calls with safe user-facing pause copy",
+      "human_required": [
+        "vercel_env_presence_only_confirmation",
+        "operation_proof"
+      ]
+    },
+    {
+      "surface": "ElevenLabs normal voice setup / model audio",
+      "env_names": [
+        "NATIVE_MINUTE_DISABLE_ELEVENLABS"
+      ],
+      "code_support": "ready",
+      "guard_locations": [
+        "providers/voice/factory.ts",
+        "services/account-deletion/account-deletion.service.ts"
+      ],
+      "disabled_behavior": "blocks voice provider creation before ElevenLabs clone or TTS calls with safe user-facing pause copy",
+      "human_required": [
+        "vercel_env_presence_only_confirmation",
+        "operation_proof",
+        "normal_v1_provider_cleanup_semantics"
+      ]
+    },
+    {
+      "surface": "Supabase Storage uploads",
+      "env_names": [
+        "NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS",
+        "NATIVE_MINUTE_DISABLE_STORAGE_UPLOAD"
+      ],
+      "canonical_env_name": "NATIVE_MINUTE_DISABLE_STORAGE_UPLOADS",
+      "alias_added": "NATIVE_MINUTE_DISABLE_STORAGE_UPLOAD",
+      "code_support": "ready_with_alias",
+      "guard_locations": [
+        "lib/cost-guard.ts",
+        "app/api/uploads/recording/route.ts",
+        "app/api/uploads/voice-sample/route.ts",
+        "app/api/uploads/voice-consent/route.ts",
+        "scripts/production-readiness-preflight.mjs"
+      ],
+      "disabled_behavior": "blocks new recording, voice sample, and consent recording uploads before app-owned Storage upload",
+      "human_required": [
+        "vercel_env_presence_only_confirmation",
+        "operation_proof"
+      ]
+    }
+  ],
+  "updated_guard": {
+    "lib_cost_guard_supports_multiple_env_names_per_area": true,
+    "storage_upload_alias_supported": true,
+    "truthy_values": [
+      "1",
+      "true",
+      "yes",
+      "on"
+    ],
+    "safe_issue_contains_triggered_env_name_for_operator_diagnostics": true,
+    "safe_issue_records_env_value": false
+  },
+  "release_qa_smoke": [
+    "set_native_minute_disable_openai_and_confirm_no_openai_call",
+    "set_native_minute_disable_azure_and_confirm_no_azure_call",
+    "set_native_minute_disable_elevenlabs_and_confirm_no_elevenlabs_call",
+    "set_native_minute_disable_storage_uploads_and_confirm_upload_routes_stop",
+    "set_native_minute_disable_storage_upload_alias_and_confirm_upload_routes_stop",
+    "unset_kill_switches_and_confirm_normal_provider_readiness_path_still_works",
+    "confirm_no_secret_raw_provider_response_transcript_raw_audio_private_path_storage_key_signed_url_provider_voice_id_or_env_value_in_ui_logs_docs_or_evidence"
+  ],
+  "human_required": [
+    "vercel_env_presence_only_confirmation",
+    "provider_kill_switch_operation_proof",
+    "release_owner_acceptance_for_remaining_warn",
+    "production_logs_redaction_confirmation_if_drill_runs"
+  ],
+  "not_changed": {
+    "vercel_env_changed": false,
+    "provider_dashboard_operated": false,
+    "provider_api_called": false,
+    "actual_account_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "database_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "db_schema_or_migration_changed": false,
+    "api_contract_breaking_change": false,
+    "brush_up_implemented": false,
+    "capacitor_or_store_submission_started": false
+  },
+  "redaction_policy": {
+    "records_secret": false,
+    "records_env_value": false,
+    "records_raw_provider_response": false,
+    "records_transcript_body": false,
+    "records_private_audio_path": false,
+    "records_storage_object_full_path": false,
+    "records_storage_object_key": false,
+    "records_signed_url": false,
+    "records_provider_voice_id": false,
+    "records_email": false,
+    "records_auth_user_id": false,
+    "records_script_body": false,
+    "records_raw_audio": false
+  },
+  "next_recommended_actions": [
+    "run_provider_kill_switch_smoke_in_local_or_production_like_environment",
+    "record_human_safe_operation_proof_without_values",
+    "rerun_gate4h_after_human_prepares_disposable_account"
+  ]
+}
