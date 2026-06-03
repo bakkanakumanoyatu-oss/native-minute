@@ -90,6 +90,8 @@ Gate 4e disposable account deletion proof checklist / operator proof package is 
 
 Gate 4f account deletion actual implementation planning is captured in `docs/store-release-gate4f-account-deletion-actual-implementation-plan.md` and `outputs/store_release_gate4f_account_deletion_actual_implementation_plan/gate4f_account_deletion_actual_implementation_plan.json`. It inventories the existing request UI, status UI, dry-run routes/services, and guarded actual service boundaries, then fixes the v1 destructive boundary and recommended order: provider cleanup, Storage cleanup, DB cleanup, Supabase Auth deletion, post-delete verification. It does not execute deletion or change Auth, Storage, DB, provider cleanup, schema/API/env/infra, Capacitor, Store submission, or Brush-up.
 
+Gate 4g account deletion dry-run service hardening is captured in `docs/store-release-gate4g-account-deletion-dry-run-hardening.md` and `outputs/store_release_gate4g_account_deletion_dry_run_hardening/gate4g_account_deletion_dry_run_hardening.json`. `runAccountDeletionJobDryRun` now returns a safe `summary` that aligns Gate 4e proof categories with coverage, skipped actual stages, deferred Brush-up items, human-required confirmations, blockers, operator checklist items, and redaction rules. Settings shows this safe summary without adding actual deletion power.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -138,6 +140,12 @@ Status: checklist ready. It is docs/output only and does not execute deletion, a
 Goal: decide the v1 actual deletion order, destructive boundary, DB schema/migration need, provider cleanup scope, and operator confirmation points before any destructive implementation or run.
 
 Status: plan ready. It is docs/output only. The existing request table appears sufficient for the v1 operator proof path, so no DB schema/migration is required for this planning gate. Actual cleanup remains separated into later gates and must not be exposed as a public UI button before guarded operator proof is accepted.
+
+### Gate 4g: Account Deletion Dry-Run Service Hardening / Operator Checklist Alignment
+
+Goal: make the existing non-destructive dry-run output line up with the disposable proof checklist before any actual deletion implementation or proof run.
+
+Status: implemented non-destructively. The job dry-run summary now covers Gate 4e v1 categories, explicit v1.1 Brush-up deferrals, skipped actual stages, human-required confirmations, blocker codes, operator checklist alignment, and redaction rules. No destructive route, DB migration, provider cleanup, Storage deletion, DB cleanup, Auth deletion, env/dashboard change, Capacitor work, or Store submission work was added.
 
 ### Gate 4: Capacitor iOS / Android
 

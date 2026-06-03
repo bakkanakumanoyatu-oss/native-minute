@@ -202,6 +202,9 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
     ] satisfies Array<[string, { count: number; status: "available" | "unavailable" }]>;
   }, [inventory]);
   const jobStageRows = useMemo(() => jobDryRun?.stages ?? [], [jobDryRun]);
+  const jobSummary = jobDryRun?.summary ?? null;
+  const coverageRows = useMemo(() => jobSummary?.coverage ?? [], [jobSummary]);
+  const operatorChecklistRows = useMemo(() => jobSummary?.operatorChecklist ?? [], [jobSummary]);
   const providerCandidateRows = useMemo(() => {
     if (!providerDryRun) {
       return [];
@@ -535,8 +538,72 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
                   </div>
                 ))}
               </dl>
+              {jobSummary ? (
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-[var(--line)] bg-white px-3 py-3">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">Gate 4g safe summary</p>
+                      <p className="text-xs font-semibold text-ink-700">{jobSummary.stopPoint}</p>
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-ink-600">
+                      destructive actions called: no / missing coverage: {jobSummary.missingCoverage.length}
+                    </p>
+                    <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                      <div className="rounded-2xl bg-ink-50 px-3 py-2">
+                        <p className="font-semibold text-ink-800">human required</p>
+                        <p className="mt-1 break-words text-ink-600">{jobSummary.humanRequired.length ? jobSummary.humanRequired.join(", ") : "none"}</p>
+                      </div>
+                      <div className="rounded-2xl bg-ink-50 px-3 py-2">
+                        <p className="font-semibold text-ink-800">blockers</p>
+                        <p className="mt-1 break-words text-ink-600">{jobSummary.blockers.length ? jobSummary.blockers.join(", ") : "none"}</p>
+                      </div>
+                      <div className="rounded-2xl bg-ink-50 px-3 py-2">
+                        <p className="font-semibold text-ink-800">deferred</p>
+                        <p className="mt-1 break-words text-ink-600">{jobSummary.deferred.length ? jobSummary.deferred.join(", ") : "none"}</p>
+                      </div>
+                      <div className="rounded-2xl bg-ink-50 px-3 py-2">
+                        <p className="font-semibold text-ink-800">skipped actual stages</p>
+                        <p className="mt-1 break-words text-ink-600">{jobSummary.skipped.join(", ")}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <details className="rounded-2xl border border-[var(--line)] bg-white px-3 py-3">
+                    <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">coverage alignment</summary>
+                    <dl className="mt-3 grid gap-2 text-xs">
+                      {coverageRows.map((item) => (
+                        <div key={item.category} className="rounded-2xl bg-ink-50 px-3 py-2">
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <dt className="font-semibold text-ink-800">{item.category}</dt>
+                            <dd className="text-ink-700">
+                              {item.status} / {item.source}
+                              {item.count === null ? "" : ` / count ${item.count}`}
+                            </dd>
+                          </div>
+                        </div>
+                      ))}
+                    </dl>
+                  </details>
+
+                  <details className="rounded-2xl border border-[var(--line)] bg-white px-3 py-3">
+                    <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">operator checklist alignment</summary>
+                    <dl className="mt-3 grid gap-2 text-xs">
+                      {operatorChecklistRows.map((item) => (
+                        <div key={item.item} className="rounded-2xl bg-ink-50 px-3 py-2">
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <dt className="font-semibold text-ink-800">{item.item}</dt>
+                            <dd className="text-ink-700">
+                              {item.status} / {item.evidenceSource}
+                            </dd>
+                          </div>
+                        </div>
+                      ))}
+                    </dl>
+                  </details>
+                </div>
+              ) : null}
               <p className="text-xs leading-5 text-ink-500">
-                storage path、provider voice id、email、script 本文、transcript、raw audio、signed URL、raw provider response は返しません。
+                storage path、provider voice id、email、script 本文、transcript、raw audio、signed URL、raw provider response は返しません。これは operator proof のための safe summary で、actual deletion は実行しません。
               </p>
             </div>
           ) : (

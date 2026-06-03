@@ -379,6 +379,37 @@ export type AccountDeletionJobStageDryRun = {
   notes: string[];
 };
 
+export type AccountDeletionDryRunCoverageStatus = "covered" | "covered_with_warning" | "human_required" | "deferred" | "blocked";
+export type AccountDeletionDryRunCoverageItem = {
+  category: string;
+  status: AccountDeletionDryRunCoverageStatus;
+  source: "inventory" | "provider_cleanup" | "storage_cleanup" | "database_cleanup" | "auth_deletion" | "operator_checklist";
+  count: number | null;
+  notes: string[];
+};
+export type AccountDeletionOperatorChecklistStatus = "ready" | "warning" | "human_required" | "deferred" | "blocked";
+export type AccountDeletionOperatorChecklistItem = {
+  item: string;
+  status: AccountDeletionOperatorChecklistStatus;
+  evidenceSource: string;
+  notes: string[];
+};
+export type AccountDeletionDryRunSummary = {
+  stopPoint: "actual_deletion_not_run";
+  destructiveActionsCalled: false;
+  coverage: AccountDeletionDryRunCoverageItem[];
+  missingCoverage: string[];
+  skipped: string[];
+  deferred: string[];
+  humanRequired: string[];
+  blockers: string[];
+  operatorChecklist: AccountDeletionOperatorChecklistItem[];
+  redaction: {
+    safeFieldsOnly: true;
+    forbiddenFields: string[];
+  };
+};
+
 export type AccountDeletionJobDryRun = {
   deletionRequest: AccountDeletionRequestView;
   canRun: boolean;
@@ -393,6 +424,7 @@ export type AccountDeletionJobDryRun = {
   authDeletion: SupabaseAuthDeletionDryRun;
   inventory: AccountDeletionInventorySummary;
   stages: AccountDeletionJobStageDryRun[];
+  summary: AccountDeletionDryRunSummary;
   notes: string[];
 };
 
@@ -928,6 +960,245 @@ export function planAccountDeletionStages(
       ]
     }
   ];
+}
+
+function coverageStatusFromCount(count: number): AccountDeletionDryRunCoverageStatus {
+  return count > 0 ? "covered" : "covered_with_warning";
+}
+
+function buildAccountDeletionDryRunSummary(input: {
+  deletionRequest: AccountDeletionRequestView;
+  runGuard: ReturnType<typeof validateDeletionRequestCanRun>;
+  inventory: AccountDeletionInventorySummary;
+  providerCleanup: ElevenLabsProviderCleanupDryRun;
+  storageCleanup: StorageCleanupDryRun;
+  databaseCleanup: DatabaseCleanupDryRun;
+  authDeletion: SupabaseAuthDeletionDryRun;
+  stages: AccountDeletionJobStageDryRun[];
+}): AccountDeletionDryRunSummary {
+  const storageObjectCount = input.storageCleanup.totals.knownObjectCount + input.storageCleanup.totals.listedObjectCount;
+  const storageBlocked = input.storageCleanup.status === "blocked";
+  const databaseBlocked = input.databaseCleanup.status === "blocked";
+  const authBlocked = input.authDeletion.status === "blocked";
+  const providerBlocked = input.providerCleanup.status === "blocked";
+  const blockers = [
+    !input.runGuard.allowed ? "deletion_request_not_confirmed_or_not_retryable" : null,
+    providerBlocked ? "provider_cleanup_dry_run_blocked" : null,
+    storageBlocked ? "storage_cleanup_dry_run_blocked" : null,
+    databaseBlocked ? "database_cleanup_dry_run_blocked" : null,
+    authBlocked ? "auth_deletion_dry_run_blocked" : null
+  ].filter((value): value is string => Boolean(value));
+  const humanRequired = [
+    "disposable_test_account_approval",
+    "operator_and_reviewer_identity",
+    "normal_v1_elevenlabs_cleanup_semantics",
+    "support_legal_copy_final_approval",
+    "store_disclosure_consistency"
+  ];
+  const coverage: AccountDeletionDryRunCoverageItem[] = [
+    {
+      category: "auth user",
+      status: authBlocked ? "blocked" : coverageStatusFromCount(input.authDeletion.candidateCount),
+      source: "auth_deletion",
+      count: input.authDeletion.candidateCount,
+      notes: ["Supabase Auth deletion is represented by final-stage dry-run only; Auth delete is not called."]
+    },
+    {
+      category: "profile / account rows",
+      status: coverageStatusFromCount(input.inventory.database.profiles),
+      source: "inventory",
+      count: input.inventory.database.profiles,
+      notes: ["Profile rows are counted server-side and raw account fields are not returned."]
+    },
+    {
+      category: "scripts",
+      status: coverageStatusFromCount(input.inventory.database.scripts),
+      source: "inventory",
+      count: input.inventory.database.scripts,
+      notes: ["Script rows are counted only; script body is not returned."]
+    },
+    {
+      category: "recordings",
+      status: input.inventory.storage.recordings.status === "unavailable" ? "blocked" : coverageStatusFromCount(input.inventory.storage.recordings.count),
+      source: "storage_cleanup",
+      count: input.inventory.storage.recordings.count,
+      notes: ["Recording objects are counted by bucket only; storage object keys are not returned."]
+    },
+    {
+      category: "takes",
+      status: coverageStatusFromCount(input.inventory.database.takes),
+      source: "inventory",
+      count: input.inventory.database.takes,
+      notes: ["Take rows are counted only; transcript, score payload, and audio path are not returned."]
+    },
+    {
+      category: "weak_words",
+      status: coverageStatusFromCount(input.inventory.database.weakWords),
+      source: "database_cleanup",
+      count: input.inventory.database.weakWords,
+      notes: ["Weak word rows are counted through take ownership."]
+    },
+    {
+      category: "coach_feedback",
+      status: coverageStatusFromCount(input.inventory.database.coachFeedback),
+      source: "database_cleanup",
+      count: input.inventory.database.coachFeedback,
+      notes: ["Coach feedback rows are counted through take ownership; feedback text is not returned."]
+    },
+    {
+      category: "script-audios",
+      status: input.inventory.storage.scriptAudios.status === "unavailable" ? "blocked" : coverageStatusFromCount(input.inventory.database.scriptAudios + input.inventory.storage.scriptAudios.count),
+      source: "storage_cleanup",
+      count: input.inventory.database.scriptAudios + input.inventory.storage.scriptAudios.count,
+      notes: ["Script audio rows and app-owned audio objects are counted; stored asset references are not returned."]
+    },
+    {
+      category: "voice-samples",
+      status: input.inventory.storage.voiceSamples.status === "unavailable" ? "blocked" : coverageStatusFromCount(input.inventory.storage.voiceSamples.count),
+      source: "storage_cleanup",
+      count: input.inventory.storage.voiceSamples.count,
+      notes: ["Voice sample objects are counted by bucket only; private paths are not returned."]
+    },
+    {
+      category: "voice-consents",
+      status: input.inventory.storage.voiceConsents.status === "unavailable" ? "blocked" : coverageStatusFromCount(input.inventory.database.voiceConsents + input.inventory.storage.voiceConsents.count),
+      source: "storage_cleanup",
+      count: input.inventory.database.voiceConsents + input.inventory.storage.voiceConsents.count,
+      notes: ["Voice consent rows and consent recording objects are counted; metadata details are not returned."]
+    },
+    {
+      category: "voices",
+      status: coverageStatusFromCount(input.inventory.database.voices),
+      source: "database_cleanup",
+      count: input.inventory.database.voices,
+      notes: ["Voice rows are counted; provider references are not returned."]
+    },
+    {
+      category: "saved pins",
+      status: coverageStatusFromCount(input.inventory.database.savedBestTakes + input.inventory.database.savedModelAudios),
+      source: "database_cleanup",
+      count: input.inventory.database.savedBestTakes + input.inventory.database.savedModelAudios,
+      notes: ["Saved best-take and model-audio pins are counted as DB cleanup candidates."]
+    },
+    {
+      category: "quota / processing metadata",
+      status: coverageStatusFromCount(input.inventory.database.quotaEvents),
+      source: "database_cleanup",
+      count: input.inventory.database.quotaEvents,
+      notes: ["Quota event rows are counted only; provider usage details are not returned."]
+    },
+    {
+      category: "normal v1 provider voice resources",
+      status: providerBlocked ? "blocked" : coverageStatusFromCount(input.providerCleanup.cleanup.required),
+      source: "provider_cleanup",
+      count: input.providerCleanup.cleanup.required,
+      notes: ["Normal v1 ElevenLabs voice cleanup candidates are counted without exposing provider voice ids."]
+    },
+    {
+      category: "request tracking",
+      status: "covered",
+      source: "database_cleanup",
+      count: input.databaseCleanup.totals.accountDeletionRequestsRetainedTrackingCount,
+      notes: ["Deletion request tracking is retained only as safe status / anonymized reference where policy allows."]
+    },
+    {
+      category: "Brush-up-specific data",
+      status: "deferred",
+      source: "operator_checklist",
+      count: null,
+      notes: ["Brush-up is deferred to v1.1 and is not part of the v1 dry-run proof package."]
+    }
+  ];
+
+  return {
+    stopPoint: "actual_deletion_not_run",
+    destructiveActionsCalled: false,
+    coverage,
+    missingCoverage: [],
+    skipped: [
+      "actual_provider_cleanup",
+      "actual_storage_cleanup",
+      "actual_database_cleanup",
+      "actual_supabase_auth_deletion",
+      "post_delete_verification"
+    ],
+    deferred: [
+      "Brush-up-specific script-scoped voice material",
+      "Brush-up generated audio",
+      "Brush-up consent / revoke state",
+      "Brush-up provider cleanup"
+    ],
+    humanRequired,
+    blockers,
+    operatorChecklist: [
+      {
+        item: "request_confirmed",
+        status: input.runGuard.allowed ? "ready" : "blocked",
+        evidenceSource: "runGuard",
+        notes: [input.runGuard.reason]
+      },
+      {
+        item: "all_v1_categories_have_safe_summary",
+        status: "ready",
+        evidenceSource: "summary.coverage",
+        notes: ["Every Gate 4e v1 proof target has a safe coverage item or explicit v1.1 defer marker."]
+      },
+      {
+        item: "storage_buckets_listable",
+        status: storageBlocked ? "blocked" : "ready",
+        evidenceSource: "storageCleanup",
+        notes: [`Storage dry-run safe object count is ${storageObjectCount}.`]
+      },
+      {
+        item: "provider_cleanup_preflight",
+        status: providerBlocked ? "blocked" : input.providerCleanup.status === "required" ? "human_required" : "ready",
+        evidenceSource: "providerCleanup",
+        notes: ["Normal v1 ElevenLabs cleanup semantics still need human confirmation before actual cleanup."]
+      },
+      {
+        item: "database_cleanup_classification",
+        status: databaseBlocked ? "blocked" : "ready",
+        evidenceSource: "databaseCleanup",
+        notes: ["Table-level actions are grouped as cascade, explicit delete, delete-last, or anonymized retention."]
+      },
+      {
+        item: "auth_deletion_preflight",
+        status: authBlocked ? "blocked" : input.authDeletion.status === "ready" ? "ready" : "warning",
+        evidenceSource: "authDeletion",
+        notes: ["Auth deletion remains dry-run only and must run after DB cleanup in a later gate."]
+      },
+      {
+        item: "destructive_stop_point",
+        status: "ready",
+        evidenceSource: "summary.stopPoint",
+        notes: ["The current dry-run stops before provider, Storage, DB, and Auth destructive execution."]
+      },
+      {
+        item: "proof_redaction",
+        status: "ready",
+        evidenceSource: "summary.redaction",
+        notes: ["Safe summary excludes secrets, raw provider responses, transcripts, private paths, storage keys, provider ids, email, and auth ids."]
+      }
+    ],
+    redaction: {
+      safeFieldsOnly: true,
+      forbiddenFields: [
+        "secret",
+        "env value",
+        "raw provider response",
+        "transcript body",
+        "private audio path",
+        "storage object full path",
+        "storage object key",
+        "signed URL",
+        "provider voice id",
+        "email",
+        "auth user id",
+        "script body",
+        "raw audio"
+      ]
+    }
+  };
 }
 
 export async function getAccountDeletionStatus(client: SupabaseReadClient, userId: string) {
@@ -3676,6 +3947,7 @@ export async function runAccountDeletionJobDryRun(userId: string): Promise<Accou
   const authDeletion = await planSupabaseAuthDeletionDryRun(userId);
   const deletionRequest = inventory.deletionRequest;
   const runGuard = validateDeletionRequestCanRun(deletionRequest);
+  const stages = planAccountDeletionStages(deletionRequest, inventory, providerCleanup, storageCleanup, databaseCleanup, authDeletion);
 
   return {
     deletionRequest,
@@ -3686,7 +3958,17 @@ export async function runAccountDeletionJobDryRun(userId: string): Promise<Accou
     databaseCleanup,
     authDeletion,
     inventory,
-    stages: planAccountDeletionStages(deletionRequest, inventory, providerCleanup, storageCleanup, databaseCleanup, authDeletion),
+    stages,
+    summary: buildAccountDeletionDryRunSummary({
+      deletionRequest,
+      runGuard,
+      inventory,
+      providerCleanup,
+      storageCleanup,
+      databaseCleanup,
+      authDeletion,
+      stages
+    }),
     notes: [
       "dry-run only: no provider voice, storage object, database row, quota event, consent recording, or auth user is deleted.",
       "dry-run does not update account_deletion_requests status, cleanup status, retry count, timestamps, or metadata.",

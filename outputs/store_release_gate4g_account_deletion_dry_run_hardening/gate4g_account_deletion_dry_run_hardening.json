@@ -1,0 +1,141 @@
+{
+  "gate": "4g",
+  "name": "account_deletion_dry_run_service_hardening",
+  "status": "implemented_non_destructive",
+  "scope": [
+    "dry_run_service_summary",
+    "settings_ui_safe_summary",
+    "operator_checklist_alignment",
+    "docs_and_output_report"
+  ],
+  "code_inventory_reviewed": [
+    "services/account-deletion/account-deletion.service.ts",
+    "services/account-deletion/index.ts",
+    "app/api/account/deletion-request/route.ts",
+    "app/api/account/deletion-confirm/route.ts",
+    "app/api/account/deletion-status/route.ts",
+    "app/api/account/deletion-inventory/route.ts",
+    "app/api/account/deletion-job-dry-run/route.ts",
+    "app/api/account/deletion-provider-dry-run/route.ts",
+    "app/api/account/deletion-storage-dry-run/route.ts",
+    "app/api/account/deletion-database-dry-run/route.ts",
+    "app/api/account/deletion-auth-dry-run/route.ts",
+    "components/account/account-deletion-panel.tsx",
+    "app/settings/page.tsx",
+    "app/support/account-deletion/page.tsx"
+  ],
+  "dry_run_summary_added": {
+    "service": "runAccountDeletionJobDryRun",
+    "field": "summary",
+    "stop_point": "actual_deletion_not_run",
+    "destructive_actions_called": false,
+    "contains": [
+      "coverage",
+      "missingCoverage",
+      "skipped",
+      "deferred",
+      "humanRequired",
+      "blockers",
+      "operatorChecklist",
+      "redaction"
+    ]
+  },
+  "covered_v1_categories": [
+    "auth user",
+    "profile / account rows",
+    "scripts",
+    "recordings",
+    "takes",
+    "weak_words",
+    "coach_feedback",
+    "script-audios",
+    "voice-samples",
+    "voice-consents",
+    "voices",
+    "saved pins",
+    "quota / processing metadata",
+    "normal v1 provider voice resources",
+    "request tracking"
+  ],
+  "deferred_categories": [
+    "Brush-up-specific script-scoped voice material",
+    "Brush-up generated audio",
+    "Brush-up consent / revoke state",
+    "Brush-up provider cleanup"
+  ],
+  "operator_checklist_alignment": [
+    {
+      "check": "request_confirmed",
+      "source": "runGuard"
+    },
+    {
+      "check": "all_v1_categories_have_safe_summary",
+      "source": "summary.coverage"
+    },
+    {
+      "check": "storage_buckets_listable",
+      "source": "storageCleanup"
+    },
+    {
+      "check": "provider_cleanup_preflight",
+      "source": "providerCleanup"
+    },
+    {
+      "check": "database_cleanup_classification",
+      "source": "databaseCleanup"
+    },
+    {
+      "check": "auth_deletion_preflight",
+      "source": "authDeletion"
+    },
+    {
+      "check": "destructive_stop_point",
+      "source": "summary.stopPoint"
+    },
+    {
+      "check": "proof_redaction",
+      "source": "summary.redaction"
+    }
+  ],
+  "human_required": [
+    "disposable_test_account_approval",
+    "operator_and_reviewer_identity",
+    "normal_v1_elevenlabs_cleanup_semantics",
+    "support_legal_copy_final_approval",
+    "store_disclosure_consistency"
+  ],
+  "blocker_codes": [
+    "deletion_request_not_confirmed_or_not_retryable",
+    "provider_cleanup_dry_run_blocked",
+    "storage_cleanup_dry_run_blocked",
+    "database_cleanup_dry_run_blocked",
+    "auth_deletion_dry_run_blocked"
+  ],
+  "non_destructive_boundary": {
+    "actual_account_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "database_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "destructive_api_route_added": false,
+    "db_schema_or_migration_changed": false,
+    "env_or_dashboard_changed": false,
+    "brush_up_implemented": false
+  },
+  "redaction_policy": {
+    "records_secret": false,
+    "records_env_value": false,
+    "records_raw_provider_response": false,
+    "records_transcript_body": false,
+    "records_private_audio_path": false,
+    "records_storage_object_full_path": false,
+    "records_storage_object_key": false,
+    "records_signed_url": false,
+    "records_provider_voice_id": false,
+    "records_email": false,
+    "records_auth_user_id": false,
+    "records_script_body": false,
+    "records_raw_audio": false
+  },
+  "next_recommended_gate": "Gate 4h disposable account dry-run proof capture"
+}
