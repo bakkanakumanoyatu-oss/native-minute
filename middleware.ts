@@ -15,17 +15,25 @@ function isAuthFlowPath(pathname: string) {
   return pathname === "/auth/callback" || pathname.startsWith("/api/auth/");
 }
 
+function isStaticAssetPath(pathname: string) {
+  return pathname.startsWith("/_next/") || pathname === "/favicon.ico";
+}
+
+function nextResponse(request: NextRequest) {
+  return NextResponse.next({
+    request: {
+      headers: request.headers
+    }
+  });
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const nextPath = `${pathname}${request.nextUrl.search}`;
   const protectedPath = isProtectedPath(pathname);
 
-  if (isAuthFlowPath(pathname)) {
-    return NextResponse.next({
-      request: {
-        headers: request.headers
-      }
-    });
+  if (isStaticAssetPath(pathname) || isAuthFlowPath(pathname)) {
+    return nextResponse(request);
   }
 
   if (!hasSupabaseConfig()) {
@@ -33,18 +41,14 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(buildLoginHref(nextPath, "supabase_not_configured", "/scripts"), request.url));
     }
 
-    return NextResponse.next({
-      request: {
-        headers: request.headers
-      }
-    });
+    return nextResponse(request);
   }
 
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers
-    }
-  });
+  if (!protectedPath && !pathname.startsWith("/api/")) {
+    return nextResponse(request);
+  }
+
+  let response = nextResponse(request);
 
   const supabase = createServerClient<Database>(getSupabaseUrl(), getSupabaseAnonKey(), {
     cookies: {
@@ -53,11 +57,7 @@ export async function middleware(request: NextRequest) {
       },
       setAll(cookiesToSet: SupabaseCookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
-        response = NextResponse.next({
-          request: {
-            headers: request.headers
-          }
-        });
+        response = nextResponse(request);
         cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       }
     }
@@ -75,5 +75,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]
+  matcher: ["/((?!_next/|favicon.ico).*)"]
 };

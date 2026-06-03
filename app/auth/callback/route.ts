@@ -18,12 +18,7 @@ export async function GET(request: NextRequest) {
   const hasPkceVerifierCookie = cookieNames.some((name) => name.endsWith("-code-verifier"));
 
   function redirectTo(path: string) {
-    return new NextResponse(null, {
-      status: 307,
-      headers: {
-        Location: path
-      }
-    });
+    return NextResponse.redirect(new URL(path, requestOrigin), 307);
   }
 
   function finalize(response: NextResponse, options: { clearPkceVerifierCookies: boolean }) {
