@@ -1,0 +1,180 @@
+{
+  "gate": "4h",
+  "name": "disposable_account_dry_run_proof_capture",
+  "proof_status": "BLOCKED",
+  "blocker_code": "needs_human_disposable_account",
+  "captured_at": "2026-06-03T05:09:58Z",
+  "environment": "unknown",
+  "disposable_account_safe_alias": "unknown",
+  "disposable_account_confirmed": false,
+  "request_status": "unknown",
+  "confirmation_status": "unknown",
+  "dry_run_executed": false,
+  "dry_run_timestamp": null,
+  "dry_run_execution_reason": "No explicit disposable test account, masked proof alias, authenticated disposable session, or safe confirmed deletion request was provided. Dry-run APIs require the current authenticated user, so execution is blocked to avoid targeting a real or personal account.",
+  "dry_run_endpoints_repo_confirmed": [
+    "GET /api/account/deletion-inventory",
+    "GET /api/account/deletion-job-dry-run",
+    "GET /api/account/deletion-provider-dry-run",
+    "GET /api/account/deletion-storage-dry-run",
+    "GET /api/account/deletion-database-dry-run",
+    "GET /api/account/deletion-auth-dry-run"
+  ],
+  "categories_checked": [
+    "auth user",
+    "profile / account rows",
+    "scripts",
+    "recordings",
+    "takes",
+    "weak_words",
+    "coach_feedback",
+    "script-audios",
+    "voice-samples",
+    "voice-consents",
+    "voices",
+    "saved pins",
+    "quota / processing metadata",
+    "normal v1 provider voice resources",
+    "request tracking"
+  ],
+  "category_counts_safe_summary": [
+    {
+      "category": "auth user",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "profile / account rows",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "scripts",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "recordings",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "takes",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "weak_words",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "coach_feedback",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "script-audios",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "voice-samples",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "voice-consents",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "voices",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "saved pins",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "quota / processing metadata",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "normal v1 provider voice resources",
+      "status": "not_executed",
+      "count": null
+    },
+    {
+      "category": "request tracking",
+      "status": "not_executed",
+      "count": null
+    }
+  ],
+  "missing_coverage": [
+    "runtime_dry_run_not_captured"
+  ],
+  "skipped": [
+    "account_deletion_request_creation",
+    "typed_delete_confirmation",
+    "inventory_dry_run_execution",
+    "job_stage_dry_run_execution",
+    "provider_cleanup_dry_run_execution",
+    "storage_cleanup_dry_run_execution",
+    "database_cleanup_dry_run_execution",
+    "supabase_auth_deletion_dry_run_execution",
+    "actual_provider_cleanup",
+    "actual_storage_cleanup",
+    "actual_database_cleanup",
+    "actual_supabase_auth_deletion"
+  ],
+  "deferred": [
+    "Brush-up-specific script-scoped voice material",
+    "Brush-up generated audio",
+    "Brush-up consent / revoke state",
+    "Brush-up provider cleanup"
+  ],
+  "human_required": [
+    "disposable_test_account_creation_or_selection",
+    "masked_proof_alias",
+    "disposable_account_confirmation",
+    "environment_selection",
+    "disposable_account_login",
+    "minimal_v1_test_data_creation",
+    "account_deletion_request_creation",
+    "typed_delete_confirmation",
+    "dry_run_capture_from_settings_or_safe_api_summaries",
+    "operator_and_reviewer_safe_labels",
+    "redaction_confirmation"
+  ],
+  "blockers": [
+    "needs_human_disposable_account"
+  ],
+  "redaction_check": {
+    "status": "PASS",
+    "records_secret": false,
+    "records_env_value": false,
+    "records_raw_provider_response": false,
+    "records_transcript_body": false,
+    "records_private_audio_path": false,
+    "records_storage_object_full_path": false,
+    "records_storage_object_key": false,
+    "records_signed_url": false,
+    "records_provider_voice_id": false,
+    "records_email": false,
+    "records_auth_user_id": false,
+    "records_script_body": false,
+    "records_raw_audio": false
+  },
+  "destructive_operations_executed": false,
+  "actual_account_deletion_executed": false,
+  "auth_user_deletion_executed": false,
+  "storage_object_deletion_executed": false,
+  "database_destructive_cleanup_executed": false,
+  "provider_cleanup_executed": false,
+  "stop_point": "before_actual_deletion",
+  "next_action": "Human prepares a disposable account with a safe alias, creates minimal v1 test data, creates and confirms the deletion request from Settings, then reruns Gate 4h capture using only Gate 4g safe summaries."
+}

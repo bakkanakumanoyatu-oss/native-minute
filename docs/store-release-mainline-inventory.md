@@ -92,6 +92,8 @@ Gate 4f account deletion actual implementation planning is captured in `docs/sto
 
 Gate 4g account deletion dry-run service hardening is captured in `docs/store-release-gate4g-account-deletion-dry-run-hardening.md` and `outputs/store_release_gate4g_account_deletion_dry_run_hardening/gate4g_account_deletion_dry_run_hardening.json`. `runAccountDeletionJobDryRun` now returns a safe `summary` that aligns Gate 4e proof categories with coverage, skipped actual stages, deferred Brush-up items, human-required confirmations, blockers, operator checklist items, and redaction rules. Settings shows this safe summary without adding actual deletion power.
 
+Gate 4h disposable account dry-run proof capture is recorded in `docs/store-release-gate4h-disposable-account-dry-run-proof-capture.md` and `outputs/store_release_gate4h_disposable_account_dry_run_proof_capture/gate4h_disposable_account_dry_run_proof_capture.json`. Result: `BLOCKED: needs_human_disposable_account`. No explicit disposable account safe alias, authenticated disposable session, or confirmed disposable deletion request was provided, so no dry-run was executed. The proof package records only safe unknown / not_executed / human_required status and stops before actual deletion.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -146,6 +148,12 @@ Status: plan ready. It is docs/output only. The existing request table appears s
 Goal: make the existing non-destructive dry-run output line up with the disposable proof checklist before any actual deletion implementation or proof run.
 
 Status: implemented non-destructively. The job dry-run summary now covers Gate 4e v1 categories, explicit v1.1 Brush-up deferrals, skipped actual stages, human-required confirmations, blocker codes, operator checklist alignment, and redaction rules. No destructive route, DB migration, provider cleanup, Storage deletion, DB cleanup, Auth deletion, env/dashboard change, Capacitor work, or Store submission work was added.
+
+### Gate 4h: Disposable Account Dry-Run Proof Capture
+
+Goal: capture non-destructive dry-run evidence for a disposable account using safe counts, status, blockers, deferred items, human-required items, and redaction checks.
+
+Status: blocked pending human disposable account. Codex did not execute dry-run because the task did not provide a disposable account safe alias, authenticated disposable session, or confirmed request. Next attempt must use a disposable account only, record no raw identifiers, and stop before actual deletion.
 
 ### Gate 4: Capacitor iOS / Android
 
