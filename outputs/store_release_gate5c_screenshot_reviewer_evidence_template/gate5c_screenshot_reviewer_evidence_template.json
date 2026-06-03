@@ -1,0 +1,298 @@
+{
+  "gate": "5c",
+  "title": "Screenshot candidate plan / reviewer evidence template",
+  "status": "plan_ready_human_review_required",
+  "created_at": "2026-06-03T12:13:49Z",
+  "source_commit": "cf46175",
+  "scope": {
+    "type": "docs_output_only",
+    "screenshots_captured": false,
+    "images_generated": false,
+    "app_icon_created": false,
+    "app_store_connect_operated": false,
+    "google_play_console_operated": false,
+    "app_privacy_submitted": false,
+    "google_data_safety_submitted": false,
+    "capacitor_started": false,
+    "qa_executed": false,
+    "gate_4h_rerun_executed": false,
+    "actual_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_deletion_executed": false,
+    "db_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "env_changed": false,
+    "dashboard_changed": false,
+    "provider_api_called": false,
+    "brush_up_implemented": false
+  },
+  "screenshot_candidates": [
+    {
+      "id": "home_practice_entry",
+      "route_or_surface": "home",
+      "focus": "main_practice_entry_and_one_minute_loop_positioning",
+      "caption_candidate": "Start a one-minute English practice loop.",
+      "status": "candidate"
+    },
+    {
+      "id": "scripts_practice_library",
+      "route_or_surface": "/scripts",
+      "focus": "pick_or_resume_a_practice_script",
+      "caption_candidate": "Choose today's short speaking practice.",
+      "status": "candidate"
+    },
+    {
+      "id": "script_creation",
+      "route_or_surface": "/scripts/new",
+      "focus": "create_a_short_script_or_use_a_safe_demo_template",
+      "caption_candidate": "Make a short script for one focused practice.",
+      "status": "candidate"
+    },
+    {
+      "id": "listen",
+      "route_or_surface": "/scripts/[id]/listen",
+      "focus": "normal_model_audio_and_protected_replay",
+      "caption_candidate": "Listen to model audio before recording.",
+      "status": "candidate"
+    },
+    {
+      "id": "record",
+      "route_or_surface": "/scripts/[id]/record",
+      "focus": "record_a_practice_take_and_recording_provider_notice",
+      "caption_candidate": "Record your take when you are ready.",
+      "status": "candidate"
+    },
+    {
+      "id": "review",
+      "route_or_surface": "/scripts/[id]/review/[takeId]",
+      "focus": "learning_feedback_weak_words_next_practice_point",
+      "caption_candidate": "Review feedback as learning support.",
+      "status": "candidate"
+    },
+    {
+      "id": "progress",
+      "route_or_surface": "/progress",
+      "focus": "latest_best_take_continuity_and_progress_reflection",
+      "caption_candidate": "Compare your latest and best takes.",
+      "status": "candidate"
+    },
+    {
+      "id": "settings_legal_links",
+      "route_or_surface": "/settings",
+      "focus": "privacy_terms_support_and_deletion_request_links",
+      "caption_candidate": "Manage privacy, support, and account help.",
+      "status": "candidate_optional"
+    },
+    {
+      "id": "support_account_deletion",
+      "route_or_surface": "/support/account-deletion",
+      "focus": "account_deletion_request_path_without_actual_deletion_claim",
+      "caption_candidate": "Find the account deletion request path.",
+      "status": "candidate_optional"
+    }
+  ],
+  "recommended_first_store_set": [
+    "home_practice_entry",
+    "script_creation",
+    "listen",
+    "record",
+    "review",
+    "progress"
+  ],
+  "caption_candidate_pool": [
+    "1-minute English practice",
+    "Create a short speaking script",
+    "Listen to model audio",
+    "Record your take",
+    "Check pronunciation, fluency, and rhythm",
+    "Find weak words and the next practice point",
+    "Track latest and best takes",
+    "Review privacy, support, and account options"
+  ],
+  "japanese_working_notes": [
+    "1分英語スクリプト",
+    "聞く",
+    "録る",
+    "発音・流暢さ・リズムを確認",
+    "弱点語と次の練習ポイント",
+    "進捗確認"
+  ],
+  "avoid_store_claims": [
+    "become_native",
+    "guaranteed_improvement",
+    "perfect_pronunciation_judgment",
+    "medical_or_institution_level_claim",
+    "official_ability_assessment",
+    "native_speaker_replacement",
+    "brush_up_available_in_v1",
+    "voice_clone_improvement_available_in_v1",
+    "best_take_becomes_voice_material_in_v1",
+    "account_deletion_complete_before_proof"
+  ],
+  "reviewer_evidence_template": {
+    "safe_fields": {
+      "evidence_id": "operator_generated_safe_alias",
+      "prepared_for": [
+        "app_store_review",
+        "google_play_review",
+        "both"
+      ],
+      "reviewer_account_status": [
+        "human_required",
+        "ready",
+        "blocked",
+        "not_applicable"
+      ],
+      "reviewer_account_safe_alias": "alias_only_no_email_or_auth_id",
+      "build_or_url": "production_url_or_build_label_no_private_token",
+      "login_flow_status": [
+        "pass",
+        "warn",
+        "blocked",
+        "human_required"
+      ],
+      "script_creation_status": [
+        "pass",
+        "warn",
+        "blocked",
+        "human_required"
+      ],
+      "listen_status": [
+        "pass",
+        "warn",
+        "blocked",
+        "human_required"
+      ],
+      "record_status": [
+        "pass",
+        "warn",
+        "blocked",
+        "human_required"
+      ],
+      "evaluate_status": [
+        "pass",
+        "warn",
+        "blocked",
+        "human_required"
+      ],
+      "review_status": [
+        "pass",
+        "warn",
+        "blocked",
+        "human_required"
+      ],
+      "progress_status": [
+        "pass",
+        "warn",
+        "blocked",
+        "human_required"
+      ],
+      "privacy_terms_support_status": [
+        "pass",
+        "warn",
+        "blocked",
+        "human_required"
+      ],
+      "account_deletion_request_status": [
+        "pass",
+        "warn",
+        "blocked",
+        "human_required"
+      ],
+      "provider_failure_recovery_status": [
+        "pass",
+        "warn",
+        "blocked",
+        "not_applicable",
+        "human_required"
+      ],
+      "brush_up_expected_in_v1": false,
+      "redaction_status": [
+        "pass",
+        "warn",
+        "fail"
+      ],
+      "next_action": "safe_next_action_label"
+    },
+    "reviewer_flow": [
+      "open_production_or_native_review_build_url",
+      "sign_in_with_provided_reviewer_account",
+      "open_scripts",
+      "create_or_use_review_script",
+      "open_listen_and_play_or_generate_normal_model_audio",
+      "open_record_and_create_short_practice_recording",
+      "run_evaluation",
+      "open_review_and_confirm_learning_feedback",
+      "open_progress_and_confirm_latest_best_continuity",
+      "open_settings",
+      "confirm_privacy_terms_support_account_deletion_request_are_reachable",
+      "do_not_expect_brush_up_in_v1"
+    ],
+    "provider_failure_recovery_note": "Provider-disabled proof is operator-only; reviewers should not need dashboard, env, billing, API key, or provider access.",
+    "account_deletion_review_note": "v1 surfaces request / confirmation / dry-run / proof-first paths; do not claim actual deletion completion until proof is complete."
+  },
+  "qa_evidence_vs_reviewer_evidence": {
+    "internal_qa_evidence": {
+      "audience": "release_owner_operators",
+      "purpose": "prove_behavior_before_release_decisions",
+      "safe_content": [
+        "pass_warn_blocked_status",
+        "safe_counts",
+        "safe_route_labels",
+        "redaction_checks",
+        "blocker_codes"
+      ]
+    },
+    "store_reviewer_evidence": {
+      "audience": "app_store_google_play_reviewers",
+      "purpose": "explain_how_to_review_the_app_safely",
+      "safe_content": [
+        "reviewer_account_instructions",
+        "v1_route_flow",
+        "provider_recovery_note",
+        "privacy_support_deletion_paths"
+      ]
+    }
+  },
+  "human_required": [
+    "final_screenshots",
+    "app_icon",
+    "final_app_name",
+    "final_subtitle_short_description",
+    "final_screenshot_captions_and_localization",
+    "reviewer_account",
+    "reviewer_account_safe_alias",
+    "final_reviewer_instructions",
+    "support_url",
+    "privacy_policy_url",
+    "account_deletion_request_url",
+    "terms_url_if_used",
+    "legal_approval_for_store_copy_and_screenshots",
+    "platform_specific_screenshot_sizes_and_device_frames",
+    "screenshot_private_data_redaction_review",
+    "final_no_brush_up_v1_screenshot_or_reviewer_claim_confirmation"
+  ],
+  "redaction_policy": {
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "script_body_recorded": false,
+    "raw_audio_recorded": false,
+    "private_audio_path_recorded": false,
+    "storage_object_key_recorded": false,
+    "signed_url_recorded": false,
+    "provider_voice_id_recorded": false,
+    "billing_detail_recorded": false,
+    "email_recorded": false,
+    "auth_user_id_recorded": false
+  },
+  "next_work": [
+    "push_gate_5c_commit_if_needed",
+    "human_review_screenshot_candidate_set",
+    "human_prepare_reviewer_account",
+    "gate_5d_store_asset_capture_plan_or_reviewer_evidence_draft",
+    "gate_4h_rerun_after_disposable_account_preparation",
+    "gate_6_release_qa_after_human_required_items_close"
+  ]
+}

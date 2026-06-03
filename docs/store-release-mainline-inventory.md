@@ -106,6 +106,8 @@ Gate 5a release QA smoke execution plan is captured in `docs/store-release-gate5
 
 Gate 5b Store metadata / reviewer instructions / App Privacy and Google Data Safety draft mapping is captured in `docs/store-release-gate5b-store-metadata-reviewer-privacy-draft.md` and `outputs/store_release_gate5b_store_metadata_reviewer_privacy_draft/gate5b_store_metadata_reviewer_privacy_draft.json`. It drafts v1 Store metadata, reviewer flow, data use purposes, data safety mapping, human-required final answers, screenshot candidates, age/category considerations, and claims to avoid. It is human-review-required draft only; no Store Console operation, final privacy/data safety submission, screenshot/icon creation, Capacitor work, deletion, cleanup, provider call, env/dashboard operation, or Brush-up occurred.
 
+Gate 5c screenshot candidate plan / reviewer evidence template is captured in `docs/store-release-gate5c-screenshot-reviewer-evidence-template.md` and `outputs/store_release_gate5c_screenshot_reviewer_evidence_template/gate5c_screenshot_reviewer_evidence_template.json`. It defines v1 screenshot candidate surfaces, safe caption directions, Store claims to avoid, reviewer evidence fields, reviewer flow, and the difference between internal QA evidence and Store reviewer evidence. It is planning/template only; no screenshot capture, image generation, Store Console operation, Capacitor work, deletion, cleanup, provider call, env/dashboard operation, or Brush-up occurred.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -212,6 +214,12 @@ Status: plan ready. Gate 5a does not execute QA. Gate 4h disposable account dry-
 Goal: prepare human-review-required drafts for Store metadata, reviewer instructions, App Privacy mapping, and Google Data Safety mapping that match the v1 feature set without Brush-up.
 
 Status: draft ready. Final support / privacy / deletion URLs, reviewer account, App Privacy / Data Safety console answers, screenshots, countries/regions, category, keywords, and age rating remain human-required. Do not operate App Store Connect or Google Play Console until the draft is reviewed and release blockers are resolved.
+
+### Gate 5c: Screenshot Candidate Plan / Reviewer Evidence Template
+
+Goal: prepare screenshot candidate surfaces, safe caption directions, claims-to-avoid, and Store reviewer evidence template before any screenshot capture or Store Console operation.
+
+Status: plan/template ready. Recommended v1 screenshot candidates are Home / practice entry, script creation, listen, record, review, and progress, with optional settings/legal and account deletion request surfaces. Final screenshots, app icon, app name, subtitle, reviewer account, support/privacy/deletion URLs, legal approval, platform-specific screenshot sizes, and redaction review remain human-required. Brush-up must not appear in v1 screenshots or reviewer notes.
 
 ### Gate 6: Release QA
 
