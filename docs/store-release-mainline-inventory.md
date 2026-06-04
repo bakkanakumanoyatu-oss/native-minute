@@ -9,7 +9,7 @@ This document is docs-only. It does not change auth, DB schema, API contracts, p
 - The fixed 1-minute practice main loop is working well in production-style use: Home, `/scripts`, `/scripts/new`, Listen, Record, Review, and Progress have no major known UX blocker.
 - UI/UX improvement is paused as a phase. The product should now move from "make it easier to use" to "make it safe, operable, and reviewable for public release."
 - Recent speed work has improved perceived performance: selected-script summaries, Review loading consolidation, lazy Progress audio players, protected audio feedback, and staged evaluate feedback are in place.
-- The user-confirmed current app state is usable. Auth callback failure is not a current blocker.
+- Gate 0 auth callback failure fix `0bd55b4 Fix auth callback login redirect handling` is reflected in the production latest deploy. Human browser smoke is `PASS`; `/login`, new email login, `/scripts`, clean new-account state, `/progress` initial state, refresh session persistence, logout -> new magic link -> login, and the prior `callback_failed` / `/login` 404 / `/_next/static` 404 chain are resolved.
 - The next decisions should be evidence and operations decisions, not broad UI polish or provider implementation.
 
 ## Git / Deploy Snapshot
@@ -21,6 +21,25 @@ This document is docs-only. It does not change auth, DB schema, API contracts, p
 - Git alone does not prove deployment state; Gate 1 production smoke evidence is the human-confirmed production record.
 
 ## Gate Map
+
+### Gate 0: Auth Callback Failure Production Smoke
+
+Goal: verify the production auth recovery path after the callback failure fix before returning to Store release planning.
+
+Status: `PASS` for production latest deploy with commit `0bd55b4`. Safe evidence is recorded in `outputs/store_release_gate0_auth_callback_production_human_smoke/gate0_auth_callback_production_human_smoke.json`.
+
+Confirmed:
+
+- production latest deploy reflected the fix
+- `/login` opens
+- new email login works
+- `/scripts` opens after login
+- new account does not show old records
+- `/progress` starts from an initial state
+- refresh keeps the session
+- logout -> new magic link -> login works
+- `callback_failed` / `/login` 404 / `/_next/static` 404 chain is resolved
+- Safari old-record visibility was treated as an old session / cookie issue; Chrome clean session confirmed a new-account state
 
 ### Gate 1: Web Production Core / Web Beta Deploy Smoke
 

@@ -1,0 +1,80 @@
+{
+  "gate": "Gate 0",
+  "name": "auth_callback_production_human_smoke",
+  "recorded_at": "2026-06-04",
+  "recorded_by": "codex_from_human_confirmation",
+  "status": "PASS",
+  "production_latest_deploy": {
+    "status": "reflected",
+    "commit": "0bd55b4",
+    "commit_message": "Fix auth callback login redirect handling"
+  },
+  "human_smoke": {
+    "reviewer": "human_project_owner",
+    "browser_context": {
+      "chrome_clean_session": "confirmed_new_account_initial_state",
+      "safari_old_records_observed": "treated_as_old_session_or_cookie_residue"
+    },
+    "results": [
+      {
+        "item": "production_latest_deploy_reflected",
+        "status": "PASS"
+      },
+      {
+        "item": "/login opens",
+        "status": "PASS"
+      },
+      {
+        "item": "new_email_login",
+        "status": "PASS"
+      },
+      {
+        "item": "/scripts opens_after_login",
+        "status": "PASS"
+      },
+      {
+        "item": "new_account_old_records_absent",
+        "status": "PASS"
+      },
+      {
+        "item": "/progress initial_state",
+        "status": "PASS"
+      },
+      {
+        "item": "refresh_keeps_session",
+        "status": "PASS"
+      },
+      {
+        "item": "logout_new_magic_link_login",
+        "status": "PASS"
+      },
+      {
+        "item": "callback_failed_login_404_next_static_404_chain",
+        "status": "resolved"
+      }
+    ]
+  },
+  "redaction": {
+    "secret_recorded": false,
+    "email_full_value_recorded": false,
+    "user_id_full_value_recorded": false,
+    "raw_logs_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_value_recorded": false
+  },
+  "not_performed": [
+    "Gate 5f",
+    "Store asset capture readiness check",
+    "screenshot capture",
+    "Store Console operation",
+    "Capacitor introduction",
+    "DB schema or migration change",
+    "Auth cleanup",
+    "Storage cleanup",
+    "provider cleanup",
+    "voice provider production connection",
+    "env or dashboard operation",
+    "provider API call"
+  ],
+  "next_step": "push evidence commit, then continue store-release-mainline from the next selected gate"
+}
