@@ -22,9 +22,10 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 | Short description | `human_required` | Draft direction exists; final text requires human/legal approval. |
 | Long description | `human_required` | Gate 5b draft is source material only. |
 | Screenshot captions | `human_required` | Safe caption pool exists; final captions need localization and legal review. |
-| Support URL | `human_required` | Must point to final public support surface before Store submission. |
-| Privacy URL | `human_required` | Must point to final public Privacy Policy. |
-| Account deletion URL | `human_required` | Must point to final account deletion request/help path without overclaiming actual deletion completion. |
+| Support URL | `ready` | Human check confirmed `/support` opens; support contact is unified to `nativeminutes.support@gmail.com`. |
+| Privacy URL | `ready` | Human check confirmed `/privacy` opens. |
+| Account deletion URL | `ready` | Human check confirmed `/support/account-deletion` opens; the page still describes request / proof-first status without overclaiming actual deletion completion. |
+| Support contact email | `ready` | Public support contact is unified to `nativeminutes.support@gmail.com`; the legacy personal contact mismatch is fixed without recording the legacy raw value in new evidence. |
 | Reviewer account | `human_required` | Gate 5d has placeholder only; no credentials belong in repo/docs/outputs. |
 | Clean demo account | `human_required` | Needed before capture to avoid private data and stale account state. |
 | Demo script | `human_required` | Must be short, neutral, non-private, and safe for screenshots/review. |
@@ -41,6 +42,8 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 - Minimum screenshot set definition: Home / practice entry, script creation, listen, record, review, progress.
 - Optional screenshot surfaces: Scripts, Settings, Privacy / Support / Account deletion request path.
 - Safe caption candidate pool.
+- Human-confirmed `/privacy`, `/support`, and `/support/account-deletion` URL open checks.
+- Unified public support contact email: `nativeminutes.support@gmail.com`.
 - Redaction rule.
 - Screenshot capture evidence template.
 - v1 scope boundary.
@@ -55,9 +58,6 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 - Final short description.
 - Final long description.
 - Final screenshot captions and localization.
-- Final support URL.
-- Final Privacy Policy URL.
-- Final account deletion request URL.
 - Final Terms URL if used.
 - Reviewer account and safe alias.
 - Clean demo account.
@@ -85,7 +85,7 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 Actual screenshot capture can start only when all of these are true:
 
 - Final app name / subtitle / description direction is approved for capture.
-- Support URL, Privacy URL, Terms URL if used, and account deletion request URL are final enough for screenshots and reviewer notes.
+- Human-confirmed support, privacy, and account deletion URLs remain valid; Terms URL, if used, is final enough for screenshots and reviewer notes.
 - Reviewer or clean demo account exists and contains no private data.
 - Safe demo script exists and is short, neutral, non-private, and not copyrighted.
 - Target viewport / device sizes are selected for App Store and Google Play.
@@ -99,7 +99,7 @@ Actual screenshot capture can start only when all of these are true:
 Do not start capture if any of these are true:
 
 - Final Store name / subtitle / captions require unresolved legal judgment.
-- Support URL, Privacy URL, or account deletion URL is unknown and must appear in screenshots or metadata.
+- Support URL, Privacy URL, or account deletion URL stops opening, or Terms URL is unknown and must appear in screenshots or metadata.
 - Reviewer account, clean demo account, or demo script is missing.
 - Screenshots would expose full email, auth id, transcript body, private script, raw recording, private audio path, Storage object key, signed URL, provider id, env value, secret, or billing detail.
 - Any screenshot, caption, metadata, or reviewer note would imply Brush-up is available in v1.

@@ -39,7 +39,7 @@ Fill this section before deciding whether the build can be deployed to Web beta.
 | --- | --- |
 | Release candidate result | `GO WITH WARNINGS` |
 | Decision reason | Final Human Check `BLOCKED` items are resolved after Azure Speech resource / region / quota / usage visibility, pay-as-you-go upgrade, Gate1l release-owner acceptance, and Azure pronunciation live smoke were confirmed. No deploy has been performed. |
-| Support contact | `PASS`: Web beta support contact is published as `bakkanakuma@gmail.com`. |
+| Support contact | `PASS`: Web beta support contact is published as `nativeminutes.support@gmail.com`. |
 | Account deletion SLA | `PASS`: first response target is 3 business days; completion target is 30 days; manual cleanup owner is app owner. |
 | Legal/support draft review | `WARN`: required information mostly exists, but copy clarity needs improvement and formal legal review is not complete. |
 | Gate1g provider proof | `WARN`: Azure dashboard/resource proof and Azure pronunciation live smoke are PASS; OpenAI and ElevenLabs have release-owner-accepted WARN items; Supabase Storage budget/usage visibility is PASS. |

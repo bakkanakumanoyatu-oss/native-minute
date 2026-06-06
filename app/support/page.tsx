@@ -16,7 +16,7 @@ export default function SupportPage() {
     >
       <LegalSection
         title="問い合わせ先"
-        summary="現在の support contact は bakkanakuma@gmail.com です。Store release 用の final support URL / inbox 運用は human_required として残します。"
+        summary="正式 support contact は nativeminutes.support@gmail.com です。Store release 用の support URL は human check で開けることを確認済みです。"
         items={[
           "account deletion request は、一次返信の目安が 3 business days、完了目安が 30 days です。",
           "問い合わせ時は、secret、API key、auth header、magic link URL、raw provider response を貼らないでください。",

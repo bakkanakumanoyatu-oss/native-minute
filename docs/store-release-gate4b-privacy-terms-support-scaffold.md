@@ -61,7 +61,7 @@ The following remain human-required before Store submission:
 - actual account deletion disposable proof;
 - provider cleanup proof for normal v1 voice resources.
 
-The current support contact remains `bakkanakuma@gmail.com` from earlier human confirmation, but final support URL / inbox operations remain human-required for Store release.
+The current support contact remains `nativeminutes.support@gmail.com` from earlier human confirmation, but final support URL / inbox operations remain human-required for Store release.
 
 ## Files Updated
 

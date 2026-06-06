@@ -61,7 +61,7 @@ export default function AccountDeletionSupportPage() {
 
       <LegalSection
         title="support へ連絡するとき"
-        summary="現在の support contact は bakkanakuma@gmail.com です。Store release 用の final support URL / inbox は human_required です。"
+        summary="正式 support contact は nativeminutes.support@gmail.com です。Store release 用の account deletion request URL は human check で開けることを確認済みです。"
         items={[
           "削除 request について問い合わせる場合は、Settings で request を開始したうえで、support contact に連絡してください。",
           "password、API key、auth header、magic link URL、provider voice id、storage path、signed URL、raw audio、raw transcript は送らないでください。",

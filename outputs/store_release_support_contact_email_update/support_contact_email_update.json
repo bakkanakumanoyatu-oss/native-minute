@@ -1,0 +1,50 @@
+{
+  "gate": "support_contact_email_update",
+  "recorded_at": "2026-06-06",
+  "status": "PASS",
+  "support_contact": {
+    "current": "nativeminutes.support@gmail.com",
+    "legacy_personal_contact_email": "replaced_without_recording_raw_value",
+    "mismatch": "fixed"
+  },
+  "url_human_check": {
+    "/privacy": "PASS",
+    "/support": "PASS",
+    "/support/account-deletion": "PASS"
+  },
+  "changed_surfaces": [
+    "/support",
+    "/support/account-deletion",
+    "README.md",
+    "docs/current-state.md",
+    "docs/store-release-mainline-inventory.md",
+    "Gate 5f docs/outputs",
+    "historical support-contact planning docs/outputs"
+  ],
+  "redaction": {
+    "legacy_personal_contact_email_raw_value_recorded": false,
+    "secret_recorded": false,
+    "api_key_recorded": false,
+    "env_value_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_value_recorded": false,
+    "provider_raw_response_recorded": false,
+    "transcript_body_recorded": false,
+    "private_audio_path_recorded": false,
+    "private_email_full_value_recorded": false,
+    "public_support_contact_email_recorded": true
+  },
+  "not_performed": {
+    "gate_4h_rerun_executed": false,
+    "screenshots_captured": false,
+    "store_console_operated": false,
+    "capacitor_started": false,
+    "db_cleanup_executed": false,
+    "auth_deletion_executed": false,
+    "storage_deletion_executed": false,
+    "provider_cleanup_executed": false,
+    "voice_provider_connected": false,
+    "env_or_dashboard_changed": false,
+    "actual_deletion_executed": false
+  }
+}
