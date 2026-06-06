@@ -139,6 +139,8 @@ Store metadata candidate update: app name / subtitle are user human-confirmed ca
 
 Demo script candidate update: Store / screenshot / reviewer demo script is recorded as a user human-confirmed candidate. It is neutral original practice copy with no personal data, no copyrighted excerpt, no Brush-up v1 claim, no voice clone improvement v1 claim, and no guaranteed-outcome Store claim.
 
+Reviewer account update: reviewer account candidate is `nativeminutes.support+reviewer@gmail.com`, with verification status `human_required_deferred`. Defer reason is temporary email / magic link rate-limit risk after repeated login attempts. Supporting evidence: `+demo` and `+delete-test` plus-address login flows have already passed. Final reviewer account login must be confirmed before Store submission / reviewer instructions finalization.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -268,7 +270,7 @@ Status: plan ready. Minimum screenshot set is Home / practice entry, script crea
 
 Goal: decide whether Store asset capture can begin based on Gate 5e prerequisites, Gate 0 auth recovery evidence, redaction rules, Store claim safety, v1 scope, and human-required items.
 
-Status: readiness check complete; actual capture is not ready. Ready items are Gate 0 production smoke, candidate screenshots, recommended minimum set, safe caption pool, human-confirmed app name/subtitle, human-confirmed demo script, redaction rule, v1 scope boundary, Brush-up v1.1 defer boundary, and Store claim safety list. Human-required blockers before capture are final descriptions, reviewer or clean demo account, mobile/device selection, platform-specific asset requirement check, legal/support approval, Store console/platform acceptance checks, and final redaction review. Do not capture screenshots or create icons until those are closed.
+Status: readiness check complete; actual capture is not ready. Ready items are Gate 0 production smoke, candidate screenshots, recommended minimum set, safe caption pool, human-confirmed app name/subtitle, human-confirmed demo script, redaction rule, v1 scope boundary, Brush-up v1.1 defer boundary, and Store claim safety list. Reviewer account candidate is recorded but login verification is `human_required_deferred`. Human-required blockers before capture are final descriptions, reviewer or clean demo account verification, mobile/device selection, platform-specific asset requirement check, legal/support approval, Store console/platform acceptance checks, and final redaction review. Do not capture screenshots or create icons until those are closed.
 
 ### Gate 6: Release QA
 

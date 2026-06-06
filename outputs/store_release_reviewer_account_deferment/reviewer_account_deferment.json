@@ -1,0 +1,45 @@
+{
+  "gate": "store_reviewer_account_verification",
+  "recorded_at": "2026-06-06",
+  "status": "human_required_deferred",
+  "reviewer_account_candidate": "nativeminutes.support+reviewer@gmail.com",
+  "defer_reason": "temporary email / magic link rate-limit risk after repeated login attempts",
+  "supporting_evidence": {
+    "plus_demo_login_flow": "PASS",
+    "plus_delete_test_login_flow": "PASS"
+  },
+  "required_before": [
+    "Store submission",
+    "reviewer instructions finalization"
+  ],
+  "must_confirm_later": [
+    "reviewer account can receive a fresh magic link",
+    "reviewer account can login successfully",
+    "reviewer account can access the expected reviewer flow",
+    "no password, magic link URL, auth token, cookie value, or private session detail is recorded in repo/docs/outputs"
+  ],
+  "redaction": {
+    "reviewer_password_recorded": false,
+    "magic_link_url_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_value_recorded": false,
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "private_path_recorded": false
+  },
+  "not_performed": {
+    "reviewer_account_relogin_attempted": false,
+    "magic_link_resent": false,
+    "screenshot_capture": false,
+    "store_console_operated": false,
+    "capacitor_started": false,
+    "db_cleanup_executed": false,
+    "auth_deletion_executed": false,
+    "storage_deletion_executed": false,
+    "provider_cleanup_executed": false,
+    "voice_provider_connected": false,
+    "actual_deletion_executed": false
+  }
+}

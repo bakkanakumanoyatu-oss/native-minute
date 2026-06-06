@@ -26,7 +26,7 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 | Privacy URL | `ready` | Human check confirmed `/privacy` opens. |
 | Account deletion URL | `ready` | Human check confirmed `/support/account-deletion` opens; the page still describes request / proof-first status without overclaiming actual deletion completion. |
 | Support contact email | `ready` | Public support contact is unified to `nativeminutes.support@gmail.com`; the legacy personal contact mismatch is fixed without recording the legacy raw value in new evidence. |
-| Reviewer account | `human_required` | Gate 5d has placeholder only; no credentials belong in repo/docs/outputs. |
+| Reviewer account | `human_required_deferred` | Candidate is `nativeminutes.support+reviewer@gmail.com`; final login verification is deferred due to temporary email / magic link rate-limit risk after repeated login attempts. Do not record passwords, magic links, tokens, or cookies. |
 | Clean demo account | `human_required` | Needed before capture to avoid private data and stale account state. |
 | Demo script | `human_confirmed_candidate` | Store / screenshot / reviewer demo script is human-confirmed, original, non-private, and safe for screenshots/review. |
 | Redaction rule | `ready` | Do not capture full emails, auth ids, transcript bodies, private scripts, raw recordings, Storage paths, signed URLs, provider ids, secrets, env values, or billing details. |
@@ -60,7 +60,7 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 - Final long description.
 - Final screenshot captions and localization.
 - Final Terms URL if used.
-- Reviewer account and safe alias.
+- Reviewer account final login verification for `nativeminutes.support+reviewer@gmail.com`.
 - Clean demo account.
 - Mobile viewport / device selection.
 - App Store specific asset requirement check.
@@ -88,7 +88,7 @@ Actual screenshot capture can start only when all of these are true:
 
 - Human-confirmed app name / subtitle candidate remains approved for capture, and description direction is approved.
 - Human-confirmed support, privacy, and account deletion URLs remain valid; Terms URL, if used, is final enough for screenshots and reviewer notes.
-- Reviewer or clean demo account exists and contains no private data.
+- Reviewer account final login verification is complete, and reviewer / clean demo account contains no private data.
 - Human-confirmed demo script remains approved, non-private, original, and safe for screenshots/reviewer notes.
 - Target viewport / device sizes are selected for App Store and Google Play.
 - Store claim safety list has been reviewed by the release owner.
@@ -102,7 +102,7 @@ Do not start capture if any of these are true:
 
 - Final Store name / subtitle / captions require unresolved legal judgment.
 - Support URL, Privacy URL, or account deletion URL stops opening, or Terms URL is unknown and must appear in screenshots or metadata.
-- Reviewer account or clean demo account is missing, or the demo script is changed to unapproved copy.
+- Reviewer account final login verification is still deferred, clean demo account is missing, or the demo script is changed to unapproved copy.
 - Screenshots would expose full email, auth id, transcript body, private script, raw recording, private audio path, Storage object key, signed URL, provider id, env value, secret, or billing detail.
 - Any screenshot, caption, metadata, or reviewer note would imply Brush-up is available in v1.
 - Any copy would imply guaranteed improvement, perfect pronunciation scoring, native-speaker replacement, medical/institutional assessment, or complete account deletion before proof.

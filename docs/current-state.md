@@ -44,6 +44,7 @@
 - Store release の public support contact は `nativeminutes.support@gmail.com` に統一済み。Human check で `/privacy`、`/support`、`/support/account-deletion` は開けることを確認し、legacy personal contact mismatch は修正済み。新規 evidence には旧 contact の raw value を残さず、`legacy_personal_contact_email` として扱う。
 - Store asset / metadata 用の app name / subtitle は、user human-confirmed candidate として `Native Minutes` / `1分間のナチュラル発音トレーニング` を記録済み。既存 docs の `Native Minute` 表記、package 名、route、project 名、DB、env、repository 名は今回変更しない。
 - Store / screenshot / reviewer 用 demo script は user human-confirmed candidate として記録済み。個人情報、著作権リスクのある引用、Brush-up v1 claim、voice clone improvement v1 claim、強い成果保証を含まない安全な練習文として扱う。
+- Store reviewer account candidate は `nativeminutes.support+reviewer@gmail.com`。短時間の magic link 複数送信による temporary email / magic link rate-limit risk のため、実ログイン確認は `human_required_deferred` として後回しにする。`+demo` / `+delete-test` plus-address login flow は PASS 済みだが、Store submission / reviewer instructions finalization 前に reviewer account login の最終確認が必要。
 
 ## UI/UX Phase 1 の画面方針
 - ユーザー向け main loop は `作る -> 聞く -> 録る -> 直す` の4語を前面に出す。

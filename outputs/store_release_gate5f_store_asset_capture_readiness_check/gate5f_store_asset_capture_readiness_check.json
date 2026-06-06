@@ -80,8 +80,8 @@
     },
     {
       "item": "reviewer_account",
-      "status": "human_required",
-      "notes": "Gate 5d has placeholder only; credentials must never be recorded in repo/docs/outputs"
+      "status": "human_required_deferred",
+      "notes": "candidate is nativeminutes.support+reviewer@gmail.com; final login verification is deferred due to temporary email / magic link rate-limit risk after repeated login attempts; do not record passwords, magic links, tokens, or cookies"
     },
     {
       "item": "clean_demo_account",
@@ -131,7 +131,6 @@
     "final_long_description",
     "final_screenshot_captions_and_localization",
     "final_terms_url_if_used",
-    "reviewer_account_and_safe_alias",
     "clean_demo_account",
     "mobile_viewport_device_selection",
     "app_store_specific_asset_requirement_check",
@@ -140,7 +139,8 @@
     "final_redaction_review",
     "final_no_brush_up_v1_asset_claim_confirmation",
     "store_console_availability_platform_acceptance_check_for_app_name_subtitle",
-    "final_redaction_review_for_human_confirmed_demo_script"
+    "final_redaction_review_for_human_confirmed_demo_script",
+    "reviewer_account_final_login_verification"
   ],
   "blocked_or_not_started": [
     {
@@ -181,7 +181,7 @@
   "conditions_to_enter_screenshot_capture": [
     "human_confirmed_app_name_subtitle_candidate_remains_approved_and_description_direction_is_approved",
     "human_confirmed_support_privacy_account_deletion_urls_remain_valid_and_terms_url_if_used_is_final_enough",
-    "reviewer_or_clean_demo_account_exists_without_private_data",
+    "reviewer_account_final_login_verification_complete_and_reviewer_or_clean_demo_account_has_no_private_data",
     "human_confirmed_demo_script_candidate_remains_approved_non_private_original_and_safe",
     "target_viewport_device_sizes_selected",
     "store_claim_safety_reviewed",
@@ -192,7 +192,7 @@
   "conditions_that_block_capture": [
     "unresolved_legal_judgment_for_store_name_subtitle_or_captions",
     "support_privacy_or_account_deletion_url_stops_opening_or_terms_url_is_unknown_and_needed_for_assets",
-    "missing_reviewer_account_or_clean_demo_account_or_demo_script_changed_to_unapproved_copy",
+    "reviewer_account_final_login_verification_deferred_or_clean_demo_account_missing_or_demo_script_changed_to_unapproved_copy",
     "screenshot_would_expose_private_or_raw_data",
     "asset_would_claim_brush_up_v1",
     "asset_would_claim_guaranteed_improvement_or_perfect_assessment",
@@ -272,7 +272,7 @@
   },
   "next_work": [
     "human_confirm_url_validity_store_console_name_availability_and_finalize_copy",
-    "human_prepare_reviewer_or_clean_demo_account",
+    "human_confirm_reviewer_account_login_after_rate_limit_window_or_prepare_clean_demo_account",
     "human_prepare_clean_demo_account_using_human_confirmed_demo_script",
     "human_select_device_sizes_and_platform_asset_requirements",
     "then_capture_screenshots_or_create_app_icon_in_a_later_gate",
@@ -319,6 +319,29 @@
       "medical_or_institution_level_claim_included": false,
       "native_speaker_replacement_claim_included": false,
       "notes": "The text is original neutral practice copy. 'I can become more comfortable' is framed as the speaker's practice intention, not a product guarantee."
+    }
+  },
+  "reviewer_account": {
+    "candidate": "nativeminutes.support+reviewer@gmail.com",
+    "verification_status": "human_required_deferred",
+    "defer_reason": "temporary email / magic link rate-limit risk after repeated login attempts",
+    "supporting_evidence": {
+      "plus_demo_login_flow": "PASS",
+      "plus_delete_test_login_flow": "PASS"
+    },
+    "required_before": [
+      "Store submission",
+      "reviewer instructions finalization"
+    ],
+    "not_performed": {
+      "relogin_attempted": false,
+      "magic_link_resent": false
+    },
+    "redaction": {
+      "reviewer_password_recorded": false,
+      "magic_link_url_recorded": false,
+      "auth_token_recorded": false,
+      "cookie_value_recorded": false
     }
   }
 }
