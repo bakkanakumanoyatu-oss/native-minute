@@ -1,0 +1,153 @@
+{
+  "gate": "4h",
+  "title": "Disposable account dry-run proof re-run status",
+  "recorded_at": "2026-06-06",
+  "proof_status": "BLOCKED",
+  "blocker_code": "needs_authenticated_disposable_session_and_confirmed_request",
+  "environment": "production_web_human_candidate",
+  "disposable_account_safe_alias": "plus_delete_test_account",
+  "disposable_account_candidate_status": "human_login_pass",
+  "supporting_evidence": {
+    "plus_demo_login_flow": "PASS",
+    "plus_delete_test_login_flow": "PASS"
+  },
+  "request_status": "unknown_not_queried",
+  "confirmation_status": "unknown_not_queried",
+  "dry_run_executed": false,
+  "dry_run_timestamp": null,
+  "dry_run_execution_decision": {
+    "decision": "not_executed",
+    "reason": "Codex does not have an authenticated disposable session, a confirmed account deletion request, or human typed confirmation for the plus-delete-test account. Existing dry-run APIs operate on the current authenticated user, so running them without that session would risk targeting the wrong account.",
+    "next_action": "Human should log in as the plus-delete-test disposable account, create/confirm the deletion request from Settings, then rerun Gate 4h dry-run capture using safe summaries only."
+  },
+  "categories_checked": [
+    {
+      "category": "auth_user",
+      "status": "not_executed"
+    },
+    {
+      "category": "profile_account_rows",
+      "status": "not_executed"
+    },
+    {
+      "category": "scripts",
+      "status": "not_executed"
+    },
+    {
+      "category": "recordings",
+      "status": "not_executed"
+    },
+    {
+      "category": "takes",
+      "status": "not_executed"
+    },
+    {
+      "category": "weak_words",
+      "status": "not_executed"
+    },
+    {
+      "category": "coach_feedback",
+      "status": "not_executed"
+    },
+    {
+      "category": "script_audios",
+      "status": "not_executed"
+    },
+    {
+      "category": "voice_samples",
+      "status": "not_executed"
+    },
+    {
+      "category": "voice_consents",
+      "status": "not_executed"
+    },
+    {
+      "category": "voices",
+      "status": "not_executed"
+    },
+    {
+      "category": "saved_pins",
+      "status": "not_executed"
+    },
+    {
+      "category": "quota_processing_metadata",
+      "status": "not_executed"
+    },
+    {
+      "category": "provider_side_normal_v1_voice_resources",
+      "status": "not_executed"
+    },
+    {
+      "category": "account_deletion_request_tracking",
+      "status": "not_executed"
+    }
+  ],
+  "category_counts_safe_summary": "not_executed",
+  "missing_coverage": [
+    "authenticated_disposable_session",
+    "confirmed_account_deletion_request",
+    "typed_confirmation_performed_by_human",
+    "safe_dry_run_summary_capture"
+  ],
+  "skipped": [
+    "inventory_dry_run",
+    "job_stage_dry_run",
+    "provider_cleanup_dry_run",
+    "storage_cleanup_dry_run",
+    "database_cleanup_dry_run",
+    "auth_deletion_dry_run"
+  ],
+  "deferred": [
+    "brush_up_specific_data",
+    "actual_deletion",
+    "provider_cleanup_execution",
+    "storage_object_deletion",
+    "db_destructive_cleanup",
+    "supabase_auth_user_deletion"
+  ],
+  "human_required": [
+    "log in as plus-delete-test disposable account",
+    "create account deletion request from Settings",
+    "perform typed DELETE confirmation in the UI",
+    "capture safe dry-run summaries without raw identifiers",
+    "stop before actual deletion"
+  ],
+  "blockers": [
+    "no_authenticated_disposable_session_available_to_codex",
+    "no_confirmed_deletion_request_available_to_codex",
+    "human_typed_confirmation_required_before_dry_run_proof"
+  ],
+  "redaction_check": {
+    "status": "PASS",
+    "full_email_recorded": false,
+    "full_user_id_recorded": false,
+    "storage_full_path_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_value_recorded": false,
+    "secret_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "private_audio_path_recorded": false
+  },
+  "destructive_operations_executed": false,
+  "stop_point": "before_dry_run_execution_and_before_actual_deletion",
+  "actual_deletion_executed": false,
+  "not_performed": {
+    "actual_account_deletion": true,
+    "supabase_auth_user_deletion": true,
+    "storage_object_deletion": true,
+    "db_destructive_cleanup": true,
+    "provider_cleanup_execution": true,
+    "migration_or_schema_change": true,
+    "env_or_dashboard_operation": true,
+    "provider_api_call": true,
+    "screenshot_capture": true,
+    "store_console_operation": true,
+    "capacitor_started": true,
+    "voice_provider_connected": true,
+    "reviewer_account_relogin_attempted": true,
+    "magic_link_resent": true
+  },
+  "overall_result": "BLOCKED",
+  "next_action": "Human should prepare the authenticated plus-delete-test session and confirmed deletion request, then rerun Gate 4h safe dry-run capture."
+}

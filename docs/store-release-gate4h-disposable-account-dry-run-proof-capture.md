@@ -4,6 +4,8 @@ Status: `blocked_needs_human_disposable_account`
 
 Gate 4h attempts to prepare a disposable account dry-run proof package using the Gate 4g safe summary and Gate 4e proof checklist.
 
+Update: `+delete-test` is now available as a disposable account candidate with human login PASS. Re-run preparation is recorded in `outputs/store_release_gate4h_disposable_account_dry_run_proof/gate4h_disposable_account_dry_run_proof.json`, but Codex still did not execute dry-run because it does not have an authenticated disposable session, a confirmed deletion request, or typed confirmation. Current re-run status is `BLOCKED: needs_authenticated_disposable_session_and_confirmed_request`.
+
 No dry-run was executed in this pass because no explicit disposable test account, masked proof alias, authenticated disposable session, or safe confirmed account deletion request was provided. Running the existing dry-run APIs without that confirmation would risk targeting a real or personal account, so the correct result is `BLOCKED`, not failure.
 
 This gate does not run actual account deletion, Supabase Auth deletion, Storage object deletion, DB destructive cleanup, provider cleanup, DB schema changes, destructive API routes, env changes, dashboard operations, Capacitor work, Store submission work, or Brush-up work.
