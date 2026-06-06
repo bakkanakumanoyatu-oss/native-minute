@@ -30,8 +30,8 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 | Clean demo account | `human_required` | Needed before capture to avoid private data and stale account state. |
 | Demo script | `human_confirmed_candidate` | Store / screenshot / reviewer demo script is human-confirmed, original, non-private, and safe for screenshots/review. |
 | Redaction rule | `ready` | Do not capture full emails, auth ids, transcript bodies, private scripts, raw recordings, Storage paths, signed URLs, provider ids, secrets, env values, or billing details. |
-| Mobile viewport / device selection | `human_required` | iPhone / Android sizes and device framing need final platform-specific decision. |
-| Platform-specific asset requirements | `not_started` | App Store / Google Play current asset sizes and console requirements need human/platform check before capture. |
+| Mobile viewport / device selection | `planned_human_required` | Gate 5g defines iPhone primary / secondary, Android primary / secondary, and desktop fallback candidates; final device / viewport selection remains human_required. |
+| Platform-specific asset requirements | `planned_human_required` | Gate 5g identifies unknown platform requirements; current App Store and Google Play asset rules still need human/platform check before capture. |
 | Store claim safety boundary | `ready` | Claims-to-avoid are defined by Gate 5b / 5c / 5e and repeated below. |
 | Brush-up v1.1 deferral boundary | `ready` | Brush-up is excluded from v1 Store assets. |
 

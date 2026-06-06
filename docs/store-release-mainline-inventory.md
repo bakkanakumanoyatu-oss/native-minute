@@ -141,6 +141,8 @@ Demo script candidate update: Store / screenshot / reviewer demo script is recor
 
 Reviewer account update: reviewer account candidate is `nativeminutes.support+reviewer@gmail.com`, with verification status `human_required_deferred`. Defer reason is temporary email / magic link rate-limit risk after repeated login attempts. Supporting evidence: `+demo` and `+delete-test` plus-address login flows have already passed. Final reviewer account login must be confirmed before Store submission / reviewer instructions finalization.
 
+Gate 5g mobile / device selection and platform asset requirements plan is captured in `docs/store-release-gate5g-mobile-device-selection-asset-requirements.md` and `outputs/store_release_gate5g_mobile_device_selection_asset_requirements/gate5g_mobile_device_selection_asset_requirements.json`. It defines iPhone / Android / desktop fallback capture candidates, minimum and optional screenshot sets, per-device capture targets, and current `human_required / unknown` platform checks. It does not capture screenshots, generate images, create app icons, operate Store Console, introduce Capacitor, retry reviewer login, resend magic links, execute deletion, cleanup providers, call provider APIs, or change env/dashboard state.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -271,6 +273,12 @@ Status: plan ready. Minimum screenshot set is Home / practice entry, script crea
 Goal: decide whether Store asset capture can begin based on Gate 5e prerequisites, Gate 0 auth recovery evidence, redaction rules, Store claim safety, v1 scope, and human-required items.
 
 Status: readiness check complete; actual capture is not ready. Ready items are Gate 0 production smoke, candidate screenshots, recommended minimum set, safe caption pool, human-confirmed app name/subtitle, human-confirmed demo script, redaction rule, v1 scope boundary, Brush-up v1.1 defer boundary, and Store claim safety list. Reviewer account candidate is recorded but login verification is `human_required_deferred`. Human-required blockers before capture are final descriptions, reviewer or clean demo account verification, mobile/device selection, platform-specific asset requirement check, legal/support approval, Store console/platform acceptance checks, and final redaction review. Do not capture screenshots or create icons until those are closed.
+
+### Gate 5g: Mobile / Device Selection and Platform Asset Requirements
+
+Goal: choose capture planning candidates for iPhone, Android, and fallback web evidence, and identify platform-specific Store asset requirements that must be human-checked before screenshot capture.
+
+Status: plan ready. Recommended minimum screenshot set remains Home / practice entry, Script creation, Listen, Record, Review, and Progress. Optional additions are Scripts / practice library, Settings, and Privacy / Support / Account deletion request path. Exact App Store / Google Play screenshot dimensions, device family requirements, tablet strategy, feature graphic / app icon requirements, and device frame choices remain `human_required / platform_check_required`.
 
 ### Gate 6: Release QA
 

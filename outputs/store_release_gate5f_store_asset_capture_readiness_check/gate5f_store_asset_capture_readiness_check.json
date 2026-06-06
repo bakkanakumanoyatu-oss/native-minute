@@ -100,13 +100,13 @@
     },
     {
       "item": "mobile_viewport_device_selection",
-      "status": "human_required",
-      "notes": "iPhone and Android sizes/device framing need final platform-specific decision"
+      "status": "planned_human_required",
+      "notes": "Gate 5g defines iPhone primary/secondary, Android primary/secondary, and desktop fallback candidates; final device/viewport selection remains human_required"
     },
     {
       "item": "platform_specific_asset_requirements",
-      "status": "not_started",
-      "notes": "App Store and Google Play current asset requirements need human/platform check before capture"
+      "status": "planned_human_required",
+      "notes": "Gate 5g identifies unknown platform requirements; current App Store and Google Play asset rules still need human/platform check before capture"
     }
   ],
   "ready_items": [
@@ -274,10 +274,36 @@
     "human_confirm_url_validity_store_console_name_availability_and_finalize_copy",
     "human_confirm_reviewer_account_login_after_rate_limit_window_or_prepare_clean_demo_account",
     "human_prepare_clean_demo_account_using_human_confirmed_demo_script",
-    "human_select_device_sizes_and_platform_asset_requirements",
+    "human_select_final_device_viewports_from_gate_5g_candidates",
+    "human_check_current_app_store_and_google_play_asset_requirements",
     "then_capture_screenshots_or_create_app_icon_in_a_later_gate",
     "or_return_to_gate_4h_after_disposable_account_is_ready"
   ],
+  "gate_5g_plan": {
+    "status": "plan_ready_human_required_before_capture",
+    "document": "docs/store-release-gate5g-mobile-device-selection-asset-requirements.md",
+    "evidence": "outputs/store_release_gate5g_mobile_device_selection_asset_requirements/gate5g_mobile_device_selection_asset_requirements.json",
+    "device_candidates": [
+      "iphone_primary",
+      "iphone_secondary",
+      "android_primary",
+      "android_secondary",
+      "desktop_web_fallback"
+    ],
+    "minimum_screenshot_set": [
+      "home_practice_entry",
+      "script_creation",
+      "listen",
+      "record",
+      "review",
+      "progress"
+    ],
+    "platform_requirements_status": "human_required_platform_check_required",
+    "screenshots_captured": false,
+    "store_console_operated": false,
+    "app_icon_created": false,
+    "capacitor_started": false
+  },
   "url_human_check": {
     "/privacy": "PASS",
     "/support": "PASS",

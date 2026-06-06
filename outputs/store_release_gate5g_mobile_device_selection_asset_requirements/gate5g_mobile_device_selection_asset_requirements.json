@@ -1,0 +1,198 @@
+{
+  "gate": "5g",
+  "title": "Mobile device selection and platform asset requirements plan",
+  "status": "plan_ready_human_required_before_capture",
+  "created_at": "2026-06-06",
+  "source_inputs": [
+    "docs/store-release-gate5e-store-asset-capture-plan.md",
+    "docs/store-release-gate5f-store-asset-capture-readiness-check.md",
+    "outputs/store_release_gate5f_store_asset_capture_readiness_check/gate5f_store_asset_capture_readiness_check.json"
+  ],
+  "repo_confirmed_inputs": {
+    "gate_0_production_auth_smoke": "PASS",
+    "support_email": "nativeminutes.support@gmail.com",
+    "privacy_support_account_deletion_urls_human_check": "PASS",
+    "plus_demo_login_flow": "PASS",
+    "plus_delete_test_login_flow": "PASS",
+    "reviewer_account_candidate": "nativeminutes.support+reviewer@gmail.com",
+    "reviewer_account_verification_status": "human_required_deferred",
+    "app_name": "Native Minutes",
+    "subtitle": "1分間のナチュラル発音トレーニング",
+    "demo_script_candidate_status": "human_confirmed_candidate"
+  },
+  "device_viewport_candidates": [
+    {
+      "target": "iphone_primary",
+      "candidate": "modern large iPhone portrait viewport, such as a 6.7-inch class device",
+      "purpose": "main App Store phone screenshot set",
+      "status": "human_required"
+    },
+    {
+      "target": "iphone_secondary",
+      "candidate": "smaller iPhone portrait viewport, such as a 6.1-inch class device",
+      "purpose": "text-fit and layout sanity check before capture",
+      "status": "optional_human_required"
+    },
+    {
+      "target": "android_primary",
+      "candidate": "modern Android phone portrait viewport, Pixel-like or similar",
+      "purpose": "main Google Play phone screenshot set",
+      "status": "human_required"
+    },
+    {
+      "target": "android_secondary",
+      "candidate": "narrow Android phone portrait viewport",
+      "purpose": "text-fit and control overlap sanity check",
+      "status": "optional_human_required"
+    },
+    {
+      "target": "desktop_web_fallback",
+      "candidate": "desktop web viewport for docs/reviewer evidence only",
+      "purpose": "fallback evidence, not primary mobile Store asset",
+      "status": "optional"
+    }
+  ],
+  "minimum_screenshot_set": [
+    "home_practice_entry",
+    "script_creation",
+    "listen",
+    "record",
+    "review",
+    "progress"
+  ],
+  "optional_screenshot_set": [
+    "scripts_practice_library",
+    "settings",
+    "privacy_support_account_deletion_request_path",
+    "reviewer_support_evidence_if_needed_without_private_data"
+  ],
+  "per_device_capture_targets": {
+    "iphone_primary": {
+      "minimum": [
+        "home_practice_entry",
+        "script_creation",
+        "listen",
+        "record",
+        "review",
+        "progress"
+      ],
+      "optional": [
+        "scripts_practice_library",
+        "settings",
+        "legal_support_path"
+      ],
+      "checks": [
+        "text_legibility",
+        "button_fit",
+        "audio_controls_do_not_cover_content",
+        "no_private_data",
+        "no_brush_up_claim"
+      ]
+    },
+    "android_primary": {
+      "minimum": [
+        "home_practice_entry",
+        "script_creation",
+        "listen",
+        "record",
+        "review",
+        "progress"
+      ],
+      "optional": [
+        "scripts_practice_library",
+        "settings",
+        "legal_support_path"
+      ],
+      "checks": [
+        "text_legibility",
+        "button_fit",
+        "browser_or_device_chrome_cropping_risk",
+        "no_private_data",
+        "no_brush_up_claim"
+      ]
+    },
+    "desktop_web_fallback": {
+      "minimum": [
+        "home_practice_entry",
+        "script_creation",
+        "listen",
+        "record",
+        "review",
+        "progress"
+      ],
+      "optional": [
+        "settings",
+        "legal_support_surfaces"
+      ],
+      "use": "internal evidence only unless Store strategy explicitly allows web screenshots"
+    }
+  },
+  "human_required_before_capture": [
+    "reviewer_account_final_login_or_clean_demo_account_confirmation",
+    "final_iphone_target_device_or_viewport",
+    "final_android_target_device_or_viewport",
+    "current_app_store_screenshot_requirements",
+    "current_google_play_screenshot_requirements",
+    "tablet_asset_decision",
+    "device_frame_decision",
+    "final_short_description_long_description_and_captions",
+    "final_legal_support_approval",
+    "final_redaction_review",
+    "store_console_app_name_subtitle_acceptance_check",
+    "support_privacy_account_deletion_url_validity_recheck"
+  ],
+  "unknown_platform_check_required": [
+    "exact_app_store_connect_screenshot_pixel_sizes_and_upload_rules",
+    "exact_google_play_screenshot_dimensions_count_limits_and_upload_rules",
+    "tablet_asset_requirements_or_strategy",
+    "web_or_native_shell_screenshot_acceptability_after_capacitor_decision",
+    "app_icon_source_asset_size_safe_area_and_adaptive_icon_layer_requirements"
+  ],
+  "store_claim_safety": {
+    "forbidden_claims_included": false,
+    "brush_up_v1_claim_included": false,
+    "voice_clone_improvement_v1_claim_included": false,
+    "guaranteed_improvement_claim_included": false,
+    "perfect_pronunciation_judgment_claim_included": false,
+    "medical_or_institution_level_claim_included": false,
+    "native_app_claim_before_capacitor": false
+  },
+  "not_performed": {
+    "screenshots_captured": false,
+    "images_generated": false,
+    "app_icon_created": false,
+    "store_console_operated": false,
+    "app_store_connect_operated": false,
+    "google_play_console_operated": false,
+    "app_privacy_submitted": false,
+    "google_data_safety_submitted": false,
+    "capacitor_started": false,
+    "testflight_started": false,
+    "google_closed_testing_started": false,
+    "reviewer_account_relogin_attempted": false,
+    "magic_link_resent": false,
+    "gate_4h_rerun_executed": false,
+    "actual_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "db_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "env_changed": false,
+    "dashboard_changed": false,
+    "provider_api_called": false,
+    "voice_provider_connected": false,
+    "brush_up_implemented": false
+  },
+  "redaction": {
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "private_path_recorded": false,
+    "private_email_recorded": false,
+    "auth_token_recorded": false,
+    "reviewer_password_recorded": false,
+    "magic_link_url_recorded": false,
+    "cookie_value_recorded": false
+  }
+}

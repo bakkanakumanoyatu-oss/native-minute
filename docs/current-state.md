@@ -45,6 +45,7 @@
 - Store asset / metadata 用の app name / subtitle は、user human-confirmed candidate として `Native Minutes` / `1分間のナチュラル発音トレーニング` を記録済み。既存 docs の `Native Minute` 表記、package 名、route、project 名、DB、env、repository 名は今回変更しない。
 - Store / screenshot / reviewer 用 demo script は user human-confirmed candidate として記録済み。個人情報、著作権リスクのある引用、Brush-up v1 claim、voice clone improvement v1 claim、強い成果保証を含まない安全な練習文として扱う。
 - Store reviewer account candidate は `nativeminutes.support+reviewer@gmail.com`。短時間の magic link 複数送信による temporary email / magic link rate-limit risk のため、実ログイン確認は `human_required_deferred` として後回しにする。`+demo` / `+delete-test` plus-address login flow は PASS 済みだが、Store submission / reviewer instructions finalization 前に reviewer account login の最終確認が必要。
+- Gate 5g mobile / device selection and platform asset requirements plan として、iPhone primary / secondary、Android primary / secondary、desktop web fallback の capture 候補、minimum / optional screenshot set、platform-specific requirements の `human_required / unknown` を `docs/store-release-gate5g-mobile-device-selection-asset-requirements.md` と `outputs/store_release_gate5g_mobile_device_selection_asset_requirements/gate5g_mobile_device_selection_asset_requirements.json` に整理した。screenshot 実撮影、Store Console、app icon、Capacitor、reviewer 再ログイン、magic link 再送、actual deletion、provider cleanup、env / dashboard、provider API は実行していない。
 
 ## UI/UX Phase 1 の画面方針
 - ユーザー向け main loop は `作る -> 聞く -> 録る -> 直す` の4語を前面に出す。
