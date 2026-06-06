@@ -1,0 +1,269 @@
+{
+  "gate": "5f",
+  "title": "Store asset capture readiness check",
+  "status": "readiness_check_complete_capture_not_ready_human_required",
+  "created_at": "2026-06-06",
+  "source_inputs": [
+    "docs/store-release-gate5c-screenshot-reviewer-evidence-template.md",
+    "docs/store-release-gate5d-reviewer-instructions-evidence-package.md",
+    "docs/store-release-gate5e-store-asset-capture-plan.md",
+    "outputs/store_release_gate5e_store_asset_capture_plan/gate5e_store_asset_capture_plan.json",
+    "outputs/store_release_gate0_auth_callback_production_human_smoke/gate0_auth_callback_production_human_smoke.json"
+  ],
+  "step_0_push_check": {
+    "push_performed": false,
+    "reason": "main and origin/main were already aligned before Gate 5f work",
+    "main_origin_diff_before_work": "0 0",
+    "latest_commit_before_work": "bee12e2 Record Gate 0 auth callback production smoke pass"
+  },
+  "prerequisites": {
+    "gate_0_auth_callback_production_human_smoke": {
+      "status": "ready",
+      "commit": "0bd55b4",
+      "evidence": "outputs/store_release_gate0_auth_callback_production_human_smoke/gate0_auth_callback_production_human_smoke.json"
+    },
+    "gate_5e_capture_plan": {
+      "status": "ready",
+      "evidence": "outputs/store_release_gate5e_store_asset_capture_plan/gate5e_store_asset_capture_plan.json"
+    }
+  },
+  "readiness_matrix": [
+    {
+      "item": "screenshots",
+      "status": "human_required",
+      "notes": "candidate set is ready, but actual capture needs final account, demo script, device selection, redaction review, and Store copy decisions"
+    },
+    {
+      "item": "app_icon",
+      "status": "not_started",
+      "notes": "final icon/brand decision and asset creation are outside Gate 5f"
+    },
+    {
+      "item": "app_name_subtitle",
+      "status": "human_required",
+      "notes": "Gate 5b candidates are draft only"
+    },
+    {
+      "item": "short_description",
+      "status": "human_required",
+      "notes": "draft direction exists; final text requires human/legal approval"
+    },
+    {
+      "item": "long_description",
+      "status": "human_required",
+      "notes": "Gate 5b draft is source material only"
+    },
+    {
+      "item": "screenshot_captions",
+      "status": "human_required",
+      "notes": "safe caption pool exists; final captions need localization and legal review"
+    },
+    {
+      "item": "support_url",
+      "status": "human_required",
+      "notes": "must point to final public support surface"
+    },
+    {
+      "item": "privacy_url",
+      "status": "human_required",
+      "notes": "must point to final public Privacy Policy"
+    },
+    {
+      "item": "account_deletion_url",
+      "status": "human_required",
+      "notes": "must point to final account deletion request/help path without actual deletion overclaim"
+    },
+    {
+      "item": "reviewer_account",
+      "status": "human_required",
+      "notes": "Gate 5d has placeholder only; credentials must never be recorded in repo/docs/outputs"
+    },
+    {
+      "item": "clean_demo_account",
+      "status": "human_required",
+      "notes": "needed to avoid private data and stale account state in screenshots"
+    },
+    {
+      "item": "demo_script",
+      "status": "human_required",
+      "notes": "must be short, neutral, non-private, and safe for screenshots/review"
+    },
+    {
+      "item": "redaction_rule",
+      "status": "ready",
+      "notes": "do not capture full emails, auth ids, transcript bodies, private scripts, raw recordings, private paths, provider ids, secrets, env values, or billing details"
+    },
+    {
+      "item": "mobile_viewport_device_selection",
+      "status": "human_required",
+      "notes": "iPhone and Android sizes/device framing need final platform-specific decision"
+    },
+    {
+      "item": "platform_specific_asset_requirements",
+      "status": "not_started",
+      "notes": "App Store and Google Play current asset requirements need human/platform check before capture"
+    }
+  ],
+  "ready_items": [
+    "gate_0_production_auth_smoke",
+    "v1_screenshot_candidate_surfaces",
+    "minimum_screenshot_set_definition",
+    "optional_screenshot_surface_definition",
+    "safe_caption_candidate_pool",
+    "redaction_rule",
+    "screenshot_capture_evidence_template",
+    "v1_scope_boundary",
+    "brush_up_v1_1_defer_boundary",
+    "store_claim_safety_list"
+  ],
+  "human_required": [
+    "final_screenshot_capture",
+    "final_app_name",
+    "final_subtitle",
+    "final_short_description",
+    "final_long_description",
+    "final_screenshot_captions_and_localization",
+    "final_support_url",
+    "final_privacy_policy_url",
+    "final_account_deletion_request_url",
+    "final_terms_url_if_used",
+    "reviewer_account_and_safe_alias",
+    "clean_demo_account",
+    "safe_demo_script",
+    "mobile_viewport_device_selection",
+    "app_store_specific_asset_requirement_check",
+    "google_play_specific_asset_requirement_check",
+    "final_legal_support_approval",
+    "final_redaction_review",
+    "final_no_brush_up_v1_asset_claim_confirmation"
+  ],
+  "blocked_or_not_started": [
+    {
+      "item": "actual_screenshot_capture",
+      "status": "blocked",
+      "reason": "human_required prerequisites are not closed"
+    },
+    {
+      "item": "app_icon_creation",
+      "status": "not_started"
+    },
+    {
+      "item": "platform_specific_screenshot_size_device_frame_decision",
+      "status": "not_started"
+    },
+    {
+      "item": "store_console_asset_upload",
+      "status": "not_started"
+    },
+    {
+      "item": "app_privacy_google_data_safety_final_console_answers",
+      "status": "not_started"
+    },
+    {
+      "item": "capacitor_native_packaging",
+      "status": "not_started"
+    },
+    {
+      "item": "gate_4h_disposable_account_dry_run_proof",
+      "status": "blocked",
+      "reason": "needs_human_disposable_account"
+    },
+    {
+      "item": "actual_account_deletion_proof",
+      "status": "not_started"
+    }
+  ],
+  "conditions_to_enter_screenshot_capture": [
+    "final_app_name_subtitle_description_direction_approved",
+    "support_privacy_terms_if_used_and_account_deletion_urls_final_enough",
+    "reviewer_or_clean_demo_account_exists_without_private_data",
+    "safe_demo_script_exists",
+    "target_viewport_device_sizes_selected",
+    "store_claim_safety_reviewed",
+    "redaction_rule_accepted_by_asset_capturer",
+    "brush_up_absent_from_assets_and_notes",
+    "account_deletion_described_as_request_path_unless_actual_proof_later_completed"
+  ],
+  "conditions_that_block_capture": [
+    "unresolved_legal_judgment_for_store_name_subtitle_or_captions",
+    "unknown_support_privacy_or_account_deletion_url_needed_for_assets",
+    "missing_reviewer_account_clean_demo_account_or_demo_script",
+    "screenshot_would_expose_private_or_raw_data",
+    "asset_would_claim_brush_up_v1",
+    "asset_would_claim_guaranteed_improvement_or_perfect_assessment",
+    "asset_would_claim_complete_account_deletion_before_proof",
+    "capture_requires_store_console_provider_dashboard_env_db_schema_destructive_cleanup_capacitor_or_voice_provider_work"
+  ],
+  "store_claim_safety": {
+    "forbidden_claims": [
+      "become_native",
+      "guaranteed_improvement",
+      "perfect_pronunciation_judgment",
+      "medical_or_institution_level_claim",
+      "official_ability_assessment",
+      "native_speaker_replacement",
+      "brush_up_available_in_v1",
+      "voice_clone_improvement_available_in_v1",
+      "best_take_becomes_voice_material_in_v1",
+      "account_deletion_fully_complete_before_proof",
+      "native_app_before_native_packaging_complete"
+    ],
+    "safer_directions": [
+      "one_minute_speaking_practice",
+      "model_audio",
+      "learning_feedback",
+      "practice_support",
+      "latest_and_best_takes",
+      "account_deletion_request_path"
+    ]
+  },
+  "scope_alignment": {
+    "v1_scope_ok": true,
+    "brush_up_expected_in_v1": false,
+    "brush_up_deferred_to": "v1.1",
+    "store_claim_safety_status": "ready_boundary_defined"
+  },
+  "not_performed": {
+    "screenshots_captured": false,
+    "images_generated": false,
+    "app_icon_created": false,
+    "store_console_operated": false,
+    "app_store_connect_operated": false,
+    "google_play_console_operated": false,
+    "app_privacy_submitted": false,
+    "google_data_safety_submitted": false,
+    "capacitor_started": false,
+    "testflight_started": false,
+    "google_closed_testing_started": false,
+    "qa_executed": false,
+    "gate_4h_rerun_executed": false,
+    "actual_deletion_executed": false,
+    "auth_user_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "db_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "env_changed": false,
+    "dashboard_changed": false,
+    "provider_api_called": false,
+    "voice_provider_connected": false,
+    "brush_up_implemented": false
+  },
+  "redaction_policy": {
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "private_path_recorded": false,
+    "email_full_value_recorded": false,
+    "auth_user_id_recorded": false,
+    "reviewer_password_recorded": false
+  },
+  "next_work": [
+    "human_finalize_store_urls_app_name_subtitle_and_copy",
+    "human_prepare_reviewer_or_clean_demo_account",
+    "human_prepare_safe_demo_script",
+    "human_select_device_sizes_and_platform_asset_requirements",
+    "then_capture_screenshots_or_create_app_icon_in_a_later_gate",
+    "or_return_to_gate_4h_after_disposable_account_is_ready"
+  ]
+}

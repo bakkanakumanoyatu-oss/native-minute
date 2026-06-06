@@ -131,6 +131,8 @@ Gate 5d reviewer instructions / evidence package draft is captured in `docs/stor
 
 Gate 5e Store asset capture plan is captured in `docs/store-release-gate5e-store-asset-capture-plan.md` and `outputs/store_release_gate5e_store_asset_capture_plan/gate5e_store_asset_capture_plan.json`. It defines the Store asset preparation scope, recommended screenshot sets, caption candidates, claims to avoid, capture prerequisites, screenshot evidence template, and redaction boundaries. It is planning/template only; no screenshot capture, image generation, app icon creation, Store Console operation, QA run, deletion, cleanup, provider call, env/dashboard operation, Capacitor work, or Brush-up occurred.
 
+Gate 5f Store asset capture readiness check is captured in `docs/store-release-gate5f-store-asset-capture-readiness-check.md` and `outputs/store_release_gate5f_store_asset_capture_readiness_check/gate5f_store_asset_capture_readiness_check.json`. Gate 0 production human smoke PASS is a ready prerequisite, and the screenshot candidate set, safe caption pool, redaction rule, v1 scope boundary, Brush-up v1.1 deferral boundary, and Store claim safety list are ready. Actual screenshot capture is not ready until final Store URLs, final app name/subtitle/copy, reviewer or clean demo account, safe demo script, mobile/device selection, platform-specific asset requirements, legal/support approval, and redaction review are human-confirmed. No screenshot capture, image generation, app icon creation, Store Console operation, Capacitor work, deletion, cleanup, provider call, env/dashboard operation, voice provider connection, or Brush-up occurred.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
@@ -255,6 +257,12 @@ Status: draft ready. The reviewer flow covers login, script creation, listen, re
 Goal: prepare the capture plan for screenshots, app icon, app name/subtitle, descriptions, preview captions, Store URLs, reviewer account, and reviewer instructions before any asset capture or Store Console operation.
 
 Status: plan ready. Minimum screenshot set is Home / practice entry, script creation, listen, record, review, and progress. Optional additions are Scripts, Settings, and Privacy / Support / Account deletion request surfaces. Final screenshot capture, app icon, final app name/subtitle/descriptions, support/privacy/deletion URLs, reviewer account, demo account/script, device size selection, platform-specific asset requirements, legal approval, and redaction review remain human-required. Brush-up must not appear in v1 assets.
+
+### Gate 5f: Store Asset Capture Readiness Check
+
+Goal: decide whether Store asset capture can begin based on Gate 5e prerequisites, Gate 0 auth recovery evidence, redaction rules, Store claim safety, v1 scope, and human-required items.
+
+Status: readiness check complete; actual capture is not ready. Ready items are Gate 0 production smoke, candidate screenshots, recommended minimum set, safe caption pool, redaction rule, v1 scope boundary, Brush-up v1.1 defer boundary, and Store claim safety list. Human-required blockers before capture are final app name/subtitle/descriptions, final support/privacy/deletion URLs, reviewer or clean demo account, safe demo script, mobile/device selection, platform-specific asset requirement check, legal/support approval, and final redaction review. Do not capture screenshots or create icons until those are closed.
 
 ### Gate 6: Release QA
 
