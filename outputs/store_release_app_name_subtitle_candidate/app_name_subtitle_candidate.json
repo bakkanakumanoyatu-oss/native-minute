@@ -1,0 +1,52 @@
+{
+  "gate": "store_asset_metadata_candidate",
+  "recorded_at": "2026-06-06",
+  "status": "human_confirmed_candidate",
+  "app_name": "Native Minutes",
+  "subtitle": "1分間のナチュラル発音トレーニング",
+  "scope": {
+    "store_asset_metadata_candidate_only": true,
+    "large_rename_performed": false,
+    "package_name_changed": false,
+    "route_changed": false,
+    "project_name_changed": false,
+    "db_changed": false,
+    "env_changed": false,
+    "repository_name_changed": false
+  },
+  "store_claim_safety": {
+    "forbidden_claims_included": false,
+    "native_speaker_replacement_claim_included": false,
+    "guaranteed_improvement_claim_included": false,
+    "perfect_pronunciation_judgment_claim_included": false,
+    "medical_or_institution_level_claim_included": false,
+    "brush_up_v1_claim_included": false,
+    "voice_clone_improvement_v1_claim_included": false,
+    "account_deletion_complete_before_proof_claim_included": false,
+    "notes": "The subtitle describes one-minute natural pronunciation training and does not claim guaranteed outcomes, perfect assessment, native-speaker replacement, Brush-up availability, or medical/institutional evaluation."
+  },
+  "not_performed": {
+    "screenshot_capture": false,
+    "image_generation": false,
+    "app_icon_creation": false,
+    "store_console_operation": false,
+    "app_store_connect_operation": false,
+    "google_play_console_operation": false,
+    "capacitor_started": false,
+    "voice_provider_connected": false,
+    "db_cleanup_executed": false,
+    "auth_deletion_executed": false,
+    "storage_deletion_executed": false,
+    "provider_cleanup_executed": false,
+    "actual_deletion_executed": false
+  },
+  "redaction": {
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "private_path_recorded": false,
+    "private_email_recorded": false,
+    "auth_token_recorded": false
+  }
+}

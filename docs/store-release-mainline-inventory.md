@@ -135,6 +135,8 @@ Gate 5f Store asset capture readiness check is captured in `docs/store-release-g
 
 Support contact update: public support contact is unified to `nativeminutes.support@gmail.com`. Human check confirmed `/privacy`, `/support`, and `/support/account-deletion` open successfully, and the legacy personal support contact mismatch is fixed without recording the legacy raw value in new evidence.
 
+Store metadata candidate update: app name / subtitle are user human-confirmed candidates for Store assets as `Native Minutes` / `1分間のナチュラル発音トレーニング`. This records a Store metadata candidate only; it does not rename existing `Native Minute` docs references, package/project/repository names, routes, DB, or env names.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation

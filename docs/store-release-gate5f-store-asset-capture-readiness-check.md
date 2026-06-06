@@ -18,7 +18,7 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 | Screenshot candidate set | `ready` | Gate 5c / 5e define Home, script creation, listen, record, review, progress, plus optional scripts/settings/legal surfaces. |
 | Screenshot capture | `human_required` | Actual capture needs final account, demo script, device selection, redaction review, and final Store copy decisions. |
 | App icon | `not_started` | Final brand/icon decision and asset creation are outside Gate 5f. |
-| App name / subtitle | `human_required` | Use Gate 5b candidates only until release owner finalizes. |
+| App name / subtitle | `human_confirmed_candidate` | Store metadata candidate is `Native Minutes` / `1分間のナチュラル発音トレーニング`; repo/package/route/project naming is unchanged. |
 | Short description | `human_required` | Draft direction exists; final text requires human/legal approval. |
 | Long description | `human_required` | Gate 5b draft is source material only. |
 | Screenshot captions | `human_required` | Safe caption pool exists; final captions need localization and legal review. |
@@ -44,6 +44,7 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 - Safe caption candidate pool.
 - Human-confirmed `/privacy`, `/support`, and `/support/account-deletion` URL open checks.
 - Unified public support contact email: `nativeminutes.support@gmail.com`.
+- Human-confirmed Store metadata candidate: `Native Minutes` / `1分間のナチュラル発音トレーニング`.
 - Redaction rule.
 - Screenshot capture evidence template.
 - v1 scope boundary.
@@ -53,8 +54,6 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 ## Human Required Items
 
 - Final screenshot capture.
-- Final app name.
-- Final subtitle.
 - Final short description.
 - Final long description.
 - Final screenshot captions and localization.
@@ -66,6 +65,7 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 - App Store specific asset requirement check.
 - Google Play specific asset requirement check.
 - Final legal / support approval.
+- Store console availability / platform acceptance check for the human-confirmed app name and subtitle.
 - Final redaction review.
 - Final confirmation that Brush-up is absent from v1 assets.
 
@@ -84,7 +84,7 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 
 Actual screenshot capture can start only when all of these are true:
 
-- Final app name / subtitle / description direction is approved for capture.
+- Human-confirmed app name / subtitle candidate remains approved for capture, and description direction is approved.
 - Human-confirmed support, privacy, and account deletion URLs remain valid; Terms URL, if used, is final enough for screenshots and reviewer notes.
 - Reviewer or clean demo account exists and contains no private data.
 - Safe demo script exists and is short, neutral, non-private, and not copyrighted.
@@ -125,6 +125,8 @@ Avoid these claims in v1 assets:
 
 Safer directions:
 
+- `Native Minutes`
+- `1分間のナチュラル発音トレーニング`
 - `one-minute speaking practice`
 - `model audio`
 - `learning feedback`
