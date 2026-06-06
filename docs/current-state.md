@@ -43,6 +43,7 @@
 - Gate 5f Store asset capture readiness check として、Gate 5e の capture plan をもとに screenshots、app icon、metadata、URLs、reviewer / demo account、demo script、redaction、device selection、platform requirements の readiness matrix を `docs/store-release-gate5f-store-asset-capture-readiness-check.md` と `outputs/store_release_gate5f_store_asset_capture_readiness_check/gate5f_store_asset_capture_readiness_check.json` に整理した。Gate 0 production human smoke PASS は前提条件として反映済み。candidate set / caption pool / redaction rule / v1 claim boundary は ready だが、actual screenshot capture は reviewer / clean demo account、demo script、device/platform requirements、legal approval が human_required のためまだ開始しない。Store Console、screenshot 実撮影、app icon 作成、Capacitor、actual deletion、provider cleanup、env / dashboard、provider API は実行していない。
 - Store release の public support contact は `nativeminutes.support@gmail.com` に統一済み。Human check で `/privacy`、`/support`、`/support/account-deletion` は開けることを確認し、legacy personal contact mismatch は修正済み。新規 evidence には旧 contact の raw value を残さず、`legacy_personal_contact_email` として扱う。
 - Store asset / metadata 用の app name / subtitle は、user human-confirmed candidate として `Native Minutes` / `1分間のナチュラル発音トレーニング` を記録済み。既存 docs の `Native Minute` 表記、package 名、route、project 名、DB、env、repository 名は今回変更しない。
+- Store / screenshot / reviewer 用 demo script は user human-confirmed candidate として記録済み。個人情報、著作権リスクのある引用、Brush-up v1 claim、voice clone improvement v1 claim、強い成果保証を含まない安全な練習文として扱う。
 
 ## UI/UX Phase 1 の画面方針
 - ユーザー向け main loop は `作る -> 聞く -> 録る -> 直す` の4語を前面に出す。

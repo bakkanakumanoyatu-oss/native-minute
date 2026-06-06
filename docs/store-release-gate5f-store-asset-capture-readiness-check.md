@@ -16,7 +16,7 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 | --- | --- | --- |
 | Gate 0 auth smoke prerequisite | `ready` | Production human smoke PASS is recorded in `outputs/store_release_gate0_auth_callback_production_human_smoke/`. |
 | Screenshot candidate set | `ready` | Gate 5c / 5e define Home, script creation, listen, record, review, progress, plus optional scripts/settings/legal surfaces. |
-| Screenshot capture | `human_required` | Actual capture needs final account, demo script, device selection, redaction review, and final Store copy decisions. |
+| Screenshot capture | `human_required` | Actual capture still needs final account, device selection, redaction review, and final Store copy decisions. |
 | App icon | `not_started` | Final brand/icon decision and asset creation are outside Gate 5f. |
 | App name / subtitle | `human_confirmed_candidate` | Store metadata candidate is `Native Minutes` / `1分間のナチュラル発音トレーニング`; repo/package/route/project naming is unchanged. |
 | Short description | `human_required` | Draft direction exists; final text requires human/legal approval. |
@@ -28,7 +28,7 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 | Support contact email | `ready` | Public support contact is unified to `nativeminutes.support@gmail.com`; the legacy personal contact mismatch is fixed without recording the legacy raw value in new evidence. |
 | Reviewer account | `human_required` | Gate 5d has placeholder only; no credentials belong in repo/docs/outputs. |
 | Clean demo account | `human_required` | Needed before capture to avoid private data and stale account state. |
-| Demo script | `human_required` | Must be short, neutral, non-private, and safe for screenshots/review. |
+| Demo script | `human_confirmed_candidate` | Store / screenshot / reviewer demo script is human-confirmed, original, non-private, and safe for screenshots/review. |
 | Redaction rule | `ready` | Do not capture full emails, auth ids, transcript bodies, private scripts, raw recordings, Storage paths, signed URLs, provider ids, secrets, env values, or billing details. |
 | Mobile viewport / device selection | `human_required` | iPhone / Android sizes and device framing need final platform-specific decision. |
 | Platform-specific asset requirements | `not_started` | App Store / Google Play current asset sizes and console requirements need human/platform check before capture. |
@@ -45,6 +45,8 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 - Human-confirmed `/privacy`, `/support`, and `/support/account-deletion` URL open checks.
 - Unified public support contact email: `nativeminutes.support@gmail.com`.
 - Human-confirmed Store metadata candidate: `Native Minutes` / `1分間のナチュラル発音トレーニング`.
+- Human-confirmed demo script candidate:
+  `Today, I will practice speaking clearly and confidently for one minute. I want to improve my pronunciation, rhythm, and fluency little by little. I will slow down, breathe naturally, and focus on each word. Even small progress matters, and I can become more comfortable each time I practice.`
 - Redaction rule.
 - Screenshot capture evidence template.
 - v1 scope boundary.
@@ -60,12 +62,12 @@ Brush-up remains deferred to v1.1. Store assets, captions, reviewer notes, scree
 - Final Terms URL if used.
 - Reviewer account and safe alias.
 - Clean demo account.
-- Safe demo script.
 - Mobile viewport / device selection.
 - App Store specific asset requirement check.
 - Google Play specific asset requirement check.
 - Final legal / support approval.
 - Store console availability / platform acceptance check for the human-confirmed app name and subtitle.
+- Final redaction review for the human-confirmed demo script in screenshots/reviewer notes.
 - Final redaction review.
 - Final confirmation that Brush-up is absent from v1 assets.
 
@@ -87,7 +89,7 @@ Actual screenshot capture can start only when all of these are true:
 - Human-confirmed app name / subtitle candidate remains approved for capture, and description direction is approved.
 - Human-confirmed support, privacy, and account deletion URLs remain valid; Terms URL, if used, is final enough for screenshots and reviewer notes.
 - Reviewer or clean demo account exists and contains no private data.
-- Safe demo script exists and is short, neutral, non-private, and not copyrighted.
+- Human-confirmed demo script remains approved, non-private, original, and safe for screenshots/reviewer notes.
 - Target viewport / device sizes are selected for App Store and Google Play.
 - Store claim safety list has been reviewed by the release owner.
 - Redaction rule is accepted by the person capturing assets.
@@ -100,7 +102,7 @@ Do not start capture if any of these are true:
 
 - Final Store name / subtitle / captions require unresolved legal judgment.
 - Support URL, Privacy URL, or account deletion URL stops opening, or Terms URL is unknown and must appear in screenshots or metadata.
-- Reviewer account, clean demo account, or demo script is missing.
+- Reviewer account or clean demo account is missing, or the demo script is changed to unapproved copy.
 - Screenshots would expose full email, auth id, transcript body, private script, raw recording, private audio path, Storage object key, signed URL, provider id, env value, secret, or billing detail.
 - Any screenshot, caption, metadata, or reviewer note would imply Brush-up is available in v1.
 - Any copy would imply guaranteed improvement, perfect pronunciation scoring, native-speaker replacement, medical/institutional assessment, or complete account deletion before proof.

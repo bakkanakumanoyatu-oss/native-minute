@@ -1,0 +1,44 @@
+{
+  "gate": "store_demo_script_candidate",
+  "recorded_at": "2026-06-06",
+  "status": "human_confirmed_candidate",
+  "demo_script": "Today, I will practice speaking clearly and confidently for one minute. I want to improve my pronunciation, rhythm, and fluency little by little. I will slow down, breathe naturally, and focus on each word. Even small progress matters, and I can become more comfortable each time I practice.",
+  "intended_use": [
+    "store_screenshots",
+    "reviewer_instructions",
+    "reviewer_evidence",
+    "clean_demo_account"
+  ],
+  "safety_review": {
+    "personal_data_included": false,
+    "copyrighted_excerpt_included": false,
+    "strong_outcome_guarantee_included": false,
+    "brush_up_v1_claim_included": false,
+    "voice_clone_improvement_v1_claim_included": false,
+    "medical_or_institution_level_claim_included": false,
+    "native_speaker_replacement_claim_included": false,
+    "notes": "The text is original neutral practice copy. 'I can become more comfortable' is framed as the speaker's practice intention, not a product guarantee."
+  },
+  "scope": {
+    "candidate_only": true,
+    "screenshot_capture_performed": false,
+    "store_console_operated": false,
+    "app_icon_created": false,
+    "capacitor_started": false,
+    "voice_provider_connected": false,
+    "db_changed": false,
+    "auth_changed": false,
+    "storage_changed": false,
+    "provider_cleanup_executed": false,
+    "actual_deletion_executed": false
+  },
+  "redaction": {
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "private_path_recorded": false,
+    "private_email_recorded": false,
+    "auth_token_recorded": false
+  }
+}
