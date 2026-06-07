@@ -1,0 +1,153 @@
+{
+  "gate": "4m",
+  "title": "Account deletion Storage cleanup proof readiness",
+  "recorded_at": "2026-06-07",
+  "status": "READY_FOR_SAFE_PROOF_REVIEW_ACTUAL_CLEANUP_PROOF_STILL_BLOCKER",
+  "scope": {
+    "docs_outputs_only": true,
+    "storage_object_deletion_executed": false,
+    "actual_account_deletion_executed": false,
+    "supabase_auth_deletion_executed": false,
+    "db_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "provider_api_call_executed": false,
+    "env_dashboard_operation_executed": false,
+    "store_console_operation_executed": false,
+    "screenshot_capture_executed": false,
+    "capacitor_started": false,
+    "db_schema_migration_changed": false,
+    "api_or_service_logic_changed": false
+  },
+  "repo_confirmed": {
+    "storage_dry_run_route": "GET /api/account/deletion-storage-dry-run",
+    "route_requires_current_user": true,
+    "active_deletion_request_required": true,
+    "storage_dry_run_returns_safe_counts_only": true,
+    "storage_actual_cleanup_guarded": true,
+    "actual_storage_cleanup_not_exposed_in_public_practice_slot_delete": true,
+    "account_deletion_order": [
+      "provider_cleanup",
+      "storage_cleanup",
+      "db_cleanup",
+      "supabase_auth_deletion",
+      "post_delete_verification"
+    ]
+  },
+  "storage_cleanup_proof_targets": [
+    {
+      "category": "recordings",
+      "bucket": "recordings",
+      "proof_summary": "known_count_and_listed_count_only"
+    },
+    {
+      "category": "script_audios",
+      "bucket": "script-audios",
+      "proof_summary": "known_count_and_listed_count_only"
+    },
+    {
+      "category": "voice_samples",
+      "bucket": "voice-samples",
+      "proof_summary": "known_count_and_listed_count_only"
+    },
+    {
+      "category": "voice_consents",
+      "bucket": "voice-consents",
+      "proof_summary": "known_count_and_listed_count_only"
+    }
+  ],
+  "gate4h_human_observed_storage_summary": {
+    "source": "outputs/store_release_gate4h_disposable_account_dry_run_proof/gate4h_disposable_account_dry_run_proof.json",
+    "status": "PASS",
+    "storage_cleanup_status": "not_needed",
+    "listed": 0,
+    "known": 0,
+    "recordings": 0,
+    "script_audios": 0,
+    "voice_samples": 0,
+    "voice_consents": 0,
+    "blockers": [],
+    "actual_deletion_executed": false
+  },
+  "safe_summary_include": [
+    "bucket/category name",
+    "bucket status",
+    "known object count",
+    "listed object count",
+    "orphan candidate count",
+    "missing known object count",
+    "list status",
+    "overall storage dry-run status",
+    "request status",
+    "confirmation status",
+    "stop point before actual deletion",
+    "redaction status",
+    "destructive operation executed=false"
+  ],
+  "safe_summary_exclude": [
+    "full email",
+    "full user id",
+    "full Storage path",
+    "object key",
+    "signed URL",
+    "auth token",
+    "cookie value",
+    "secret or env value",
+    "transcript body",
+    "raw audio",
+    "raw provider response",
+    "provider voice id",
+    "raw DB row identifiers"
+  ],
+  "readiness_conditions": [
+    "account deletion request exists",
+    "typed confirmation is complete",
+    "all four Storage categories are represented",
+    "bucket status is not blocked",
+    "missing known object count is 0",
+    "safe counts/status only are recorded",
+    "provider cleanup is succeeded or not_needed before any future actual Storage cleanup",
+    "actual Storage deletion is not run during readiness capture"
+  ],
+  "store_submission_blockers_remaining": [
+    {
+      "item": "actual_account_deletion_storage_cleanup_proof",
+      "status": "blocked_until_separate_destructive_gate_or_human_legal_acceptance",
+      "reason": "Gate 4h is safe dry-run proof only; Store submission needs account deletion completion proof or explicit acceptance"
+    },
+    {
+      "item": "actual_provider_db_auth_cleanup_proof",
+      "status": "blocked_until_separate_destructive_gate_or_human_legal_acceptance",
+      "reason": "Storage cleanup is one stage in the provider -> Storage -> DB -> Auth account deletion sequence"
+    }
+  ],
+  "stop_conditions_before_actual_deletion": [
+    "storage dry-run status is blocked",
+    "required bucket is unavailable",
+    "missing known object count is greater than 0",
+    "owned target counts changed between dry-run and actual candidate collection",
+    "provider cleanup is not succeeded or not_needed",
+    "destructive guard is not explicitly enabled in a later approved destructive gate",
+    "operator request reference cannot be safely resolved server-side",
+    "proof would require recording full paths, object keys, raw identifiers, secrets, or private data",
+    "DB schema/migration, Auth policy, Storage policy, or ownership boundary change is required"
+  ],
+  "redaction": {
+    "full_email_recorded": false,
+    "full_user_id_recorded": false,
+    "storage_full_path_recorded": false,
+    "storage_object_key_recorded": false,
+    "signed_url_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_value_recorded": false,
+    "secret_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_recorded": false
+  },
+  "recommended_next_gate": {
+    "gate": "4n",
+    "title": "Account deletion actual proof approval packet",
+    "actual_deletion_allowed": false,
+    "purpose": "gather explicit human approval and operator/reviewer/approver boundaries before any destructive proof"
+  }
+}
