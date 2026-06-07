@@ -17,6 +17,6 @@ export async function GET() {
 
     return jsonOk({ authDeletion });
   } catch (error) {
-    return jsonError(getErrorMessage(error, "Auth deletion dry-run を取得できませんでした。"), getErrorStatus(error, 500));
+    return jsonError(getErrorMessage(error, "ログイン情報の確認を取得できませんでした。"), getErrorStatus(error, 500));
   }
 }

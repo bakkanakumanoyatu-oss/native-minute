@@ -17,6 +17,6 @@ export async function GET() {
 
     return jsonOk({ databaseCleanup });
   } catch (error) {
-    return jsonError(getErrorMessage(error, "DB cleanup dry-run を取得できませんでした。"), getErrorStatus(error, 500));
+    return jsonError(getErrorMessage(error, "練習記録の確認を取得できませんでした。"), getErrorStatus(error, 500));
   }
 }

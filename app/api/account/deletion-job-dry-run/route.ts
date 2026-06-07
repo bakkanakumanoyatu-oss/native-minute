@@ -17,6 +17,6 @@ export async function GET() {
 
     return jsonOk({ dryRun });
   } catch (error) {
-    return jsonError(getErrorMessage(error, "削除 job dry-run を取得できませんでした。"), getErrorStatus(error, 500));
+    return jsonError(getErrorMessage(error, "削除前の安全確認を取得できませんでした。"), getErrorStatus(error, 500));
   }
 }

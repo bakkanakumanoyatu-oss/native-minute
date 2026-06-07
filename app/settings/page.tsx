@@ -68,7 +68,7 @@ export default async function SettingsPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-ink-500">Privacy and support</p>
         <h2 className="mt-2 text-2xl font-semibold text-ink-950">サポートとデータの扱い</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
-          Privacy Policy、Terms、Support、Account deletion request を確認できます。アカウント削除はリクエスト作成、確認、削除対象の件数確認までこの画面で進められます。実際の削除は、別の安全な手順で確認してから実行します。
+          Privacy Policy、Terms、Support、Account deletion request を確認できます。アカウント削除はリクエスト作成、内容確認、削除対象の概要確認までこの画面で進められます。実際の削除は、サポート側で安全確認してから進めます。
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link href="/privacy" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto">

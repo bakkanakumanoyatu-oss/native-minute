@@ -17,6 +17,6 @@ export async function GET() {
 
     return jsonOk({ storageCleanup });
   } catch (error) {
-    return jsonError(getErrorMessage(error, "Storage cleanup dry-run を取得できませんでした。"), getErrorStatus(error, 500));
+    return jsonError(getErrorMessage(error, "録音・音声ファイルの確認を取得できませんでした。"), getErrorStatus(error, 500));
   }
 }

@@ -17,6 +17,6 @@ export async function GET() {
 
     return jsonOk({ providerCleanup });
   } catch (error) {
-    return jsonError(getErrorMessage(error, "Provider cleanup dry-run を取得できませんでした。"), getErrorStatus(error, 500));
+    return jsonError(getErrorMessage(error, "外部サービス上の音声データの確認を取得できませんでした。"), getErrorStatus(error, 500));
   }
 }

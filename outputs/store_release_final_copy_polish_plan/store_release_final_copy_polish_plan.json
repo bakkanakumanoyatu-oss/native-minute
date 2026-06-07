@@ -68,6 +68,24 @@
       "raw_data_storage_path_secret_transcript_raw_audio_not_displayed"
     ]
   },
+  "account_deletion_user_copy_refinement": {
+    "status": "applied",
+    "public_ui_disposable_account_language_removed": true,
+    "public_flow_terms": [
+      "deletion_request_creation",
+      "content_confirmation",
+      "deletion_target_overview",
+      "support_side_safety_review",
+      "later_deletion_procedure"
+    ],
+    "public_data_labels": [
+      "external_service_voice_data",
+      "recordings_and_audio_files",
+      "practice_records",
+      "login_information"
+    ],
+    "actual_deletion_not_claimed": true
+  },
   "remove_or_reword_before_store_submission": [
     "draft",
     "candidate",

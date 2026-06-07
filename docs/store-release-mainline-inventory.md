@@ -153,6 +153,8 @@ Store release final copy polish plan is captured in `docs/store-release-final-co
 
 Final copy polish small pass is now applied to footer, Settings, Privacy, Terms, Support, Account deletion, the account deletion panel, and provider / consent notices. Public copy now avoids the main internal planning labels from the plan and explains deletion request creation, typed confirmation, safe count summary, and the separate actual deletion path in user-facing language. No deletion API/service logic, actual deletion, Auth deletion, Storage deletion, DB cleanup, provider cleanup, screenshot capture, Store Console operation, Capacitor work, app icon creation, env/dashboard operation, provider API call, reviewer login retry, or magic link resend was performed.
 
+Account deletion UI received an additional user-facing copy refinement. Public UI no longer asks or implies that users should prepare a disposable/test account, and it frames the flow as request creation, content confirmation, deletion-target overview, support-side safety review, and later deletion procedure. Labels now prefer external-service voice data, recordings/audio files, practice records, and login information. No deletion API/service logic, actual deletion, Auth deletion, Storage deletion, DB cleanup, provider cleanup, schema/migration, env/dashboard operation, screenshot capture, Store Console operation, Capacitor work, reviewer login retry, or magic link resend was performed.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
