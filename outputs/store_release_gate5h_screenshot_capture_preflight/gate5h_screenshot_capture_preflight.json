@@ -1,0 +1,206 @@
+{
+  "gate": "5h",
+  "report": "screenshot_capture_preflight",
+  "recorded_at": "2026-06-07",
+  "status": "preflight_ready_capture_not_started",
+  "scope": {
+    "docs_outputs_only": true,
+    "screenshot_captured": false,
+    "image_generated": false,
+    "app_icon_created": false,
+    "store_console_operated": false,
+    "app_store_connect_operated": false,
+    "google_play_console_operated": false,
+    "capacitor_started": false,
+    "testflight_started": false,
+    "google_closed_testing_started": false,
+    "actual_account_deletion_executed": false,
+    "supabase_auth_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "db_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "provider_api_called": false,
+    "env_or_dashboard_changed": false,
+    "reviewer_account_relogin_attempted": false,
+    "magic_link_resent": false
+  },
+  "inputs": {
+    "gate_5e_store_asset_capture_plan": "complete",
+    "gate_5f_store_asset_capture_readiness_check": "complete",
+    "gate_5g_mobile_device_selection_asset_requirements": "complete",
+    "iphone_safari_mobile_qa": "PASS",
+    "iphone_chrome_lightweight_mobile_qa": "PASS",
+    "android_chrome_mobile_qa": "human_required_later_device_unavailable",
+    "app_name_candidate": "Native Minutes",
+    "subtitle_candidate": "1分間のナチュラル発音トレーニング",
+    "demo_script_candidate": "human_confirmed_claim_safe",
+    "support_privacy_deletion_urls": "human_check_PASS"
+  },
+  "account_context": {
+    "capture_account": {
+      "safe_alias": "plus_demo_account",
+      "status": "ready_for_capture_preflight",
+      "full_email_should_appear_in_screenshot": false,
+      "full_email_recorded_in_this_report": false
+    },
+    "reviewer_account": {
+      "use_for_screenshots": false,
+      "status": "verification_deferred"
+    },
+    "delete_test_account": {
+      "use_for_screenshots": false,
+      "status": "deletion_proof_only"
+    },
+    "real_or_personal_account": {
+      "use_for_screenshots": false,
+      "status": "blocked"
+    }
+  },
+  "demo_script": {
+    "status": "human_confirmed_candidate",
+    "text": "Today, I will practice speaking clearly and confidently for one minute. I want to improve my pronunciation, rhythm, and fluency little by little. I will slow down, breathe naturally, and focus on each word. Even small progress matters, and I can become more comfortable each time I practice.",
+    "contains_personal_data": false,
+    "copyright_risk": false,
+    "brush_up_v1_claim": false,
+    "voice_clone_improvement_v1_claim": false,
+    "guaranteed_outcome_claim": false
+  },
+  "minimum_screenshot_set": [
+    {
+      "asset_id": "shot_01_home",
+      "screen": "home_practice_entry",
+      "route_or_surface": "home",
+      "purpose": "one_minute_practice_entry",
+      "safe_caption_candidate": "1分の練習を始める"
+    },
+    {
+      "asset_id": "shot_02_script_creation",
+      "screen": "script_creation",
+      "route_or_surface": "/scripts/new",
+      "purpose": "create_short_practice_script",
+      "safe_caption_candidate": "1分英語スクリプトを作る"
+    },
+    {
+      "asset_id": "shot_03_listen",
+      "screen": "listen",
+      "route_or_surface": "/scripts/[id]/listen",
+      "purpose": "listen_first_model_audio_practice",
+      "safe_caption_candidate": "お手本を聞く"
+    },
+    {
+      "asset_id": "shot_04_record",
+      "screen": "record",
+      "route_or_surface": "/scripts/[id]/record",
+      "purpose": "record_own_take",
+      "safe_caption_candidate": "自分の発音を録音する"
+    },
+    {
+      "asset_id": "shot_05_review",
+      "screen": "review",
+      "route_or_surface": "/scripts/[id]/review/[takeId]",
+      "purpose": "feedback_and_next_practice_point",
+      "safe_caption_candidate": "発音・流暢さ・リズムを確認"
+    },
+    {
+      "asset_id": "shot_06_progress",
+      "screen": "progress",
+      "route_or_surface": "/progress",
+      "purpose": "latest_best_continuity",
+      "safe_caption_candidate": "最新結果とベスト結果を確認"
+    }
+  ],
+  "optional_screenshot_set": [
+    {
+      "asset_id": "shot_07_scripts",
+      "screen": "scripts_practice_stock",
+      "route_or_surface": "/scripts",
+      "purpose": "five_slot_practice_stock",
+      "safe_caption_candidate": "練習ストックを選ぶ"
+    },
+    {
+      "asset_id": "shot_08_settings",
+      "screen": "settings",
+      "route_or_surface": "/settings",
+      "purpose": "support_privacy_account_help_entry",
+      "safe_caption_candidate": "設定とサポートを確認"
+    },
+    {
+      "asset_id": "shot_09_support_privacy_deletion",
+      "screen": "privacy_support_deletion",
+      "route_or_surface": "/privacy / /support / /support/account-deletion",
+      "purpose": "trust_and_account_request_surfaces",
+      "safe_caption_candidate": "プライバシーとサポート"
+    }
+  ],
+  "do_not_capture": [
+    "full_email",
+    "auth_token",
+    "cookies",
+    "private_url",
+    "raw_transcript",
+    "transcript_body",
+    "raw_audio_path",
+    "storage_path",
+    "storage_object_key",
+    "signed_url",
+    "provider_response",
+    "provider_id",
+    "secret_or_env_value",
+    "billing_data",
+    "reviewer_password",
+    "personal_data",
+    "real_user_records",
+    "delete_test_account_data",
+    "actual_deletion_proof_before_it_exists"
+  ],
+  "store_claim_safety": {
+    "guaranteed_improvement_claim_allowed": false,
+    "perfect_pronunciation_assessment_claim_allowed": false,
+    "medical_or_institutional_claim_allowed": false,
+    "brush_up_v1_claim_allowed": false,
+    "voice_clone_improvement_v1_claim_allowed": false,
+    "best_take_provider_submission_v1_claim_allowed": false,
+    "actual_deletion_complete_claim_allowed": false,
+    "native_app_claim_before_capacitor_allowed": false
+  },
+  "human_required_before_capture": [
+    "final_device_size_or_viewport",
+    "final_app_store_screenshot_requirement_check",
+    "final_google_play_screenshot_requirement_check",
+    "final_copy_caption_review",
+    "final_legal_support_review",
+    "final_redaction_review",
+    "confirm_demo_account_contains_no_private_data",
+    "decide_optional_settings_privacy_support_deletion_screenshots",
+    "app_icon_separate_task",
+    "store_console_upload_requirements_separate_task",
+    "android_chrome_device_or_platform_decision"
+  ],
+  "blockers": [
+    "final_copy_requires_legal_judgment",
+    "screenshots_would_expose_private_or_raw_data",
+    "store_console_required_to_decide_capture",
+    "android_device_capture_mandatory_but_unavailable",
+    "reviewer_or_delete_test_account_would_be_used_for_screenshots",
+    "screenshots_would_imply_brush_up_v1_or_completed_actual_deletion",
+    "capture_requires_provider_api_env_dashboard_destructive_cleanup_capacitor_or_store_console"
+  ],
+  "redaction": {
+    "full_email_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_recorded": false,
+    "private_url_recorded": false,
+    "raw_transcript_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_path_recorded": false,
+    "storage_path_recorded": false,
+    "storage_object_key_recorded": false,
+    "signed_url_recorded": false,
+    "provider_response_recorded": false,
+    "provider_id_recorded": false,
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "personal_data_recorded": false
+  },
+  "next_action": "Human can proceed to screenshot capture only after final device/viewport, copy, Store requirement, and redaction review are complete."
+}

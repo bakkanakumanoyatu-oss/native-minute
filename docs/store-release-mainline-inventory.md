@@ -320,6 +320,12 @@ Goal: choose capture planning candidates for iPhone, Android, and fallback web e
 
 Status: plan ready. Recommended minimum screenshot set remains Home / practice entry, Script creation, Listen, Record, Review, and Progress. Optional additions are Scripts / practice library, Settings, and Privacy / Support / Account deletion request path. Exact App Store / Google Play screenshot dimensions, device family requirements, tablet strategy, feature graphic / app icon requirements, and device frame choices remain `human_required / platform_check_required`.
 
+### Gate 5h: Screenshot Capture Preflight
+
+Goal: prepare screenshot capture without capturing screenshots, creating images/icons, operating Store Console, introducing Capacitor, or touching destructive deletion paths.
+
+Status: preflight ready; capture not started. Use the clean demo account safe alias for screenshots, do not use the reviewer account while verification is deferred, and never use the delete-test account for screenshots. Minimum set is Home / practice entry, Script creation, Listen, Record, Review, and Progress. Optional set is Scripts, Settings, and Privacy / Support / Account deletion request surfaces. Full email, tokens, private URLs, transcripts, raw audio paths, Storage paths, provider data, secrets/env values, personal data, Brush-up v1 claims, and actual-deletion-complete claims must not appear. Final device size, Store screenshot requirements, final copy/caption/legal review, redaction review, app icon, and Store Console requirements remain human-required.
+
 ### Gate 6: Release QA
 
 Goal: run cross-device, mobile WebView, upload, replay, auth, provider failure, account deletion, support, and monitoring QA before external testing.
