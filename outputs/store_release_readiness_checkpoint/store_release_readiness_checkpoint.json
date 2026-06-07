@@ -1,0 +1,126 @@
+{
+  "checkpoint": "store_release_readiness_checkpoint",
+  "recorded_at": "2026-06-07",
+  "status": "non_destructive_checkpoint_ready_human_required_before_store_submission",
+  "summary": {
+    "web_core_smoke": "gate_0_production_human_smoke_pass",
+    "account_deletion_safe_dry_run": "gate_4h_human_observed_safe_summary_pass",
+    "account_deletion_copy_smoke": "production_settings_copy_smoke_pass",
+    "store_asset_planning": "gate_5e_5f_5g_complete",
+    "store_submission_ready": false,
+    "screenshot_capture_ready": false,
+    "brush_up_v1_scope": "deferred_to_v1_1"
+  },
+  "completed_items": [
+    "gate_0_auth_callback_production_smoke_pass",
+    "gate_4h_disposable_account_safe_dry_run_human_observed_pass",
+    "account_deletion_copy_production_smoke_pass",
+    "support_contact_unified",
+    "privacy_support_account_deletion_url_human_open_check_pass",
+    "app_name_subtitle_human_confirmed_candidate",
+    "demo_script_human_confirmed_candidate",
+    "plus_demo_login_pass",
+    "plus_delete_test_login_pass",
+    "gate_5e_store_asset_capture_plan_complete",
+    "gate_5f_store_asset_capture_readiness_check_complete",
+    "gate_5g_mobile_device_asset_requirements_plan_complete"
+  ],
+  "human_required": [
+    "reviewer_account_final_login_verification",
+    "final_store_facing_copy_polish",
+    "final_support_privacy_account_deletion_url_confirmation_at_submission_time",
+    "final_store_metadata",
+    "app_privacy_final_answers",
+    "google_data_safety_final_answers",
+    "reviewer_instructions_finalization",
+    "apple_developer_and_google_play_console_readiness",
+    "google_closed_testing_testers",
+    "release_qa_execution_and_signoff",
+    "reviewer_or_clean_demo_account_for_screenshots",
+    "final_mobile_device_viewport_selection",
+    "current_platform_asset_requirement_check",
+    "screenshot_capture",
+    "app_icon_creation",
+    "final_redaction_review"
+  ],
+  "blocker_or_deferred": [
+    {
+      "item": "actual_deletion_proof",
+      "status": "separate_explicit_destructive_gate_required"
+    },
+    {
+      "item": "auth_storage_db_provider_cleanup",
+      "status": "not_started_until_destructive_gate"
+    },
+    {
+      "item": "capacitor_ios_android_conversion",
+      "status": "future_gate"
+    },
+    {
+      "item": "testflight_google_closed_testing",
+      "status": "future_gate"
+    },
+    {
+      "item": "app_store_google_play_submission",
+      "status": "future_gate"
+    },
+    {
+      "item": "brush_up",
+      "status": "v1_1_deferred"
+    }
+  ],
+  "recommended_next_order": [
+    "finalize_reviewer_or_clean_demo_account_readiness_without_recording_credentials",
+    "final_store_facing_copy_polish",
+    "human_platform_asset_requirements_check",
+    "screenshot_capture_and_app_icon_creation_after_redaction_review",
+    "final_store_metadata_reviewer_instructions_app_privacy_google_data_safety",
+    "gate_6_release_qa_execution",
+    "actual_deletion_proof_only_after_explicit_destructive_gate_approval",
+    "capacitor_ios_android_after_web_release_readiness_acceptance",
+    "testflight_google_closed_testing_then_store_submission"
+  ],
+  "store_claim_safety": {
+    "forbidden_claims_included": false,
+    "brush_up_v1_claim_included": false,
+    "voice_clone_improvement_v1_claim_included": false,
+    "guaranteed_improvement_claim_included": false,
+    "complete_pronunciation_scoring_claim_included": false,
+    "complete_account_deletion_claim_before_destructive_proof_included": false,
+    "native_app_claim_before_capacitor_included": false
+  },
+  "redaction": {
+    "full_email_recorded": false,
+    "full_user_id_recorded": false,
+    "storage_full_path_recorded": false,
+    "object_key_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_value_recorded": false,
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_recorded": false
+  },
+  "non_execution": {
+    "actual_account_deletion_executed": false,
+    "supabase_auth_deletion_executed": false,
+    "storage_deletion_executed": false,
+    "db_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "db_schema_migration_changed": false,
+    "env_dashboard_changed": false,
+    "provider_api_called": false,
+    "screenshot_captured": false,
+    "image_generated": false,
+    "app_icon_created": false,
+    "store_console_operated": false,
+    "app_store_connect_operated": false,
+    "google_play_console_operated": false,
+    "capacitor_started": false,
+    "reviewer_login_retried": false,
+    "magic_link_resent": false,
+    "voice_provider_connected": false,
+    "brush_up_implemented": false
+  }
+}
