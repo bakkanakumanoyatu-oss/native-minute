@@ -1,9 +1,10 @@
 {
   "gate": "4h",
-  "title": "Disposable account dry-run proof re-run status",
+  "title": "Disposable account safe dry-run proof human-observed summary",
   "recorded_at": "2026-06-07",
-  "proof_status": "BLOCKED",
-  "blocker_code": "needs_codex_authenticated_disposable_session_for_safe_dry_run",
+  "proof_status": "PASS",
+  "proof_status_detail": "human_observed_safe_dry_run_summary",
+  "blocker_code": null,
   "environment": "production_web_human_confirmed_ui",
   "disposable_account_safe_alias": "plus_delete_test_account",
   "disposable_account_candidate_status": "human_login_pass",
@@ -21,95 +22,134 @@
     "auth_status": "pending",
     "actual_deletion_executed": false
   },
+  "human_observed_safe_summary": {
+    "status": "PASS",
+    "deletion_request": "created",
+    "typed_confirmation": "completed",
+    "provider_status": "pending",
+    "storage_status": "pending",
+    "database_status": "pending",
+    "auth_status": "pending",
+    "inventory_summary": "displayed",
+    "database_inventory_counts": "mostly_0",
+    "storage_inventory_counts": {
+      "recordings": 0,
+      "script_audios": 0,
+      "voice_samples": 0,
+      "voice_consents": 0
+    },
+    "provider_cleanup": {
+      "status": "not_needed",
+      "count": 0
+    },
+    "storage_cleanup": {
+      "status": "not_needed",
+      "listed": 0,
+      "known": 0
+    },
+    "db_cleanup": {
+      "status": "required_as_dry_run_only",
+      "accountDeletionRequests": {
+        "action": "retain_anonymized",
+        "required": true,
+        "count": 1
+      }
+    },
+    "auth_cleanup": "waiting_for_db_cleanup",
+    "request_runnable": true,
+    "service_role": "available",
+    "auth_account": "present",
+    "gate4g_safe_summary": "actual_deletion_not_run",
+    "destructive_actions_called": false,
+    "missing_coverage_count": 0,
+    "blockers": []
+  },
   "supporting_evidence": {
     "plus_demo_login_flow": "PASS",
     "plus_delete_test_login_flow": "PASS",
     "human_created_deletion_request": "PASS",
-    "human_completed_typed_confirmation": "PASS"
+    "human_completed_typed_confirmation": "PASS",
+    "human_observed_authenticated_safe_dry_run_summary": "PASS"
   },
   "request_status": "human_confirmed_created",
   "confirmation_status": "human_confirmed_confirmed",
-  "dry_run_executed": false,
+  "dry_run_executed_by_codex": false,
+  "safe_dry_run_summary_observed_by_human": true,
   "dry_run_timestamp": null,
   "dry_run_execution_decision": {
-    "decision": "not_executed",
-    "reason": "Human has confirmed the plus-delete-test request and typed confirmation, but Codex does not have an authenticated disposable session. Existing dry-run APIs operate on the current authenticated user, so running them without that session would risk targeting the wrong account.",
-    "next_action": "Capture the safe dry-run summary from the authenticated plus-delete-test UI, or provide Codex a safe already-authenticated disposable browser session without exposing cookies, tokens, full email, auth user id, private paths, transcript body, or raw provider response."
+    "decision": "human_observed_safe_summary_recorded",
+    "reason": "Human observed the authenticated plus-delete-test safe dry-run summary in the UI. Codex did not directly call dry-run routes because it did not receive cookies, tokens, or a safe authenticated session.",
+    "next_action": "Treat Gate 4h safe dry-run proof as human-observed PASS and keep actual deletion for a later explicitly approved destructive gate."
   },
   "categories_checked": [
     {
       "category": "auth_user",
-      "status": "not_executed"
+      "status": "human_observed_present"
     },
     {
       "category": "profile_account_rows",
-      "status": "not_executed"
+      "status": "human_observed_database_inventory_mostly_0"
     },
     {
       "category": "scripts",
-      "status": "not_executed"
+      "status": "human_observed_database_inventory_mostly_0"
     },
     {
       "category": "recordings",
-      "status": "not_executed"
+      "status": "human_observed_storage_count_0"
     },
     {
       "category": "takes",
-      "status": "not_executed"
+      "status": "human_observed_database_inventory_mostly_0"
     },
     {
       "category": "weak_words",
-      "status": "not_executed"
+      "status": "human_observed_database_inventory_mostly_0"
     },
     {
       "category": "coach_feedback",
-      "status": "not_executed"
+      "status": "human_observed_database_inventory_mostly_0"
     },
     {
       "category": "script_audios",
-      "status": "not_executed"
+      "status": "human_observed_storage_count_0"
     },
     {
       "category": "voice_samples",
-      "status": "not_executed"
+      "status": "human_observed_storage_count_0"
     },
     {
       "category": "voice_consents",
-      "status": "not_executed"
+      "status": "human_observed_storage_count_0"
     },
     {
       "category": "voices",
-      "status": "not_executed"
+      "status": "human_observed_database_inventory_mostly_0"
     },
     {
       "category": "saved_pins",
-      "status": "not_executed"
+      "status": "human_observed_database_inventory_mostly_0"
     },
     {
       "category": "quota_processing_metadata",
-      "status": "not_executed"
+      "status": "human_observed_database_inventory_mostly_0"
     },
     {
       "category": "provider_side_normal_v1_voice_resources",
-      "status": "not_executed"
+      "status": "human_observed_not_needed_count_0"
     },
     {
       "category": "account_deletion_request_tracking",
-      "status": "not_executed"
+      "status": "human_observed_retain_anonymized_required_count_1"
     }
   ],
-  "category_counts_safe_summary": "not_executed",
-  "missing_coverage": [
-    "codex_authenticated_disposable_session",
-    "safe_dry_run_summary_capture"
-  ],
+  "category_counts_safe_summary": "human_observed_safe_counts_only",
+  "missing_coverage": [],
+  "missing_coverage_count": 0,
   "skipped": [
-    "inventory_dry_run",
-    "job_stage_dry_run",
-    "provider_cleanup_dry_run",
-    "storage_cleanup_dry_run",
-    "database_cleanup_dry_run",
-    "auth_deletion_dry_run"
+    "codex_direct_dry_run_api_call",
+    "screenshot_capture",
+    "raw_identifier_capture"
   ],
   "deferred": [
     "brush_up_specific_data",
@@ -120,14 +160,10 @@
     "supabase_auth_user_deletion"
   ],
   "human_required": [
-    "capture safe dry-run summaries from the already authenticated plus-delete-test session without raw identifiers",
-    "or provide Codex a safe already-authenticated disposable browser session",
-    "stop before actual deletion"
+    "keep actual deletion for a later explicitly approved destructive gate",
+    "continue to avoid raw identifiers in any future proof package"
   ],
-  "blockers": [
-    "no_authenticated_disposable_session_available_to_codex",
-    "dry_run_routes_target_current_authenticated_user"
-  ],
+  "blockers": [],
   "redaction_check": {
     "status": "PASS",
     "full_email_recorded": false,
@@ -141,7 +177,7 @@
     "private_audio_path_recorded": false
   },
   "destructive_operations_executed": false,
-  "stop_point": "before_dry_run_execution_and_before_actual_deletion",
+  "stop_point": "after_human_observed_safe_dry_run_summary_before_actual_deletion",
   "actual_deletion_executed": false,
   "not_performed": {
     "actual_account_deletion": true,
@@ -159,6 +195,6 @@
     "reviewer_account_relogin_attempted": true,
     "magic_link_resent": true
   },
-  "overall_result": "BLOCKED",
-  "next_action": "Human should capture the safe dry-run summary from the authenticated plus-delete-test UI, or provide Codex a safe already-authenticated disposable browser session, then rerun Gate 4h safe dry-run capture."
+  "overall_result": "PASS",
+  "next_action": "Proceed to the next non-destructive release-readiness task, or schedule a separate explicitly approved destructive gate for actual deletion proof later."
 }
