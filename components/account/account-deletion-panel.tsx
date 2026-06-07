@@ -94,22 +94,41 @@ async function readJson<T>(response: Response): Promise<ApiResponse<T>> {
   return response.json() as Promise<ApiResponse<T>>;
 }
 
+const PUBLIC_DELETION_SUMMARY_GROUPS = [
+  {
+    title: "アカウント情報",
+    summary: "ログイン情報、プロフィール、アカウント情報"
+  },
+  {
+    title: "練習記録",
+    summary: "台本、練習結果、保存済みベスト録音"
+  },
+  {
+    title: "録音・音声ファイル",
+    summary: "録音、お手本音声、音声サンプル、同意録音"
+  },
+  {
+    title: "評価結果・フィードバック",
+    summary: "発音スコア、弱点語、コーチングメモ"
+  }
+] as const;
+
 const V1_DELETION_SCOPE_GROUPS = [
   {
-    title: "アカウント",
+    title: "アカウント情報",
     items: ["ログイン情報", "プロフィール / アカウント情報"]
   },
   {
-    title: "練習データ",
-    items: ["台本", "録音", "練習結果", "弱点語", "コーチングフィードバック"]
+    title: "練習記録",
+    items: ["台本", "練習結果", "保存済みベスト録音", "保存済みお手本音声"]
   },
   {
-    title: "音声とボイス設定",
-    items: ["お手本音声", "音声サンプル", "同意録音", "ボイス設定", "通常のお手本ボイス関連情報"]
+    title: "録音・音声ファイル",
+    items: ["録音", "台本用お手本音声", "音声サンプル", "同意録音", "通常のお手本ボイス関連情報"]
   },
   {
-    title: "管理用メタデータ",
-    items: ["保存済みベスト録音", "保存済みお手本音声", "処理状況 / 利用量メモ", "削除リクエストの管理記録"]
+    title: "評価結果・フィードバック",
+    items: ["発音スコア", "弱点語", "コーチングフィードバック", "処理状況 / 利用量メモ"]
   }
 ] as const;
 
@@ -199,6 +218,12 @@ const STATUS_LABELS: Record<string, string> = {
   "normal v1 provider voice resources": "通常のお手本ボイス関連データ",
   "request tracking": "削除リクエストの管理記録",
   "Brush-up-specific data": "現在提供していない追加機能のデータ",
+  profiles: "プロフィール",
+  script_audios: "台本用お手本音声",
+  voice_samples: "音声サンプル",
+  voice_consents: "同意録音",
+  quota_events: "利用量 / 処理メモ",
+  account_deletion_requests: "削除リクエストの管理記録",
   request_confirmed: "削除リクエストの確認",
   all_v1_categories_have_safe_summary: "削除対象の概要",
   storage_buckets_listable: "録音・音声ファイルの確認",
@@ -301,7 +326,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
       ["ボイス同意", inventory.database.voiceConsents],
       ["ボイス設定", inventory.database.voices],
       ["利用量メモ", inventory.database.quotaEvents],
-      ["ElevenLabs 側の候補", inventory.provider.elevenLabsVoiceCandidates]
+      ["外部サービス上の音声データ", inventory.provider.elevenLabsVoiceCandidates]
     ];
   }, [inventory]);
   const storageRows = useMemo(() => {
@@ -326,12 +351,12 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
     }
 
     return [
-      ["すべてのボイス設定", providerDryRun.candidates.totalVoices],
-      ["ElevenLabs ボイス", providerDryRun.candidates.elevenLabsVoices],
+      ["すべての音声設定", providerDryRun.candidates.totalVoices],
+      ["外部サービス上の音声データ候補", providerDryRun.candidates.elevenLabsVoices],
       ["削除確認が必要", providerDryRun.cleanup.required],
       ["外部サービス上の参照なし", providerDryRun.candidates.providerReferenceMissing],
       ["外部サービス上の参照の不整合", providerDryRun.candidates.providerReferenceInvalid],
-      ["ElevenLabs 以外のボイス", providerDryRun.candidates.nonElevenLabsVoices]
+      ["アプリ内設定のみの音声", providerDryRun.candidates.nonElevenLabsVoices]
     ];
   }, [providerDryRun]);
   const storageBucketRows = useMemo(() => storageDryRun?.buckets ?? [], [storageDryRun]);
@@ -522,17 +547,28 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
           ここでは削除対象の件数と状態だけを表示します。本文、録音そのもの、保存先のパス、ログイン情報、外部サービス上の音声データの詳細は表示しません。
         </p>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {V1_DELETION_SCOPE_GROUPS.map((group) => (
+          {PUBLIC_DELETION_SUMMARY_GROUPS.map((group) => (
             <div key={group.title} className="rounded-2xl border border-[var(--line)] bg-white px-3 py-3">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">{group.title}</p>
-              <ul className="mt-2 space-y-1 text-sm leading-6 text-ink-700">
-                {group.items.map((item) => (
-                  <li key={item}>- {item}</li>
-                ))}
-              </ul>
+              <p className="mt-2 text-sm leading-6 text-ink-700">{group.summary}</p>
             </div>
           ))}
         </div>
+        <details className="mt-3 rounded-2xl border border-[var(--line)] bg-white px-3 py-3">
+          <summary className="cursor-pointer text-sm font-semibold text-ink-800">詳しい内訳を見る</summary>
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            {V1_DELETION_SCOPE_GROUPS.map((group) => (
+              <div key={group.title} className="rounded-2xl bg-ink-50 px-3 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">{group.title}</p>
+                <ul className="mt-2 space-y-1 text-sm leading-6 text-ink-700">
+                  {group.items.map((item) => (
+                    <li key={item}>- {item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </details>
         <p className="mt-3 text-sm leading-6 text-ink-600">
           保存済みベスト録音を使った追加のお手本生成データは、現在の機能では対象に含めません。
         </p>
@@ -594,7 +630,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">練習記録</p>
                 <dl className="mt-2 grid gap-2 text-xs">
-                {inventoryRows.map(([label, count]) => (
+                  {inventoryRows.map(([label, count]) => (
                     <div key={label} className="flex justify-between gap-3 rounded-2xl bg-ink-50 px-3 py-2">
                       <dt className="font-semibold text-ink-700">{label}</dt>
                       <dd className="text-ink-900">{count}</dd>
@@ -783,7 +819,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
                 {storageBucketRows.map((bucket) => (
                   <div key={bucket.bucket} className="rounded-2xl bg-ink-50 px-3 py-2">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                      <dt className="font-semibold text-ink-800">{bucket.bucket}</dt>
+                      <dt className="font-semibold text-ink-800">{formatLabel(bucket.bucket)}</dt>
                       <dd className="text-ink-700">
                         {formatStatus(bucket.status)} / 表示件数 {bucket.listedObjectCount} / 既知件数 {bucket.knownObjectCount}
                       </dd>
@@ -825,7 +861,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
                 {databaseTableRows.map((table) => (
                   <div key={table.table} className="rounded-2xl bg-ink-50 px-3 py-2">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                      <dt className="font-semibold text-ink-800">{table.table}</dt>
+                      <dt className="font-semibold text-ink-800">{formatLabel(table.table)}</dt>
                       <dd className="text-ink-700">
                         {formatStatus(table.action)} / {formatStatus(table.status)} / 件数 {table.candidateCount}
                       </dd>

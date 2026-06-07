@@ -86,6 +86,25 @@
     ],
     "actual_deletion_not_claimed": true
   },
+  "account_deletion_public_flow_separation": {
+    "status": "applied",
+    "public_ui_focus": [
+      "request_creation",
+      "content_confirmation",
+      "deletion_target_overview",
+      "support_side_safety_review",
+      "later_deletion_procedure"
+    ],
+    "public_summary_categories": [
+      "account_information",
+      "practice_records",
+      "recordings_and_audio_files",
+      "evaluation_results_and_feedback"
+    ],
+    "internal_safety_details_moved_to_expandable_sections": true,
+    "internal_proof_details_remain_in_docs_outputs": true,
+    "actual_deletion_not_claimed": true
+  },
   "remove_or_reword_before_store_submission": [
     "draft",
     "candidate",
