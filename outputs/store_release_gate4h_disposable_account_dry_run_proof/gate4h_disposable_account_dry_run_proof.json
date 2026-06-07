@@ -64,6 +64,39 @@
     "missing_coverage_count": 0,
     "blockers": []
   },
+  "account_deletion_copy_production_smoke": {
+    "status": "PASS",
+    "environment": "production_settings_human_observed",
+    "misleading_completion_wording_observed": false,
+    "forbidden_completion_claims_absent": [
+      "削除済み",
+      "完全に削除されました",
+      "今すぐ削除",
+      "実削除完了"
+    ],
+    "request_creation_copy_clearer": true,
+    "typed_confirmation_copy_clearer": true,
+    "safe_count_summary_copy_clearer": true,
+    "actual_deletion_separate_gate_copy_clearer": true,
+    "raw_data_non_display_copy_present": true,
+    "actual_deletion_executed": false,
+    "remaining_before_store_submission": [
+      "final draft label polish",
+      "mixed English technical label polish",
+      "final human approval wording polish"
+    ],
+    "redaction": {
+      "full_email_recorded": false,
+      "full_user_id_recorded": false,
+      "storage_full_path_recorded": false,
+      "auth_token_recorded": false,
+      "cookie_value_recorded": false,
+      "secret_recorded": false,
+      "raw_provider_response_recorded": false,
+      "transcript_body_recorded": false,
+      "raw_audio_recorded": false
+    }
+  },
   "supporting_evidence": {
     "plus_demo_login_flow": "PASS",
     "plus_delete_test_login_flow": "PASS",
