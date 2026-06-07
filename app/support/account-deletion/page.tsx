@@ -12,15 +12,15 @@ export default function AccountDeletionSupportPage() {
     <LegalPageShell
       eyebrow="Account deletion release candidate draft"
       title="Account and data deletion"
-      summary="このページは v1 Store release に向けた削除 request 説明ドラフトです。現時点では actual destructive cleanup を実行せず、削除完了済みとも扱いません。Store submission 前には、削除完了 path、disposable proof、final human approval が必要です。"
+      summary="このページは v1 Store release に向けた削除リクエスト説明ドラフトです。ユーザーは Settings から削除リクエストを作成し、確認できます。現時点ではこのページから実際の削除は実行されず、削除が終わった状態としても扱いません。Store submission 前には、削除完了 path と final human approval が必要です。"
     >
       <LegalSection
         title="現時点の scaffold でできること"
         items={[
-          "ログイン済みユーザーは Settings から account deletion request を作成し、確認 step へ進めます。",
-          "server-side の dry-run で、削除対象の安全な summary を確認できます。",
-          "現時点では request-based deletion + dry-run / support fallback の scaffold です。",
-          "このページ自体は削除を実行しません。Storage、DB、ElevenLabs voice、Supabase Auth user はここから削除されません。"
+          "ログイン済みユーザーは Settings から削除リクエストを作成し、誤操作防止の確認へ進めます。",
+          "削除対象の件数と状態を、安全な summary として確認できます。",
+          "表示するのは件数や状態だけで、録音そのもの、台本文、保存先パス、secret は表示しません。",
+          "このページ自体は削除を実行しません。保存ファイル、アプリデータ、外部音声サービス、ログインアカウントはここから削除されません。"
         ]}
       />
 
@@ -40,21 +40,21 @@ export default function AccountDeletionSupportPage() {
       <LegalSection
         title="proof-first の進め方"
         items={[
-          "1. request: Settings から account deletion request を作成します。",
-          "2. confirmation: 誤操作防止の確認 step を通します。",
-          "3. dry-run summary: provider / Storage / DB / Auth の候補件数と stage guard だけを確認します。",
-          "4. disposable account proof: Store submission 前に、使い捨て account で安全な proof package を残します。",
-          "5. actual deletion implementation: provider cleanup、Storage cleanup、DB cleanup / anonymize、Supabase Auth deletion を順序通りに扱います。",
-          "6. post-delete verification / Store release QA: 完了後の safe status と Store-facing claim の整合を確認します。"
+          "1. リクエスト作成: Settings から削除リクエストを作成します。",
+          "2. 確認: 誤操作防止のため、確認欄に指定された文字を入力します。",
+          "3. 件数確認: 外部音声サービス、保存ファイル、アプリデータ、ログインアカウントの候補件数と状態だけを確認します。",
+          "4. 使い捨てアカウントでの確認: Store submission 前に、安全な proof package を残します。",
+          "5. 実削除の実装確認: 外部サービス、保存ファイル、アプリデータ、ログインアカウントの順序を守って扱います。",
+          "6. 削除後の確認 / Store release QA: 完了後の safe status と Store-facing claim の整合を確認します。"
         ]}
       />
 
       <LegalSection
         title="v1 scaffold の未完了部分"
         items={[
-          "削除 request は app 内で受け付けますが、actual provider cleanup / Storage cleanup / DB cleanup / Supabase Auth deletion はこのページから自動実行しません。",
+          "削除リクエストは app 内で受け付けますが、外部サービス、保存ファイル、アプリデータ、ログインアカウントの実削除はこのページから自動実行しません。",
           "support/manual cleanup の一次返信目安は 3 business days、完了目安は 30 days です。",
-          "Store submission 前には actual account/data deletion completion path、disposable proof、provider cleanup proof が blocker です。",
+          "Store submission 前には actual account/data deletion completion path と provider cleanup proof が blocker です。",
           "削除完了後に短期保持する可能性があるのは、anonymized reference と request status など、support tracking に必要な最小情報だけです。"
         ]}
       />
@@ -63,9 +63,9 @@ export default function AccountDeletionSupportPage() {
         title="support へ連絡するとき"
         summary="正式 support contact は nativeminutes.support@gmail.com です。Store release 用の account deletion request URL は human check で開けることを確認済みです。"
         items={[
-          "削除 request について問い合わせる場合は、Settings で request を開始したうえで、support contact に連絡してください。",
+          "削除リクエストについて問い合わせる場合は、Settings でリクエストを開始したうえで、support contact に連絡してください。",
           "password、API key、auth header、magic link URL、provider voice id、storage path、signed URL、raw audio、raw transcript は送らないでください。",
-          "ログインできる場合は Settings から request を開始してください。ログインできない場合は、このページを参照したうえで support contact に連絡してください。"
+          "ログインできる場合は Settings からリクエストを開始してください。ログインできない場合は、このページを参照したうえで support contact に連絡してください。"
         ]}
       />
 
