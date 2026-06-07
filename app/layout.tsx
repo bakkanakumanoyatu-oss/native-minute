@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <main>{children}</main>
           <footer className="mt-10 rounded-3xl border border-[var(--line-subtle)] bg-[var(--chrome-surface-strong)] px-4 py-4 text-sm text-ink-600 shadow-[0_14px_36px_rgba(45,38,31,0.06)] backdrop-blur sm:mt-12 sm:px-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p>v1 release candidate draft. Final human approval required.</p>
+              <p>1分間の英語練習を、データの扱いとサポート導線を確認しながら使えます。</p>
               <nav className="flex flex-wrap gap-3 font-semibold text-ink-700">
                 <Link href="/privacy" className="hover:text-[var(--studio-accent-strong)]">Privacy</Link>
                 <Link href="/terms" className="hover:text-[var(--studio-accent-strong)]">Terms</Link>

@@ -1,12 +1,14 @@
 # Store Release Final Copy Polish Plan
 
-Status: `plan_ready_human_legal_required_before_store_submission`
+Status: `small_public_copy_pass_applied_human_legal_required_before_store_submission`
 
 This plan identifies Store-submission-facing copy polish work before screenshots, Store Console input, Capacitor, or actual deletion proof. It is a planning checkpoint only.
 
 It does not execute account deletion, Auth deletion, Storage deletion, DB cleanup, provider cleanup, provider API calls, env/dashboard changes, screenshot capture, Store Console operation, App Store Connect operation, Google Play Console operation, Capacitor work, app icon creation, reviewer login retry, or magic link resend.
 
 Brush-up remains deferred to v1.1 and must not appear as a v1 feature claim.
+
+Update: a small public UI copy pass has been applied to footer, Settings, Privacy, Terms, Support, Account deletion, account deletion panel, and provider / consent notices. The pass removed or reworded the most visible internal planning labels while keeping the safety boundary that actual deletion is not run from the current UI.
 
 ## Surfaces Checked
 

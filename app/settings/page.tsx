@@ -57,7 +57,7 @@ export default async function SettingsPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-ink-500">Session</p>
         <h2 className="mt-2 text-2xl font-semibold text-ink-950">ログアウト</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
-          Gate 0 smoke では、ここで一度ログアウトしてから新しいメールリンクで login / callback を確認します。
+          ログアウトすると、このブラウザのセッションを終了します。別のメールでログインし直すときにも使えます。
         </p>
         <div className="mt-5">
           <SignOutButton />
@@ -66,19 +66,19 @@ export default async function SettingsPage() {
 
       <section className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-sm sm:p-6">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-ink-500">Privacy and support</p>
-        <h2 className="mt-2 text-2xl font-semibold text-ink-950">公開ドラフト</h2>
+        <h2 className="mt-2 text-2xl font-semibold text-ink-950">サポートとデータの扱い</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
-          v1 Store release に向けた privacy / terms / support / account deletion の release candidate draft です。アカウント削除はリクエスト作成、確認、削除対象の件数確認までを扱います。実際の削除は、別の明示承認された手順で確認します。
+          Privacy Policy、Terms、Support、Account deletion request を確認できます。アカウント削除はリクエスト作成、確認、削除対象の件数確認までこの画面で進められます。実際の削除は、別の安全な手順で確認してから実行します。
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link href="/privacy" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto">
-            Privacy draft
+            Privacy Policy
           </Link>
           <Link href="/terms" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto">
-            Terms draft
+            Terms
           </Link>
           <Link href="/support" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto">
-            Support draft
+            Support
           </Link>
           <Link href="/support/account-deletion" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto">
             Account deletion

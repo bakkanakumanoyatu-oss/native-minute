@@ -52,7 +52,7 @@ const STATUS_COPY: Record<AccountDeletionRequestView["status"], { label: string;
   },
   completed: {
     label: "完了",
-    summary: "削除処理の完了状態として記録されている場合の表示です。この Gate では新たな実削除や完了更新は行わず、Store release 前に provider / Storage / DB / Auth の安全な完了証跡を別途確認します。",
+    summary: "削除処理の完了状態として記録されている場合の表示です。この画面では新たな実削除や完了更新は行わず、外部サービス、保存ファイル、アプリデータ、ログインアカウントの安全な完了確認を別途行います。",
     tone: "steady"
   },
   cancelled: {
@@ -97,7 +97,7 @@ async function readJson<T>(response: Response): Promise<ApiResponse<T>> {
 const V1_DELETION_SCOPE_GROUPS = [
   {
     title: "アカウント",
-    items: ["ログインアカウント", "プロフィール / account rows"]
+    items: ["ログインアカウント", "プロフィール / アカウント情報"]
   },
   {
     title: "練習データ",
@@ -105,7 +105,7 @@ const V1_DELETION_SCOPE_GROUPS = [
   },
   {
     title: "音声とボイス設定",
-    items: ["お手本音声", "voice sample", "consent recording", "voice 設定", "通常 v1 の外部音声リソース"]
+    items: ["お手本音声", "音声サンプル", "同意録音", "ボイス設定", "通常のお手本ボイス関連情報"]
   },
   {
     title: "管理用メタデータ",
@@ -130,7 +130,7 @@ const GATE4D_NOT_IMPLEMENTED = [
   "保存ファイルの削除",
   "アプリデータの削除 / 匿名化",
   "外部サービス側の削除実行",
-  "Brush-up 専用データの削除"
+  "追加のお手本生成データの削除"
 ] as const;
 
 const STAGE_LABELS: Record<string, string> = {
@@ -151,6 +151,7 @@ const STATUS_LABELS: Record<string, string> = {
   succeeded: "完了",
   failed: "失敗",
   manual_required: "手動確認が必要",
+  pending: "未処理",
   available: "確認できます",
   unavailable: "確認できません",
   retained: "管理用に最小保持",
@@ -208,12 +209,12 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
     }
 
     return [
-      ["request", formatDate(deletionRequest.requestedAt)],
-      ["confirmed", formatDate(deletionRequest.confirmedAt)],
-      ["provider", deletionRequest.cleanup.provider],
-      ["storage", deletionRequest.cleanup.storage],
-      ["database", deletionRequest.cleanup.database],
-      ["auth", deletionRequest.cleanup.auth]
+      ["リクエスト作成", formatDate(deletionRequest.requestedAt)],
+      ["確認", formatDate(deletionRequest.confirmedAt)],
+      ["外部サービス", formatStatus(deletionRequest.cleanup.provider)],
+      ["保存ファイル", formatStatus(deletionRequest.cleanup.storage)],
+      ["アプリデータ", formatStatus(deletionRequest.cleanup.database)],
+      ["ログインアカウント", formatStatus(deletionRequest.cleanup.auth)]
     ];
   }, [deletionRequest]);
   const inventoryRows = useMemo(() => {
@@ -222,18 +223,18 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
     }
 
     return [
-      ["profile", inventory.database.profiles],
-      ["scripts", inventory.database.scripts],
-      ["takes", inventory.database.takes],
-      ["weak words", inventory.database.weakWords],
-      ["coach feedback", inventory.database.coachFeedback],
-      ["saved best takes", inventory.database.savedBestTakes],
-      ["saved model audios", inventory.database.savedModelAudios],
-      ["script audios", inventory.database.scriptAudios],
-      ["voice consents", inventory.database.voiceConsents],
-      ["voices", inventory.database.voices],
-      ["quota events", inventory.database.quotaEvents],
-      ["ElevenLabs voice candidates", inventory.provider.elevenLabsVoiceCandidates]
+      ["プロフィール", inventory.database.profiles],
+      ["台本", inventory.database.scripts],
+      ["録音結果", inventory.database.takes],
+      ["弱点語", inventory.database.weakWords],
+      ["コーチングメモ", inventory.database.coachFeedback],
+      ["保存済みベスト録音", inventory.database.savedBestTakes],
+      ["保存済みお手本音声", inventory.database.savedModelAudios],
+      ["台本用お手本音声", inventory.database.scriptAudios],
+      ["ボイス同意", inventory.database.voiceConsents],
+      ["ボイス設定", inventory.database.voices],
+      ["利用量メモ", inventory.database.quotaEvents],
+      ["ElevenLabs 側の候補", inventory.provider.elevenLabsVoiceCandidates]
     ];
   }, [inventory]);
   const storageRows = useMemo(() => {
@@ -242,10 +243,10 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
     }
 
     return [
-      ["recordings", inventory.storage.recordings],
-      ["script-audios", inventory.storage.scriptAudios],
-      ["voice-samples", inventory.storage.voiceSamples],
-      ["voice-consents", inventory.storage.voiceConsents]
+      ["録音", inventory.storage.recordings],
+      ["台本用お手本音声", inventory.storage.scriptAudios],
+      ["音声サンプル", inventory.storage.voiceSamples],
+      ["同意録音", inventory.storage.voiceConsents]
     ] satisfies Array<[string, { count: number; status: "available" | "unavailable" }]>;
   }, [inventory]);
   const jobStageRows = useMemo(() => jobDryRun?.stages ?? [], [jobDryRun]);
@@ -258,12 +259,12 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
     }
 
     return [
-      ["all voices", providerDryRun.candidates.totalVoices],
-      ["ElevenLabs voices", providerDryRun.candidates.elevenLabsVoices],
-      ["cleanup required", providerDryRun.cleanup.required],
-      ["missing provider reference", providerDryRun.candidates.providerReferenceMissing],
-      ["invalid provider reference", providerDryRun.candidates.providerReferenceInvalid],
-      ["non-ElevenLabs voices", providerDryRun.candidates.nonElevenLabsVoices]
+      ["すべてのボイス設定", providerDryRun.candidates.totalVoices],
+      ["ElevenLabs ボイス", providerDryRun.candidates.elevenLabsVoices],
+      ["削除確認が必要", providerDryRun.cleanup.required],
+      ["外部サービス参照なし", providerDryRun.candidates.providerReferenceMissing],
+      ["外部サービス参照の不整合", providerDryRun.candidates.providerReferenceInvalid],
+      ["ElevenLabs 以外のボイス", providerDryRun.candidates.nonElevenLabsVoices]
     ];
   }, [providerDryRun]);
   const storageBucketRows = useMemo(() => storageDryRun?.buckets ?? [], [storageDryRun]);
@@ -466,10 +467,10 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
           ))}
         </div>
         <p className="mt-3 text-sm leading-6 text-ink-600">
-          Brush-up は v1.1 に延期しているため、v1 ではベスト録音を専用ボイス素材として使うデータや Brush-up 生成音声は対象に含めません。
+          保存済みベスト録音を使った追加のお手本生成データは、現在の機能では対象に含めません。
         </p>
         <p className="mt-2 text-xs leading-5 text-ink-500">
-          外部サービスの生レスポンス、録音そのもの、台本文、保存先パス、署名付きURL、secret、メールアドレスは削除リクエストの表示用メタデータに保存しません。
+          外部サービスの詳細な応答本文、録音そのもの、台本文、保存先パス、署名付きURL、機密情報、メールアドレスは削除リクエストの表示用メタデータに保存しません。
         </p>
       </div>
 
@@ -514,9 +515,9 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
 
       {deletionRequest ? (
         <details className="mt-4 rounded-3xl border border-[var(--line)] bg-white p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-ink-900">削除対象 inventory を見る</summary>
+          <summary className="cursor-pointer text-sm font-semibold text-ink-900">削除対象の件数を見る</summary>
           <p className="mt-2 text-sm leading-6 text-ink-600">
-            削除対象の件数だけを表示します。保存先パス、外部ボイスID、メールアドレス、台本文、文字起こし、録音そのもの、署名付きURL、secret は表示しません。
+            削除対象の件数だけを表示します。保存先パス、外部ボイスID、メールアドレス、台本文、文字起こし、録音そのもの、署名付きURL、機密情報は表示しません。
           </p>
           {inventoryMessage ? (
             <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">{inventoryMessage}</p>
@@ -524,9 +525,9 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
           {inventory ? (
             <div className="mt-3 grid gap-3 lg:grid-cols-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">Database</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">アプリデータ</p>
                 <dl className="mt-2 grid gap-2 text-xs">
-                  {inventoryRows.map(([label, count]) => (
+                {inventoryRows.map(([label, count]) => (
                     <div key={label} className="flex justify-between gap-3 rounded-2xl bg-ink-50 px-3 py-2">
                       <dt className="font-semibold text-ink-700">{label}</dt>
                       <dd className="text-ink-900">{count}</dd>
@@ -535,7 +536,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
                 </dl>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">Storage</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">保存ファイル</p>
                 <dl className="mt-2 grid gap-2 text-xs">
                   {storageRows.map(([label, value]) => (
                     <div key={label} className="flex justify-between gap-3 rounded-2xl bg-ink-50 px-3 py-2">
@@ -578,7 +579,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
                       </dt>
                       <dd className="text-ink-700">
                         {formatStatus(stage.status)}
-                        {stage.count === null ? "" : ` / count ${stage.count}`}
+                        {stage.count === null ? "" : ` / 件数 ${stage.count}`}
                       </dd>
                     </div>
                     <p className="mt-1 text-ink-500">{formatGuard(stage.guard)}</p>
@@ -624,7 +625,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
                             <dt className="font-semibold text-ink-800">{formatLabel(item.category)}</dt>
                             <dd className="text-ink-700">
                               {formatStatus(item.status)} / {formatLabel(item.source)}
-                              {item.count === null ? "" : ` / count ${item.count}`}
+                              {item.count === null ? "" : ` / 件数 ${item.count}`}
                             </dd>
                           </div>
                         </div>
@@ -650,7 +651,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
                 </div>
               ) : null}
               <p className="text-xs leading-5 text-ink-500">
-                保存先パス、外部ボイスID、メールアドレス、台本文、文字起こし、録音そのもの、署名付きURL、外部サービスの生レスポンスは表示しません。これは安全な件数確認で、実際の削除は実行しません。
+                保存先パス、外部ボイスID、メールアドレス、台本文、文字起こし、録音そのもの、署名付きURL、外部サービスの詳細な応答本文は表示しません。これは安全な件数確認で、実際の削除は実行しません。
               </p>
             </div>
           ) : (
@@ -661,7 +662,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
 
       {deletionRequest ? (
         <details className="mt-4 rounded-3xl border border-[var(--line)] bg-white p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-ink-900">ElevenLabs 側の削除候補を見る</summary>
+          <summary className="cursor-pointer text-sm font-semibold text-ink-900">外部音声サービス側の削除候補を見る</summary>
           <p className="mt-2 text-sm leading-6 text-ink-600">
             外部音声サービス側の削除候補を、件数だけ確認します。外部ボイスIDや生レスポンスは表示しません。
           </p>
@@ -685,7 +686,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
                 ))}
               </dl>
               <p className="text-xs leading-5 text-ink-500">
-                外部ボイスID、外部サービスの生レスポンス、メールアドレス、保存先パス、台本文、文字起こし、録音そのもの、secret は表示しません。
+                外部ボイスID、外部サービスの詳細な応答本文、メールアドレス、保存先パス、台本文、文字起こし、録音そのもの、機密情報は表示しません。
               </p>
             </div>
           ) : (
@@ -696,9 +697,9 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
 
       {deletionRequest ? (
         <details className="mt-4 rounded-3xl border border-[var(--line)] bg-white p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-ink-900">Storage 側の削除候補を見る</summary>
+          <summary className="cursor-pointer text-sm font-semibold text-ink-900">保存ファイル側の削除候補を見る</summary>
           <p className="mt-2 text-sm leading-6 text-ink-600">
-            保存ファイル側の削除候補を、保存場所ごとの件数だけ確認します。object key や署名付きURLは表示しません。
+            保存ファイル側の削除候補を、保存場所ごとの件数だけ確認します。保存ファイルの詳細名や署名付きURLは表示しません。
           </p>
           {storageDryRunMessage ? (
             <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">{storageDryRunMessage}</p>
@@ -727,7 +728,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
                 ))}
               </dl>
               <p className="text-xs leading-5 text-ink-500">
-                保存先パス、object key、署名付きURL、メールアドレス、台本文、文字起こし、録音そのもの、外部サービス参照、生レスポンス、secret は表示しません。
+                保存先パス、保存ファイルの詳細名、署名付きURL、メールアドレス、台本文、文字起こし、録音そのもの、外部サービス参照、詳細な応答本文、機密情報は表示しません。
               </p>
             </div>
           ) : (
@@ -738,9 +739,9 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
 
       {deletionRequest ? (
         <details className="mt-4 rounded-3xl border border-[var(--line)] bg-white p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-ink-900">DB 側の削除候補を見る</summary>
+          <summary className="cursor-pointer text-sm font-semibold text-ink-900">アプリデータ側の削除候補を見る</summary>
           <p className="mt-2 text-sm leading-6 text-ink-600">
-            アプリデータ側の削除候補を、table ごとの件数と分類だけ確認します。row id や本文などの raw data は表示しません。
+            アプリデータ側の削除候補を、分類ごとの件数だけ確認します。行IDや本文などの詳細データは表示しません。
           </p>
           {databaseDryRunMessage ? (
             <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">{databaseDryRunMessage}</p>
@@ -750,7 +751,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
               <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-3 py-2 text-sm text-ink-700">
                 <p className="font-semibold text-ink-900">アプリデータ: {formatStatus(databaseDryRun.status)}</p>
                 <p className="mt-1 text-xs leading-5">
-                  件数確認のみです。DB の delete / update / anonymize は呼びません。アプリデータの削除は、外部サービスと保存ファイルの確認後に進める前提です。
+                  件数確認のみです。アプリデータの削除や匿名化は呼びません。アプリデータの削除は、外部サービスと保存ファイルの確認後に進める前提です。
                 </p>
               </div>
               <dl className="grid gap-2 text-xs">
@@ -759,14 +760,14 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <dt className="font-semibold text-ink-800">{table.table}</dt>
                       <dd className="text-ink-700">
-                        {formatStatus(table.action)} / {formatStatus(table.status)} / count {table.candidateCount}
+                        {formatStatus(table.action)} / {formatStatus(table.status)} / 件数 {table.candidateCount}
                       </dd>
                     </div>
                   </div>
                 ))}
               </dl>
               <p className="text-xs leading-5 text-ink-500">
-                row id、メールアドレス、台本文、文字起こし、生データ、metadata の詳細、保存先パス、外部サービス参照、secret は表示しません。
+                行ID、メールアドレス、台本文、文字起こし、詳細データ、メタデータの詳細、保存先パス、外部サービス参照、機密情報は表示しません。
               </p>
             </div>
           ) : (
@@ -777,7 +778,7 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
 
       {deletionRequest ? (
         <details className="mt-4 rounded-3xl border border-[var(--line)] bg-white p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-ink-900">Auth アカウント削除の準備状況を見る</summary>
+          <summary className="cursor-pointer text-sm font-semibold text-ink-900">ログインアカウント削除の準備状況を見る</summary>
           <p className="mt-2 text-sm leading-6 text-ink-600">
             ログインアカウント削除の準備状況を確認します。ログインアカウントの削除は最後に行うため、アプリデータ側の確認が終わるまで待ちます。
           </p>
@@ -789,29 +790,29 @@ export function AccountDeletionPanel({ initialDeletionRequest }: { initialDeleti
               <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-3 py-2 text-sm text-ink-700">
                 <p className="font-semibold text-ink-900">ログインアカウント: {formatStatus(authDryRun.status)}</p>
                 <p className="mt-1 text-xs leading-5">
-                  件数確認のみです。Supabase Auth user deletion は呼びません。完了後の管理記録は、匿名化した参照と削除状況だけに寄せる前提です。
+                  件数確認のみです。ログインアカウントの削除は呼びません。完了後の管理記録は、匿名化した参照と削除状況だけに寄せる前提です。
                 </p>
               </div>
               <dl className="grid gap-2 text-xs sm:grid-cols-2">
                 <div className="flex justify-between gap-3 rounded-2xl bg-ink-50 px-3 py-2">
-                  <dt className="font-semibold text-ink-700">request runnable</dt>
+                  <dt className="font-semibold text-ink-700">リクエスト確認</dt>
                   <dd className="text-ink-900">{authDryRun.preflight.requestRunnable ? "はい" : "いいえ"}</dd>
                 </div>
                 <div className="flex justify-between gap-3 rounded-2xl bg-ink-50 px-3 py-2">
-                  <dt className="font-semibold text-ink-700">service role</dt>
+                  <dt className="font-semibold text-ink-700">サーバー側確認</dt>
                   <dd className="text-ink-900">{authDryRun.preflight.serviceRoleAvailable ? "確認できます" : "確認できません"}</dd>
                 </div>
                 <div className="flex justify-between gap-3 rounded-2xl bg-ink-50 px-3 py-2">
-                  <dt className="font-semibold text-ink-700">DB cleanup</dt>
+                  <dt className="font-semibold text-ink-700">アプリデータ確認</dt>
                   <dd className="text-ink-900">{authDryRun.preflight.dbCleanupSatisfied ? "確認済み" : "アプリデータ確認待ち"}</dd>
                 </div>
                 <div className="flex justify-between gap-3 rounded-2xl bg-ink-50 px-3 py-2">
-                  <dt className="font-semibold text-ink-700">auth account</dt>
+                  <dt className="font-semibold text-ink-700">ログインアカウント</dt>
                   <dd className="text-ink-900">{formatStatus(authDryRun.preflight.authUserStatus)}</dd>
                 </div>
               </dl>
               <p className="text-xs leading-5 text-ink-500">
-                user reference、メールアドレス、session detail、credential、auth の詳細、metadata の詳細、secret は表示しません。
+                ユーザー参照、メールアドレス、セッション詳細、認証情報、ログインアカウントの詳細、メタデータの詳細、機密情報は表示しません。
               </p>
             </div>
           ) : (

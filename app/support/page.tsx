@@ -3,25 +3,25 @@ import Link from "next/link";
 import { LegalPageShell, LegalSection } from "@/components/legal/beta-legal-page";
 
 export const metadata: Metadata = {
-  title: "Support Draft | Native Minute",
-  description: "Native Minute v1 support release candidate draft"
+  title: "Support | Native Minute",
+  description: "Native Minute support"
 };
 
 export default function SupportPage() {
   return (
     <LegalPageShell
-      eyebrow="Support release candidate draft"
+      eyebrow="Support"
       title="Native Minute Support"
-      summary="Native Minute v1 Store release に向けた support draft です。正式公開前に final support URL / inbox、legal owner、reviewer instructions の human approval が必要です。"
+      summary="困ったときの連絡先と、ログイン、録音、評価、データ削除の確認方法をまとめています。Store 提出前に、サポートURLと運営者情報を最終確認します。"
     >
       <LegalSection
         title="問い合わせ先"
-        summary="正式 support contact は nativeminutes.support@gmail.com です。Store release 用の support URL は human check で開けることを確認済みです。"
+        summary="サポート連絡先は nativeminutes.support@gmail.com です。"
         items={[
-          "account deletion request は、一次返信の目安が 3 business days、完了目安が 30 days です。",
-          "問い合わせ時は、secret、API key、auth header、magic link URL、raw provider response を貼らないでください。",
-          "録音や transcript を送る必要がある場合は、support 側から明示的に依頼された範囲だけ共有してください。",
-          "問題の phase が分かる場合は、login / listen / record / transcription / Azure evaluation / review / progress のどこで止まったかを書いてください。"
+          "アカウント削除リクエストは、一次返信の目安が 3 business days、完了目安が 30 days です。",
+          "問い合わせ時は、API key、認証ヘッダー、magic link URL、外部サービスの詳細な応答本文を貼らないでください。",
+          "録音や文字起こしを送る必要がある場合は、Support 側から明示的に依頼された範囲だけ共有してください。",
+          "問題の場所が分かる場合は、login / listen / record / transcription / Azure evaluation / review / progress のどこで止まったかを書いてください。"
         ]}
       />
 
@@ -30,7 +30,7 @@ export default function SupportPage() {
         items={[
           "magic link は最新のメールだけを使ってください。古い link や期限切れ link は login 画面に戻ることがあります。",
           "短時間に何度も login email を送ると Supabase Auth の email rate limit に当たります。その場合はしばらく待ってから再試行してください。",
-          "callback 後に戻れない場合は、同じブラウザで link を開いているか、戻り先が internal path になっているかを確認してください。"
+          "ログイン後に戻れない場合は、同じブラウザでリンクを開いているか、戻り先がアプリ内のページになっているかを確認してください。"
         ]}
       />
 
@@ -46,32 +46,32 @@ export default function SupportPage() {
 
       <LegalSection
         title="お手本ボイス・voice setup"
-        summary="v1 mainline の voice provider は ElevenLabs です。OpenAI は voice provider ではなく、transcription / script generation / coaching 側で使います。"
+        summary="お手本ボイスには ElevenLabs を使う場合があります。OpenAI は音声 provider ではなく、文字起こし、スクリプト作成補助、コーチング補助に使う場合があります。"
         items={[
           "voice setup が未完了の場合、listen 画面や Settings から setup/voice に進めます。",
-          "voice sample / consent recording は通常のお手本ボイス作成のために扱います。Brush-up は v1.1 に延期しており、v1 support では利用可能機能として案内しません。",
+          "音声サンプル / 同意録音は通常のお手本ボイス作成のために扱います。保存済みベスト録音を使った追加のお手本生成は、現在のサポート対象機能として案内しません。",
           "ElevenLabs 側の rate limit、billing、verification、deleted voice などでお手本ボイス生成に失敗することがあります。",
-          "provider kill switch が有効な場合は、お手本ボイス生成が一時停止されることがあります。"
+          "外部サービスの一時停止設定が有効な場合は、お手本ボイス生成が一時停止されることがあります。"
         ]}
       />
 
       <LegalSection
         title="データ削除したい"
         items={[
-          "ログイン済みの場合は Settings から account deletion request を開始できます。",
-          "Web からの説明と support fallback は /support/account-deletion にまとめています。",
-          "削除 request の一次返信目安は 3 business days、完了目安は 30 days です。",
-          "現時点の scaffold では actual destructive cleanup はまだ self-serve 完了しません。Store submission 前に actual deletion path と disposable proof が必要です。"
+          "ログイン済みの場合は Settings からアカウント削除リクエストを開始できます。",
+          "Web からの説明とサポート連絡先は /support/account-deletion にまとめています。",
+          "削除リクエストの一次返信目安は 3 business days、完了目安は 30 days です。",
+          "現在の画面では、リクエスト作成、確認、削除対象の件数確認までを扱います。保存ファイル、アプリデータ、外部サービス、ログインアカウントの実削除はこの画面からは実行しません。"
         ]}
       />
 
       <LegalSection
-        title="human_required"
+        title="公開前に最終確認する項目"
         items={[
-          "Final support URL / inbox: human_required",
-          "Legal owner: human_required",
-          "Store reviewer account and instructions: human_required",
-          "Account deletion disposable proof result: human_required"
+          "Support URL と受信先",
+          "運営者情報",
+          "Store reviewer account と審査向け手順",
+          "アカウント削除リクエストの最終確認結果"
         ]}
       />
 
@@ -79,7 +79,7 @@ export default function SupportPage() {
         <p className="text-sm leading-6 text-ink-700">
           データ削除については{" "}
           <Link href="/support/account-deletion" className="font-semibold text-[var(--accent-strong)]">
-            Account deletion draft
+            Account deletion request
           </Link>
           {" "}を確認してください。
         </p>

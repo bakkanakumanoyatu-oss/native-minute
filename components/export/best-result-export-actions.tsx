@@ -54,9 +54,9 @@ export function BestResultExportActions({
       </div>
       {copyMessage ? <p className="mt-2 text-xs leading-5 text-ink-600">{copyMessage}</p> : null}
       <details className={`mt-3 rounded-2xl border px-4 py-3 text-xs leading-5 text-ink-600 ${isStudio ? "border-[var(--line-subtle)] bg-[var(--surface-inset)]" : "border-[var(--line)] bg-ink-50"}`}>
-        <summary className="cursor-pointer font-semibold text-ink-800">v1.1 Brush-up メモ（未提供）</summary>
+        <summary className="cursor-pointer font-semibold text-ink-800">保存済みベスト録音の扱い</summary>
         <p className="mt-2">
-          v1 では、この録音を専用のお手本ボイス素材として provider へ送りません。Brush-up は、明示同意、revoke、削除、provider cleanup の確認後に v1.1 で扱います。
+          この録音を、専用のお手本ボイス素材として外部サービスへ自動送信することはありません。追加の音声活用機能を提供する場合は、別の同意と削除導線を用意します。
         </p>
       </details>
     </section>

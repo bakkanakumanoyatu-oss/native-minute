@@ -127,7 +127,7 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
           className="mt-1 size-4 rounded border-[var(--line)]"
         />
         <span>
-          通常のお手本ボイスを作るために、自分の声、voice sample、必要な同意録音を使うことに同意します。v1 では Brush-up 用の best take reuse には使いません。
+          通常のお手本ボイスを作るために、自分の声、音声サンプル、必要な同意録音を使うことに同意します。保存済みベスト録音を、別機能の音声素材として自動利用することはありません。
         </span>
       </label>
 

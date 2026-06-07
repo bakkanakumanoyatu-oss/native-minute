@@ -19,7 +19,7 @@ const NOTICE_COPY: Record<ConsentNoticeKind, NoticeCopy> = {
     bullets: [
       "録音は app-owned Storage に保存し、server-side route から評価に渡します。",
       "AI coaching / feedback は学習補助で、完全な能力判定ではありません。",
-      "v1 では best take を Brush-up 用 voice material として provider に送りません。"
+      "通常録音を、別機能の音声素材として自動利用することはありません。"
     ]
   },
   listen: {
@@ -29,7 +29,7 @@ const NOTICE_COPY: Record<ConsentNoticeKind, NoticeCopy> = {
     bullets: [
       "voice setup の同意と sample recording が必要な場合があります。",
       "生成音声は provider 直 URL に依存せず、保存済み audio を protected route で再生します。",
-      "Brush-up voice variant は v1.1 へ回しており、v1 の listen では作りません。"
+      "この画面では、保存済みの声を使った追加のお手本生成は行いません。"
     ]
   },
   voice: {
@@ -39,7 +39,7 @@ const NOTICE_COPY: Record<ConsentNoticeKind, NoticeCopy> = {
     bullets: [
       "client から provider へ直接送らず、app-owned Storage に保存してから server-side route 経由で処理します。",
       "ElevenLabs normal voice / model audio に使う可能性があります。",
-      "通常録音の同意とは別で、Brush-up 用の best take reuse には使いません。"
+      "通常録音の同意とは別に扱い、保存済みベスト録音を自動的に音声素材として使うことはありません。"
     ]
   },
   review: {
@@ -49,7 +49,7 @@ const NOTICE_COPY: Record<ConsentNoticeKind, NoticeCopy> = {
     bullets: [
       "録音、transcript、score、weak words、coach feedback は復習と進捗表示に使います。",
       "OpenAI transcription、Azure pronunciation evaluation、AI coaching / feedback を使う場合があります。",
-      "保存済み best take は v1 の復習用で、Brush-up voice material には使いません。"
+      "保存済みベスト録音は復習用で、別機能の音声素材として自動利用することはありません。"
     ]
   }
 };
@@ -66,7 +66,7 @@ export function ConsentNotice({ kind, className = "" }: { kind: ConsentNoticeKin
           <p className="mt-2">{copy.summary}</p>
         </div>
         <span className="shrink-0 rounded-full border border-[var(--line-subtle)] bg-[var(--surface-paper)] px-3 py-1 text-xs font-semibold text-ink-600">
-          human approval required
+          内容を確認
         </span>
       </div>
 

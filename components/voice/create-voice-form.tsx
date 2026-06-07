@@ -192,7 +192,7 @@ export function CreateVoiceForm({
         />
         {sampleAudioFile ? <span className="block text-xs font-semibold text-[var(--accent-strong)]">選択済み: {sampleAudioFile.name}</span> : null}
         <span className="block text-xs leading-5 text-ink-600">
-          この sample は normal model audio / default voice 用です。v1 では best take を Brush-up voice material として送信しません。
+          この音声サンプルは通常のお手本ボイス用です。保存済みベスト録音を、別機能の音声素材として自動送信することはありません。
         </span>
       </label>
 

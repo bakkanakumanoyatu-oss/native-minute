@@ -4,9 +4,9 @@ import type { ReactNode } from "react";
 export function BetaDraftNotice() {
   return (
     <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-950">
-      <p className="font-semibold">v1 release candidate draft</p>
+      <p className="font-semibold">公開前の確認</p>
       <p className="mt-1">
-        このページは Native Minute v1 Store release に向けたドラフトです。正式公開、App Store / Google Play 提出、法務レビュー、release owner の最終承認前に human approval が必要です。
+        このページは、現在のアプリで扱うデータとサポート導線を分かりやすく確認できるようにまとめています。Store 提出前に最終確認します。
       </p>
     </div>
   );

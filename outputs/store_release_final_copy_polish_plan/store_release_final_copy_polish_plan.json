@@ -1,10 +1,11 @@
 {
   "plan": "store_release_final_copy_polish_plan",
   "recorded_at": "2026-06-07",
-  "status": "plan_ready_human_legal_required_before_store_submission",
+  "status": "small_public_copy_pass_applied_human_legal_required_before_store_submission",
   "scope": {
     "planning_only": true,
     "small_copy_change_allowed_later": true,
+    "small_public_copy_pass_applied": true,
     "large_rewrite_allowed": false,
     "screenshot_capture_ready": false,
     "store_submission_ready": false
@@ -37,6 +38,36 @@
       "notes": "Internal planning terms remain visible in public copy and should be removed or reworded before screenshots or Store submission."
     }
   ],
+  "small_public_copy_pass": {
+    "status": "applied",
+    "surfaces_updated": [
+      "footer_legal_links",
+      "settings",
+      "privacy",
+      "terms",
+      "support",
+      "account_deletion",
+      "account_deletion_panel",
+      "provider_consent_notices",
+      "voice_setup_notices",
+      "best_result_export_notice"
+    ],
+    "copy_reworded": [
+      "draft_labels",
+      "release_candidate_labels",
+      "human_required_labels",
+      "gate_smoke_proof_language",
+      "scaffold_dry_run_cleanup_destructive_language",
+      "mixed_english_technical_labels"
+    ],
+    "safety_boundary_kept": [
+      "account_deletion_request_creation_available",
+      "typed_confirmation_available",
+      "safe_count_summary_available",
+      "actual_deletion_not_run_from_current_ui",
+      "raw_data_storage_path_secret_transcript_raw_audio_not_displayed"
+    ]
+  },
   "remove_or_reword_before_store_submission": [
     "draft",
     "candidate",
