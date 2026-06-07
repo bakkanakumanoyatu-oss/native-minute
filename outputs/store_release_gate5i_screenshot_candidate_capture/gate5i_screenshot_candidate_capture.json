@@ -1,0 +1,223 @@
+{
+  "gate": "5i",
+  "report": "screenshot_candidate_capture_internal_review",
+  "recorded_at": "2026-06-07",
+  "status": "BLOCKED_no_authenticated_clean_demo_session",
+  "internal_review_only": true,
+  "final_store_screenshot": false,
+  "scope": {
+    "screenshot_candidate_capture_attempted": true,
+    "screenshot_files_created": 0,
+    "final_store_screenshot_approved": false,
+    "image_generated": false,
+    "app_icon_created": false,
+    "store_console_operated": false,
+    "app_store_connect_operated": false,
+    "google_play_console_operated": false,
+    "capacitor_started": false,
+    "testflight_started": false,
+    "google_closed_testing_started": false,
+    "actual_account_deletion_executed": false,
+    "supabase_auth_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "db_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "provider_api_called": false,
+    "env_or_dashboard_changed": false,
+    "reviewer_account_relogin_attempted": false,
+    "magic_link_resent": false
+  },
+  "inputs": {
+    "gate_5h_preflight": "complete_pushed",
+    "iphone_safari_mobile_qa": "PASS",
+    "iphone_chrome_lightweight_mobile_qa": "PASS",
+    "android_chrome_mobile_qa": "human_required_later_device_unavailable",
+    "app_name_candidate": "Native Minutes",
+    "subtitle_candidate": "1分間のナチュラル発音トレーニング",
+    "demo_script_candidate": "human_confirmed_claim_safe",
+    "support_privacy_deletion_urls": "human_check_PASS"
+  },
+  "capture_attempt": {
+    "browser_surface": "in_app_browser",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "purpose": "mobile_width_internal_review_candidate"
+    },
+    "environment": "production_web",
+    "intended_account_context": "plus_demo_account_safe_alias",
+    "attempted_protected_route": "/scripts",
+    "observed_result": "redirected_to_login_required",
+    "authenticated_clean_demo_session_available_to_codex": false,
+    "stop_reason": "no_authenticated_clean_demo_session",
+    "viewport_reset_after_attempt": true
+  },
+  "account_context": {
+    "clean_demo_account": {
+      "safe_alias": "plus_demo_account",
+      "use_for_future_screenshot_rerun": true,
+      "full_email_recorded": false,
+      "status": "human_must_prepare_authenticated_session_before_rerun"
+    },
+    "reviewer_account": {
+      "use_for_screenshots": false,
+      "status": "verification_deferred"
+    },
+    "delete_test_account": {
+      "use_for_screenshots": false,
+      "status": "deletion_proof_only"
+    },
+    "real_or_personal_account": {
+      "use_for_screenshots": false,
+      "status": "blocked"
+    }
+  },
+  "demo_script": {
+    "status": "human_confirmed_candidate",
+    "text": "Today, I will practice speaking clearly and confidently for one minute. I want to improve my pronunciation, rhythm, and fluency little by little. I will slow down, breathe naturally, and focus on each word. Even small progress matters, and I can become more comfortable each time I practice.",
+    "loaded_into_capture_session": false,
+    "contains_personal_data": false,
+    "copyright_risk": false,
+    "brush_up_v1_claim": false,
+    "voice_clone_improvement_v1_claim": false,
+    "guaranteed_outcome_claim": false
+  },
+  "screenshot_files": [],
+  "minimum_screenshot_candidates": [
+    {
+      "asset_id": "shot_01_home",
+      "screen": "home_practice_entry",
+      "route_or_surface": "home",
+      "capture_status": "not_captured_blocked",
+      "safe_caption_candidate": "1分の練習を始める",
+      "file_path": null
+    },
+    {
+      "asset_id": "shot_02_script_creation",
+      "screen": "script_creation",
+      "route_or_surface": "/scripts/new",
+      "capture_status": "not_captured_blocked",
+      "safe_caption_candidate": "1分英語スクリプトを作る",
+      "file_path": null
+    },
+    {
+      "asset_id": "shot_03_listen",
+      "screen": "listen",
+      "route_or_surface": "/scripts/[id]/listen",
+      "capture_status": "not_captured_blocked",
+      "safe_caption_candidate": "お手本を聞く",
+      "file_path": null
+    },
+    {
+      "asset_id": "shot_04_record",
+      "screen": "record",
+      "route_or_surface": "/scripts/[id]/record",
+      "capture_status": "not_captured_blocked",
+      "safe_caption_candidate": "自分の発音を録音する",
+      "file_path": null
+    },
+    {
+      "asset_id": "shot_05_review",
+      "screen": "review",
+      "route_or_surface": "/scripts/[id]/review/[takeId]",
+      "capture_status": "not_captured_blocked",
+      "safe_caption_candidate": "発音・流暢さ・リズムを確認",
+      "file_path": null
+    },
+    {
+      "asset_id": "shot_06_progress",
+      "screen": "progress",
+      "route_or_surface": "/progress",
+      "capture_status": "not_captured_blocked",
+      "safe_caption_candidate": "最新結果とベスト結果を確認",
+      "file_path": null
+    }
+  ],
+  "optional_screenshot_candidates": [
+    {
+      "asset_id": "shot_07_scripts",
+      "screen": "scripts_practice_stock",
+      "route_or_surface": "/scripts",
+      "capture_status": "not_captured_blocked",
+      "safe_caption_candidate": "練習ストックを選ぶ",
+      "file_path": null
+    },
+    {
+      "asset_id": "shot_08_settings",
+      "screen": "settings",
+      "route_or_surface": "/settings",
+      "capture_status": "not_captured_blocked",
+      "safe_caption_candidate": "設定とサポートを確認",
+      "file_path": null
+    },
+    {
+      "asset_id": "shot_09_support_privacy_deletion",
+      "screen": "privacy_support_deletion",
+      "route_or_surface": "/privacy / /support / /support/account-deletion",
+      "capture_status": "not_captured_blocked",
+      "safe_caption_candidate": "プライバシーとサポート",
+      "file_path": null
+    }
+  ],
+  "redaction": {
+    "full_email_recorded": false,
+    "auth_user_id_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_recorded": false,
+    "private_url_recorded": false,
+    "raw_transcript_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_path_recorded": false,
+    "storage_path_recorded": false,
+    "storage_object_key_recorded": false,
+    "signed_url_recorded": false,
+    "provider_response_recorded": false,
+    "provider_id_recorded": false,
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "personal_data_recorded": false
+  },
+  "store_claim_safety": {
+    "guaranteed_improvement_claim": false,
+    "perfect_pronunciation_assessment_claim": false,
+    "medical_or_institutional_claim": false,
+    "brush_up_v1_claim": false,
+    "voice_clone_improvement_v1_claim": false,
+    "best_take_provider_submission_v1_claim": false,
+    "actual_deletion_complete_claim": false,
+    "native_app_claim_before_capacitor": false
+  },
+  "layout_copy_observations": [
+    {
+      "surface": "minimum_candidate_set",
+      "status": "not_reviewed",
+      "reason": "authenticated clean demo session was unavailable, so protected screenshot candidates were not captured"
+    },
+    {
+      "surface": "login_redirect_page",
+      "status": "not_a_candidate",
+      "notes": "mobile-width login redirect rendered without exposing private account data"
+    }
+  ],
+  "checks": {
+    "json_parse": "PASS",
+    "screenshot_files_existence": "not_applicable_no_files_created_due_blocker",
+    "redaction_scan": "PASS_no_private_values_recorded",
+    "forbidden_claim_scan": "PASS_forbidden_claims_only_appear_as_do_not_use_guidance",
+    "store_operation_boundary_scan": "PASS",
+    "destructive_operation_scan": "PASS",
+    "actual_deletion_non_execution_scan": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "blockers": [
+    "no_authenticated_clean_demo_session_available_to_codex"
+  ],
+  "human_required": [
+    "prepare_authenticated_clean_demo_session_in_browser_before_rerun",
+    "confirm_demo_account_contains_no_private_data",
+    "rerun_internal_screenshot_capture_without_codex_magic_link_resend",
+    "final_redaction_review_after_candidate_capture",
+    "final_store_screenshot_approval_later"
+  ],
+  "next_action": "Human should sign in to the clean demo account in the capture browser/session, then rerun Gate 5i candidate capture. Codex must still avoid magic-link resend, reviewer relogin, delete-test account use, Store Console work, and final screenshot approval."
+}

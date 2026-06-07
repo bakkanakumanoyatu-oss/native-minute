@@ -326,6 +326,12 @@ Goal: prepare screenshot capture without capturing screenshots, creating images/
 
 Status: preflight ready; capture not started. Use the clean demo account safe alias for screenshots, do not use the reviewer account while verification is deferred, and never use the delete-test account for screenshots. Minimum set is Home / practice entry, Script creation, Listen, Record, Review, and Progress. Optional set is Scripts, Settings, and Privacy / Support / Account deletion request surfaces. Full email, tokens, private URLs, transcripts, raw audio paths, Storage paths, provider data, secrets/env values, personal data, Brush-up v1 claims, and actual-deletion-complete claims must not appear. Final device size, Store screenshot requirements, final copy/caption/legal review, redaction review, app icon, and Store Console requirements remain human-required.
 
+### Gate 5i: Screenshot Candidate Capture Internal Review
+
+Goal: capture PC-based mobile-width screenshot candidates for internal review only, using the clean demo account context and Gate 5h redaction / claim boundaries.
+
+Status: `BLOCKED: no_authenticated_clean_demo_session`. Codex opened production `/scripts` at a mobile-width viewport, but the in-app browser was not authenticated as the clean demo account and redirected to `/login` with `login_required`. No screenshot candidate image files were created. Minimum set and optional set remain unchanged for rerun. Codex did not send magic links, retry reviewer login, use the delete-test account, operate Store Console, approve final screenshots, introduce Capacitor, execute deletion, call provider APIs, change env/dashboard, or perform DB / Auth / Storage / provider cleanup.
+
 ### Gate 6: Release QA
 
 Goal: run cross-device, mobile WebView, upload, replay, auth, provider failure, account deletion, support, and monitoring QA before external testing.
