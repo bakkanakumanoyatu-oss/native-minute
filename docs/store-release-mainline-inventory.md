@@ -280,6 +280,8 @@ Goal: prepare human-run mobile browser QA for iPhone Safari, iPhone Chrome, and 
 
 Status: plan ready. The checklist covers login / logout / magic link, Home / Scripts, five-slot management, script creation, Listen audio playback, Record microphone / upload, Review saved recording playback, Progress, Settings, Privacy / Terms / Support / Account deletion, small-screen layout, Safari / Chrome differences, provider/upload failure copy, and Store claim safety. Evidence must use safe PASS / FAIL / BLOCKED / human_required fields only. This plan did not run mobile QA, send magic links, log into reviewer accounts, capture screenshots, operate Store Console, introduce Capacitor, call providers, change env/dashboard state, or execute actual deletion / cleanup.
 
+Human QA update: iPhone Safari production mobile browser QA is `PASS` with a clean demo account context. Login, scripts, five-slot management, script creation, listen audio, record microphone / upload, review playback, progress, and settings / legal pages passed with no concerns. Actual deletion, Store Console, screenshots, Capacitor, provider API calls by Codex, env/dashboard changes, and cleanup operations were not performed.
+
 ### Gate 5b: Store Metadata / Reviewer Instructions / Privacy Draft Mapping
 
 Goal: prepare human-review-required drafts for Store metadata, reviewer instructions, App Privacy mapping, and Google Data Safety mapping that match the v1 feature set without Brush-up.

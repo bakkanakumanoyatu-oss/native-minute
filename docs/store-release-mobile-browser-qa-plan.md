@@ -1,12 +1,33 @@
 # Store Release Mobile Browser QA Plan
 
-Status: `plan_ready`
+Status: `plan_ready_with_iphone_safari_pass`
 
 This plan prepares mobile browser QA for the v1 Store release path. It is a checklist and evidence template only.
 
 It does not execute QA, send magic links, log into reviewer accounts, execute account deletion, delete Supabase Auth users, remove Storage objects, perform DB cleanup, execute provider cleanup, operate Store Console, capture screenshots, create app icons, introduce Capacitor, call providers, or change env/dashboard settings.
 
 Brush-up remains deferred to v1.1 and must not appear in v1 mobile QA claims, Store copy, screenshots, reviewer instructions, or support copy.
+
+## Human QA Result: iPhone Safari
+
+Status: `PASS`
+
+Human-run production mobile QA on iPhone Safari passed with a clean demo account context.
+
+| Area | Result |
+| --- | --- |
+| login | `PASS` |
+| scripts | `PASS` |
+| five-slot management | `PASS` |
+| script creation | `PASS` |
+| listen audio | `PASS` |
+| record microphone / upload | `PASS` |
+| review playback | `PASS` |
+| progress | `PASS` |
+| settings / legal pages | `PASS` |
+| notes | `none` |
+
+The run did not execute actual deletion, Auth deletion, Storage deletion, DB cleanup, provider cleanup, Store Console work, screenshot capture, app icon creation, Capacitor work, provider API calls by Codex, env/dashboard operation, reviewer relogin, or magic-link resend by Codex.
 
 ## Scope
 
