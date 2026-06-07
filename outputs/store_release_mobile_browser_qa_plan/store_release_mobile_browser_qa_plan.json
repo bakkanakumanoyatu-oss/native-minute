@@ -1,0 +1,253 @@
+{
+  "report": "store_release_mobile_browser_qa_plan",
+  "recorded_at": "2026-06-07",
+  "status": "plan_ready",
+  "scope": {
+    "docs_outputs_only": true,
+    "mobile_qa_executed": false,
+    "magic_link_sent_or_resent": false,
+    "reviewer_account_relogin_attempted": false,
+    "actual_account_deletion_executed": false,
+    "supabase_auth_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "db_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "store_console_operated": false,
+    "screenshot_captured": false,
+    "app_icon_created": false,
+    "capacitor_started": false,
+    "provider_api_called": false,
+    "env_or_dashboard_changed": false
+  },
+  "source_inputs": [
+    "docs/current-state.md",
+    "docs/store-release-mainline-inventory.md",
+    "docs/store-release-qa-readiness-refresh.md",
+    "docs/store-release-gate5g-mobile-device-selection-asset-requirements.md"
+  ],
+  "device_matrix": [
+    {
+      "target": "iphone_safari",
+      "required": true,
+      "purpose": "primary_iOS_mobile_browser_smoke",
+      "focus": [
+        "auth_callback",
+        "microphone_permission",
+        "audio_playback_after_user_gesture",
+        "small_screen_layout",
+        "legal_support_routes"
+      ],
+      "status": "human_required"
+    },
+    {
+      "target": "iphone_chrome",
+      "required": false,
+      "purpose": "iOS_browser_chrome_and_magic_link_handoff_sanity",
+      "focus": [
+        "auth_callback",
+        "viewport_changes",
+        "listen_playback",
+        "record_permission",
+        "review_playback"
+      ],
+      "status": "recommended_human_required"
+    },
+    {
+      "target": "android_chrome",
+      "required": true,
+      "purpose": "primary_android_mobile_browser_smoke",
+      "focus": [
+        "auth_callback",
+        "microphone_permission",
+        "upload_fallback_if_approved",
+        "audio_playback",
+        "small_screen_layout"
+      ],
+      "status": "human_required"
+    },
+    {
+      "target": "desktop_responsive_fallback",
+      "required": false,
+      "purpose": "debug_or_planning_backup_only",
+      "focus": [
+        "layout_sanity"
+      ],
+      "status": "optional_not_mobile_pass_evidence"
+    }
+  ],
+  "qa_scope": [
+    "login_logout_magic_link",
+    "home_practice_scripts",
+    "five_slot_management",
+    "script_creation",
+    "listen_audio_playback",
+    "record_microphone_upload",
+    "review_saved_recording_playback",
+    "progress",
+    "settings",
+    "privacy_terms_support_account_deletion",
+    "mobile_viewport_small_screen_layout",
+    "safari_chrome_differences",
+    "provider_failure_upload_failure_copy",
+    "store_claim_safety_public_copy"
+  ],
+  "pre_run_setup": [
+    "confirm_production_url_and_intended_build",
+    "choose_safe_account_context",
+    "record_device_browser_label_without_private_identifiers",
+    "confirm_screenshot_capture_is_not_part_of_this_run",
+    "confirm_no_store_console_capacitor_provider_dashboard_or_env_operation",
+    "record_safe_status_route_labels_and_issue_summaries_only"
+  ],
+  "iphone_safari_checklist": [
+    "login_auth_callback",
+    "session_refresh",
+    "logout_relogin_if_human_approves_magic_link",
+    "home_scripts_layout",
+    "five_slot_management",
+    "script_creation",
+    "listen_audio",
+    "record_microphone",
+    "upload_fallback_if_approved",
+    "evaluate_review",
+    "saved_recording_playback",
+    "progress",
+    "settings_legal_routes",
+    "provider_upload_failure_copy_if_naturally_observed"
+  ],
+  "iphone_chrome_checklist": [
+    "login_auth_callback",
+    "session_refresh",
+    "home_scripts_layout",
+    "listen_playback",
+    "record_permission_and_stop_flow",
+    "review_saved_recording_playback",
+    "progress",
+    "settings_legal_account_deletion_routes",
+    "no_brush_up_v1_claim",
+    "no_deletion_complete_claim"
+  ],
+  "android_chrome_checklist": [
+    "login_auth_callback",
+    "session_refresh_logout",
+    "home_scripts_layout",
+    "five_slot_management",
+    "script_creation",
+    "listen_audio",
+    "record_microphone",
+    "upload_fallback_if_approved",
+    "review_saved_recording_playback",
+    "progress",
+    "settings_legal_routes"
+  ],
+  "status_values": [
+    "pass",
+    "fail",
+    "blocked",
+    "human_required",
+    "not_applicable"
+  ],
+  "evidence_template": {
+    "run_id": "safe_alias",
+    "run_date": "date_or_timestamp",
+    "environment": [
+      "production_web_mobile_browser",
+      "local_mobile_browser",
+      "unknown"
+    ],
+    "device_family": [
+      "iphone",
+      "android",
+      "desktop_fallback"
+    ],
+    "browser": [
+      "safari",
+      "chrome",
+      "unknown"
+    ],
+    "account_context": [
+      "clean_demo",
+      "reviewer",
+      "disposable",
+      "owner",
+      "unknown"
+    ],
+    "route_or_feature": "safe_route_or_feature_label",
+    "result": [
+      "pass",
+      "fail",
+      "blocked",
+      "human_required",
+      "not_applicable"
+    ],
+    "issue_summary": "safe_summary_only",
+    "redaction_status": [
+      "pass",
+      "warn",
+      "fail"
+    ],
+    "store_claim_safety": [
+      "pass",
+      "warn",
+      "fail"
+    ],
+    "actual_deletion_executed": false,
+    "provider_api_called_by_codex": false,
+    "screenshot_captured": false,
+    "next_action": "safe_next_step_label"
+  },
+  "human_required": [
+    "physical_or_approved_remote_iphone_android_access",
+    "human_approved_safe_account_selection",
+    "magic_link_send_or_resend",
+    "microphone_permission_decision",
+    "optional_upload_fallback_file_selection",
+    "reviewer_account_final_verification",
+    "production_safe_provider_failure_or_kill_switch_operation_proof",
+    "screenshot_capture_or_store_asset_capture"
+  ],
+  "blockers": [
+    "mobile_login_cannot_reach_scripts",
+    "mobile_refresh_breaks_session",
+    "required_mobile_microphone_cannot_record_or_recover_safely",
+    "required_mobile_audio_playback_cannot_start_after_user_gesture",
+    "five_slot_management_cannot_free_slot_and_recreate_script",
+    "progress_breaks_after_mobile_record_evaluate_or_script_delete_recreate",
+    "privacy_terms_support_account_deletion_routes_do_not_load",
+    "public_copy_implies_actual_deletion_completed",
+    "evidence_requires_private_identifier_or_raw_data"
+  ],
+  "store_claim_safety": {
+    "guaranteed_improvement_claim_allowed": false,
+    "perfect_pronunciation_assessment_claim_allowed": false,
+    "medical_or_institutional_claim_allowed": false,
+    "brush_up_v1_claim_allowed": false,
+    "voice_clone_improvement_v1_claim_allowed": false,
+    "best_take_provider_submission_v1_claim_allowed": false,
+    "actual_deletion_complete_before_proof_claim_allowed": false
+  },
+  "redaction_policy": {
+    "full_email_recorded": false,
+    "full_auth_user_id_recorded": false,
+    "token_recorded": false,
+    "cookie_recorded": false,
+    "storage_object_key_recorded": false,
+    "storage_full_path_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_recorded": false,
+    "raw_provider_response_recorded": false,
+    "provider_id_recorded": false,
+    "secret_recorded": false,
+    "env_value_recorded": false
+  },
+  "non_execution_boundary": {
+    "mobile_qa_run_started": false,
+    "actual_deletion_started": false,
+    "store_console_started": false,
+    "screenshot_capture_started": false,
+    "capacitor_started": false,
+    "provider_api_started": false,
+    "env_dashboard_operation_started": false
+  },
+  "next_action": "Human can run the mobile browser QA using this checklist, then record safe PASS/FAIL/BLOCKED evidence without raw identifiers or screenshots unless a later gate approves capture."
+}

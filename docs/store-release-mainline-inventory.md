@@ -274,6 +274,12 @@ Goal: refresh the pre-submission QA checklist after Gate 0 auth recovery, Gate 4
 
 Status: refresh ready. The updated checklist separates clean demo account, reviewer account, and disposable account scopes; adds auth callback regression, five-slot management, script deletion/recreation, progress continuity, account deletion request / typed confirmation / safe summary, privacy / terms / support / footer copy, provider notice, Store claim safety, mobile browser, reviewer flow, and Store data forms. Actual deletion proof and Storage cleanup actual proof remain Store-submission blockers unless separately approved or explicitly accepted. This refresh did not run QA, target accounts, execute deletion, operate Store Console, capture screenshots, introduce Capacitor, or change provider/env/dashboard state.
 
+### Mobile Browser QA Plan
+
+Goal: prepare human-run mobile browser QA for iPhone Safari, iPhone Chrome, and Android Chrome before screenshots, Capacitor, Store Console, or destructive account deletion work.
+
+Status: plan ready. The checklist covers login / logout / magic link, Home / Scripts, five-slot management, script creation, Listen audio playback, Record microphone / upload, Review saved recording playback, Progress, Settings, Privacy / Terms / Support / Account deletion, small-screen layout, Safari / Chrome differences, provider/upload failure copy, and Store claim safety. Evidence must use safe PASS / FAIL / BLOCKED / human_required fields only. This plan did not run mobile QA, send magic links, log into reviewer accounts, capture screenshots, operate Store Console, introduce Capacitor, call providers, change env/dashboard state, or execute actual deletion / cleanup.
+
 ### Gate 5b: Store Metadata / Reviewer Instructions / Privacy Draft Mapping
 
 Goal: prepare human-review-required drafts for Store metadata, reviewer instructions, App Privacy mapping, and Google Data Safety mapping that match the v1 feature set without Brush-up.
