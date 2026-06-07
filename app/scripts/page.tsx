@@ -7,10 +7,9 @@ import { getCurrentUser } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DeleteScriptButton } from "@/components/scripts/delete-script-button";
 import { getProgressOverview, type ScriptProgressItem } from "@/services/progress";
+import { MAX_PRACTICE_SLOTS } from "@/services/scripts/scripts.service";
 import { getTranscriptionProviderStatus } from "@/services/transcription";
 import { getVoiceSetupState } from "@/services/voice";
-
-const MAX_VISIBLE_PRACTICES = 5;
 
 function getVoiceReady(input: {
   providerSupported: boolean;
@@ -95,7 +94,7 @@ export default async function ScriptsPage() {
   const transcriptionStatus = getTranscriptionProviderStatus();
   const canRecord = transcriptionStatus.supported;
   const scripts = overview.scripts;
-  const visibleScripts = scripts.slice(0, MAX_VISIBLE_PRACTICES);
+  const visibleScripts = scripts.slice(0, MAX_PRACTICE_SLOTS);
   const hiddenScriptCount = Math.max(0, scripts.length - visibleScripts.length);
   const candidateScript = pickScriptsLaunchCandidate(scripts, canRecord);
   const voiceReady = getVoiceReady({
@@ -110,8 +109,8 @@ export default async function ScriptsPage() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
           <div>
             <div aria-hidden="true" className="mb-5 flex max-w-xs gap-2">
-              {[0, 1, 2, 3, 4].map((slot) => (
-                <span key={slot} className={`h-2 flex-1 rounded-full ${slot < Math.min(scripts.length, MAX_VISIBLE_PRACTICES) ? "bg-[var(--control-panel)]" : "bg-[rgba(45,38,31,0.14)]"}`} />
+              {Array.from({ length: MAX_PRACTICE_SLOTS }, (_, slot) => (
+                <span key={slot} className={`h-2 flex-1 rounded-full ${slot < Math.min(scripts.length, MAX_PRACTICE_SLOTS) ? "bg-[var(--control-panel)]" : "bg-[rgba(45,38,31,0.14)]"}`} />
               ))}
             </div>
             <p className="text-sm font-semibold text-[var(--studio-accent-strong)]">1分ストック</p>
@@ -120,7 +119,7 @@ export default async function ScriptsPage() {
           </div>
           <div className="rounded-[1.75rem] border border-[var(--line-dark)] bg-[var(--control-panel)] p-6 text-[var(--cta-primary-text)] shadow-[0_18px_44px_rgba(24,23,34,0.22)]">
             <p className="text-sm font-semibold text-[rgba(255,241,221,0.78)]">棚の空き</p>
-            <p className="mt-2 text-4xl font-semibold tracking-tight text-[var(--cta-primary-text)]">1分ストック {Math.min(scripts.length, MAX_VISIBLE_PRACTICES)} / {MAX_VISIBLE_PRACTICES}</p>
+            <p className="mt-2 text-4xl font-semibold tracking-tight text-[var(--cta-primary-text)]">1分ストック {Math.min(scripts.length, MAX_PRACTICE_SLOTS)} / {MAX_PRACTICE_SLOTS}</p>
             <p className="mt-1 text-sm leading-6 text-[rgba(255,241,221,0.68)]">
               {scripts.length === 0 ? "まず1テイク用の1本を作ります。" : hiddenScriptCount > 0 ? `表示は5個まで。ほか ${hiddenScriptCount} 件は絞っています。` : "5本まで置けます。"}
             </p>
@@ -130,7 +129,7 @@ export default async function ScriptsPage() {
           <p className="text-sm leading-6 text-ink-700">
             {scripts.length > 0 ? "今ある1分から選びます。" : "まずは新しい1分を作ります。"}
           </p>
-          {scripts.length < MAX_VISIBLE_PRACTICES ? (
+          {scripts.length < MAX_PRACTICE_SLOTS ? (
             <Link href="/scripts/new" className="inline-flex w-full justify-center rounded-2xl bg-[var(--cta-primary-bg)] px-5 py-4 text-[var(--cta-primary-text)] shadow-[0_12px_28px_rgba(24,23,34,0.18)] transition hover:opacity-90 sm:w-auto">
               新しい1分を作る
             </Link>

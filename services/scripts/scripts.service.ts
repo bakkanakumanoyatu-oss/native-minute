@@ -10,6 +10,8 @@ type PostgrestErrorLike = { message: string };
 
 type ScriptSingleResult = Promise<{ data: ScriptRow; error: PostgrestErrorLike | null }>;
 
+export const MAX_PRACTICE_SLOTS = 5;
+
 type ScriptInsertBuilder = {
   select(columns?: string): {
     single(): ScriptSingleResult;
@@ -69,6 +71,12 @@ export async function getScript(client: AppSupabaseClient, userId: string, scrip
 }
 
 export async function createScript(client: AppSupabaseClient, userId: string, input: CreateScriptInput) {
+  const existingScripts = await listScripts(client, userId);
+
+  if (existingScripts.length >= MAX_PRACTICE_SLOTS) {
+    throw new AppError(409, `1分ストックは最大${MAX_PRACTICE_SLOTS}本です。不要な練習を削除してから追加してください。`);
+  }
+
   const scriptsTable: Database["public"]["Tables"]["scripts"]["Insert"] = {
     user_id: userId,
     title: input.title,

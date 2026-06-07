@@ -5,7 +5,7 @@ import { getScriptListenPath } from "@/lib/script-routes";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { NewScriptWorkspace } from "@/components/scripts/new-script-workspace";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getScript } from "@/services/scripts/scripts.service";
+import { getScript, listScripts, MAX_PRACTICE_SLOTS } from "@/services/scripts/scripts.service";
 import { scriptIdSchema } from "@/schemas/script";
 
 type PageProps = {
@@ -24,8 +24,12 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
   const sourceScriptId = typeof searchParams?.from === "string" ? searchParams.from : null;
   const parsedSourceId = sourceScriptId ? scriptIdSchema.safeParse(sourceScriptId) : null;
   const supabase = createSupabaseServerClient();
-  const sourceScript = parsedSourceId?.success ? await getScript(supabase, user.id, parsedSourceId.data) : null;
+  const [sourceScript, scripts] = await Promise.all([
+    parsedSourceId?.success ? getScript(supabase, user.id, parsedSourceId.data) : Promise.resolve(null),
+    listScripts(supabase, user.id)
+  ]);
   const sourceScriptMissing = Boolean(sourceScriptId) && !sourceScript;
+  const isFull = scripts.length >= MAX_PRACTICE_SLOTS;
   const initialValues = sourceScript
     ? {
         title: `${sourceScript.title} の複製`,
@@ -58,7 +62,20 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
         ) : null}
       </div>
       <div className="p-6 sm:p-8">
-        <NewScriptWorkspace initialValues={initialValues} sourceTitle={sourceScript?.title ?? null} />
+        {isFull ? (
+          <div className="rounded-[1.75rem] border border-[var(--line-inset)] bg-[var(--coach-note)] p-5 text-sm leading-6 text-ink-700 shadow-[var(--shadow-studio-soft)] sm:p-6">
+            <p className="text-xs font-semibold text-ink-500">1分ストック {Math.min(scripts.length, MAX_PRACTICE_SLOTS)} / {MAX_PRACTICE_SLOTS}</p>
+            <h2 className="mt-2 text-2xl font-semibold text-ink-900">5本あります。整理してから追加できます。</h2>
+            <p className="mt-3">
+              新しい練習を作るには、1分ストックで不要な練習を削除して空きを作ってください。削除した練習は一覧と進捗から外れます。
+            </p>
+            <Link href="/scripts" className="mt-5 inline-flex rounded-2xl bg-[var(--cta-primary-bg)] px-5 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
+              1分ストックを整理する
+            </Link>
+          </div>
+        ) : (
+          <NewScriptWorkspace initialValues={initialValues} sourceTitle={sourceScript?.title ?? null} />
+        )}
       </div>
     </section>
   );

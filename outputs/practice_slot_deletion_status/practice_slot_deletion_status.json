@@ -1,0 +1,75 @@
+{
+  "report": "practice_slot_deletion_status",
+  "recorded_at": "2026-06-07",
+  "status": "WARN_WITH_MINIMAL_HARDENING_APPLIED",
+  "scope": {
+    "practice_script_slot_deletion_checked": true,
+    "account_deletion_touched": false,
+    "actual_account_deletion_executed": false,
+    "db_schema_migration_changed": false,
+    "provider_cleanup_executed": false,
+    "storage_cleanup_executed": false,
+    "store_console_operated": false
+  },
+  "current_behavior": {
+    "max_practice_slots": 5,
+    "scripts_page_shows_delete_action": true,
+    "delete_confirmation_ui_exists": true,
+    "delete_endpoint": "DELETE /api/scripts/[id]",
+    "delete_semantics": "hard_delete_scripts_row",
+    "soft_delete_or_archive": false,
+    "slot_reopens_after_delete": true,
+    "new_script_after_delete": true,
+    "progress_reads_current_scripts_only": true
+  },
+  "hardening_applied": {
+    "server_side_create_limit": true,
+    "scripts_new_full_state": true,
+    "shared_slot_limit_constant": true
+  },
+  "related_data_handling": {
+    "script_audios_rows": "cascade_via_script_id",
+    "takes_rows": "cascade_via_script_id",
+    "weak_words_rows": "cascade_via_take_id",
+    "coach_feedback_rows": "cascade_via_take_id",
+    "saved_model_audio_rows": "cascade_via_script_id_or_script_audio_id",
+    "saved_best_take_rows": "cascade_via_script_id_or_take_id",
+    "storage_objects": "not_removed_by_script_delete_service",
+    "progress_after_delete": "deleted_script_absent_because_progress_overview_lists_current_scripts"
+  },
+  "ownership_safety": {
+    "script_list_scoped_by_user_id": true,
+    "script_get_update_delete_scoped_by_user_id": true,
+    "route_requires_current_user": true,
+    "rls_scripts_crud_own_present": true,
+    "related_read_paths_scoped_by_user_or_owned_script": true
+  },
+  "warnings": [
+    "script deletion is hard delete, not archive/soft-delete",
+    "storage objects referenced by recordings or script audio are not removed by this practice-slot delete path",
+    "existing accounts with more than five scripts from older behavior may still have hidden scripts beyond the first five",
+    "existing over-limit accounts may need a separate one-time cleanup or UI handling decision"
+  ],
+  "production_human_smoke_checklist": [
+    "open /scripts with fewer than five scripts and confirm new script button is visible",
+    "create scripts until five slots are full",
+    "confirm /scripts/new shows full-state guidance when five slots exist",
+    "delete an unnecessary script from the Scripts card after confirmation UI",
+    "confirm /scripts count drops and an empty slot is available",
+    "create a new script and confirm it appears in /scripts and /progress",
+    "confirm deleted script no longer appears in /scripts or /progress",
+    "confirm latest / best / progress for remaining scripts still render",
+    "confirm other user data is not visible or affected"
+  ],
+  "redaction": {
+    "full_email_recorded": false,
+    "full_user_id_recorded": false,
+    "storage_full_path_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_value_recorded": false,
+    "secret_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_recorded": false
+  }
+}
