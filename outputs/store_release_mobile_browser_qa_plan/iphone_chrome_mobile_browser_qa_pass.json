@@ -1,0 +1,67 @@
+{
+  "report": "iphone_chrome_mobile_browser_qa_pass",
+  "recorded_at": "2026-06-07",
+  "status": "PASS",
+  "qa_type": "lightweight_mobile_browser_qa",
+  "environment": "production_web_mobile_browser",
+  "device_family": "iphone",
+  "browser": "chrome",
+  "account_context": "clean_demo",
+  "reviewer": "human_project_owner",
+  "results": {
+    "login": "PASS",
+    "scripts": "PASS",
+    "listen_audio": "PASS",
+    "record_microphone_upload": "PASS",
+    "review_playback": "PASS",
+    "progress": "PASS",
+    "settings_legal_pages": "PASS"
+  },
+  "notes": {
+    "concerns": "none",
+    "raw_private_data_recorded": false,
+    "screenshot_captured": false
+  },
+  "android_chrome_status": {
+    "status": "human_required_later",
+    "reason": "device_unavailable",
+    "pass_claimed": false
+  },
+  "safety_boundaries": {
+    "actual_account_deletion_executed": false,
+    "supabase_auth_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "db_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "store_console_operated": false,
+    "app_icon_created": false,
+    "capacitor_started": false,
+    "provider_api_called_by_codex": false,
+    "env_or_dashboard_changed": false,
+    "reviewer_account_relogin_attempted": false,
+    "magic_link_resent_by_codex": false
+  },
+  "redaction": {
+    "full_email_recorded": false,
+    "full_auth_user_id_recorded": false,
+    "token_recorded": false,
+    "cookie_recorded": false,
+    "storage_object_key_recorded": false,
+    "storage_full_path_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_recorded": false,
+    "raw_provider_response_recorded": false,
+    "provider_id_recorded": false,
+    "secret_recorded": false,
+    "env_value_recorded": false
+  },
+  "store_claim_safety": {
+    "guaranteed_improvement_claim_observed": false,
+    "perfect_pronunciation_assessment_claim_observed": false,
+    "medical_or_institutional_claim_observed": false,
+    "brush_up_v1_claim_observed": false,
+    "voice_clone_improvement_v1_claim_observed": false,
+    "actual_deletion_complete_claim_observed": false
+  },
+  "next_action": "Run Android Chrome mobile browser QA later when an Android device is available."
+}

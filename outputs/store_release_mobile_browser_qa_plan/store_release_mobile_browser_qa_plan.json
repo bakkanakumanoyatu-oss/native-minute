@@ -1,7 +1,7 @@
 {
   "report": "store_release_mobile_browser_qa_plan",
   "recorded_at": "2026-06-07",
-  "status": "plan_ready_with_iphone_safari_pass",
+  "status": "plan_ready_with_iphone_safari_and_chrome_pass_android_deferred",
   "scope": {
     "docs_outputs_only": true,
     "mobile_qa_executed": false,
@@ -50,6 +50,39 @@
       "screenshot_captured": false,
       "capacitor_started": false,
       "redaction_status": "PASS"
+    },
+    {
+      "evidence_file": "outputs/store_release_mobile_browser_qa_plan/iphone_chrome_mobile_browser_qa_pass.json",
+      "status": "PASS",
+      "qa_type": "lightweight_mobile_browser_qa",
+      "environment": "production_web_mobile_browser",
+      "device_family": "iphone",
+      "browser": "chrome",
+      "account_context": "clean_demo",
+      "results": {
+        "login": "PASS",
+        "scripts": "PASS",
+        "listen_audio": "PASS",
+        "record_microphone_upload": "PASS",
+        "review_playback": "PASS",
+        "progress": "PASS",
+        "settings_legal_pages": "PASS"
+      },
+      "concerns": "none",
+      "actual_deletion_executed": false,
+      "store_console_operated": false,
+      "screenshot_captured": false,
+      "capacitor_started": false,
+      "redaction_status": "PASS"
+    }
+  ],
+  "deferred_mobile_targets": [
+    {
+      "target": "android_chrome",
+      "status": "human_required_later",
+      "reason": "device_unavailable",
+      "pass_claimed": false,
+      "next_action": "run_android_chrome_mobile_browser_qa_when_device_available"
     }
   ],
   "device_matrix": [
@@ -90,7 +123,7 @@
         "audio_playback",
         "small_screen_layout"
       ],
-      "status": "human_required"
+      "status": "human_required_later_device_unavailable"
     },
     {
       "target": "desktop_responsive_fallback",

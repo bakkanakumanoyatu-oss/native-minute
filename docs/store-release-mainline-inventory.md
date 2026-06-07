@@ -282,6 +282,8 @@ Status: plan ready. The checklist covers login / logout / magic link, Home / Scr
 
 Human QA update: iPhone Safari production mobile browser QA is `PASS` with a clean demo account context. Login, scripts, five-slot management, script creation, listen audio, record microphone / upload, review playback, progress, and settings / legal pages passed with no concerns. Actual deletion, Store Console, screenshots, Capacitor, provider API calls by Codex, env/dashboard changes, and cleanup operations were not performed.
 
+Human QA update: iPhone Chrome lightweight production mobile QA is also `PASS` for login, scripts, listen audio, record microphone / upload, review playback, progress, and settings / legal pages with no concerns. Android Chrome is still `human_required_later / device_unavailable`; no Android Chrome PASS is claimed.
+
 ### Gate 5b: Store Metadata / Reviewer Instructions / Privacy Draft Mapping
 
 Goal: prepare human-review-required drafts for Store metadata, reviewer instructions, App Privacy mapping, and Google Data Safety mapping that match the v1 feature set without Brush-up.

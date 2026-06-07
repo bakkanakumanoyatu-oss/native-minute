@@ -1,6 +1,6 @@
 # Store Release Mobile Browser QA Plan
 
-Status: `plan_ready_with_iphone_safari_pass`
+Status: `plan_ready_with_iphone_safari_and_chrome_pass_android_deferred`
 
 This plan prepares mobile browser QA for the v1 Store release path. It is a checklist and evidence template only.
 
@@ -28,6 +28,25 @@ Human-run production mobile QA on iPhone Safari passed with a clean demo account
 | notes | `none` |
 
 The run did not execute actual deletion, Auth deletion, Storage deletion, DB cleanup, provider cleanup, Store Console work, screenshot capture, app icon creation, Capacitor work, provider API calls by Codex, env/dashboard operation, reviewer relogin, or magic-link resend by Codex.
+
+## Human QA Result: iPhone Chrome Lightweight
+
+Status: `PASS`
+
+Human-run production mobile lightweight QA on iPhone Chrome passed with the same safe mobile-browser boundary as iPhone Safari.
+
+| Area | Result |
+| --- | --- |
+| login | `PASS` |
+| scripts | `PASS` |
+| listen audio | `PASS` |
+| record microphone / upload | `PASS` |
+| review playback | `PASS` |
+| progress | `PASS` |
+| settings / legal pages | `PASS` |
+| notes | `none` |
+
+Android Chrome remains `human_required_later` because an Android device is currently unavailable. This is not recorded as PASS and should be tested later on a real Android Chrome device or approved remote device.
 
 ## Scope
 
