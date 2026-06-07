@@ -1,0 +1,242 @@
+{
+  "gate": "4n",
+  "title": "Account deletion actual proof approval packet",
+  "recorded_at": "2026-06-07",
+  "status": "APPROVAL_PACKET_READY_NOT_APPROVED_FOR_ACTUAL_DELETION",
+  "scope": {
+    "docs_outputs_only": true,
+    "actual_account_deletion_executed": false,
+    "supabase_auth_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "db_destructive_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "provider_api_call_executed": false,
+    "env_dashboard_operation_executed": false,
+    "store_console_operation_executed": false,
+    "screenshot_capture_executed": false,
+    "capacitor_started": false,
+    "db_schema_migration_changed": false,
+    "api_or_service_logic_changed": false,
+    "reviewer_account_relogin_attempted": false,
+    "magic_link_resent": false
+  },
+  "eligible_target": {
+    "safe_alias": "plus_delete_test_account",
+    "disposable_account_only": true,
+    "real_user_account_allowed": false,
+    "support_account_allowed": false,
+    "demo_account_allowed": false,
+    "reviewer_account_allowed": false,
+    "target_ambiguity_allowed": false
+  },
+  "available_evidence": {
+    "gate4h_safe_dry_run_proof": {
+      "status": "PASS",
+      "human_observed": true,
+      "account_deletion_request_created": true,
+      "typed_confirmation_completed": true,
+      "destructive_actions_called": false,
+      "blockers": []
+    },
+    "gate4m_storage_cleanup_readiness": {
+      "status": "READY_FOR_SAFE_PROOF_REVIEW_ACTUAL_CLEANUP_PROOF_STILL_BLOCKER",
+      "storage_cleanup_status": "not_needed",
+      "listed": 0,
+      "known": 0,
+      "storage_categories": [
+        "recordings",
+        "script_audios",
+        "voice_samples",
+        "voice_consents"
+      ]
+    }
+  },
+  "possible_actual_proof_stages_after_future_approval": [
+    "provider_cleanup",
+    "storage_cleanup",
+    "db_cleanup",
+    "supabase_auth_deletion",
+    "post_delete_verification"
+  ],
+  "execution_order_principle": [
+    {
+      "stage": "provider_cleanup",
+      "next_stage_allowed_only_when": [
+        "succeeded",
+        "not_needed"
+      ]
+    },
+    {
+      "stage": "storage_cleanup",
+      "next_stage_allowed_only_when": [
+        "succeeded",
+        "not_needed"
+      ]
+    },
+    {
+      "stage": "db_cleanup",
+      "next_stage_allowed_only_when": [
+        "succeeded",
+        "not_needed"
+      ]
+    },
+    {
+      "stage": "supabase_auth_deletion",
+      "proof_complete_only_when": [
+        "succeeded",
+        "explicitly_accepted_not_needed"
+      ]
+    },
+    {
+      "stage": "post_delete_verification",
+      "records": "safe_status_and_count_evidence_only"
+    }
+  ],
+  "stop_points": {
+    "provider_cleanup": {
+      "stop_after_status": [
+        "succeeded",
+        "not_needed",
+        "blocked",
+        "failed",
+        "manual_required"
+      ],
+      "continue_condition": "succeeded_or_not_needed"
+    },
+    "storage_cleanup": {
+      "stop_after_status": [
+        "succeeded",
+        "not_needed",
+        "blocked",
+        "failed",
+        "manual_required"
+      ],
+      "continue_condition": "succeeded_or_not_needed",
+      "do_not_record": [
+        "full Storage path",
+        "object key",
+        "signed URL",
+        "raw Storage error",
+        "private audio data"
+      ]
+    },
+    "db_cleanup": {
+      "stop_after_status": [
+        "succeeded",
+        "not_needed",
+        "blocked",
+        "failed",
+        "manual_required"
+      ],
+      "continue_condition": "succeeded_or_not_needed",
+      "do_not_record": [
+        "row id",
+        "script text",
+        "transcript body",
+        "coach feedback body",
+        "raw metadata",
+        "full user id"
+      ]
+    },
+    "supabase_auth_deletion": {
+      "stop_after_status": [
+        "succeeded",
+        "not_needed",
+        "blocked",
+        "failed",
+        "manual_required"
+      ],
+      "continue_condition": "succeeded_or_explicitly_accepted_not_needed",
+      "do_not_record": [
+        "auth raw payload",
+        "session details",
+        "token",
+        "cookie",
+        "full identifier"
+      ]
+    },
+    "post_delete_verification": {
+      "records": "safe_status_and_count_outcomes_only",
+      "does_not_include": [
+        "login retry",
+        "magic link resend",
+        "dashboard edit",
+        "provider API call",
+        "Store Console operation",
+        "screenshot capture"
+      ]
+    }
+  },
+  "human_confirmation_required_before_approval": [
+    "target account is plus_delete_test_account",
+    "target is not a real user account",
+    "target is not the support account",
+    "target is not the demo account",
+    "target is not the reviewer account",
+    "account deletion request has been created",
+    "typed confirmation has been completed",
+    "safe dry-run summary is PASS",
+    "Storage cleanup readiness is confirmed",
+    "provider cleanup dry-run coverage is sufficient",
+    "Storage cleanup dry-run covers all four v1 buckets",
+    "DB cleanup dry-run coverage is sufficient",
+    "Auth deletion dry-run coverage is sufficient",
+    "operator and reviewer are identified by role only in proof artifacts",
+    "raw identifiers and private data will not be recorded",
+    "rollback limitations are understood",
+    "Store/legal owner accepts this as a destructive disposable-account proof"
+  ],
+  "approval_phrase": {
+    "phrase": "I APPROVE ACTUAL DELETION FOR DISPOSABLE ACCOUNT ONLY",
+    "defined_for_future_gate": true,
+    "provided_in_this_gate": false,
+    "approval_granted_in_this_gate": false
+  },
+  "do_not_execute_if": [
+    "target account is ambiguous",
+    "target could be a real user account",
+    "target could be the support account",
+    "target could be the demo account",
+    "target could be the reviewer account",
+    "disposable account safe alias is missing or disputed",
+    "authenticated disposable session or server-side request resolution is missing",
+    "account deletion request is missing",
+    "typed confirmation is missing",
+    "safe dry-run summary is not PASS",
+    "provider, Storage, DB, or Auth dry-run coverage is incomplete",
+    "Storage dry-run is blocked",
+    "missing known Storage object count is greater than 0",
+    "provider cleanup is not succeeded or not_needed before Storage cleanup",
+    "actual target counts differ from latest dry-run counts",
+    "proof would require recording raw identifiers or private data",
+    "DB schema/migration, Auth policy, Storage policy, or ownership-boundary changes are needed",
+    "human has not explicitly provided the approval phrase in a later gate"
+  ],
+  "target_ambiguity_scan": {
+    "safe_alias_only": true,
+    "full_email_recorded": false,
+    "full_user_id_recorded": false,
+    "support_demo_reviewer_accounts_excluded": true,
+    "approval_phrase_not_provided": true
+  },
+  "redaction": {
+    "full_email_recorded": false,
+    "full_user_id_recorded": false,
+    "full_storage_path_recorded": false,
+    "storage_object_key_recorded": false,
+    "signed_url_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_value_recorded": false,
+    "secret_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_recorded": false,
+    "provider_voice_id_recorded": false,
+    "raw_db_row_identifier_recorded": false
+  },
+  "next_safe_step": {
+    "gate": "future_destructive_approval_gate",
+    "allowed_now": false,
+    "description": "A human may later provide the approval phrase and target confirmation in a separate destructive gate. Until then, actual deletion remains blocked."
+  }
+}
