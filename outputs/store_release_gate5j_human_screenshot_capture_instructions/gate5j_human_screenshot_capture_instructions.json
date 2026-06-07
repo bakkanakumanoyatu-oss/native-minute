@@ -1,0 +1,223 @@
+{
+  "gate": "5j",
+  "report": "human_screenshot_capture_instructions",
+  "recorded_at": "2026-06-07",
+  "status": "instruction_pack_ready_capture_not_started",
+  "internal_review_candidate_instructions_only": true,
+  "final_store_screenshot": false,
+  "scope": {
+    "screenshot_captured": false,
+    "screenshot_files_created": 0,
+    "image_generated": false,
+    "app_icon_created": false,
+    "store_console_operated": false,
+    "app_store_connect_operated": false,
+    "google_play_console_operated": false,
+    "capacitor_started": false,
+    "testflight_started": false,
+    "google_closed_testing_started": false,
+    "actual_account_deletion_executed": false,
+    "supabase_auth_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "db_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "provider_api_called": false,
+    "env_or_dashboard_changed": false,
+    "reviewer_account_relogin_attempted": false,
+    "magic_link_resent": false
+  },
+  "inputs": {
+    "gate_5h_preflight": "complete_pushed",
+    "gate_5i_internal_capture_attempt": "blocked_no_authenticated_clean_demo_session_pushed",
+    "iphone_safari_mobile_qa": "PASS",
+    "iphone_chrome_lightweight_mobile_qa": "PASS",
+    "android_chrome_mobile_qa": "human_required_later_device_unavailable",
+    "app_name_candidate": "Native Minutes",
+    "subtitle_candidate": "1分間のナチュラル発音トレーニング",
+    "demo_script_candidate": "human_confirmed_claim_safe",
+    "support_privacy_deletion_urls": "human_check_PASS"
+  },
+  "account_context": {
+    "clean_demo_account": {
+      "safe_alias": "plus_demo_account",
+      "use_for_human_capture": true,
+      "full_email_recorded": false
+    },
+    "reviewer_account": {
+      "use_for_human_capture": false,
+      "status": "verification_deferred"
+    },
+    "delete_test_account": {
+      "use_for_human_capture": false,
+      "status": "deletion_proof_only"
+    },
+    "real_or_personal_account": {
+      "use_for_human_capture": false,
+      "status": "blocked"
+    }
+  },
+  "demo_script": {
+    "status": "human_confirmed_candidate",
+    "text": "Today, I will practice speaking clearly and confidently for one minute. I want to improve my pronunciation, rhythm, and fluency little by little. I will slow down, breathe naturally, and focus on each word. Even small progress matters, and I can become more comfortable each time I practice.",
+    "contains_personal_data": false,
+    "copyright_risk": false,
+    "brush_up_v1_claim": false,
+    "voice_clone_improvement_v1_claim": false,
+    "guaranteed_outcome_claim": false
+  },
+  "before_capture": [
+    "use_iphone_portrait_orientation",
+    "sign_in_with_clean_demo_account_before_capture",
+    "do_not_capture_login_email_magic_link_inbox_or_callback_url",
+    "hide_notifications",
+    "close_mail_messages_password_manager_and_unrelated_tabs",
+    "use_clean_browser_tab_or_session",
+    "avoid_browser_chrome_or_url_bar_when_it_would_show_private_context",
+    "confirm_demo_account_has_no_private_visible_data",
+    "use_only_human_confirmed_demo_script",
+    "treat_all_candidates_as_internal_review_only"
+  ],
+  "minimum_screenshot_steps": [
+    {
+      "order": 1,
+      "asset_id": "shot_01_home",
+      "screen": "home_practice_entry",
+      "route_or_action": "open_home_after_login",
+      "what_to_show": "one_minute_practice_entry_and_main_navigation",
+      "safe_caption_candidate": "1分の練習を始める"
+    },
+    {
+      "order": 2,
+      "asset_id": "shot_02_script_creation",
+      "screen": "script_creation",
+      "route_or_action": "open_/scripts/new",
+      "what_to_show": "creating_a_one_minute_english_script_without_private_content",
+      "safe_caption_candidate": "1分英語スクリプトを作る"
+    },
+    {
+      "order": 3,
+      "asset_id": "shot_03_listen",
+      "screen": "listen",
+      "route_or_action": "open_demo_script_listen_screen",
+      "what_to_show": "model_audio_listen_first_practice_controls_and_readable_script_preview",
+      "safe_caption_candidate": "お手本を聞く"
+    },
+    {
+      "order": 4,
+      "asset_id": "shot_04_record",
+      "screen": "record",
+      "route_or_action": "open_demo_script_record_screen",
+      "what_to_show": "recording_entry_microphone_upload_notice_and_provider_notice_without_private_data",
+      "safe_caption_candidate": "自分の発音を録音する"
+    },
+    {
+      "order": 5,
+      "asset_id": "shot_05_review",
+      "screen": "review",
+      "route_or_action": "open_safe_saved_review_for_demo_script",
+      "what_to_show": "score_feedback_and_next_practice_point_without_raw_private_transcript_content",
+      "safe_caption_candidate": "発音・流暢さ・リズムを確認"
+    },
+    {
+      "order": 6,
+      "asset_id": "shot_06_progress",
+      "screen": "progress",
+      "route_or_action": "open_/progress",
+      "what_to_show": "latest_best_continuity_for_safe_demo_script",
+      "safe_caption_candidate": "最新結果とベスト結果を確認"
+    }
+  ],
+  "optional_screenshot_steps": [
+    {
+      "order": 7,
+      "asset_id": "shot_07_scripts",
+      "screen": "scripts_practice_stock",
+      "route_or_action": "open_/scripts",
+      "what_to_show": "five_slot_practice_stock_and_visible_organization_flow_without_private_titles",
+      "safe_caption_candidate": "練習ストックを選ぶ"
+    },
+    {
+      "order": 8,
+      "asset_id": "shot_08_settings",
+      "screen": "settings",
+      "route_or_action": "open_/settings",
+      "what_to_show": "support_privacy_terms_and_account_help_links_without_full_email",
+      "safe_caption_candidate": "設定とサポートを確認"
+    },
+    {
+      "order": 9,
+      "asset_id": "shot_09_support_privacy_deletion",
+      "screen": "privacy_support_deletion",
+      "route_or_action": "open_/privacy_or_/support_or_/support/account-deletion",
+      "what_to_show": "trust_support_path_only_if_copy_is_clean_and_no_deletion_complete_claim_appears",
+      "safe_caption_candidate": "プライバシーとサポート"
+    }
+  ],
+  "do_not_capture": [
+    "full_email_address",
+    "magic_link_email_or_inbox",
+    "auth_callback_url",
+    "auth_token",
+    "cookies",
+    "private_url",
+    "password_manager_or_saved_password_prompts",
+    "raw_transcript_body",
+    "raw_audio_waveform_or_private_audio_that_identifies_a_person",
+    "raw_audio_path",
+    "storage_path",
+    "storage_object_key",
+    "signed_url",
+    "provider_response",
+    "provider_id",
+    "secret_or_env_value",
+    "billing_data",
+    "reviewer_password",
+    "personal_data",
+    "real_user_records",
+    "delete_test_account_data",
+    "actual_deletion_proof_before_it_exists"
+  ],
+  "post_capture_human_checklist": {
+    "asset_id": "required_safe_alias",
+    "screen": "required_safe_screen_label",
+    "device": "iphone_no_serial_number",
+    "browser": "safari_or_chrome_no_private_profile_info",
+    "account_context": "clean_demo_no_email",
+    "caption_candidate": "safe_short_caption",
+    "contains_private_data": false,
+    "contains_browser_private_ui": false,
+    "brush_up_claim_absent": true,
+    "deletion_complete_claim_absent": true,
+    "approved_for_final_store_submission": false,
+    "notes": "safe_summary_only"
+  },
+  "store_claim_safety": {
+    "guaranteed_improvement_claim_allowed": false,
+    "perfect_pronunciation_assessment_claim_allowed": false,
+    "medical_or_institutional_claim_allowed": false,
+    "brush_up_v1_claim_allowed": false,
+    "voice_clone_improvement_v1_claim_allowed": false,
+    "best_take_provider_submission_v1_claim_allowed": false,
+    "actual_deletion_complete_claim_allowed": false,
+    "native_app_claim_before_capacitor_allowed": false
+  },
+  "human_required": [
+    "human_sign_in_to_clean_demo_account",
+    "human_capture_on_iphone",
+    "human_redaction_review_after_capture",
+    "human_layout_and_copy_review_after_capture",
+    "final_store_screenshot_approval_later",
+    "platform_specific_store_requirement_check_later"
+  ],
+  "checks": {
+    "json_parse": "PASS",
+    "redaction_scan": "PASS_do_not_capture_terms_only_no_private_values_recorded",
+    "forbidden_claim_scan": "PASS_forbidden_claims_only_appear_as_do_not_use_guidance",
+    "store_operation_boundary_scan": "PASS",
+    "screenshot_non_execution_scan": "PASS",
+    "destructive_operation_scan": "PASS",
+    "actual_deletion_non_execution_scan": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "next_action": "Human can use this instruction pack to capture iPhone internal review screenshot candidates with the clean demo account. Codex should not send magic links, capture screenshots, operate Store Console, or approve final screenshots in this gate."
+}

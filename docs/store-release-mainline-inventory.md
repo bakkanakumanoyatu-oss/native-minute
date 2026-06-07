@@ -332,6 +332,12 @@ Goal: capture PC-based mobile-width screenshot candidates for internal review on
 
 Status: `BLOCKED: no_authenticated_clean_demo_session`. Codex opened production `/scripts` at a mobile-width viewport, but the in-app browser was not authenticated as the clean demo account and redirected to `/login` with `login_required`. No screenshot candidate image files were created. Minimum set and optional set remain unchanged for rerun. Codex did not send magic links, retry reviewer login, use the delete-test account, operate Store Console, approve final screenshots, introduce Capacitor, execute deletion, call provider APIs, change env/dashboard, or perform DB / Auth / Storage / provider cleanup.
 
+### Gate 5j: Human Screenshot Capture Instructions
+
+Goal: provide a concrete iPhone instruction pack for a human to capture internal review screenshot candidates safely, after Gate 5i could not capture due to no authenticated clean demo session.
+
+Status: instruction pack ready; capture not started. Use the clean demo account context only, never the reviewer or delete-test account. Minimum order is Home / practice entry, Script creation, Listen, Record, Review, and Progress. Optional order is Scripts / practice stock, Settings, and Privacy / Support / Account deletion request. The pack tells the human to hide notifications, avoid mailbox / magic-link / full email / auth callback / browser private UI, use the human-confirmed demo script, avoid Brush-up and completed-deletion claims, and keep every candidate as internal review only until later final Store approval. No screenshots, screenshot files, image generation, Store Console work, app icon creation, Capacitor, provider calls, env/dashboard changes, magic-link resend, reviewer relogin, or actual deletion / cleanup happened.
+
 ### Gate 6: Release QA
 
 Goal: run cross-device, mobile WebView, upload, replay, auth, provider failure, account deletion, support, and monitoring QA before external testing.
