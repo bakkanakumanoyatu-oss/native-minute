@@ -161,6 +161,8 @@ Practice slot management UX follow-up moved the user-facing script delete action
 
 Practice slot management production human smoke is PASS for commit `48dfda2`. The owner confirmed the five-slot full state, sixth-script block, organize-stock link, visible per-card delete action, delete confirmation UI, reopened slot after one script deletion, new script creation after deletion, and intact `/progress`. Account deletion, actual deletion, and Storage cleanup were not performed.
 
+Storage object cleanup boundary planning is captured in `docs/storage-object-cleanup-boundary-plan.md` and `outputs/storage_object_cleanup_boundary_plan/storage_object_cleanup_boundary_plan.json`. Practice slot deletion remains v1 DB-first slot management and does not call Storage remove; this is a warning / future gate unless public copy or Store review requires per-script file deletion. Account deletion remains the user-level destructive path and must cover `recordings`, `script-audios`, `voice-samples`, and `voice-consents` through safe dry-run evidence and a separately approved destructive gate before Store submission. No Storage deletion, actual account deletion, Auth deletion, DB cleanup, provider cleanup, schema/migration, env/dashboard operation, Store Console operation, screenshot capture, or Capacitor work was performed.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation

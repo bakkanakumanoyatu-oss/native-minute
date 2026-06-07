@@ -1,0 +1,101 @@
+{
+  "report": "storage_object_cleanup_boundary_plan",
+  "recorded_at": "2026-06-07",
+  "status": "PLAN_ONLY_NO_DESTRUCTIVE_OPERATION",
+  "scope": {
+    "practice_slot_deletion_reviewed": true,
+    "account_deletion_storage_dry_run_reviewed": true,
+    "storage_object_deletion_executed": false,
+    "actual_account_deletion_executed": false,
+    "auth_deletion_executed": false,
+    "db_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "db_schema_migration_changed": false,
+    "api_or_service_logic_changed": false
+  },
+  "repo_confirmed": {
+    "practice_slot_delete_endpoint": "DELETE /api/scripts/[id]",
+    "practice_slot_delete_requires_current_user": true,
+    "practice_slot_delete_scoped_by_user_id_and_script_id": true,
+    "practice_slot_delete_storage_remove_called": false,
+    "practice_slot_delete_provider_cleanup_called": false,
+    "account_deletion_storage_dry_run_buckets": [
+      "recordings",
+      "scriptAudios",
+      "voiceSamples",
+      "voiceConsents"
+    ],
+    "account_deletion_storage_dry_run_returns_safe_counts_only": true,
+    "account_deletion_actual_storage_cleanup_guarded": true,
+    "account_deletion_order": [
+      "provider_cleanup",
+      "storage_cleanup",
+      "db_cleanup",
+      "supabase_auth_deletion",
+      "post_delete_verification"
+    ]
+  },
+  "storage_objects_that_can_remain_after_practice_slot_delete": [
+    {
+      "bucket": "recordings",
+      "reason": "recording objects are stored in Supabase Storage under user/script ownership and practice slot deletion currently deletes DB rows only"
+    },
+    {
+      "bucket": "script-audios",
+      "reason": "generated model audio objects are app-owned replay assets referenced by script_audios stored_asset before DB rows cascade"
+    }
+  ],
+  "storage_objects_not_directly_script_slot_scoped": [
+    {
+      "bucket": "voice-samples",
+      "policy": "normal voice setup data belongs to user/consent voice setup and should be handled by account deletion or voice-specific revoke/delete, not ordinary script deletion"
+    },
+    {
+      "bucket": "voice-consents",
+      "policy": "consent recording belongs to user voice consent and should be handled by account deletion or consent revoke/delete, not ordinary script deletion"
+    }
+  ],
+  "practice_slot_deletion_policy": {
+    "v1_policy": "db_first_slot_management",
+    "storage_cleanup_in_current_slot_delete_path": "defer",
+    "store_submission_blocker": false,
+    "conditions": [
+      "public copy must not claim that deleting a practice slot permanently removes every related Storage object",
+      "account deletion Storage cleanup must remain available for user-level deletion proof"
+    ],
+    "future_gate_if_needed": "practice_slot_per_script_storage_cleanup_design"
+  },
+  "account_deletion_policy": {
+    "v1_policy": "storage_cleanup_required_in_destructive_account_deletion_gate",
+    "store_submission_blocker": true,
+    "blocker_reason": "actual account deletion proof must cover owned Storage objects before Store submission",
+    "next_gate": "Gate 4m account deletion Storage cleanup proof readiness",
+    "actual_deletion_requires_separate_approval": true
+  },
+  "redaction": {
+    "full_email_recorded": false,
+    "full_user_id_recorded": false,
+    "storage_full_path_recorded": false,
+    "storage_object_key_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_value_recorded": false,
+    "secret_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_recorded": false
+  },
+  "remaining_work": [
+    {
+      "item": "account_deletion_storage_cleanup_proof_readiness",
+      "classification": "before_store_submission_blocker"
+    },
+    {
+      "item": "practice_slot_per_script_storage_cleanup",
+      "classification": "warning_defer_unless_copy_or_store_review_requires"
+    },
+    {
+      "item": "brush_up_specific_storage_cleanup",
+      "classification": "v1_1_deferred"
+    }
+  ]
+}
