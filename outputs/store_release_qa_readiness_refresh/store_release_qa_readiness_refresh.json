@@ -1,0 +1,329 @@
+{
+  "report": "store_release_qa_readiness_refresh",
+  "recorded_at": "2026-06-07",
+  "status": "refresh_ready",
+  "scope": {
+    "docs_outputs_only": true,
+    "qa_executed": false,
+    "account_targeted": false,
+    "actual_account_deletion_executed": false,
+    "supabase_auth_deletion_executed": false,
+    "storage_object_deletion_executed": false,
+    "db_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "store_console_operated": false,
+    "screenshot_captured": false,
+    "app_icon_created": false,
+    "capacitor_started": false,
+    "provider_api_called": false,
+    "env_or_dashboard_changed": false,
+    "reviewer_account_relogin_attempted": false,
+    "magic_link_resent": false
+  },
+  "updated_readiness_inputs": {
+    "gate_0_production_auth_smoke": "PASS",
+    "practice_slot_management_production_smoke": "PASS",
+    "gate_4h_safe_dry_run_proof": "PASS_human_observed_safe_dry_run_summary",
+    "gate_4m_storage_cleanup_proof_readiness": "ready_with_store_blocker",
+    "gate_4n_actual_proof_approval_packet": "packet_ready_not_approved",
+    "account_deletion_public_copy": "polished",
+    "store_asset_readiness_gate_5e_5f_5g": "planning_complete"
+  },
+  "qa_items": [
+    {
+      "area": "auth_callback_regression",
+      "account_context": "clean_demo_account",
+      "environment": "production_web",
+      "checks": [
+        "login_opens",
+        "login_reaches_scripts",
+        "refresh_keeps_session",
+        "logout_new_magic_link_login",
+        "callback_failed_absent",
+        "static_asset_404_chain_absent"
+      ],
+      "status_before_execution": "ready_for_qa"
+    },
+    {
+      "area": "main_loop",
+      "account_context": "clean_demo_account",
+      "environment": "production_web",
+      "checks": [
+        "script_creation",
+        "listen",
+        "record",
+        "evaluate",
+        "review",
+        "progress",
+        "second_take_continuity"
+      ],
+      "status_before_execution": "ready_for_qa"
+    },
+    {
+      "area": "five_slot_management",
+      "account_context": "clean_demo_account",
+      "environment": "production_web",
+      "checks": [
+        "five_slots_full",
+        "sixth_script_blocked",
+        "organize_stock_link",
+        "per_card_delete_action",
+        "delete_confirmation",
+        "slot_reopens_after_delete",
+        "new_script_after_delete",
+        "progress_intact"
+      ],
+      "status_before_execution": "ready_for_qa"
+    },
+    {
+      "area": "practice_script_deletion_safety",
+      "account_context": "clean_demo_account",
+      "environment": "production_web",
+      "checks": [
+        "current_user_boundary",
+        "separate_from_account_deletion",
+        "storage_cleanup_not_implied"
+      ],
+      "status_before_execution": "ready_for_qa_with_storage_warning"
+    },
+    {
+      "area": "account_deletion_request_flow",
+      "account_context": "disposable_account",
+      "environment": "production_web_human_observed_ui",
+      "checks": [
+        "request_created",
+        "typed_confirmation_completed",
+        "safe_summary_visible",
+        "no_raw_identifiers",
+        "actual_deletion_not_run"
+      ],
+      "status_before_execution": "covered_by_gate4h_human_observed_pass"
+    },
+    {
+      "area": "account_deletion_actual_proof",
+      "account_context": "disposable_account_only",
+      "environment": "future_explicit_destructive_gate",
+      "checks": [
+        "provider_cleanup",
+        "storage_cleanup",
+        "db_cleanup",
+        "supabase_auth_deletion",
+        "post_delete_verification"
+      ],
+      "status_before_execution": "blocked_outside_release_qa"
+    },
+    {
+      "area": "privacy_terms_support_footer",
+      "account_context": "none_or_clean_demo_account",
+      "environment": "production_web",
+      "checks": [
+        "privacy_route",
+        "terms_route",
+        "support_route",
+        "account_deletion_route",
+        "footer_links",
+        "current_support_contact",
+        "no_internal_public_copy",
+        "no_deletion_complete_claim"
+      ],
+      "status_before_execution": "ready_for_qa"
+    },
+    {
+      "area": "provider_notice_consent_notice",
+      "account_context": "clean_demo_account",
+      "environment": "production_web",
+      "checks": [
+        "recording_notice",
+        "openai_transcription_notice",
+        "azure_pronunciation_notice",
+        "ai_feedback_learning_aid_notice",
+        "voice_sample_consent_recording_notice",
+        "privacy_terms_support_links"
+      ],
+      "status_before_execution": "ready_for_qa"
+    },
+    {
+      "area": "provider_kill_switch_operation_proof",
+      "account_context": "none",
+      "environment": "human_approved_production_safe_or_local",
+      "checks": [
+        "openai_disabled_before_call",
+        "azure_disabled_before_call",
+        "elevenlabs_disabled_before_call",
+        "storage_upload_disabled_before_upload",
+        "safe_user_facing_recovery",
+        "no_env_value_recording"
+      ],
+      "status_before_execution": "human_required"
+    },
+    {
+      "area": "store_claim_safety",
+      "account_context": "none",
+      "environment": "metadata_screenshot_reviewer_drafts",
+      "checks": [
+        "no_guaranteed_improvement_claim",
+        "no_perfect_assessment_claim",
+        "no_medical_or_institutional_claim",
+        "no_brush_up_v1_claim",
+        "no_voice_clone_improvement_v1_claim",
+        "no_deletion_complete_claim"
+      ],
+      "status_before_execution": "ready_for_review"
+    },
+    {
+      "area": "mobile_browser",
+      "account_context": "clean_demo_account",
+      "environment": "mobile_safari_mobile_chrome",
+      "checks": [
+        "auth",
+        "record",
+        "upload",
+        "protected_replay",
+        "legal_support_routes",
+        "account_deletion_copy_visibility",
+        "audio_recovery"
+      ],
+      "status_before_execution": "human_required"
+    },
+    {
+      "area": "reviewer_flow",
+      "account_context": "reviewer_account",
+      "environment": "production_web",
+      "checks": [
+        "reviewer_login",
+        "main_loop",
+        "settings_support_deletion_request_path",
+        "no_brush_up_v1_claim"
+      ],
+      "status_before_execution": "human_required_deferred"
+    },
+    {
+      "area": "store_data_forms",
+      "account_context": "none",
+      "environment": "store_owner",
+      "checks": [
+        "app_privacy_answers_match_v1",
+        "google_data_safety_answers_match_v1",
+        "deletion_state_disclosed_correctly",
+        "provider_roles_disclosed_correctly"
+      ],
+      "status_before_execution": "human_required"
+    }
+  ],
+  "account_contexts": {
+    "clean_demo_account": {
+      "use_for": [
+        "auth_regression",
+        "main_loop",
+        "five_slot_management",
+        "progress",
+        "screenshot_candidate_flow"
+      ],
+      "do_not_use_for": [
+        "actual_deletion_proof",
+        "reviewer_password_evidence"
+      ]
+    },
+    "reviewer_account": {
+      "use_for": [
+        "reviewer_instructions",
+        "final_reviewer_login_smoke"
+      ],
+      "status": "human_required_deferred",
+      "do_not_use_for": [
+        "disposable_deletion_proof",
+        "provider_cleanup",
+        "internal_operator_proof"
+      ]
+    },
+    "disposable_deletion_account": {
+      "use_for": [
+        "account_deletion_request",
+        "typed_confirmation",
+        "safe_dry_run_summary",
+        "future_actual_proof_if_explicitly_approved"
+      ],
+      "do_not_use_for": [
+        "screenshots",
+        "reviewer_flow",
+        "demo_main_store_flow",
+        "real_user_data"
+      ]
+    }
+  },
+  "blockers": [
+    {
+      "item": "actual_account_deletion_proof_or_explicit_acceptance",
+      "classification": "store_submission_blocker",
+      "reason": "Gate 4h is safe dry-run proof only; Gate 4n approval packet is not approved."
+    },
+    {
+      "item": "storage_cleanup_actual_proof_or_explicit_acceptance",
+      "classification": "store_submission_blocker",
+      "reason": "Gate 4m readiness is ready, but destructive Storage cleanup proof has not run."
+    },
+    {
+      "item": "app_privacy_google_data_safety_final_consistency",
+      "classification": "store_submission_blocker",
+      "reason": "Final Store answers must match implemented behavior and deletion state."
+    }
+  ],
+  "human_required": [
+    "reviewer_account_final_login_verification",
+    "final_support_legal_deletion_copy_approval",
+    "mobile_browser_webview_audio_replay_smoke",
+    "production_safe_kill_switch_operation_proof",
+    "app_privacy_google_data_safety_final_answers",
+    "screenshot_capture_and_redaction_review",
+    "app_icon_and_platform_asset_requirements",
+    "apple_developer_google_play_console_readiness",
+    "google_closed_testing_setup"
+  ],
+  "deferred": [
+    "brush_up_v1_1",
+    "practice_slot_storage_object_cleanup_future_gate",
+    "actual_account_deletion_destructive_gate"
+  ],
+  "recommended_execution_order": [
+    "local_route_smoke_planning_review",
+    "production_web_auth_callback_regression",
+    "clean_demo_account_main_loop",
+    "five_slot_management_script_deletion_recreation",
+    "privacy_terms_support_footer_account_deletion_public_copy",
+    "provider_notice_consent_notice_checks",
+    "provider_kill_switch_operation_proof_after_human_approval",
+    "mobile_browser_smoke",
+    "reviewer_account_smoke_after_verification",
+    "disposable_account_actual_deletion_proof_only_after_future_approval_phrase",
+    "final_store_data_forms_screenshot_asset_release_signoff"
+  ],
+  "redaction_policy": {
+    "full_email_recorded": false,
+    "full_auth_user_id_recorded": false,
+    "token_recorded": false,
+    "cookie_recorded": false,
+    "storage_object_key_recorded": false,
+    "storage_full_path_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_recorded": false,
+    "raw_provider_response_recorded": false,
+    "secret_recorded": false,
+    "env_value_recorded": false
+  },
+  "store_claim_safety": {
+    "guaranteed_improvement_claim_added": false,
+    "perfect_pronunciation_assessment_claim_added": false,
+    "medical_or_institutional_claim_added": false,
+    "brush_up_v1_claim_added": false,
+    "voice_clone_improvement_v1_claim_added": false,
+    "actual_deletion_completed_claim_added": false
+  },
+  "non_destructive_boundary": {
+    "qa_run_started": false,
+    "actual_deletion_started": false,
+    "store_console_started": false,
+    "screenshot_capture_started": false,
+    "capacitor_started": false
+  },
+  "next_action": "Run or record the refreshed QA items only when the required human accounts, Store owner approvals, mobile devices, and destructive-gate decisions are available."
+}

@@ -268,6 +268,12 @@ Goal: plan v1 release QA smoke across local, production Web, mobile browser, rev
 
 Status: plan ready. Gate 5a does not execute QA. Gate 4h safe dry-run proof is now human-observed PASS, while actual deletion proof remains separate and destructive-gate-only. Gate 6 receives mobile/WebView audio risk, Azure final refresh, provider cleanup proof, App Privacy / Data Safety consistency, reviewer flow, Store URLs, production logs redaction, kill switch operation proof, protected replay proof, and final legal/support approval.
 
+### Store Release QA Readiness Refresh
+
+Goal: refresh the pre-submission QA checklist after Gate 0 auth recovery, Gate 4h safe dry-run proof, Gate 4m / 4n deletion readiness, account deletion public copy polish, five-slot management smoke, and Gate 5e / 5f / 5g asset readiness work.
+
+Status: refresh ready. The updated checklist separates clean demo account, reviewer account, and disposable account scopes; adds auth callback regression, five-slot management, script deletion/recreation, progress continuity, account deletion request / typed confirmation / safe summary, privacy / terms / support / footer copy, provider notice, Store claim safety, mobile browser, reviewer flow, and Store data forms. Actual deletion proof and Storage cleanup actual proof remain Store-submission blockers unless separately approved or explicitly accepted. This refresh did not run QA, target accounts, execute deletion, operate Store Console, capture screenshots, introduce Capacitor, or change provider/env/dashboard state.
+
 ### Gate 5b: Store Metadata / Reviewer Instructions / Privacy Draft Mapping
 
 Goal: prepare human-review-required drafts for Store metadata, reviewer instructions, App Privacy mapping, and Google Data Safety mapping that match the v1 feature set without Brush-up.
