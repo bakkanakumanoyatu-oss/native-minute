@@ -159,6 +159,8 @@ Practice slot deletion readiness check is captured in `outputs/practice_slot_del
 
 Practice slot management UX follow-up moved the user-facing script delete action out of the hidden "other actions" area and next to the card's primary practice action as a lower-emphasis "delete this script" control. The existing confirmation UI remains in place. When five slots are full, `/scripts` now offers a clickable "organize stock" link to the script list anchor, and `/scripts/new` returns users to the same management anchor. The five-slot server-side cap, ownership boundary, hard-delete semantics, and Storage-object non-cleanup warning remain unchanged.
 
+Practice slot management production human smoke is PASS for commit `48dfda2`. The owner confirmed the five-slot full state, sixth-script block, organize-stock link, visible per-card delete action, delete confirmation UI, reopened slot after one script deletion, new script creation after deletion, and intact `/progress`. Account deletion, actual deletion, and Storage cleanup were not performed.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation

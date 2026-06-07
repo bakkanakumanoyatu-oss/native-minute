@@ -1,7 +1,7 @@
 {
   "report": "practice_slot_deletion_status",
   "recorded_at": "2026-06-07",
-  "status": "WARN_WITH_MINIMAL_HARDENING_APPLIED",
+  "status": "PASS_PRODUCTION_HUMAN_SMOKE_WITH_KNOWN_STORAGE_CLEANUP_WARNING",
   "scope": {
     "practice_script_slot_deletion_checked": true,
     "account_deletion_touched": false,
@@ -37,6 +37,22 @@
     "scripts_full_state_link": "#practice-stock-list",
     "scripts_new_full_state_link": "/scripts#practice-stock-list",
     "primary_practice_action_remains_stronger_than_delete_action": true
+  },
+  "production_human_smoke": {
+    "status": "PASS",
+    "commit": "48dfda2",
+    "verified_by": "human_project_owner",
+    "five_slots_full_state": "PASS",
+    "sixth_script_create_blocked": "PASS",
+    "organize_stock_link_to_list": "PASS",
+    "per_card_delete_action_discoverable": "PASS",
+    "delete_confirmation_ui": "PASS",
+    "slot_reopened_after_one_script_delete": "PASS",
+    "new_script_created_after_delete": "PASS",
+    "progress_not_broken": "PASS",
+    "account_deletion_touched": false,
+    "actual_account_deletion_executed": false,
+    "storage_cleanup_executed": false
   },
   "related_data_handling": {
     "script_audios_rows": "cascade_via_script_id",
