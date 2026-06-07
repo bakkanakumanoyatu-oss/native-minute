@@ -1,0 +1,150 @@
+{
+  "plan": "store_release_final_copy_polish_plan",
+  "recorded_at": "2026-06-07",
+  "status": "plan_ready_human_legal_required_before_store_submission",
+  "scope": {
+    "planning_only": true,
+    "small_copy_change_allowed_later": true,
+    "large_rewrite_allowed": false,
+    "screenshot_capture_ready": false,
+    "store_submission_ready": false
+  },
+  "surfaces_checked": [
+    "home",
+    "practice_scripts",
+    "script_creation",
+    "listen",
+    "record",
+    "review",
+    "progress",
+    "settings",
+    "privacy",
+    "terms",
+    "support",
+    "account_deletion",
+    "footer_legal_links",
+    "provider_consent_notices"
+  ],
+  "main_findings": [
+    {
+      "area": "main_practice_loop",
+      "status": "mostly_user_facing_copy_ok",
+      "notes": "No major Store-unsafe claim was identified in the practice loop scan."
+    },
+    {
+      "area": "legal_support_settings_account_deletion",
+      "status": "polish_required_before_store_submission",
+      "notes": "Internal planning terms remain visible in public copy and should be removed or reworded before screenshots or Store submission."
+    }
+  ],
+  "remove_or_reword_before_store_submission": [
+    "draft",
+    "candidate",
+    "release candidate draft",
+    "final human approval required",
+    "human_required",
+    "Gate",
+    "smoke",
+    "internal proof",
+    "Store submission blocker",
+    "scaffold",
+    "dry-run",
+    "cleanup",
+    "stage",
+    "guard",
+    "destructive",
+    "provider cleanup",
+    "DB cleanup",
+    "Auth cleanup"
+  ],
+  "keep_internal_only": [
+    "Gate",
+    "smoke",
+    "proof package",
+    "dry-run",
+    "destructive gate",
+    "human_required",
+    "release candidate",
+    "blocker",
+    "provider cleanup",
+    "Storage cleanup",
+    "DB cleanup",
+    "Auth cleanup",
+    "redaction scan",
+    "Store operation boundary"
+  ],
+  "store_claim_safety": {
+    "native_speaker_claim_included": false,
+    "guaranteed_improvement_claim_included": false,
+    "perfect_pronunciation_claim_included": false,
+    "medical_or_institutional_assessment_claim_included": false,
+    "brush_up_v1_claim_included": false,
+    "voice_clone_improvement_v1_claim_included": false,
+    "best_take_provider_submission_v1_claim_included": false,
+    "complete_account_deletion_before_proof_claim_included": false,
+    "native_app_before_capacitor_claim_included": false
+  },
+  "final_copy_polish_checklist": {
+    "before_screenshot_capture": [
+      "remove_public_draft_release_candidate_human_required_labels",
+      "replace_gate_smoke_proof_language_with_user_facing_explanations",
+      "confirm_support_email_and_urls",
+      "confirm_app_name_subtitle_candidates",
+      "confirm_demo_script_claim_safety",
+      "confirm_brush_up_absent_from_v1_public_copy",
+      "confirm_account_deletion_does_not_claim_completion"
+    ],
+    "before_store_submission": [
+      "legal_approval_for_privacy_policy_and_terms",
+      "support_owner_approval_for_support_and_account_deletion_copy",
+      "app_privacy_google_data_safety_match_final_behavior",
+      "reviewer_account_instructions_finalized_without_credentials_in_repo",
+      "actual_deletion_proof_kept_separate_until_explicit_destructive_gate",
+      "release_qa_confirms_no_internal_labels_visible"
+    ]
+  },
+  "human_required": [
+    "final_reviewer_account_login_verification",
+    "support_owner_copy_approval",
+    "release_owner_store_metadata_approval",
+    "app_privacy_google_data_safety_final_answers",
+    "final_screenshot_caption_approval"
+  ],
+  "legal_required": [
+    "privacy_policy_final_wording",
+    "terms_final_wording",
+    "account_deletion_public_copy_if_actual_deletion_proof_is_not_complete",
+    "provider_data_disclosure_wording"
+  ],
+  "recommended_next_step": "small_ui_copy_pass_for_footer_settings_privacy_terms_support_account_deletion_pages",
+  "redaction": {
+    "full_email_recorded": false,
+    "full_user_id_recorded": false,
+    "storage_full_path_recorded": false,
+    "auth_token_recorded": false,
+    "cookie_value_recorded": false,
+    "secret_recorded": false,
+    "env_value_recorded": false,
+    "raw_provider_response_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_recorded": false
+  },
+  "non_execution": {
+    "screenshot_captured": false,
+    "store_console_operated": false,
+    "app_store_connect_operated": false,
+    "google_play_console_operated": false,
+    "capacitor_started": false,
+    "app_icon_created": false,
+    "actual_account_deletion_executed": false,
+    "auth_deletion_executed": false,
+    "storage_deletion_executed": false,
+    "db_cleanup_executed": false,
+    "provider_cleanup_executed": false,
+    "db_schema_migration_changed": false,
+    "env_dashboard_changed": false,
+    "provider_api_called": false,
+    "reviewer_login_retried": false,
+    "magic_link_resent": false
+  }
+}
