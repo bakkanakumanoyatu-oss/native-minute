@@ -69,8 +69,8 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
             <p className="mt-3">
               新しい練習を作るには、1分ストックで不要な練習を削除して空きを作ってください。削除した練習は一覧と進捗から外れます。
             </p>
-            <Link href="/scripts" className="mt-5 inline-flex rounded-2xl bg-[var(--cta-primary-bg)] px-5 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
-              1分ストックを整理する
+            <Link href="/scripts#practice-stock-list" className="mt-5 inline-flex rounded-2xl bg-[var(--cta-primary-bg)] px-5 py-3 text-sm font-semibold text-[var(--cta-primary-text)]">
+              ストックを整理する
             </Link>
           </div>
         ) : (

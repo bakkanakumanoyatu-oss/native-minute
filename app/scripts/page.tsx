@@ -127,16 +127,20 @@ export default async function ScriptsPage() {
         </div>
         <div className="mt-8 flex flex-col gap-3 text-sm font-semibold sm:flex-row sm:items-center">
           <p className="text-sm leading-6 text-ink-700">
-            {scripts.length > 0 ? "今ある1分から選びます。" : "まずは新しい1分を作ります。"}
+            {scripts.length >= MAX_PRACTICE_SLOTS
+              ? "5本あります。不要な台本を削除すると、新しい台本を追加できます。"
+              : scripts.length > 0
+                ? "今ある1分から選びます。"
+                : "まずは新しい1分を作ります。"}
           </p>
           {scripts.length < MAX_PRACTICE_SLOTS ? (
             <Link href="/scripts/new" className="inline-flex w-full justify-center rounded-2xl bg-[var(--cta-primary-bg)] px-5 py-4 text-[var(--cta-primary-text)] shadow-[0_12px_28px_rgba(24,23,34,0.18)] transition hover:opacity-90 sm:w-auto">
               新しい1分を作る
             </Link>
           ) : (
-            <span className="inline-flex w-full justify-center rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-5 py-4 text-ink-500 sm:w-auto">
-              5本あります。整理してから追加
-            </span>
+            <Link href="#practice-stock-list" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-5 py-4 text-ink-800 transition hover:bg-[var(--surface-inset-strong)] sm:w-auto">
+              ストックを整理する
+            </Link>
           )}
         </div>
       </div>
@@ -167,7 +171,7 @@ export default async function ScriptsPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-5">
+        <div id="practice-stock-list" className="scroll-mt-6 grid gap-5">
           {visibleScripts.map((item) => {
             const primaryHref = getCardPrimaryHref(item, { voiceReady, canRecord });
             const primaryLabel = getCardPrimaryLabel(item, { voiceReady, canRecord });
@@ -196,6 +200,7 @@ export default async function ScriptsPage() {
                   <Link href={primaryHref} className="inline-flex w-full justify-center rounded-2xl bg-[var(--cta-primary-bg)] px-5 py-4 text-[var(--cta-primary-text)] shadow-[0_12px_28px_rgba(24,23,34,0.18)] transition hover:opacity-90 sm:w-auto">
                     {primaryLabel}
                   </Link>
+                  <DeleteScriptButton scriptId={item.script.id} scriptTitle={item.script.title} />
                 </div>
                 <details className="mt-4 rounded-2xl border border-[var(--line-subtle)] bg-[rgba(223,197,170,0.58)] px-4 py-3">
                   <summary className="cursor-pointer text-sm font-semibold text-ink-700">その他の操作</summary>
@@ -209,7 +214,6 @@ export default async function ScriptsPage() {
                     <Link href={getDuplicateScriptPath(item.script.id)} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-ink-700">
                       この台本を磨く
                     </Link>
-                    <DeleteScriptButton scriptId={item.script.id} scriptTitle={item.script.title} />
                   </div>
                 </details>
               </article>

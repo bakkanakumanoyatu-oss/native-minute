@@ -216,6 +216,7 @@
 - `voice 設定` に戻る導線は、候補 script が見えている場面ではその script の `listen` に戻る形を優先している。
 - `scripts` は練習候補を選ぶ入口、`progress` は最大5本の練習スロットから成果を選んで見る入口として扱う。
 - 5スロット制の practice / script slot deletion を棚卸しし、`/scripts` の削除導線、確認 UI、`DELETE /api/scripts/[id]`、progress の current scripts 参照を確認した。script 削除は `scripts` row の hard delete で、`script_audios`、`takes`、`weak_words`、`coach_feedback`、保存済みベスト / お手本の DB rows は FK cascade で外れる。録音・お手本音声の Storage object はこの practice-slot delete path では削除しないため、account deletion / storage cleanup とは別扱い。5本上限は server-side create guard と `/scripts/new` の満杯案内でも補強した。
+- 5スロット制の discoverability follow-up として、`/scripts` の各 card で主操作の近くに「この台本を削除」を出し、既存の確認 UI を維持した。5本満杯時の「ストックを整理する」は `/scripts` の一覧 anchor へ移動し、`/scripts/new` からも同じ一覧に戻れる。
 - `setup/voice` は `?next=` が internal path のときだけ保持し、blocked state から戻る設定・管理導線に使う。
 - `/api/uploads/voice-consent` を追加し、同意録音は `voice-consents` bucket の app-owned object として先に保存してから `/api/voice-consent` に参照を渡せる。
 - `setup/voice` / `scripts` / `listen` / `progress` が参照する consent と default voice は、現在の `VOICE_PROVIDER` に一致する row だけを見る。

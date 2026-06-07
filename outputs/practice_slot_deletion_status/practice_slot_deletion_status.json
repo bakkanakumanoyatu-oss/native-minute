@@ -25,7 +25,18 @@
   "hardening_applied": {
     "server_side_create_limit": true,
     "scripts_new_full_state": true,
-    "shared_slot_limit_constant": true
+    "shared_slot_limit_constant": true,
+    "delete_action_discoverability_improved": true,
+    "full_state_management_link_added": true
+  },
+  "ux_follow_up": {
+    "status": "applied",
+    "delete_button_location": "near_primary_script_card_action",
+    "delete_confirmation_ui_preserved": true,
+    "delete_removed_from_other_actions_to_reduce_duplicate_controls": true,
+    "scripts_full_state_link": "#practice-stock-list",
+    "scripts_new_full_state_link": "/scripts#practice-stock-list",
+    "primary_practice_action_remains_stronger_than_delete_action": true
   },
   "related_data_handling": {
     "script_audios_rows": "cascade_via_script_id",

@@ -157,6 +157,8 @@ Account deletion UI received an additional user-facing copy refinement. Public U
 
 Practice slot deletion readiness check is captured in `outputs/practice_slot_deletion_status/practice_slot_deletion_status.json`. `/scripts` has a user-facing delete action with confirmation UI, and `DELETE /api/scripts/[id]` deletes only the current user's script by `user_id + id`. Related DB rows cascade through existing foreign keys, so deleted scripts disappear from `/scripts` and `/progress`; Storage objects for recordings/model audio are not removed by this practice-slot delete path and remain separate from account deletion/storage cleanup. The five-slot rule is now enforced in the server-side create path and `/scripts/new` shows a full-state guidance when five scripts already exist. No account deletion, provider cleanup, storage cleanup, DB schema/migration, env/dashboard operation, Store Console operation, screenshot capture, Capacitor work, or voice provider connection was performed.
 
+Practice slot management UX follow-up moved the user-facing script delete action out of the hidden "other actions" area and next to the card's primary practice action as a lower-emphasis "delete this script" control. The existing confirmation UI remains in place. When five slots are full, `/scripts` now offers a clickable "organize stock" link to the script list anchor, and `/scripts/new` returns users to the same management anchor. The five-slot server-side cap, ownership boundary, hard-delete semantics, and Storage-object non-cleanup warning remain unchanged.
+
 Provider roles:
 
 - ElevenLabs: voice clone and model audio generation
