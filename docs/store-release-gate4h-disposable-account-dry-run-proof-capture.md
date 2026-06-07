@@ -1,12 +1,12 @@
 # Gate 4h Disposable Account Dry-Run Proof Capture
 
-Status: `blocked_needs_human_disposable_account`
+Status: `blocked_needs_codex_authenticated_disposable_session_for_safe_dry_run`
 
 Gate 4h attempts to prepare a disposable account dry-run proof package using the Gate 4g safe summary and Gate 4e proof checklist.
 
-Update: `+delete-test` is now available as a disposable account candidate with human login PASS. Re-run preparation is recorded in `outputs/store_release_gate4h_disposable_account_dry_run_proof/gate4h_disposable_account_dry_run_proof.json`, but Codex still did not execute dry-run because it does not have an authenticated disposable session, a confirmed deletion request, or typed confirmation. Current re-run status is `BLOCKED: needs_authenticated_disposable_session_and_confirmed_request`.
+Update: `+delete-test` is now available as a disposable account candidate with human login PASS. A human has created the account deletion request, completed typed confirmation, and confirmed that the screen shows the request as confirmed with request / confirmed timestamps visible. Provider, Storage, database, and Auth cleanup statuses are still pending. Re-run preparation is recorded in `outputs/store_release_gate4h_disposable_account_dry_run_proof/gate4h_disposable_account_dry_run_proof.json`, but Codex still did not execute dry-run because it does not have an authenticated disposable session and the existing dry-run routes operate on the current authenticated user. Current re-run status is `BLOCKED: needs_codex_authenticated_disposable_session_for_safe_dry_run`.
 
-No dry-run was executed in this pass because no explicit disposable test account, masked proof alias, authenticated disposable session, or safe confirmed account deletion request was provided. Running the existing dry-run APIs without that confirmation would risk targeting a real or personal account, so the correct result is `BLOCKED`, not failure.
+No dry-run was executed in this pass. The disposable account, request, and typed confirmation are human-confirmed, but Codex does not have a safe authenticated session for that same disposable account. Running the existing dry-run APIs without that session would risk targeting the wrong account, so the correct result is `BLOCKED`, not failure.
 
 This gate does not run actual account deletion, Supabase Auth deletion, Storage object deletion, DB destructive cleanup, provider cleanup, DB schema changes, destructive API routes, env changes, dashboard operations, Capacitor work, Store submission work, or Brush-up work.
 
@@ -16,11 +16,11 @@ Brush-up remains deferred to v1.1.
 
 | Requirement | Result | Notes |
 | --- | --- | --- |
-| Disposable test account | `missing` | No safe alias or account confirmation was provided in this task. |
-| Environment selection | `unknown` | Local / preview / production dry-run target was not provided. |
-| Authenticated disposable session | `missing` | Existing dry-run API routes require the current authenticated user. |
-| Deletion request status | `unknown` | No disposable account request was supplied or queried. |
-| Confirmation status | `unknown` | No disposable account request was supplied or queried. |
+| Disposable test account | `human_confirmed` | Safe alias only: `plus_delete_test_account`. Full email is not recorded. |
+| Environment selection | `production_web_human_confirmed_ui` | Human confirmed the UI state; Codex did not change production env or dashboard settings. |
+| Authenticated disposable session | `missing_for_codex` | Existing dry-run API routes require the current authenticated user. |
+| Deletion request status | `human_confirmed_created` | Request timestamp is visible in UI, but exact timestamp is not recorded here. |
+| Confirmation status | `human_confirmed_confirmed` | Confirmed timestamp is visible in UI, but exact timestamp is not recorded here. |
 | Dry-run endpoint availability | `repo_confirmed` | Existing routes cover inventory, job, provider, Storage, DB, and Auth dry-run. |
 | Proof package location | `repo_confirmed` | Output is recorded under `outputs/store_release_gate4h_disposable_account_dry_run_proof_capture/`. |
 | Redaction policy | `repo_confirmed` | Gate 4e / 4g forbid secrets, raw provider responses, transcript body, private paths, storage object keys, provider ids, email, and auth ids. |
@@ -29,7 +29,7 @@ Brush-up remains deferred to v1.1.
 
 Dry-run execution was skipped.
 
-Reason: `needs_human_disposable_account`.
+Reason: `needs_codex_authenticated_disposable_session_for_safe_dry_run`.
 
 The existing dry-run APIs are authenticated user routes:
 
@@ -40,7 +40,7 @@ The existing dry-run APIs are authenticated user routes:
 - `GET /api/account/deletion-database-dry-run`
 - `GET /api/account/deletion-auth-dry-run`
 
-They are safe summaries, but they still operate on the current authenticated account. Gate 4h requires an explicitly disposable target before they may be used as proof evidence.
+They are safe summaries, but they still operate on the current authenticated account. Gate 4h now has human-confirmed disposable account request and confirmation state, but Codex must not call those routes without a safe authenticated disposable session because the call target is session-derived.
 
 ## Proof Package Shape
 
@@ -65,7 +65,7 @@ This pass records a blocked readiness proof with these fields:
 - `stop_point`;
 - `next_action`.
 
-All runtime category counts remain `unknown` because no disposable account dry-run was executed.
+All runtime category counts remain `not_executed` because no disposable account dry-run was executed by Codex.
 
 ## Category Status
 
@@ -98,25 +98,26 @@ Brush-up-specific data remains `deferred`:
 
 ## Human Required
 
-Before Gate 4h can capture a real dry-run proof, a human must provide or perform:
+Before Gate 4h can capture a real dry-run proof, the remaining human/Codex-safe requirement is one of:
 
-- disposable test account creation or selection;
-- masked proof alias only, not email or auth user id;
-- confirmation that the account is not a real personal or production user account;
-- local / preview / production environment label;
-- login as the disposable account;
-- minimal v1 test data creation;
-- account deletion request creation;
-- typed confirmation;
-- dry-run capture from Settings or safe API summaries;
-- operator / reviewer safe labels;
-- confirmation that no secret, raw provider response, transcript body, private path, storage object key, provider voice id, email, or auth user id is recorded.
+- a human captures and provides only the safe dry-run summary from the already authenticated `+delete-test` UI; or
+- Codex is given a safe way to operate the already authenticated disposable browser session without recording cookies, tokens, full email, auth user id, private paths, transcript body, or raw provider response.
+
+Already human-confirmed:
+
+- disposable account candidate login PASS;
+- account deletion request created;
+- typed confirmation completed;
+- UI state is confirmed;
+- request / confirmed timestamps are visible;
+- provider / Storage / database / Auth statuses are pending;
+- actual deletion has not run.
 
 ## Non-Destructive Boundary
 
 Gate 4h did not:
 
-- execute dry-run against any real or unknown account;
+- execute dry-run against any real, unknown, or unauthenticated-by-Codex account;
 - create an account deletion request;
 - confirm an account deletion request;
 - execute account deletion;
@@ -131,4 +132,4 @@ Gate 4h did not:
 
 ## Next Action
 
-Prepare a disposable account with a safe proof alias, create minimal v1 test data, create and confirm the deletion request from `/settings`, then rerun Gate 4h capture using only Gate 4g safe summaries. Stop before actual deletion.
+Capture the Gate 4g safe dry-run summary from the authenticated `+delete-test` disposable session, or provide Codex a safe already-authenticated disposable browser session. Stop before actual deletion.

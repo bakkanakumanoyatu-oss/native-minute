@@ -1,24 +1,40 @@
 {
   "gate": "4h",
   "title": "Disposable account dry-run proof re-run status",
-  "recorded_at": "2026-06-06",
+  "recorded_at": "2026-06-07",
   "proof_status": "BLOCKED",
-  "blocker_code": "needs_authenticated_disposable_session_and_confirmed_request",
-  "environment": "production_web_human_candidate",
+  "blocker_code": "needs_codex_authenticated_disposable_session_for_safe_dry_run",
+  "environment": "production_web_human_confirmed_ui",
   "disposable_account_safe_alias": "plus_delete_test_account",
   "disposable_account_candidate_status": "human_login_pass",
+  "human_confirmation_evidence": {
+    "account_deletion_request_created": true,
+    "typed_confirmation_completed": true,
+    "ui_state": "confirmed",
+    "request_timestamp_visible": true,
+    "confirmed_timestamp_visible": true,
+    "exact_request_timestamp_recorded": false,
+    "exact_confirmed_timestamp_recorded": false,
+    "provider_status": "pending",
+    "storage_status": "pending",
+    "database_status": "pending",
+    "auth_status": "pending",
+    "actual_deletion_executed": false
+  },
   "supporting_evidence": {
     "plus_demo_login_flow": "PASS",
-    "plus_delete_test_login_flow": "PASS"
+    "plus_delete_test_login_flow": "PASS",
+    "human_created_deletion_request": "PASS",
+    "human_completed_typed_confirmation": "PASS"
   },
-  "request_status": "unknown_not_queried",
-  "confirmation_status": "unknown_not_queried",
+  "request_status": "human_confirmed_created",
+  "confirmation_status": "human_confirmed_confirmed",
   "dry_run_executed": false,
   "dry_run_timestamp": null,
   "dry_run_execution_decision": {
     "decision": "not_executed",
-    "reason": "Codex does not have an authenticated disposable session, a confirmed account deletion request, or human typed confirmation for the plus-delete-test account. Existing dry-run APIs operate on the current authenticated user, so running them without that session would risk targeting the wrong account.",
-    "next_action": "Human should log in as the plus-delete-test disposable account, create/confirm the deletion request from Settings, then rerun Gate 4h dry-run capture using safe summaries only."
+    "reason": "Human has confirmed the plus-delete-test request and typed confirmation, but Codex does not have an authenticated disposable session. Existing dry-run APIs operate on the current authenticated user, so running them without that session would risk targeting the wrong account.",
+    "next_action": "Capture the safe dry-run summary from the authenticated plus-delete-test UI, or provide Codex a safe already-authenticated disposable browser session without exposing cookies, tokens, full email, auth user id, private paths, transcript body, or raw provider response."
   },
   "categories_checked": [
     {
@@ -84,9 +100,7 @@
   ],
   "category_counts_safe_summary": "not_executed",
   "missing_coverage": [
-    "authenticated_disposable_session",
-    "confirmed_account_deletion_request",
-    "typed_confirmation_performed_by_human",
+    "codex_authenticated_disposable_session",
     "safe_dry_run_summary_capture"
   ],
   "skipped": [
@@ -106,16 +120,13 @@
     "supabase_auth_user_deletion"
   ],
   "human_required": [
-    "log in as plus-delete-test disposable account",
-    "create account deletion request from Settings",
-    "perform typed DELETE confirmation in the UI",
-    "capture safe dry-run summaries without raw identifiers",
+    "capture safe dry-run summaries from the already authenticated plus-delete-test session without raw identifiers",
+    "or provide Codex a safe already-authenticated disposable browser session",
     "stop before actual deletion"
   ],
   "blockers": [
     "no_authenticated_disposable_session_available_to_codex",
-    "no_confirmed_deletion_request_available_to_codex",
-    "human_typed_confirmation_required_before_dry_run_proof"
+    "dry_run_routes_target_current_authenticated_user"
   ],
   "redaction_check": {
     "status": "PASS",
@@ -149,5 +160,5 @@
     "magic_link_resent": true
   },
   "overall_result": "BLOCKED",
-  "next_action": "Human should prepare the authenticated plus-delete-test session and confirmed deletion request, then rerun Gate 4h safe dry-run capture."
+  "next_action": "Human should capture the safe dry-run summary from the authenticated plus-delete-test UI, or provide Codex a safe already-authenticated disposable browser session, then rerun Gate 4h safe dry-run capture."
 }
