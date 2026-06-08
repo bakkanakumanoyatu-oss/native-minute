@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
-import { MAX_VOICE_SAMPLE_BYTES, VOICE_SAMPLES_BUCKET, VOICE_SAMPLE_MIME_TYPES } from "./constants";
+import { MAX_VOICE_SAMPLE_BYTES, VOICE_SAMPLE_FORMAT_LABEL, VOICE_SAMPLES_BUCKET, VOICE_SAMPLE_MIME_TYPES } from "./constants";
 
 type VoiceConsentRow = Database["public"]["Tables"]["voice_consents"]["Row"];
 type StorageUploadInput = {
@@ -113,11 +113,21 @@ function inferContentType(file: File) {
 }
 
 function normalizeVoiceSampleContentType(contentType: string) {
-  if (contentType === "video/webm") {
+  const normalized = contentType.toLowerCase().split(";")[0]?.trim() || contentType;
+
+  if (normalized === "video/webm") {
     return "audio/webm";
   }
 
-  return contentType;
+  if (normalized === "audio/x-m4a") {
+    return "audio/mp4";
+  }
+
+  if (normalized === "audio/x-wav") {
+    return "audio/wav";
+  }
+
+  return normalized;
 }
 
 function asMaybeSingle<TRow>(value: unknown) {
@@ -199,7 +209,7 @@ export async function uploadOwnedVoiceSample(
   const contentType = normalizeVoiceSampleContentType(inferContentType(input.file));
 
   if (!VOICE_SAMPLE_MIME_TYPES.has(contentType)) {
-    throw new AppError(400, "対応していない見本音声形式です。webm / wav / m4a / mp3 / ogg を使用してください。");
+    throw new AppError(400, `この録音形式を保存できませんでした。iPhone のその場録音は通常そのまま使えます。録音済みファイルの場合は ${VOICE_SAMPLE_FORMAT_LABEL} を使用してください。`);
   }
 
   const extension = getExtension(contentType, input.file.name);

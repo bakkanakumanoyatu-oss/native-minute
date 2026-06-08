@@ -20,7 +20,7 @@ function getSupportedMimeType() {
     return undefined;
   }
 
-  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/mpeg"];
+  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/mpeg"];
   return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate));
 }
 

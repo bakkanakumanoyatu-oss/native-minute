@@ -4,6 +4,7 @@ import type { AppSupabaseClient } from "@/lib/supabase/client";
 import {
   MAX_VOICE_CONSENT_BYTES,
   VOICE_CONSENTS_BUCKET,
+  VOICE_CONSENT_FORMAT_LABEL,
   VOICE_CONSENT_MIME_TYPES
 } from "./constants";
 
@@ -125,19 +126,21 @@ function inferContentType(file: File) {
 }
 
 function normalizeVoiceConsentContentType(contentType: string) {
-  if (contentType === "video/webm") {
+  const normalized = contentType.toLowerCase().split(";")[0]?.trim() || contentType;
+
+  if (normalized === "video/webm") {
     return "audio/webm";
   }
 
-  if (contentType === "audio/x-m4a") {
+  if (normalized === "audio/x-m4a") {
     return "audio/mp4";
   }
 
-  if (contentType === "audio/x-wav") {
+  if (normalized === "audio/x-wav") {
     return "audio/wav";
   }
 
-  return contentType;
+  return normalized;
 }
 
 export function createVoiceConsentRecordingAudioPath(audioStorageKey: string) {
@@ -192,7 +195,7 @@ export async function uploadOwnedVoiceConsentRecording(
   const contentType = normalizeVoiceConsentContentType(inferContentType(input.file));
 
   if (!VOICE_CONSENT_MIME_TYPES.has(contentType)) {
-    throw new AppError(400, "対応していない同意録音形式です。webm / wav / m4a / mp3 / ogg / aac / flac を使用してください。");
+    throw new AppError(400, `この同意録音形式を保存できませんでした。iPhone のその場録音は通常そのまま使えます。録音済みファイルの場合は ${VOICE_CONSENT_FORMAT_LABEL} を使用してください。`);
   }
 
   const extension = getExtension(contentType, input.file.name);
