@@ -271,6 +271,7 @@
 - listen の音声再生は、client-side fetch で Blob URL 化せず、単一の audio element が protected replay URL を直接読む形へ戻した。`/api/script-audio/[audioId]` は Range request に 206 で返せるため、mobile Safari でも metadata / seek / play が通りやすい。
 - listen の見えている音声操作は下部固定 audio bar に一本化した。hidden audio element は単一の audioRef を維持し、再生 / 一時停止は音声 URL があれば押せ、3秒 / 5秒の seek は metadata 準備後に有効になる。
 - setup/voice は「お手本を聞けます」「次の入口」などの余分な状態 section と provider/debug/readiness 表示を主導線から外し、現在の声の状態、アップロード、再アップロードだけに絞った。
+- setup/voice は同意音声とお手本ボイス用の自分の声をその場で録音できる主導線を追加した。MediaRecorder / getUserMedia で録音、停止、再生確認、録り直し、この録音を使う流れを作り、既存の `/api/uploads/voice-consent` / `/api/uploads/voice-sample` へ渡す File upload contract は維持する。マイクが使えないブラウザや許可拒否時は録音済みファイル選択へ fallback する。
 - Home から「毎日使う練習場です。細かい設定より、まず練習を選びます。」の説明を削った。
 - listen は大きな sticky audio card や区切り文ごとの重複 controls をやめ、区切りカードは英文 / cue / focus に集中させた。音声操作は下部固定 bar で行う。
 - scripts は hero の重複した「練習を始める」ボタンを削り、保存済み練習カードを選ぶか、新しい1分を作るかに整理した。

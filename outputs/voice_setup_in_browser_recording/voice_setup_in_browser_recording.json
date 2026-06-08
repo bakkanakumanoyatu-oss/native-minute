@@ -1,0 +1,75 @@
+{
+  "status": "implemented_pending_human_mobile_smoke",
+  "scope": "voice_setup_in_browser_recording",
+  "route": "/setup/voice",
+  "summary": {
+    "primary_path": "record_in_browser",
+    "fallback_path": "existing_file_upload",
+    "upload_contract_changed": false,
+    "db_schema_changed": false,
+    "provider_api_called": false,
+    "env_or_dashboard_changed": false,
+    "actual_deletion_executed": false
+  },
+  "surfaces": [
+    {
+      "surface": "voice_consent_recording",
+      "component": "components/voice/voice-consent-form.tsx",
+      "upload_route": "/api/uploads/voice-consent",
+      "flow": [
+        "start_recording",
+        "stop",
+        "playback_review",
+        "retry",
+        "use_recording",
+        "submit_existing_upload_flow"
+      ],
+      "minimum_seconds": 3
+    },
+    {
+      "surface": "voice_sample_recording",
+      "component": "components/voice/create-voice-form.tsx",
+      "upload_route": "/api/uploads/voice-sample",
+      "flow": [
+        "start_recording",
+        "stop",
+        "playback_review",
+        "retry",
+        "use_recording",
+        "submit_existing_upload_flow"
+      ],
+      "minimum_seconds": 10
+    }
+  ],
+  "mobile_behavior": {
+    "iphone_safari": "uses MediaRecorder/getUserMedia when available; otherwise shows file selection fallback",
+    "iphone_chrome": "uses browser microphone permission path when available; otherwise shows file selection fallback",
+    "microphone_denied": "safe user-facing recovery copy directs the user to browser permission settings or file selection",
+    "too_short_recording": "blocked before upload with a safe duration message"
+  },
+  "storage_and_ownership": {
+    "voice_consent_route": "requires current user before app-owned voice-consents upload",
+    "voice_sample_route": "requires current user and owned consent before app-owned voice-samples upload",
+    "client_does_not_receive_storage_path_for_display": true,
+    "raw_audio_not_logged_or_displayed": true,
+    "private_object_key_not_recorded": true
+  },
+  "redaction": {
+    "secret_recorded": false,
+    "auth_token_recorded": false,
+    "raw_provider_response_recorded": false,
+    "full_email_recorded": false,
+    "full_user_id_recorded": false,
+    "storage_full_path_recorded": false,
+    "object_key_recorded": false,
+    "transcript_body_recorded": false,
+    "raw_audio_recorded": false,
+    "local_file_name_display_avoided": true
+  },
+  "human_follow_up": [
+    "Verify /setup/voice on iPhone Safari with microphone allowed.",
+    "Verify /setup/voice on iPhone Chrome with microphone allowed.",
+    "Verify microphone denied fallback copy.",
+    "Verify file selection fallback still uploads through the existing routes."
+  ]
+}

@@ -179,7 +179,7 @@ export default async function VoiceSetupPage({
       ) : !state.consent ? (
         <section data-testid="voice-consent-section" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-ink-900">1. 自分の声を使う準備</h2>
-          <p className="mt-2 text-sm leading-6 text-ink-600">お手本ボイスを作るための同意を保存します。必要な場合は、自分の声の録音ファイルもここで選びます。</p>
+          <p className="mt-2 text-sm leading-6 text-ink-600">お手本ボイスを作るための同意を保存します。必要な場合は、この場で同意音声を録音できます。</p>
           <div className="mt-6">
             <VoiceConsentForm requirements={state.providerRequirements} />
           </div>
@@ -189,7 +189,7 @@ export default async function VoiceSetupPage({
       {state.providerSupported && state.consent && !state.defaultVoice ? (
         <section data-testid="voice-create-section" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-ink-900">2. お手本ボイス用の声を作る</h2>
-          <p className="mt-2 text-sm leading-6 text-ink-600">録音した自分の声を使って、聞く画面で使う声を作ります。</p>
+          <p className="mt-2 text-sm leading-6 text-ink-600">この場で自分の声を録音し、聞く画面で使う声を作ります。録音済みファイルも補助として使えます。</p>
           <div className="mt-6">
             <CreateVoiceForm consentId={state.consent.id} requirements={state.providerRequirements} />
           </div>

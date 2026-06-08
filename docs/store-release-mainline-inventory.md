@@ -338,6 +338,8 @@ Goal: provide a concrete iPhone instruction pack for a human to capture internal
 
 Status: instruction pack ready; capture not started. Use the clean demo account context only, never the reviewer or delete-test account. Minimum order is Home / practice entry, Script creation, Listen, Record, Review, and Progress. Optional order is Scripts / practice stock, Settings, and Privacy / Support / Account deletion request. The pack tells the human to hide notifications, avoid mailbox / magic-link / full email / auth callback / browser private UI, use the human-confirmed demo script, avoid Brush-up and completed-deletion claims, and keep every candidate as internal review only until later final Store approval. No screenshots, screenshot files, image generation, Store Console work, app icon creation, Capacitor, provider calls, env/dashboard changes, magic-link resend, reviewer relogin, or actual deletion / cleanup happened.
 
+Voice setup recording update: `/setup/voice` now exposes in-browser recording as the primary path for consent audio and normal voice sample capture. The flow is start recording, stop, play back, retry, and use this recording; file selection remains as a fallback / advanced option. The existing voice consent/sample upload routes and app-owned Storage ownership boundary are unchanged. No provider live connection, provider API call, DB schema/migration, env/dashboard operation, Store Console work, screenshot capture, Capacitor work, or actual deletion / cleanup happened.
+
 ### Gate 6: Release QA
 
 Goal: run cross-device, mobile WebView, upload, replay, auth, provider failure, account deletion, support, and monitoring QA before external testing.

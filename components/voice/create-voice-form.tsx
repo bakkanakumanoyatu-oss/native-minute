@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { VoiceProviderRequirements } from "@/providers/voice";
+import { BrowserVoiceRecorder } from "./browser-voice-recorder";
 
 function isOpenAiEntitlementMessage(message: string | null) {
   if (!message) {
@@ -95,7 +96,7 @@ export function CreateVoiceForm({
 
     try {
       if (requiresUploadedSample && !sampleAudioFile) {
-        setMessage("お手本ボイス用に、自分の声の録音ファイルを選んでください。");
+        setMessage("お手本ボイス用に、自分の声を録音するか、録音済みファイルを選んでください。");
         return;
       }
 
@@ -181,20 +182,34 @@ export function CreateVoiceForm({
         />
       </label>
 
-      <label className="block space-y-2">
-        <span className="text-sm font-medium text-ink-700">自分の声の録音ファイル ({requiresUploadedSample ? "必須" : "任意"})</span>
-        <input
-          data-testid="voice-create-sample-file"
-          type="file"
-          accept="audio/webm,audio/wav,audio/wave,audio/x-wav,audio/mp4,audio/x-m4a,audio/mpeg,audio/ogg"
-          onChange={(event) => setSampleAudioFile(event.target.files?.[0] ?? null)}
-          className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-ink-100 file:px-3 file:py-2 file:text-sm file:font-medium focus:border-[var(--accent)]"
-        />
-        {sampleAudioFile ? <span className="block text-xs font-semibold text-[var(--accent-strong)]">選択済み: {sampleAudioFile.name}</span> : null}
-        <span className="block text-xs leading-5 text-ink-600">
-          この音声サンプルは通常のお手本ボイス用です。保存済みベスト録音を、別機能の音声素材として自動送信することはありません。
-        </span>
-      </label>
+      <BrowserVoiceRecorder
+        id="voice-create"
+        title={`その場で自分の声を録音する (${requiresUploadedSample ? "必須" : "任意"})`}
+        description="お手本ボイスに使う声をこの場で録音します。10秒以上、自然な声で話してください。"
+        filePrefix="voice-sample-recording"
+        minSeconds={10}
+        selectedFile={sampleAudioFile}
+        disabled={loading}
+        onUseRecording={setSampleAudioFile}
+      />
+
+      <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
+        <summary className="cursor-pointer text-sm font-semibold text-ink-800">録音済みファイルを選ぶ</summary>
+        <label className="mt-3 block space-y-2">
+          <span className="text-sm font-medium text-ink-700">ファイルを選択 ({requiresUploadedSample ? "必須" : "任意"})</span>
+          <input
+            data-testid="voice-create-sample-file"
+            type="file"
+            accept="audio/webm,audio/wav,audio/wave,audio/x-wav,audio/mp4,audio/x-m4a,audio/mpeg,audio/ogg"
+            onChange={(event) => setSampleAudioFile(event.target.files?.[0] ?? null)}
+            className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-ink-100 file:px-3 file:py-2 file:text-sm file:font-medium focus:border-[var(--accent)]"
+          />
+          {sampleAudioFile ? <span className="block text-xs font-semibold text-[var(--accent-strong)]">選択済みの音声があります</span> : null}
+          <span className="block text-xs leading-5 text-ink-600">
+            この音声サンプルは通常のお手本ボイス用です。保存済みベスト録音を、別機能の音声素材として自動送信することはありません。
+          </span>
+        </label>
+      </details>
 
       <button
         data-testid="voice-create-submit"
@@ -210,8 +225,8 @@ export function CreateVoiceForm({
         <summary className="cursor-pointer font-semibold text-ink-800">うまくいかない時</summary>
         <p className="mt-3">
           {requiresUploadedSample
-            ? `${voiceLabel} では自分の声の録音が必要です。通常はファイルを選ぶだけで進めます。`
-            : "通常は録音ファイルを選ぶだけで進めます。保存済み参照は確認用です。"}
+            ? `${voiceLabel} では自分の声の録音が必要です。その場で録音できない場合は、録音済みファイルを選べます。`
+            : "その場で録音できない場合は、録音済みファイルを選べます。保存済み参照は確認用です。"}
         </p>
         {requirements.entitlementSensitive ? (
           <p className="mt-2">

@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { VoiceProviderRequirements } from "@/providers/voice";
+import { BrowserVoiceRecorder } from "./browser-voice-recorder";
 
 function isOpenAiEntitlementMessage(message: string | null) {
   if (!message) {
@@ -153,20 +154,34 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
         />
       </label>
 
-      <label className="block space-y-2">
-        <span className="text-sm font-medium text-ink-700">自分の声の同意録音 ({requiresRecording ? "必須" : "任意"})</span>
-        <input
-          data-testid="voice-consent-file"
-          type="file"
-          accept="audio/webm,audio/wav,audio/wave,audio/x-wav,audio/mp4,audio/x-m4a,audio/mpeg,audio/ogg,audio/aac,audio/flac"
-          onChange={(event) => setRecordingFile(event.target.files?.[0] ?? null)}
-          className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-ink-100 file:px-3 file:py-2 file:text-sm file:font-medium focus:border-[var(--accent)]"
-        />
-        {recordingFile ? <span className="block text-xs font-semibold text-[var(--accent-strong)]">選択済み: {recordingFile.name}</span> : null}
-        <span className="block text-xs leading-5 text-ink-600">
-          同意録音は app-owned Storage に保存し、必要な場合だけ server-side route 経由で voice provider へ渡します。
-        </span>
-      </label>
+      <BrowserVoiceRecorder
+        id="voice-consent"
+        title={`その場で同意音声を録音する (${requiresRecording ? "必須" : "任意"})`}
+        description="マイクを許可して、同意のための短い音声を録音します。録音後に再生して確認できます。"
+        filePrefix="voice-consent-recording"
+        minSeconds={3}
+        selectedFile={recordingFile}
+        disabled={loading}
+        onUseRecording={setRecordingFile}
+      />
+
+      <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3">
+        <summary className="cursor-pointer text-sm font-semibold text-ink-800">録音済みファイルを選ぶ</summary>
+        <label className="mt-3 block space-y-2">
+          <span className="text-sm font-medium text-ink-700">ファイルを選択 ({requiresRecording ? "必須" : "任意"})</span>
+          <input
+            data-testid="voice-consent-file"
+            type="file"
+            accept="audio/webm,audio/wav,audio/wave,audio/x-wav,audio/mp4,audio/x-m4a,audio/mpeg,audio/ogg,audio/aac,audio/flac"
+            onChange={(event) => setRecordingFile(event.target.files?.[0] ?? null)}
+            className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-ink-100 file:px-3 file:py-2 file:text-sm file:font-medium focus:border-[var(--accent)]"
+          />
+          {recordingFile ? <span className="block text-xs font-semibold text-[var(--accent-strong)]">選択済みの音声があります</span> : null}
+          <span className="block text-xs leading-5 text-ink-600">
+            同意音声はアプリの安全な保存領域に保存し、必要な場合だけサーバー側で音声サービスへ渡します。
+          </span>
+        </label>
+      </details>
 
       <button
         data-testid="voice-consent-submit"
