@@ -20,6 +20,8 @@ function isOpenAiEntitlementMessage(message: string | null) {
   );
 }
 
+type VoiceConsentMessageKind = "info" | "success" | "error";
+
 export function VoiceConsentForm({ requirements }: { requirements: VoiceProviderRequirements }) {
   const router = useRouter();
   const [accepted, setAccepted] = useState(false);
@@ -28,19 +30,25 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
   const [recordingFile, setRecordingFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageKind, setMessageKind] = useState<VoiceConsentMessageKind>("info");
   const trimmedName = name.trim();
   const trimmedLanguage = language.trim();
   const requiresRecording = requirements.requiresConsentRecording;
   const voiceLabel = requirements.voiceLabel;
 
+  function setFormMessage(kind: VoiceConsentMessageKind, nextMessage: string) {
+    setMessageKind(kind);
+    setMessage(nextMessage);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setMessage(null);
+    setFormMessage("info", "同意を保存しています。録音がある場合は、先に音声を保存します。");
 
     try {
       if (requiresRecording && (!recordingFile || !trimmedName || !trimmedLanguage)) {
-        setMessage(`${voiceLabel} では同意者名・言語・同意録音が必要です。`);
+        setFormMessage("error", `${voiceLabel} では同意者名・言語・同意録音が必要です。`);
         return;
       }
 
@@ -54,7 +62,7 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
 
       if (recordingFile) {
         if (!trimmedName || !trimmedLanguage) {
-          setMessage("同意録音を使うときは、同意者名と言語も入力してください。");
+          setFormMessage("error", "同意音声を使うときは、同意者名と言語も入力してください。");
           return;
         }
 
@@ -80,7 +88,7 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
         };
 
         if (!uploadResponse.ok || !uploadPayload.ok || !uploadPayload.data?.recording) {
-          setMessage(uploadPayload.message ?? "同意録音の保存に失敗しました。");
+          setFormMessage("error", uploadPayload.message ?? "同意音声を保存できませんでした。もう一度お試しください。");
           return;
         }
 
@@ -104,14 +112,14 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
       const payload = (await response.json()) as { ok: boolean; message?: string };
 
       if (!response.ok || !payload.ok) {
-        setMessage(payload.message ?? "同意の保存に失敗しました。");
+        setFormMessage("error", payload.message ?? "同意を保存できませんでした。もう一度お試しください。");
         return;
       }
 
-      setMessage("同意を保存しました。次はこのページでお手本ボイスを作れます。");
+      setFormMessage("success", "同意を保存しました。次に自分の声を準備します。画面を更新しています。");
       router.refresh();
     } catch {
-      setMessage("通信に失敗しました。少し待ってからお試しください。");
+      setFormMessage("error", "通信に失敗しました。少し待ってからもう一度お試しください。");
     } finally {
       setLoading(false);
     }
@@ -190,8 +198,24 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
         aria-busy={loading}
         className="inline-flex items-center justify-center rounded-2xl bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "記録中..." : "同意を保存して次へ"}
+        {loading ? "保存中..." : "同意を保存して次へ"}
       </button>
+      {message ? (
+        <div
+          data-testid="voice-consent-message"
+          role={messageKind === "error" ? "alert" : "status"}
+          aria-live="polite"
+          className={`rounded-2xl border px-4 py-3 text-sm leading-6 ${
+            messageKind === "error"
+              ? "border-amber-200 bg-amber-50 text-amber-900"
+              : messageKind === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                : "border-[var(--line)] bg-ink-50 text-ink-700"
+          }`}
+        >
+          {message}
+        </div>
+      ) : null}
       {!accepted ? (
         <p className="text-xs leading-5 text-ink-600">
           録音の選択は先にできます。保存するには、上の同意チェックを入れてください。
@@ -224,7 +248,6 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
         </button>
       ) : null}
 
-      {message ? <p data-testid="voice-consent-message" className="text-sm text-ink-600">{message}</p> : null}
       {requirements.entitlementSensitive && isOpenAiEntitlementMessage(message) ? (
         <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4 text-sm leading-6 text-ink-700">
           <p className="text-xs uppercase tracking-[0.18em] text-ink-500">うまくいかない時</p>
