@@ -192,6 +192,11 @@ export function VoiceConsentForm({ requirements }: { requirements: VoiceProvider
       >
         {loading ? "記録中..." : "同意を保存して次へ"}
       </button>
+      {!accepted ? (
+        <p className="text-xs leading-5 text-ink-600">
+          録音の選択は先にできます。保存するには、上の同意チェックを入れてください。
+        </p>
+      ) : null}
 
       <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-xs leading-5 text-ink-600">
         <summary className="cursor-pointer font-semibold text-ink-800">うまくいかない時</summary>

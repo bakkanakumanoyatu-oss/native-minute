@@ -9,7 +9,7 @@ type BrowserVoiceRecorderProps = {
   filePrefix: string;
   minSeconds: number;
   selectedFile: File | null;
-  onUseRecording: (file: File) => void;
+  onUseRecording: (file: File | null) => void;
   disabled?: boolean;
 };
 
@@ -73,6 +73,7 @@ export function BrowserVoiceRecorder({
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [durationSeconds, setDurationSeconds] = useState<number | null>(null);
+  const [hasConfirmedRecording, setHasConfirmedRecording] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageKind, setMessageKind] = useState<"info" | "error">("info");
 
@@ -87,6 +88,12 @@ export function BrowserVoiceRecorder({
       streamRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!selectedFile || (pendingFile && selectedFile !== pendingFile)) {
+      setHasConfirmedRecording(false);
+    }
+  }, [pendingFile, selectedFile]);
 
   function setInfo(nextMessage: string) {
     setMessage(nextMessage);
@@ -110,8 +117,10 @@ export function BrowserVoiceRecorder({
   function clearPendingRecording() {
     setPendingFile(null);
     setDurationSeconds(null);
+    setHasConfirmedRecording(false);
     setStatus("idle");
     setMessage(null);
+    onUseRecording(null);
     replacePreviewUrl(null);
   }
 
@@ -138,6 +147,8 @@ export function BrowserVoiceRecorder({
       startedAtRef.current = Date.now();
       setPendingFile(null);
       setDurationSeconds(null);
+      setHasConfirmedRecording(false);
+      onUseRecording(null);
       replacePreviewUrl(null);
 
       recorder.ondataavailable = (event) => {
@@ -206,11 +217,17 @@ export function BrowserVoiceRecorder({
     }
 
     onUseRecording(pendingFile);
-    setInfo("この録音を使います。必要なら下でファイルを選び直せます。");
+    setHasConfirmedRecording(true);
+    setInfo("録音を選択しました。保存へ進むには、必要な項目を確認してください。");
   }
 
-  const selectedFileLabel = selectedFile ? "使用中の録音があります" : "まだ録音を選んでいません";
   const durationLabel = formatSeconds(durationSeconds);
+  const selectedFileLabel =
+    hasConfirmedRecording && pendingFile
+      ? `録音を選択しました${durationLabel ? ` (${durationLabel})` : ""}`
+      : selectedFile
+        ? "選択済みの音声があります"
+        : "まだ録音を選んでいません";
 
   return (
     <div data-testid={`${id}-browser-recorder`} className="space-y-4 rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
@@ -246,7 +263,7 @@ export function BrowserVoiceRecorder({
               disabled={disabled || status === "recording"}
               className="inline-flex items-center justify-center rounded-2xl bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              この録音を使う
+              {hasConfirmedRecording ? "この録音を選択済み" : "この録音を使う"}
             </button>
           </>
         ) : null}
