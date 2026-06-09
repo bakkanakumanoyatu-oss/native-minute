@@ -9,6 +9,7 @@ This document is docs-only. It does not change auth, DB schema, API contracts, p
 - The fixed 1-minute practice main loop is working well in production-style use: Home, `/scripts`, `/scripts/new`, Listen, Record, Review, and Progress have no major known UX blocker.
 - UI/UX improvement is paused as a phase. The product should now move from "make it easier to use" to "make it safe, operable, and reviewable for public release."
 - Recent speed work has improved perceived performance: selected-script summaries, Review loading consolidation, lazy Progress audio players, protected audio feedback, and staged evaluate feedback are in place.
+- `/setup/voice` now treats re-recording as a normal v1 setup action: users with an existing default voice can keep the current voice, record a new sample to create a new default voice, or choose an existing audio file. This reuses the existing consent / sample upload / createVoice path and does not perform provider cleanup or deletion.
 - Gate 0 auth callback failure fix `0bd55b4 Fix auth callback login redirect handling` is reflected in the production latest deploy. Human browser smoke is `PASS`; `/login`, new email login, `/scripts`, clean new-account state, `/progress` initial state, refresh session persistence, logout -> new magic link -> login, and the prior `callback_failed` / `/login` 404 / `/_next/static` 404 chain are resolved.
 - The next decisions should be evidence and operations decisions, not broad UI polish or provider implementation.
 

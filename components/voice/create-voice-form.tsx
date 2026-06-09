@@ -74,10 +74,12 @@ function isElevenLabsAccountOrLimitMessage(message: string | null) {
 
 export function CreateVoiceForm({
   consentId,
-  requirements
+  requirements,
+  mode = "initial"
 }: {
   consentId: string;
   requirements: VoiceProviderRequirements;
+  mode?: "initial" | "rerecord";
 }) {
   const router = useRouter();
   const [label, setLabel] = useState("自分の声");
@@ -88,6 +90,20 @@ export function CreateVoiceForm({
   const isMissingRequiredLabel = trimmedLabel.length === 0;
   const requiresUploadedSample = requirements.requiresSampleAudio;
   const voiceLabel = requirements.voiceLabel;
+  const isRerecord = mode === "rerecord";
+  const sampleRequiredMessage = isRerecord
+    ? "新しく作り直すには、その場で録音するか、録音済みファイルを選んでください。"
+    : "お手本ボイス用に、自分の声を録音するか、録音済みファイルを選んでください。";
+  const recorderTitle = isRerecord
+    ? `その場で録り直す (${requiresUploadedSample ? "必須" : "任意"})`
+    : `その場で自分の声を録音する (${requiresUploadedSample ? "必須" : "任意"})`;
+  const recorderDescription = isRerecord
+    ? "録り方を変えて、もう一度お手本ボイスを作れます。10秒以上、自然な声で話してください。"
+    : "お手本ボイスに使う声をこの場で録音します。10秒以上、自然な声で話してください。";
+  const submitLabel = isRerecord ? "この録音で新しいお手本ボイスを作る" : "自分の声を録音してお手本ボイスを作る";
+  const successMessage = isRerecord
+    ? "新しいお手本ボイスを作りました。次からこの声を使います。"
+    : "お手本ボイスを作りました。次の入口から練習へ進めます。";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -96,7 +112,7 @@ export function CreateVoiceForm({
 
     try {
       if (requiresUploadedSample && !sampleAudioFile) {
-        setMessage("お手本ボイス用に、自分の声を録音するか、録音済みファイルを選んでください。");
+        setMessage(sampleRequiredMessage);
         return;
       }
 
@@ -159,7 +175,7 @@ export function CreateVoiceForm({
         return;
       }
 
-      setMessage("お手本ボイスを作りました。次の入口から練習へ進めます。");
+      setMessage(successMessage);
       router.refresh();
     } catch {
       setMessage("通信に失敗しました。少し待ってからお試しください。");
@@ -184,8 +200,8 @@ export function CreateVoiceForm({
 
       <BrowserVoiceRecorder
         id="voice-create"
-        title={`その場で自分の声を録音する (${requiresUploadedSample ? "必須" : "任意"})`}
-        description="お手本ボイスに使う声をこの場で録音します。10秒以上、自然な声で話してください。"
+        title={recorderTitle}
+        description={recorderDescription}
         filePrefix="voice-sample-recording"
         minSeconds={10}
         selectedFile={sampleAudioFile}
@@ -218,7 +234,7 @@ export function CreateVoiceForm({
         aria-busy={loading}
         className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "作成中..." : "自分の声を録音してお手本ボイスを作る"}
+        {loading ? "作成中..." : submitLabel}
       </button>
 
       <details className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-xs leading-5 text-ink-600">

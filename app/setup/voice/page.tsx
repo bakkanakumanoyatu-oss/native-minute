@@ -104,6 +104,7 @@ export default async function VoiceSetupPage({
 
   const supabase = createSupabaseServerClient();
   const state = await getVoiceSetupState(supabase, authState.user.id);
+  const voiceReadyNextPath = requestedNextPath ?? "/scripts";
   const readyStateSummary = getVoiceSetupRecoverySummary({
     providerSupported: state.providerSupported,
     providerStatusMessage: state.providerMessage,
@@ -197,20 +198,48 @@ export default async function VoiceSetupPage({
       ) : null}
 
       {state.providerSupported && state.defaultVoice ? (
-        <section data-testid="voice-ready-block" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ink-900">自分の声を作り直す</h2>
+        <>
+          <section data-testid="voice-ready-block" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-[var(--accent-strong)]">現在のお手本ボイスがあります</p>
+            <h2 className="mt-2 text-lg font-semibold text-ink-900">今のお手本ボイスを使う</h2>
+            <p className="mt-2 text-sm leading-6 text-ink-600">
+              このまま練習へ進めます。今の声がしっくりこない場合は、下で録り直して新しいお手本ボイスを作れます。
+            </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Link
+                data-testid="voice-use-current-link"
+                href={voiceReadyNextPath}
+                className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)]"
+              >
+                今のお手本ボイスを使う
+              </Link>
+              {state.consent ? (
+                <a
+                  href="#voice-rerecord-section"
+                  className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50"
+                >
+                  新しく録音して作り直す
+                </a>
+              ) : null}
+            </div>
+          </section>
+
           {state.consent ? (
-            <details className="mt-4 rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3">
-              <summary className="cursor-pointer text-sm font-semibold text-ink-800">自分の声を再アップロードして作り直す</summary>
-              <p className="mt-3 text-sm leading-6 text-ink-600">
-                新しい録音からお手本ボイス用の声を作り直します。既存の声は上書きせず、新しく作った声が次のお手本に使われます。
+            <section
+              id="voice-rerecord-section"
+              data-testid="voice-rerecord-section"
+              className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm"
+            >
+              <h2 className="text-lg font-semibold text-ink-900">新しく録音して作り直す</h2>
+              <p className="mt-2 text-sm leading-6 text-ink-600">
+                録り方を変えて、もう一度お手本ボイスを作れます。古い声はここでは削除せず、新しく作った声が次のお手本に使われます。
               </p>
-              <div className="mt-4">
-                <CreateVoiceForm consentId={state.consent.id} requirements={state.providerRequirements} />
+              <div className="mt-6">
+                <CreateVoiceForm consentId={state.consent.id} requirements={state.providerRequirements} mode="rerecord" />
               </div>
-            </details>
+            </section>
           ) : null}
-        </section>
+        </>
       ) : null}
     </section>
   );
