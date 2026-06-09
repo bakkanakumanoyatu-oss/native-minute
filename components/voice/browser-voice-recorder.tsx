@@ -11,6 +11,7 @@ type BrowserVoiceRecorderProps = {
   selectedFile: File | null;
   onUseRecording: (file: File | null) => void;
   disabled?: boolean;
+  fallbackHint?: string;
 };
 
 type RecorderStatus = "idle" | "starting" | "recording" | "recorded";
@@ -62,7 +63,8 @@ export function BrowserVoiceRecorder({
   minSeconds,
   selectedFile,
   onUseRecording,
-  disabled = false
+  disabled = false,
+  fallbackHint = "マイクが使えない場合は、下のファイル選択を使えます。録音の中身や保存先の詳細は画面に表示しません。"
 }: BrowserVoiceRecorderProps) {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -281,7 +283,7 @@ export function BrowserVoiceRecorder({
 
       <p className="text-xs font-semibold text-[var(--accent-strong)]">{selectedFileLabel}</p>
       <p className="text-xs leading-5 text-ink-600">
-        マイクが使えない場合は、下のファイル選択を使えます。録音の中身や保存先の詳細は画面に表示しません。
+        {fallbackHint}
       </p>
       {message ? (
         <p data-testid={`${id}-browser-recorder-message`} className={`text-sm leading-6 ${messageKind === "error" ? "text-amber-800" : "text-ink-600"}`}>

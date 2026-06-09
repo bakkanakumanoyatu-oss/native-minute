@@ -470,10 +470,20 @@ test("authenticated user can complete the minimal setup voice UI flow", async ({
   await expect(page.getByTestId("voice-ready-block")).toBeVisible();
   await expect(page.getByTestId("voice-ready-block")).toContainText("現在のお手本ボイスがあります");
   await expect(page.getByTestId("voice-ready-block")).toContainText("今のお手本ボイスを使う");
+  await expect(page.getByTestId("voice-ready-block")).toContainText("新しく録音して作り直す");
+  await expect(page.getByTestId("voice-ready-block")).toContainText("録音済みファイルから作り直す");
   await expect(page.getByTestId("voice-use-current-link")).toBeVisible();
+  await expect(page.getByTestId("voice-rerecord-section")).toHaveCount(0);
+  await expect(page.getByTestId("voice-rerecord-file-section")).toHaveCount(0);
+  await page.getByTestId("voice-rerecord-record-button").click();
   await expect(page.getByTestId("voice-rerecord-section")).toBeVisible();
   await expect(page.getByTestId("voice-rerecord-section")).toContainText("新しく録音して作り直す");
-  await expect(page.getByTestId("voice-rerecord-section")).toContainText("録音済みファイルを選ぶ");
+  await expect(page.getByTestId("voice-create-browser-recorder")).toBeVisible();
+  await page.getByTestId("voice-rerecord-file-button").click();
+  await expect(page.getByTestId("voice-rerecord-section")).toHaveCount(0);
+  await expect(page.getByTestId("voice-rerecord-file-section")).toBeVisible();
+  await expect(page.getByTestId("voice-rerecord-file-section")).toContainText("録音済みファイルから作り直す");
+  await expect(page.getByTestId("voice-create-sample-file")).toBeVisible();
   await expect(page.getByTestId("voice-ready-block")).not.toContainText("お手本を聞けます");
 
   await page.goto(`/scripts/${seededScript.id}/listen`);

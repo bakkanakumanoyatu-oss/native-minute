@@ -4,6 +4,7 @@ import { buildLoginHref, getOptionalInternalPath } from "@/lib/navigation";
 import { getAuthState } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CreateVoiceForm } from "@/components/voice/create-voice-form";
+import { VoiceRerecordChoices } from "@/components/voice/voice-rerecord-choices";
 import { VoiceConsentForm } from "@/components/voice/voice-consent-form";
 import { ConsentNotice } from "@/components/legal/consent-notice";
 import { getVoiceSetupState } from "@/services/voice";
@@ -198,14 +199,22 @@ export default async function VoiceSetupPage({
       ) : null}
 
       {state.providerSupported && state.defaultVoice ? (
-        <>
-          <section data-testid="voice-ready-block" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-[var(--accent-strong)]">現在のお手本ボイスがあります</p>
-            <h2 className="mt-2 text-lg font-semibold text-ink-900">今のお手本ボイスを使う</h2>
-            <p className="mt-2 text-sm leading-6 text-ink-600">
-              このまま練習へ進めます。今の声がしっくりこない場合は、下で録り直して新しいお手本ボイスを作れます。
-            </p>
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <section data-testid="voice-ready-block" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
+          <p className="text-sm font-semibold text-[var(--accent-strong)]">現在のお手本ボイスがあります</p>
+          <h2 className="mt-2 text-lg font-semibold text-ink-900">次に使う声を選ぶ</h2>
+          <p className="mt-2 text-sm leading-6 text-ink-600">
+            まず今の声で進むか、録り方を変えて作り直すかを選べます。古い声はここでは削除せず、新しく作った声が次のお手本に使われます。
+          </p>
+          {state.consent ? (
+            <div className="mt-5">
+              <VoiceRerecordChoices
+                nextPath={voiceReadyNextPath}
+                consentId={state.consent.id}
+                requirements={state.providerRequirements}
+              />
+            </div>
+          ) : (
+            <div className="mt-5">
               <Link
                 data-testid="voice-use-current-link"
                 href={voiceReadyNextPath}
@@ -213,33 +222,9 @@ export default async function VoiceSetupPage({
               >
                 今のお手本ボイスを使う
               </Link>
-              {state.consent ? (
-                <a
-                  href="#voice-rerecord-section"
-                  className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-50"
-                >
-                  新しく録音して作り直す
-                </a>
-              ) : null}
             </div>
-          </section>
-
-          {state.consent ? (
-            <section
-              id="voice-rerecord-section"
-              data-testid="voice-rerecord-section"
-              className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm"
-            >
-              <h2 className="text-lg font-semibold text-ink-900">新しく録音して作り直す</h2>
-              <p className="mt-2 text-sm leading-6 text-ink-600">
-                録り方を変えて、もう一度お手本ボイスを作れます。古い声はここでは削除せず、新しく作った声が次のお手本に使われます。
-              </p>
-              <div className="mt-6">
-                <CreateVoiceForm consentId={state.consent.id} requirements={state.providerRequirements} mode="rerecord" />
-              </div>
-            </section>
-          ) : null}
-        </>
+          )}
+        </section>
       ) : null}
     </section>
   );
