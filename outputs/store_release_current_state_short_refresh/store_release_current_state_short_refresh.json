@@ -1,0 +1,62 @@
+{
+  "artifact": "store_release_current_state_short_refresh",
+  "status": "ready_to_return_to_screenshot_preparation",
+  "date": "2026-06-10",
+  "scope": "store_submission_current_state_after_voice_setup_practical_e2e_pass",
+  "completed": [
+    "web_core_main_loop",
+    "auth_callback_recovery",
+    "legal_support_account_deletion_public_flow",
+    "mobile_browser_qa_iphone_safari_and_iphone_chrome",
+    "practice_five_slot_management",
+    "voice_setup_rerecord_choices",
+    "voice_setup_practical_e2e"
+  ],
+  "remaining": [
+    "screenshot_and_store_assets",
+    "reviewer_account_final_login",
+    "android_google_play_checks",
+    "capacitor_native_packaging",
+    "account_deletion_actual_execution_proof",
+    "provider_production_readiness_cleanup_proof",
+    "app_privacy_google_data_safety_final_answers",
+    "final_release_qa"
+  ],
+  "screenshot_priority": [
+    "home_practice_entry",
+    "script_creation",
+    "listen_model_audio",
+    "record",
+    "review",
+    "progress",
+    "voice_setup_three_choices",
+    "settings_legal_account_deletion_optional"
+  ],
+  "redaction_reminders": [
+    "no_full_email",
+    "no_token_or_cookie",
+    "no_private_url",
+    "no_raw_audio",
+    "no_transcript_body",
+    "no_storage_path_or_object_key",
+    "no_provider_id_or_raw_response",
+    "no_secret_or_env_value",
+    "no_delete_test_account",
+    "no_brush_up_v1_claim",
+    "no_actual_deletion_complete_claim"
+  ],
+  "explicitly_not_done": [
+    "code_change",
+    "ui_fix",
+    "voice_provider_live_connection",
+    "openai_custom_voice_entitlement_check",
+    "db_schema_or_migration_change",
+    "provider_cleanup",
+    "old_voice_deletion",
+    "actual_deletion",
+    "store_console_operation",
+    "screenshot_capture",
+    "capacitor_introduction"
+  ],
+  "next_step": "capture_screenshot_candidates_then_select_accept_reject"
+}
