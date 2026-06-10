@@ -1,0 +1,43 @@
+{
+  "artifact": "voice_setup_rerecord_practical_e2e_pass",
+  "status": "PASS",
+  "date": "2026-06-10",
+  "surface": "/setup/voice",
+  "environment": "production",
+  "device_browser": "iPhone Safari",
+  "scope": "existing_default_voice_rerecord_practical_flow",
+  "confirmed_flow": [
+    "opened_setup_voice_with_existing_default_voice",
+    "selected_rerecord_choice",
+    "recorded_in_browser",
+    "stopped_recording",
+    "played_back_recording_for_confirmation",
+    "used_recording_to_create_new_model_voice"
+  ],
+  "confirmed": {
+    "rerecord_choice_is_practical_with_existing_voice": true,
+    "iphone_safari_recording_format_error_not_seen": true,
+    "old_voice_deletion_not_run": true,
+    "provider_cleanup_not_run": true,
+    "no_raw_audio_or_private_storage_details_visible": true,
+    "no_token_or_secret_visible": true
+  },
+  "explicitly_not_done": [
+    "voice_provider_live_connection_change",
+    "openai_custom_voice_entitlement_check",
+    "db_schema_or_migration_change",
+    "provider_cleanup",
+    "old_voice_deletion",
+    "actual_deletion",
+    "store_console_operation",
+    "screenshot_capture",
+    "capacitor_introduction"
+  ],
+  "redaction": {
+    "raw_audio": "not_recorded",
+    "storage_path": "not_recorded",
+    "token": "not_recorded",
+    "secret": "not_recorded",
+    "private_path": "not_recorded"
+  }
+}
