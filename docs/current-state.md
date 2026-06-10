@@ -280,6 +280,7 @@
 - 共通 nav は pathname ベースで現在ページを点灯する。Home / Practice / Progress / Voice / Settings を対象にする。
 - listen の区切り表示では、各 chunk の英文 / cue / focus だけを出す。正確な区切り音声切り出しはタイムスタンプがないため未実装で、聞き直しは下部固定 audio bar で行う。
 - setup/voice は登録済みの自分の声、クローン元音声の有無、同意録音 metadata から分かる形式/サイズだけを表示する。既存のお手本ボイスがある場合も「今のお手本ボイスを使う」「新しく録音して作り直す」「録音済みファイルから作り直す」の3択を先に出し、録音欄 / ファイル欄は選択後だけ開く。既存 consent を再利用して新しい default voice を作れる。古い voice の provider cleanup / deletion は v1 の作り直し操作では実行せず、別 gate のまま扱う。
+- setup/voice の既存お手本ボイスあり状態は、iPhone Safari production human smoke で PASS。`次に使う声を選ぶ`、3択、初期状態で録音フォームを出しすぎないこと、録り直しを肯定する導線、録音済みファイル補助導線、旧 voice をここで削除しない説明、raw audio / storage path / token / secret 非表示を確認済み。
 - Brush-up v1 は `docs/brush-up-v1-design-plan.md` に設計だけを固定した。既存お手本を上書きせず、Review 起点の candidate から始める案だが、storage identity / cache key / metadata contract は実装前の判断点として残す。
 - listen / record / progress は説明ページではなく操作ページに寄せた。`今やること` / `次にやること` / 長い guidance は主導線から外し、必要操作だけを残す。
 - listen は sticky な お手本ボイス player、スクリプト、区切り表示、録音へ進む、お手本ボイスを作り直す、に絞った。3秒 / 5秒の巻き戻し・早送りを追加し、区切り練習中も player を見失いにくくした。

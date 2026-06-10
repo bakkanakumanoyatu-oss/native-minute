@@ -1,0 +1,46 @@
+{
+  "artifact": "voice_setup_rerecord_choices_production_pass",
+  "status": "PASS",
+  "date": "2026-06-10",
+  "surface": "/setup/voice",
+  "environment": "production",
+  "device_browser": "iPhone Safari",
+  "scope": "existing_default_voice_state_rerecord_choices",
+  "confirmed": {
+    "initial_state_feels_natural": true,
+    "heading_next_voice_choice_is_clear": true,
+    "three_choices_visible": true,
+    "use_current_voice_choice_visible": true,
+    "rerecord_choice_visible": true,
+    "existing_file_choice_visible": true,
+    "recording_form_not_overexposed_initially": true,
+    "rerecord_flow_feels_affirming": true,
+    "existing_file_choice_reads_as_secondary_path": true,
+    "no_old_voice_deletion_explanation_visible": true,
+    "no_raw_audio_or_private_storage_details_visible": true,
+    "no_token_or_secret_visible": true
+  },
+  "choices": [
+    "今のお手本ボイスを使う",
+    "新しく録音して作り直す",
+    "録音済みファイルから作り直す"
+  ],
+  "explicitly_not_done": [
+    "voice_provider_live_connection",
+    "openai_custom_voice_entitlement_check",
+    "db_schema_or_migration_change",
+    "provider_cleanup",
+    "old_voice_deletion",
+    "actual_deletion",
+    "store_console_operation",
+    "screenshot_capture",
+    "capacitor_introduction"
+  ],
+  "redaction": {
+    "raw_audio": "not_recorded",
+    "storage_path": "not_recorded",
+    "token": "not_recorded",
+    "secret": "not_recorded",
+    "private_path": "not_recorded"
+  }
+}
