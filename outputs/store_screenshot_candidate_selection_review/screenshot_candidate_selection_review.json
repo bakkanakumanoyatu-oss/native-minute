@@ -1,0 +1,104 @@
+{
+  "recordType": "store_screenshot_candidate_selection_review",
+  "recordedAt": "2026-06-12",
+  "source": "human_review_of_user_captured_iphone_safari_production_screenshot_candidates",
+  "codexImageInspection": "not_performed",
+  "scope": {
+    "action": "record_safe_summary_only",
+    "codeChanges": "not_performed",
+    "uiChanges": "not_performed",
+    "imageEditing": "not_performed",
+    "screenshotCapture": "not_performed",
+    "storeConsoleOperation": "not_performed",
+    "capacitorWork": "not_performed",
+    "providerConnection": "not_performed",
+    "dbSchemaOrMigration": "not_performed",
+    "actualDeletion": "not_performed"
+  },
+  "context": {
+    "storeReleaseShortInventory": "completed",
+    "voiceSetupRerecordFlowProduction": "PASS",
+    "voiceSetupRerecordPracticalE2EProduction": "PASS",
+    "nextWorkstream": "screenshot_and_store_assets"
+  },
+  "strongAdoptionCandidates": [
+    {
+      "screen": "Home / Practice entry",
+      "visibleSignal": "今日の1分スタジオに入る",
+      "reason": "Conveys the app atmosphere and first practice entry point.",
+      "finalAssetNote": "Retake without Safari UI."
+    },
+    {
+      "screen": "Script creation",
+      "visibleSignal": "今日の1分をどう作る？",
+      "reason": "Shows template, self-written, and AI-assisted script creation choices.",
+      "finalAssetNote": "Avoid a composition where the legal footer is too prominent; capture slightly higher."
+    },
+    {
+      "screen": "Listen / お手本",
+      "visibleSignal": "English script, model voice, playback control, and Take recording path",
+      "reason": "Communicates the core practice loop."
+    },
+    {
+      "screen": "Review",
+      "visibleSignal": "Reference score, next focus, coach memo, retry / polish paths",
+      "reason": "Shows that recording leads to concrete improvement, not just a saved take.",
+      "finalAssetNote": "Avoid loading or audio-preparing states if possible."
+    },
+    {
+      "screen": "Voice setup three-choice state",
+      "visibleSignal": "Use current model voice / record a new sample / use an existing recorded file",
+      "reason": "Strong support screenshot for existing-voice setup and rerecord clarity."
+    }
+  ],
+  "holdOrLowerPriority": [
+    {
+      "screen": "Voice log shelf",
+      "reason": "Shows five-stock and saved scripts, but is lower priority within limited Store slots."
+    },
+    {
+      "screen": "Playback-speed-focused view",
+      "reason": "Useful as a feature explanation, but too detailed for primary Store appeal."
+    },
+    {
+      "screen": "Best take plus replay-speed view",
+      "reason": "Dense information makes the main message harder to understand quickly; possible Progress fallback only."
+    }
+  ],
+  "missingOrRetakeCandidates": [
+    {
+      "screen": "Record",
+      "neededSignal": "Take を録る or この Take で評価する in a natural normal state",
+      "avoid": "recording, saving, or error state"
+    },
+    {
+      "screen": "Progress",
+      "neededSignal": "Practice history, growth, recent takes, or best take",
+      "reason": "Important for conveying why continued practice matters."
+    },
+    {
+      "screen": "Final Store assets",
+      "neededSignal": "App display or Store-prepared screen without browser chrome",
+      "reason": "Current candidates include Safari UI / address bar / browser controls and are not final submission assets."
+    }
+  ],
+  "recommendedFinalSet": [
+    "Home / Practice entry",
+    "Script creation",
+    "Listen / お手本",
+    "Record",
+    "Review",
+    "Progress",
+    "Voice setup three-choice state"
+  ],
+  "preCaptureSafetyNotes": [
+    "Use a clean demo account.",
+    "Do not show email, token, private path, raw audio, Storage path, or secret.",
+    "Do not show magic links or account identifiers.",
+    "Avoid old UI, error states, loading-in-progress states, and network failure states.",
+    "Do not show unimplemented claims such as Brush-up v1.1 as a v1 feature.",
+    "Do not show misleading actual-deletion-complete wording.",
+    "Avoid Safari UI, URL bars, and browser buttons in final Store assets."
+  ],
+  "nextStep": "Retake or prepare final Store screenshots for the recommended set, starting with Record and Progress gaps, then perform final redaction review before Store asset processing."
+}
