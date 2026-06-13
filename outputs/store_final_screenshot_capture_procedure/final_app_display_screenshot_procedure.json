@@ -1,0 +1,213 @@
+{
+  "recordType": "store_final_app_display_screenshot_procedure",
+  "recordedAt": "2026-06-13",
+  "source": "safe_summary_for_capacitor_app_display_final_screenshot_capture_procedure",
+  "codexImageInspection": "not_performed",
+  "scope": {
+    "action": "record_safe_summary_only",
+    "codeChanges": "not_performed",
+    "uiChanges": "not_performed",
+    "capacitorWork": "not_performed",
+    "screenshotCapture": "not_performed",
+    "imageEditing": "not_performed",
+    "storeConsoleOperation": "not_performed",
+    "providerConnection": "not_performed",
+    "dbSchemaOrMigration": "not_performed",
+    "actualDeletion": "not_performed"
+  },
+  "context": {
+    "finalScreenshotSet": "confirmed",
+    "finalScreenshotCaptureStrategy": "committed_and_pushed",
+    "mainVsOriginMainBeforeThisWork": "expected_0_0",
+    "currentWebSafariScreenshots": "composition_reference_only",
+    "finalSubmissionAssetCapture": "after_capacitor_in_app_display_without_browser_chrome"
+  },
+  "procedureDecision": {
+    "captureSurface": "Capacitor app display after native wrapper preflight",
+    "browserChromePolicy": "Safari UI, URL bars, and browser controls must not appear in final submission screenshots.",
+    "currentSafariCandidates": "keep_as_composition_reference_only",
+    "implementationStatus": "not_started",
+    "nextGate": "Capacitor introduction preflight decision before implementation or capture"
+  },
+  "cleanDemoAccountPrerequisites": [
+    "A clean demo account is available and does not expose personal email or account identifiers in the UI.",
+    "At least one safe demo script exists for the screenshot flow.",
+    "Reusable model audio exists for the Listen screen.",
+    "Record can show the English script, Take recording action, and model voice playback bar without technical file details.",
+    "At least one Take exists for Review.",
+    "Review has a reference score, next-focus guidance, and coach memo in a normal non-loading state.",
+    "Progress shows latest take and best take data for the demo script.",
+    "Progress can show take memo and replay affordances without overly negative short-recording warning copy when possible.",
+    "A default voice exists so Voice setup opens the existing-voice three-choice state.",
+    "The account has no visible private paths, raw audio references, Storage object details, provider IDs, tokens, or secrets."
+  ],
+  "captureOrder": [
+    "Home / Practice entry",
+    "Script creation",
+    "Listen / お手本",
+    "Record",
+    "Review",
+    "Progress",
+    "Voice setup three-choice state"
+  ],
+  "screens": [
+    {
+      "slot": 1,
+      "screen": "Home / Practice entry",
+      "targetRouteOrSurface": "Home / practice entry",
+      "desiredState": "Normal logged-in demo state where today's one-minute studio entry is visible.",
+      "mustShow": [
+        "今日の1分スタジオに入る",
+        "first practice entry point"
+      ],
+      "avoid": [
+        "login_required state",
+        "private account information",
+        "browser chrome"
+      ]
+    },
+    {
+      "slot": 2,
+      "screen": "Script creation",
+      "targetRouteOrSurface": "Script creation screen",
+      "desiredState": "Normal creation choice state with the three creation options visible.",
+      "mustShow": [
+        "templates",
+        "write yourself",
+        "AI-assisted creation"
+      ],
+      "avoid": [
+        "legal footer dominating the frame",
+        "loading or generation failure state",
+        "unimplemented claims"
+      ]
+    },
+    {
+      "slot": 3,
+      "screen": "Listen / お手本",
+      "targetRouteOrSurface": "Listen screen for the demo script",
+      "desiredState": "Model audio is ready or normally playable, with script text and path to Take recording visible.",
+      "mustShow": [
+        "English script",
+        "model voice / お手本",
+        "playback controls",
+        "path to Take recording"
+      ],
+      "avoid": [
+        "audio preparing / loading state where possible",
+        "provider failure",
+        "provider IDs or internal diagnostics"
+      ]
+    },
+    {
+      "slot": 4,
+      "screen": "Record",
+      "targetRouteOrSurface": "Record screen for the demo script",
+      "desiredState": "Ready-to-record normal state with script and model playback bar visible.",
+      "mustShow": [
+        "English script",
+        "Take recording action",
+        "model voice playback bar"
+      ],
+      "avoid": [
+        "recording filename",
+        "MIME / codec",
+        "file size",
+        "storage object metadata",
+        "saving / error state",
+        "too-short warning"
+      ]
+    },
+    {
+      "slot": 5,
+      "screen": "Review",
+      "targetRouteOrSurface": "Review screen for a saved demo Take",
+      "desiredState": "Normal saved review state with constructive feedback visible.",
+      "mustShow": [
+        "reference score",
+        "next focus",
+        "coach memo",
+        "retry path",
+        "script-polish path"
+      ],
+      "avoid": [
+        "loading state",
+        "audio preparing state where possible",
+        "overly negative warning copy",
+        "raw transcript or private audio path"
+      ]
+    },
+    {
+      "slot": 6,
+      "screen": "Progress",
+      "targetRouteOrSurface": "Progress screen for the demo account",
+      "desiredState": "Latest take and best take are visible for the demo script in a normal reviewable state.",
+      "mustShow": [
+        "latest take",
+        "best take",
+        "reference score",
+        "take memo path",
+        "replay path"
+      ],
+      "avoid": [
+        "voice log shelf as primary Progress asset",
+        "empty state",
+        "overly negative short-recording warning where possible",
+        "storage or provider details"
+      ]
+    },
+    {
+      "slot": 7,
+      "screen": "Voice setup three-choice state",
+      "targetRouteOrSurface": "Voice setup with an existing default voice",
+      "desiredState": "Existing-default-voice state where the three choices are clearly visible.",
+      "mustShow": [
+        "use current model voice",
+        "record a new sample",
+        "rebuild from existing recorded file"
+      ],
+      "avoid": [
+        "raw recording form as the first visible state",
+        "provider IDs",
+        "old voice deletion or cleanup claims"
+      ]
+    }
+  ],
+  "capacitorCapturePreflightRisks": [
+    {
+      "area": "safe_area",
+      "check": "Verify headers, primary CTA, playback controls, and bottom content are not clipped by notches, rounded corners, home indicator, or status bar area."
+    },
+    {
+      "area": "viewport",
+      "check": "Confirm app-display viewport matches intended screenshot device size and that text/card hierarchy remains readable without Safari chrome."
+    },
+    {
+      "area": "status_bar",
+      "check": "Decide status bar appearance before capture and confirm it does not cover app content or create an unintended Store visual."
+    },
+    {
+      "area": "bottom_navigation",
+      "check": "Check bottom controls, browser-free navigation, and home indicator spacing so CTAs and audio controls are not obscured."
+    },
+    {
+      "area": "mic_permission",
+      "check": "Ensure microphone permission prompts are resolved before final Record capture; permission dialogs must not appear in final screenshots."
+    },
+    {
+      "area": "audio_playback_permission",
+      "check": "Ensure model-audio and saved-take playback can be ready without native permission or autoplay prompts visible in Listen, Review, or Progress screenshots."
+    }
+  ],
+  "redactionNotes": [
+    "Do not show email, token, private path, raw audio, Storage path, secret, magic link, or account identifier.",
+    "Do not show recording filenames, MIME / codec, file size, or storage object metadata.",
+    "Do not show provider names or internal IDs.",
+    "Do not show misleading actual-deletion-complete wording.",
+    "Do not show unimplemented claims such as Brush-up v1.1 as a v1 feature.",
+    "Do not show error states, network failure states, or loading-in-progress states.",
+    "Do not show Safari UI, URL bars, or browser controls.",
+    "Confirm important text is not visibly cut off."
+  ],
+  "nextStep": "Proceed to a Capacitor introduction preflight decision and checklist before any implementation. Do not capture final screenshots until app-display behavior, permissions, safe area, viewport, and redaction readiness have been checked."
+}
