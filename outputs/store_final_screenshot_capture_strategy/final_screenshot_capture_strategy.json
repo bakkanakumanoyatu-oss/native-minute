@@ -1,0 +1,84 @@
+{
+  "recordType": "store_final_screenshot_capture_strategy",
+  "recordedAt": "2026-06-13",
+  "source": "human_decision_summary_for_final_store_screenshot_capture_strategy",
+  "codexImageInspection": "not_performed",
+  "scope": {
+    "action": "record_safe_summary_only",
+    "codeChanges": "not_performed",
+    "uiChanges": "not_performed",
+    "imageEditing": "not_performed",
+    "screenshotCapture": "not_performed",
+    "storeConsoleOperation": "not_performed",
+    "capacitorWork": "not_performed",
+    "providerConnection": "not_performed",
+    "dbSchemaOrMigration": "not_performed",
+    "actualDeletion": "not_performed"
+  },
+  "context": {
+    "screenshotCandidateSelectionReview": "committed_and_pushed",
+    "recordProgressScreenshotReview": "committed_and_pushed",
+    "finalScreenshotRedactionReviewPrep": "committed_and_pushed",
+    "mainVsOriginMainBeforeThisWork": "expected_0_0",
+    "currentSafariScreenshots": "composition_reference_only",
+    "finalSubmissionAssetCapture": "deferred_until_after_capacitor_app_display"
+  },
+  "strategy": [
+    "Keep current Web / Safari screenshot candidates as composition references.",
+    "Capture final Store submission assets after Capacitor, in app display.",
+    "Do not include Safari UI, URL bars, or browser controls in final assets.",
+    "Keep the current seven-screen composition.",
+    "Prepare a clean demo account before final capture.",
+    "Capture each screen in a normal state without errors, loading-in-progress, or network failure.",
+    "Prefer Review and Progress states without overly negative warnings.",
+    "Use a Record screen that does not show recording filenames, MIME / codec, file size, or similar technical metadata.",
+    "Use the existing-default-voice three-choice Voice setup state.",
+    "Run a final redaction pass after final screenshot capture."
+  ],
+  "plannedFinalScreenshots": [
+    {
+      "slot": 1,
+      "screen": "Home / Practice entry",
+      "mustShow": "今日の1分スタジオに入る"
+    },
+    {
+      "slot": 2,
+      "screen": "Script creation",
+      "mustShow": "Template, self-written script, and AI-assisted script creation options."
+    },
+    {
+      "slot": 3,
+      "screen": "Listen / お手本",
+      "mustShow": "English script, model voice, playback operation, and path to Take recording."
+    },
+    {
+      "slot": 4,
+      "screen": "Record",
+      "mustShow": "English script, Take recording action, and model voice playback bar."
+    },
+    {
+      "slot": 5,
+      "screen": "Review",
+      "mustShow": "Reference score, next focus, coach memo, retry path, and script-polish path."
+    },
+    {
+      "slot": 6,
+      "screen": "Progress",
+      "mustShow": "Latest take, best take, reference score, take memo, and replay path."
+    },
+    {
+      "slot": 7,
+      "screen": "Voice setup three-choice state",
+      "mustShow": "Use current model voice, record a new sample, or rebuild from an existing recorded file."
+    }
+  ],
+  "redactionNotes": [
+    "Do not show email, token, private path, raw audio, Storage path, secret, magic link, or account identifier.",
+    "Do not show recording filenames, MIME / codec, file size, or storage object metadata.",
+    "Do not show provider names or internal IDs.",
+    "Do not show misleading actual-deletion-complete wording.",
+    "Do not show unimplemented claims such as Brush-up v1.1 as a v1 feature.",
+    "Do not show error states, network failure states, or loading-in-progress states."
+  ],
+  "nextStep": "Decide the Capacitor/app-display final capture procedure, then capture the seven final Store screenshots and run a final redaction pass before Store asset processing."
+}
