@@ -113,3 +113,7 @@ Stop and create a separate decision gate if any of these become necessary:
 - Confirm who will handle Apple Developer Associated Domains and `apple-app-site-association` hosting.
 - Confirm whether Supabase redirect allowlist changes are approved for the native auth gate.
 - Confirm whether this auth gate should happen before final app-display screenshot capture.
+
+## Preimplementation Checklist
+
+The Universal Link primary preimplementation checklist is captured in `docs/capacitor-universal-link-preimplementation-checklist.md`. It fixes the Apple / AASA / Supabase / repo-change checklist and stop conditions before any entitlement, AASA, Supabase setting, AppDelegate, or callback implementation work begins.
