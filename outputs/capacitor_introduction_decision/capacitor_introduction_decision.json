@@ -1,0 +1,100 @@
+{
+  "recordType": "capacitor_introduction_decision",
+  "recordedAt": "2026-06-13",
+  "source": "docs_only_pre_capacitor_decision_packet",
+  "scope": {
+    "action": "record_decision_packet_only",
+    "codeChanges": "not_performed",
+    "uiChanges": "not_performed",
+    "packageInstall": "not_performed",
+    "capacitorInit": "not_performed",
+    "iosProjectCreation": "not_performed",
+    "androidProjectCreation": "not_performed",
+    "xcodeOrAndroidStudioOperation": "not_performed",
+    "storeConsoleOperation": "not_performed",
+    "providerConnection": "not_performed",
+    "dbSchemaOrMigration": "not_performed",
+    "actualDeletion": "not_performed",
+    "screenshotCapture": "not_performed",
+    "imageEditing": "not_performed"
+  },
+  "context": {
+    "capacitorPreflightChecklist": "committed_and_pushed",
+    "mainVsOriginMainBeforeThisWork": "expected_0_0",
+    "repoMode": "hosted_nextjs_app_router_with_api_routes",
+    "staticExport": "not_used",
+    "finalScreenshotCaptureSurface": "after_capacitor_app_display",
+    "providerProductionReadiness": "separate_gate",
+    "actualDeletionProof": "separate_gate"
+  },
+  "decision": {
+    "proceed_to_capacitor_install": true,
+    "proceedCondition": "Only after this docs-only decision packet is accepted; no install or native project creation is performed in this record.",
+    "recommended_first_target": "ios_only_preflight",
+    "auth_deep_link_required_before_first_smoke": false,
+    "native_smoke_scope": "standard",
+    "blockers": []
+  },
+  "capacitorDirection": {
+    "architecture": "hosted_webview_first",
+    "staticExport": "rejected_for_first_step",
+    "serverLogicLocation": "vercel_or_hosted_server",
+    "apiRoutes": "remain_server_side",
+    "providerSecretsAndApiKeys": "must_not_be_stored_in_native_client",
+    "nativeClientAuthority": "no_canonical_data_or_provider_authority_moved_to_client"
+  },
+  "authAndDeepLinkPolicy": {
+    "firstSmokeRequirement": "verify_existing_production_login_flow_and_webview_session_behavior",
+    "completeNativeMagicLinkDeepLinkBeforeFirstSmoke": false,
+    "customScheme": "later_gate",
+    "universalLinks": "later_gate",
+    "stopIf": [
+      "auth_callback_or_redirect_semantics_need_change",
+      "app_scheme_or_universal_link_implementation_becomes_required",
+      "supabase_redirect_change_requires_secret_or_env_actual_value_inspection"
+    ]
+  },
+  "firstNativeSmokeScope": [
+    "app_launch",
+    "production_url_load",
+    "home_practice_entry_render",
+    "bottom_navigation",
+    "listen_audio_playback_by_user_action",
+    "record_microphone_permission_prompt",
+    "record_start_stop",
+    "review_render",
+    "progress_render_latest_and_best_take_state",
+    "voice_setup_existing_voice_three_choice_state",
+    "privacy_support_account_deletion_links_open"
+  ],
+  "outOfScopeForFirstSmoke": [
+    "provider_production_connection_changes",
+    "openai_custom_voice_entitlement_check",
+    "alternate_provider_entitlement_check",
+    "actual_deletion",
+    "destructive_cleanup",
+    "store_submission",
+    "paid_feature_or_billing",
+    "android_full_qa",
+    "final_screenshot_capture",
+    "image_processing",
+    "store_console_operation"
+  ],
+  "humanDecisionsStillNeeded": [
+    "Confirm iOS-only first target versus iOS/Android parallel.",
+    "Decide when an Android physical device will be available for later WebView and Google Play checks.",
+    "Decide whether reviewer account final login verification happens before or after first Capacitor smoke.",
+    "Decide whether provider production readiness is finalized before or after first Capacitor smoke."
+  ],
+  "stopConditions": [
+    "package_install_required_in_this_docs_only_phase",
+    "capacitor_init_or_platform_add_required_in_this_docs_only_phase",
+    "ios_or_android_project_creation_required_in_this_docs_only_phase",
+    "auth_callback_or_redirect_spec_change_required",
+    "db_schema_or_migration_required",
+    "provider_real_connection_required",
+    "secret_or_env_actual_value_required",
+    "destructive_operation_required"
+  ],
+  "nextGate": "If accepted, proceed to a separate small Capacitor install preflight implementation for iOS only; do not capture final screenshots until app-display smoke and redaction readiness pass."
+}
