@@ -181,6 +181,7 @@ logout と成功した callback 後は login continuity cookie と PKCE verifier
 Gate 0 smoke で magic link を短時間に何度も送ると Supabase Auth の email rate limit に当たります。その場合は callback failure と混同せず、しばらく待ってから新しい link を発行します。UI は rate limit を raw detail なしの日本語 message として表示します。
 `/auth/callback` と `/api/auth/*` は middleware の auth 初期化を通さず、PKCE verifier cookie と callback exchange の間に余計な auth 読み出しを挟みません。
 callback failure は、`PKCE verifier cookie が callback に届いていない` 場合と、`cookie はあるが Supabase exchange 自体が失敗した` 場合を分けて扱います。server log の `Auth callback exchange failed` で切り分けます。
+Capacitor iOS native smoke では、shell 起動と Home 表示は PASS しましたが、magic link callback が iOS WebView ではなく Mac Chrome で開いたため、Chrome 側に PKCE verifier cookie がなく `callback_pkce_missing` になりました。Home 以外の protected route が未ログイン prompt へ行くことは route guard として想定内です。native auth は、deep link / universal link、native 用 login 導線、または TestFlight 前 auth callback gate として別途判断します。`server.url` は preflight-only のままで、Store submission ready architecture とは扱いません。
 
 ## main loop
 
