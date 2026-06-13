@@ -1,0 +1,116 @@
+{
+  "recordType": "capacitor_preflight_checklist",
+  "recordedAt": "2026-06-13",
+  "source": "repo_side_capacitor_preflight_planning_without_implementation",
+  "scope": {
+    "action": "record_checklist_and_decision_material_only",
+    "codeChanges": "not_performed",
+    "uiChanges": "not_performed",
+    "packageInstall": "not_performed",
+    "capacitorInit": "not_performed",
+    "iosProjectCreation": "not_performed",
+    "androidProjectCreation": "not_performed",
+    "xcodeOrAndroidStudioOperation": "not_performed",
+    "storeConsoleOperation": "not_performed",
+    "providerConnection": "not_performed",
+    "dbSchemaOrMigration": "not_performed",
+    "actualDeletion": "not_performed",
+    "screenshotCapture": "not_performed",
+    "imageEditing": "not_performed"
+  },
+  "context": {
+    "webCoreVoiceSetupScreenshotPlanning": "advanced",
+    "finalAppDisplayScreenshotProcedure": "committed_and_pushed",
+    "mainVsOriginMainBeforeThisWork": "expected_0_0",
+    "finalScreenshotCaptureSurface": "after_capacitor_app_display",
+    "currentWebSafariScreenshots": "composition_reference_only"
+  },
+  "repoObservations": {
+    "packageAndBuild": {
+      "next": "14.x",
+      "react": "18.x",
+      "typescript": "present",
+      "scripts": [
+        "dev",
+        "build",
+        "start",
+        "lint",
+        "typecheck",
+        "provider_preflights",
+        "playwright_smokes"
+      ],
+      "staticExport": "not_configured",
+      "nextConfig": "reactStrictMode plus configurable distDir"
+    },
+    "appArchitecture": {
+      "router": "Next.js App Router",
+      "apiRoutes": "required_for_auth_upload_evaluate_voice_replay_account_deletion",
+      "serverOnlyHelpers": "present_for_script_studio_openai_boundaries",
+      "serverActionsObserved": "not_observed_in_preflight_search",
+      "nativeDirectionHint": "hosted_webview_preflight_first"
+    },
+    "auth": {
+      "mode": "Supabase magic link with callback route and cookie session",
+      "protectedPaths": [
+        "/scripts",
+        "/setup",
+        "/progress",
+        "/settings"
+      ],
+      "futureConcern": "custom scheme or universal/deep link may be needed later"
+    },
+    "audioAndUpload": {
+      "recording": "browser MediaRecorder / getUserMedia",
+      "playback": "HTML audio and protected same-origin replay",
+      "uploads": [
+        "recordings",
+        "voice-samples",
+        "voice-consents"
+      ],
+      "storageBoundary": "app-owned storage and protected replay routes"
+    }
+  },
+  "checklistSummary": [
+    "Confirm hosted WebView vs any alternate architecture before installing Capacitor.",
+    "Confirm static export is not assumed because API routes and server boundaries are product-critical.",
+    "Verify auth callback, cookies, and possible deep link needs in app-display.",
+    "Verify microphone permission and MediaRecorder MIME behavior in iOS and Android WebView.",
+    "Verify protected audio playback and same-origin credentialed fetch inside WebView.",
+    "Verify upload size, MIME, ownership, and redaction boundaries remain intact.",
+    "Verify safe area, viewport, status bar, bottom navigation, and keyboard behavior.",
+    "Verify Privacy, Terms, Support, and Account deletion routes open inside app-display.",
+    "Verify final screenshot seven-screen set after app-display preflight.",
+    "Keep provider secrets server-side and leave provider readiness as separate gates.",
+    "Treat Android / Google Play checks as human-required later until device and console checks are available."
+  ],
+  "mainRisks": [
+    "Current app is not static-export ready; API routes and server-side logic are required.",
+    "Supabase magic link callback and cookie session behavior may need native deep link or WebView session decisions.",
+    "iOS/Android WebView microphone and audio playback permissions may differ from Safari.",
+    "MediaRecorder MIME output may differ from iPhone Safari and affect upload/evaluation.",
+    "Safe area and status bar can change screenshot composition after Safari chrome disappears.",
+    "Provider calls and secrets must not move into native client code.",
+    "Android WebView / Google Play readiness remains unproven."
+  ],
+  "humanRequiredBeforeImplementation": [
+    "Choose hosted WebView as first native architecture or explicitly approve another architecture.",
+    "Confirm Supabase Auth redirect/deep-link policy for native app flow.",
+    "Confirm intended iOS and Android devices / screenshot sizes for first native smoke.",
+    "Confirm native permission copy needs for microphone and audio playback.",
+    "Confirm legal/support/account deletion links must open in-app or external browser.",
+    "Confirm Android device availability and later Google Play checklist ownership.",
+    "Confirm no secret or env actual values need to be recorded in docs."
+  ],
+  "stopConditions": [
+    "package_install_required",
+    "nextjs_structure_change_required",
+    "auth_callback_or_redirect_change_required",
+    "db_schema_or_migration_required",
+    "provider_real_connection_required",
+    "secret_or_env_actual_value_required",
+    "store_console_operation_required",
+    "screenshot_capture_or_image_editing_required",
+    "actual_deletion_required"
+  ],
+  "nextStep": "Make a Capacitor introduction preflight decision and checklist for hosted WebView, auth/deep-link policy, permissions, and first non-destructive native smoke before any package install or project creation."
+}
