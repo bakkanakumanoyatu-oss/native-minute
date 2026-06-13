@@ -1,0 +1,82 @@
+{
+  "recordType": "store_final_screenshot_redaction_review_prep",
+  "recordedAt": "2026-06-13",
+  "source": "human_review_summary_for_final_store_screenshot_set",
+  "codexImageInspection": "not_performed",
+  "scope": {
+    "action": "record_safe_summary_only",
+    "codeChanges": "not_performed",
+    "uiChanges": "not_performed",
+    "imageEditing": "not_performed",
+    "screenshotCapture": "not_performed",
+    "storeConsoleOperation": "not_performed",
+    "capacitorWork": "not_performed",
+    "providerConnection": "not_performed",
+    "dbSchemaOrMigration": "not_performed",
+    "actualDeletion": "not_performed"
+  },
+  "context": {
+    "screenshotCandidateSelectionReview": "committed_and_pushed",
+    "recordProgressScreenshotReview": "committed_and_pushed",
+    "mainVsOriginMainBeforeThisWork": "expected_0_0",
+    "currentCandidateStatus": "review_candidates_only_not_final_submission_assets",
+    "reasonCurrentCandidatesAreNotFinal": "Safari UI, URL bars, or browser controls are visible in current candidates."
+  },
+  "finalScreenshotSet": [
+    {
+      "slot": 1,
+      "screen": "Home / Practice entry",
+      "message": "First impression and entry into today's one-minute studio."
+    },
+    {
+      "slot": 2,
+      "screen": "Script creation",
+      "message": "Template, self-written script, and AI-assisted script creation choices."
+    },
+    {
+      "slot": 3,
+      "screen": "Listen / お手本",
+      "message": "English script, model voice, playback controls, and path to recording a Take."
+    },
+    {
+      "slot": 4,
+      "screen": "Record",
+      "message": "English script, Take recording action, and model voice playback bar."
+    },
+    {
+      "slot": 5,
+      "screen": "Review",
+      "message": "Reference score, next focus, coach memo, retry path, and script-polish path."
+    },
+    {
+      "slot": 6,
+      "screen": "Progress",
+      "message": "Latest take, best take, reference score, take memo, and replay value."
+    },
+    {
+      "slot": 7,
+      "screen": "Voice setup three-choice state",
+      "message": "Use current model voice, record a new sample, or rebuild from an existing recorded file."
+    }
+  ],
+  "retakeConditions": [
+    "Capture without Safari UI, URL bars, or browser controls.",
+    "Use a clean demo account.",
+    "Do not show email, token, private path, raw audio, Storage path, secret, magic link, or account identifier.",
+    "Do not show recording filenames.",
+    "Do not show MIME / codec / file size / storage object metadata or other technical file details.",
+    "Do not show error states.",
+    "Do not show loading-in-progress or network failure states.",
+    "Avoid negative short-recording warnings where possible.",
+    "Do not show unimplemented claims such as Brush-up v1.1 as a v1 feature.",
+    "Do not show misleading actual-deletion-complete wording.",
+    "Avoid screens that expose provider names or internal IDs.",
+    "Confirm screenshot text is not visibly or awkwardly cut off."
+  ],
+  "currentDecision": {
+    "sevenScreenComposition": "mostly_final",
+    "finalSubmissionAssets": "retake_required",
+    "retakeTarget": "app_display_or_store_ready_capture_state",
+    "nextStep": "Decide the final capture procedure, then run a final redaction pass across all seven screenshots before Store asset processing."
+  }
+}
