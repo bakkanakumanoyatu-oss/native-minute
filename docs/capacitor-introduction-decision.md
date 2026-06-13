@@ -24,7 +24,9 @@ This is a decision packet only. It does not install packages, run `capacitor ini
 - `reviewer_account_final_login_blocker_before_capacitor_install`: `false`.
 - `provider_readiness_blocker_before_capacitor_install`: `false`.
 - `provider_readiness_blocker_before_release_qa`: `true`.
-- `blockers`: appId / Bundle ID human approval before any `capacitor init`; stop if package/auth/schema/provider/secret/destructive work becomes necessary.
+- `approved_app_id_bundle_id`: `com.nativeminutes.app`.
+- `bundle_id_human_approval_status`: `approved`.
+- `blockers`: stop if package/auth/schema/provider/secret/destructive work becomes necessary in a docs-only phase.
 
 ## Capacitor Direction
 
@@ -39,10 +41,10 @@ This is a decision packet only. It does not install packages, run `capacitor ini
 
 ## App Identifier Guardrail
 
-- Do not invent or finalize the appId / Bundle ID in this packet.
-- Candidate identifiers may be proposed later as candidates only.
-- Human approval of the final appId / Bundle ID is required before `capacitor init`.
+- Human-approved appId / Bundle ID: `com.nativeminutes.app`.
+- This satisfies the pre-init app identifier approval guardrail for a later explicit Capacitor install gate.
 - Do not register an Apple Developer bundle identifier or perform Store Console work in this gate.
+- Do not run `capacitor init`, install packages, or create iOS / Android projects in this gate.
 
 ## Auth / Deep Link Policy
 
@@ -85,7 +87,7 @@ Standard, non-destructive smoke:
 - Android is deferred until after iOS native smoke.
 - Reviewer account final login verification can wait until after the first Capacitor native smoke.
 - Provider production readiness can wait until after the first Capacitor native smoke, but remains required before final release QA.
-- Human approval of appId / Bundle ID is still required before `capacitor init`.
+- appId / Bundle ID human approval is recorded as `com.nativeminutes.app`; implementation still waits for a separate explicit install gate.
 
 ## Stop Conditions
 
@@ -94,7 +96,6 @@ Stop and create a separate gate if any of these become necessary:
 - package install during this docs-only phase
 - Capacitor init or platform add during this docs-only phase
 - iOS / Android project creation during this docs-only phase
-- appId / Bundle ID finalization without human approval
 - auth callback / redirect semantics change
 - app scheme / universal link implementation
 - DB schema / migration
@@ -104,4 +105,4 @@ Stop and create a separate gate if any of these become necessary:
 
 ## Next Gate
 
-If the human approves the appId / Bundle ID, the next gate can be a small Capacitor install preflight implementation for iOS only. That gate should still stop before Store screenshots and should report app-display, auth/session, audio, mic, upload, safe-area, legal-link, and screenshot-readiness observations separately. Before final Store submission, run a follow-up architecture gate to decide whether the preflight `server.url` approach remains acceptable or needs a different final packaging architecture.
+With appId / Bundle ID approval recorded, the next gate can be a small Capacitor install preflight implementation for iOS only, if explicitly requested. That gate should still stop before Store screenshots and should report app-display, auth/session, audio, mic, upload, safe-area, legal-link, and screenshot-readiness observations separately. Before final Store submission, run a follow-up architecture gate to decide whether the preflight `server.url` approach remains acceptable or needs a different final packaging architecture.

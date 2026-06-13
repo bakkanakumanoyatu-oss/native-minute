@@ -1,0 +1,39 @@
+{
+  "recordType": "capacitor_bundle_id_approval",
+  "recordedAt": "2026-06-13",
+  "source": "human_approved_capacitor_app_id_bundle_id_before_init",
+  "scope": {
+    "action": "record_human_approval_only",
+    "codeChanges": "not_performed",
+    "uiChanges": "not_performed",
+    "packageInstall": "not_performed",
+    "capacitorInit": "not_performed",
+    "iosProjectCreation": "not_performed",
+    "androidProjectCreation": "not_performed",
+    "xcodeOrAndroidStudioOperation": "not_performed",
+    "storeConsoleOperation": "not_performed",
+    "appleDeveloperBundleRegistration": "not_performed",
+    "providerConnection": "not_performed",
+    "dbSchemaOrMigration": "not_performed",
+    "actualDeletion": "not_performed",
+    "screenshotCapture": "not_performed",
+    "imageEditing": "not_performed"
+  },
+  "approval": {
+    "appIdBundleId": "com.nativeminutes.app",
+    "approvalStatus": "human_approved",
+    "satisfiesGuardrail": "bundle_id_human_approval_required_before_init"
+  },
+  "decisionsMaintained": {
+    "iosOnlyPreflightStart": true,
+    "androidDeferredUntilAfterIosNativeSmoke": true,
+    "hostedWebViewServerUrlScope": "preflight_only",
+    "finalStoreArchitectureFollowupRequired": true,
+    "nativeClientProviderSecretsPolicy": "provider_secret_api_key_service_role_key_must_not_be_stored_in_native_client",
+    "reviewerAccountFinalLoginTiming": "after_first_capacitor_native_smoke",
+    "providerReadinessBlockerBeforeCapacitorInstall": false,
+    "providerReadinessBlockerBeforeFinalReleaseQa": true,
+    "deepLinkUniversalLinksRequiredForFirstNativeSmoke": false
+  },
+  "nextGate": "A later explicit iOS-only Capacitor install preflight may use the approved appId / Bundle ID, while keeping hosted WebView / server.url preflight-only and leaving final Store architecture for a follow-up gate."
+}
