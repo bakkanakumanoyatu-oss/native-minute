@@ -1,0 +1,71 @@
+{
+  "recordType": "capacitor_introduction_guardrail_update",
+  "recordedAt": "2026-06-13",
+  "source": "docs_only_guardrail_update_to_capacitor_introduction_decision",
+  "scope": {
+    "action": "record_guardrail_update_only",
+    "codeChanges": "not_performed",
+    "uiChanges": "not_performed",
+    "packageInstall": "not_performed",
+    "capacitorInit": "not_performed",
+    "iosProjectCreation": "not_performed",
+    "androidProjectCreation": "not_performed",
+    "xcodeOrAndroidStudioOperation": "not_performed",
+    "storeConsoleOperation": "not_performed",
+    "providerConnection": "not_performed",
+    "dbSchemaOrMigration": "not_performed",
+    "actualDeletion": "not_performed",
+    "screenshotCapture": "not_performed",
+    "imageEditing": "not_performed",
+    "bundleIdentifierRegistration": "not_performed"
+  },
+  "context": {
+    "previousDecisionCommit": "40b9a77e26ee951fcc99796674615c14c6fc7212",
+    "previousDecision": "hosted_webview_first_ios_only_preflight",
+    "mainVsOriginMainBeforeThisWork": "expected_0_0",
+    "reasonForUpdate": "clarify_that_hosted_webview_and_server_url_are_preflight_only_and_not_final_store_architecture"
+  },
+  "decisionFields": {
+    "hosted_webview_first_scope": "preflight_only",
+    "server_url_store_submission_ready": false,
+    "final_store_architecture_followup_required": true,
+    "bundle_id_human_approval_required_before_init": true,
+    "ios_only_start_approved": true,
+    "android_deferred_until_after_ios_native_smoke": true,
+    "reviewer_account_final_login_blocker_before_capacitor_install": false,
+    "provider_readiness_blocker_before_capacitor_install": false,
+    "provider_readiness_blocker_before_release_qa": true,
+    "proceed_to_capacitor_install": "conditional_true_after_bundle_id_approval"
+  },
+  "hostedWebViewAndServerUrlGuardrail": {
+    "allowedUse": "first_native_shell_app_display_permissions_and_webview_cookie_session_smoke",
+    "storeSubmissionReadyClaim": "not_allowed",
+    "finalArchitectureDecision": "follow_up_gate_required_before_store_submission",
+    "serverSideBoundary": "API routes, route handlers, provider calls, storage ownership, protected replay, and auth callback logic remain server-side",
+    "nativeSecretsPolicy": "provider secrets, API keys, service-role keys, and server authority must not be moved into the native client"
+  },
+  "appIdAndBundleId": {
+    "actualValue": "not_recorded",
+    "candidatePolicy": "candidate_only_if_needed_later",
+    "humanApprovalRequiredBeforeInit": true,
+    "appleDeveloperRegistration": "not_performed",
+    "storeConsoleOperation": "not_performed"
+  },
+  "sequencing": {
+    "firstNativeTarget": "ios_only",
+    "android": "after_ios_native_smoke",
+    "reviewerAccountFinalLogin": "after_first_capacitor_native_smoke_is_acceptable",
+    "providerProductionReadiness": "after_first_capacitor_native_smoke_before_final_release_qa",
+    "deepLinkAndUniversalLinks": "not_required_for_first_native_smoke_later_auth_gate"
+  },
+  "stopConditions": [
+    "package_install_required_in_this_docs_only_phase",
+    "app_id_or_bundle_id_finalization_required_without_human_approval",
+    "auth_callback_or_redirect_spec_change_required",
+    "db_schema_or_migration_required",
+    "provider_real_connection_required",
+    "secret_or_env_actual_value_required",
+    "destructive_operation_required"
+  ],
+  "nextGate": "Human approves appId / Bundle ID candidate, then a separate iOS-only Capacitor install preflight can start. Final Store architecture must be decided in a later follow-up gate before submission."
+}
