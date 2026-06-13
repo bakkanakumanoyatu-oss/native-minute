@@ -1,0 +1,74 @@
+{
+  "recordType": "store_screenshot_record_progress_review",
+  "recordedAt": "2026-06-13",
+  "source": "human_review_of_additional_record_and_progress_iphone_safari_production_screenshot_candidates",
+  "codexImageInspection": "not_performed",
+  "scope": {
+    "action": "record_safe_summary_only",
+    "codeChanges": "not_performed",
+    "uiChanges": "not_performed",
+    "imageEditing": "not_performed",
+    "screenshotCapture": "not_performed",
+    "storeConsoleOperation": "not_performed",
+    "capacitorWork": "not_performed",
+    "providerConnection": "not_performed",
+    "dbSchemaOrMigration": "not_performed",
+    "actualDeletion": "not_performed"
+  },
+  "context": {
+    "priorScreenshotCandidateSelectionReview": "committed_and_pushed",
+    "nextWorkstream": "final_screenshot_selection_and_store_asset_preparation"
+  },
+  "recordCandidates": [
+    {
+      "candidate": "今回の Take detail view",
+      "decision": "skip_recommended_for_store_asset",
+      "reason": "Shows internal or technical-looking recording details and a too-short warning.",
+      "avoidInFinalAsset": [
+        "long recording filename",
+        "MIME / codec",
+        "file size",
+        "duration metadata",
+        "too-short warning"
+      ]
+    },
+    {
+      "candidate": "English script + Take recording + model voice playback bar",
+      "decision": "adoption_candidate",
+      "reason": "Clearly communicates the flow: listen to the model, read the English script, and record a Take.",
+      "finalAssetNote": "Retake or prepare without Safari UI, URL bar, or browser controls."
+    }
+  ],
+  "progressCandidates": [
+    {
+      "candidate": "Voice log shelf / one-minute stock 2 of 5",
+      "decision": "hold_lower_priority",
+      "reason": "Useful for practice stock or voice log management, but weaker as Progress and lower priority within limited Store slots."
+    },
+    {
+      "candidate": "Latest take + best take",
+      "decision": "adoption_candidate",
+      "reason": "Communicates practice history, reflection, reference score, take memo, replay, and best-take value.",
+      "finalAssetNote": "Prefer a final capture with positive or neutral memo text instead of a too-short recording warning."
+    }
+  ],
+  "updatedRecommendedFinalSet": [
+    "Home / Practice entry",
+    "Script creation",
+    "Listen / お手本",
+    "Record: English script + Take recording",
+    "Review: reference score + next focus + coach memo",
+    "Progress: latest take + best take",
+    "Voice setup three-choice state"
+  ],
+  "preFinalAssetSafetyNotes": [
+    "Avoid Safari UI, URL bars, and browser controls in final assets.",
+    "Use a clean demo account.",
+    "Do not show email, token, private path, raw audio, Storage path, secret, magic link, or account identifier.",
+    "Do not show recording filenames, MIME / codec, file size, or other technical file metadata.",
+    "Avoid error states, loading-in-progress states, network failure states, and too-short warnings when possible.",
+    "Do not show unimplemented claims such as Brush-up v1.1 as a v1 feature.",
+    "Do not show misleading actual-deletion-complete wording."
+  ],
+  "nextStep": "Use the updated final set for final screenshot retake or preparation, with Record and Progress selected from the adoption candidates and a final redaction review before Store asset processing."
+}
