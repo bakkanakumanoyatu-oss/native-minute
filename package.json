@@ -29,6 +29,8 @@
     "e2e:setup-voice": "npx playwright test tests/e2e/smoke.spec.ts --grep \"minimal setup voice UI flow|setup voice|mock voice\""
   },
   "dependencies": {
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/ios": "^8.4.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.0",
     "clsx": "^2.1.1",
@@ -41,6 +43,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.4.0",
     "@playwright/test": "^1.58.2",
     "@types/node": "^22.13.4",
     "@types/react": "^18.3.18",

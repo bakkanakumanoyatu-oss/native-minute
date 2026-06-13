@@ -1,0 +1,71 @@
+{
+  "recordType": "capacitor_ios_preflight_install",
+  "recordedAt": "2026-06-13",
+  "source": "initial_capacitor_ios_only_preflight_shell_install",
+  "scope": {
+    "action": "install_capacitor_core_cli_ios_and_create_ios_preflight_shell",
+    "androidProjectCreation": "not_performed",
+    "xcodeDeviceRun": "not_performed",
+    "storeConsoleOperation": "not_performed",
+    "finalScreenshotCapture": "not_performed",
+    "imageEditing": "not_performed",
+    "providerConnection": "not_performed",
+    "openaiCustomVoiceEntitlementCheck": "not_performed",
+    "actualDeletion": "not_performed",
+    "dbSchemaOrMigration": "not_performed",
+    "authCallbackOrRedirectChange": "not_performed",
+    "deepLinkOrUniversalLinks": "not_performed",
+    "uiRedesign": "not_performed"
+  },
+  "installedPackages": {
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/cli": "^8.4.0",
+    "@capacitor/ios": "^8.4.0"
+  },
+  "packagePlacement": {
+    "dependencies": [
+      "@capacitor/core",
+      "@capacitor/ios"
+    ],
+    "devDependencies": [
+      "@capacitor/cli"
+    ]
+  },
+  "capacitorConfig": {
+    "file": "capacitor.config.ts",
+    "appId": "com.nativeminutes.app",
+    "appName": "Native Minutes",
+    "webDir": "www",
+    "serverUrl": "https://native-minute.vercel.app",
+    "serverUrlScope": "preflight_only",
+    "storeSubmissionReadyClaim": false,
+    "finalStoreArchitectureFollowupRequired": true,
+    "secretsOrEnvValuesIncluded": false
+  },
+  "webDir": {
+    "placeholder": "www/index.html",
+    "purpose": "Capacitor webDir placeholder for hosted WebView preflight",
+    "nextStaticExport": "not_enabled"
+  },
+  "iosProject": {
+    "path": "ios/",
+    "bundleId": "com.nativeminutes.app",
+    "displayName": "Native Minutes",
+    "microphoneUsageDescription": "present",
+    "androidAdded": false
+  },
+  "guardrailsMaintained": [
+    "hosted_webview_server_url_is_preflight_only",
+    "server_url_does_not_mean_store_submission_ready",
+    "final_store_architecture_followup_required",
+    "native_client_must_not_hold_provider_secret_api_key_or_service_role_key",
+    "android_deferred_until_after_ios_native_smoke",
+    "deep_link_and_universal_links_not_implemented",
+    "provider_connection_not_performed",
+    "secret_env_actual_values_not_inspected_or_recorded"
+  ],
+  "installWarnings": [
+    "npm install reported 10 audit vulnerabilities: 5 moderate and 5 high. npm audit fix was not run in this preflight."
+  ],
+  "nextGate": "Run iOS native shell smoke from Xcode or a dedicated iOS preflight gate, then decide Android timing and final Store architecture follow-up later."
+}

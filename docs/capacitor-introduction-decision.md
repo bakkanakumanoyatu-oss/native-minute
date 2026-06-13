@@ -8,6 +8,7 @@ This is a decision packet only. It does not install packages, run `capacitor ini
 - Current repo is a hosted Next.js App Router app with API routes and server-side provider/storage boundaries.
 - Final Store screenshots should be captured from Capacitor app-display after native preflight, not from Safari.
 - Provider production readiness and actual deletion proof remain separate gates.
+- Capacitor iOS preflight shell has started: core / CLI / iOS packages are installed, `capacitor.config.ts` is present, and an iOS project exists for app-display smoke only.
 
 ## Decision Summary
 
@@ -35,6 +36,7 @@ This is a decision packet only. It does not install packages, run `capacitor ini
 - Do not claim Store submission readiness from `server.url` alone.
 - Final Store architecture must be re-checked in a follow-up gate before release.
 - Point the native shell at the hosted production app only for the first preflight smoke.
+- Current preflight config uses `https://native-minute.vercel.app` as `server.url`.
 - Keep Next.js API routes, route handlers, auth callback logic, protected replay routes, upload routes, evaluation routes, account deletion routes, and server-only helpers on the hosted server.
 - Do not move provider secrets, provider API keys, service-role keys, or server-owned data authority into the native client.
 - Treat any request to move backend logic into the native app as a separate architecture gate.
@@ -44,7 +46,8 @@ This is a decision packet only. It does not install packages, run `capacitor ini
 - Human-approved appId / Bundle ID: `com.nativeminutes.app`.
 - This satisfies the pre-init app identifier approval guardrail for a later explicit Capacitor install gate.
 - Do not register an Apple Developer bundle identifier or perform Store Console work in this gate.
-- Do not run `capacitor init`, install packages, or create iOS / Android projects in this gate.
+- Capacitor init and iOS project creation have now been performed for the explicit iOS-only preflight shell.
+- Android project creation, Apple Developer bundle registration, and Store Console work remain out of scope.
 
 ## Auth / Deep Link Policy
 
@@ -105,4 +108,4 @@ Stop and create a separate gate if any of these become necessary:
 
 ## Next Gate
 
-With appId / Bundle ID approval recorded, the next gate can be a small Capacitor install preflight implementation for iOS only, if explicitly requested. That gate should still stop before Store screenshots and should report app-display, auth/session, audio, mic, upload, safe-area, legal-link, and screenshot-readiness observations separately. Before final Store submission, run a follow-up architecture gate to decide whether the preflight `server.url` approach remains acceptable or needs a different final packaging architecture.
+With the iOS preflight shell installed, the next gate is human iOS native smoke or an Xcode-focused preflight. It should still stop before Store screenshots and should report app-display, auth/session, audio, mic, upload, safe-area, legal-link, and screenshot-readiness observations separately. Before final Store submission, run a follow-up architecture gate to decide whether the preflight `server.url` approach remains acceptable or needs a different final packaging architecture.
