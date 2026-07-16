@@ -14,6 +14,12 @@ function formatJsonRetryFailure<TPayload>(url: string, result: JsonRetryResult<T
   });
 }
 
+function formatStatusOnlyRetryFailure<TPayload>(result: JsonRetryResult<TPayload> | null) {
+  return JSON.stringify({
+    status: result?.status ?? null
+  });
+}
+
 export async function postJsonWithRetry<TPayload = unknown>(
   request: APIRequestContext,
   url: string,
@@ -28,18 +34,22 @@ export async function postJsonWithRetry<TPayload = unknown>(
   let lastResult: JsonRetryResult<TPayload> | null = null;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const response = await request.post(url, { data });
-    const payload = await response.json().catch(() => null);
-    const result: JsonRetryResult<TPayload> = {
-      ok: response.ok(),
-      status: response.status(),
-      payload: payload as TPayload | null
-    };
+    try {
+      const response = await request.post(url, { data });
+      const payload = await response.json().catch(() => null);
+      const result: JsonRetryResult<TPayload> = {
+        ok: response.ok(),
+        status: response.status(),
+        payload: payload as TPayload | null
+      };
 
-    lastResult = result;
+      lastResult = result;
 
-    if (result.ok) {
-      return result;
+      if (result.ok) {
+        return result;
+      }
+    } catch {
+      // Auth setup failures intentionally omit request and response details from reporters.
     }
 
     if (attempt < attempts - 1) {
@@ -47,7 +57,7 @@ export async function postJsonWithRetry<TPayload = unknown>(
     }
   }
 
-  expect(lastResult?.ok, formatJsonRetryFailure(url, lastResult)).toBeTruthy();
+  expect(lastResult?.ok, formatStatusOnlyRetryFailure(lastResult)).toBeTruthy();
   throw new Error(`${url} が成功しませんでした。`);
 }
 

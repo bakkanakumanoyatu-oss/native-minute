@@ -4,6 +4,22 @@ node_modules
 .env.local
 .DS_Store
 coverage
-playwright-report
-test-results
-tests/e2e/.auth
+playwright-report*/
+blob-report*/
+test-results*/
+playwright/.auth/
+tests/e2e/.auth/
+**/storage-state*.json
+**/auth-state*.json
+**/*.trace.zip
+**/*-trace.zip
+**/*_trace.zip
+**/trace.zip
+*.swp
+
+# Xcode / Simulator generated state
+DerivedData/
+**/xcuserdata/
+*.xcresult/
+*.xcresult.zip
+*.xcuserstate

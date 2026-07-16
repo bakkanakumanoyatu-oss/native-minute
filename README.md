@@ -409,10 +409,12 @@ S12e では、この human microphone smoke は通過済みです。別環境で
   - `npm run build`
 - typecheck
   - `npm run typecheck`
+- tracked auth artifact gate
+  - `npm run check:auth-artifacts`
 - voice style mapping smoke
   - `npm run voice:style-smoke`
 
-Playwright は最小スモークを維持していますが、E2E 拡張は主目的にしていません。
+Playwright は最小スモークを維持していますが、E2E 拡張は主目的にしていません。認証setupと未認証route guardではtrace / video / screenshotをデフォルトで残さず、storage stateと認証projectの出力はOSの一時領域だけに置いて実行終了時に削除します。秘密値、認証URL、cookie、storage stateをログ・画像・報告へ貼り付けないでください。
 
 ## 現在の制約
 

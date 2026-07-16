@@ -2,6 +2,11 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 
 import { defineConfig, devices } from "@playwright/test";
+import {
+  authGuardOutputDir,
+  authSetupOutputDir,
+  authStorageStatePath
+} from "./tests/e2e/auth-artifact-policy";
 import { DEFAULT_E2E_TEST_EMAIL, DEFAULT_E2E_TEST_PASSWORD, DEFAULT_E2E_TEST_SECRET, getE2ETestEnvValue } from "./tests/e2e/e2e-env";
 const port = process.env.PLAYWRIGHT_PORT ?? "3100";
 const baseURL = `http://127.0.0.1:${port}`;
@@ -14,6 +19,8 @@ export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
   workers: 1,
+  globalSetup: "./tests/e2e/global-setup.ts",
+  globalTeardown: "./tests/e2e/global-teardown.ts",
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL,
@@ -39,16 +46,38 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "setup",
-      testMatch: /auth\.setup\.ts/
+      name: "auth-setup",
+      testMatch: /auth\.setup\.ts/,
+      outputDir: authSetupOutputDir,
+      use: {
+        trace: "off",
+        screenshot: "off",
+        video: "off"
+      }
+    },
+    {
+      name: "auth-guard",
+      testMatch: /auth-guard\.spec\.ts/,
+      outputDir: authGuardOutputDir,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: {
+          cookies: [],
+          origins: []
+        },
+        trace: "off",
+        screenshot: "off",
+        video: "off"
+      }
     },
     {
       name: "chromium",
+      testIgnore: /auth-guard\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "tests/e2e/.auth/user.json"
+        storageState: authStorageStatePath
       },
-      dependencies: ["setup"]
+      dependencies: ["auth-setup"]
     }
   ]
 });

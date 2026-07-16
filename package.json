@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit --incremental false",
+    "check:auth-artifacts": "node scripts/check-auth-artifacts.mjs",
+    "check:auth-artifacts:self-test": "node scripts/check-auth-artifacts.mjs --self-test",
     "voice:preflight": "node scripts/voice-provider-preflight.mjs",
     "voice:style-smoke": "node scripts/voice-style-mapping-smoke.mjs",
     "pronunciation:preflight": "node scripts/pronunciation-provider-preflight.mjs",

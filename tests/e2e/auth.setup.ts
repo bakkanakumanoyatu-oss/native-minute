@@ -1,19 +1,23 @@
-import { mkdir } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { mkdir, writeFile } from "node:fs/promises";
+import { test } from "@playwright/test";
+import { authArtifactRoot, authStorageStatePath } from "./auth-artifact-policy";
 import { DEFAULT_E2E_TEST_SECRET, getE2ETestEnvValue } from "./e2e-env";
 import { postJsonWithRetry } from "./request-helpers";
 
-const authStatePath = "tests/e2e/.auth/user.json";
 const e2eSecret = getE2ETestEnvValue(process.env.E2E_TEST_SECRET, DEFAULT_E2E_TEST_SECRET);
 
 test("create authenticated storage state", async ({ page }) => {
-  await mkdir("tests/e2e/.auth", { recursive: true });
+  await mkdir(authArtifactRoot, { mode: 0o700, recursive: true });
   await page.goto("/");
 
-  const result = await postJsonWithRetry(page.context().request, "/api/test-login", {
+  await postJsonWithRetry(page.context().request, "/api/test-login", {
     secret: e2eSecret
   });
 
-  expect(result.ok, JSON.stringify(result.payload)).toBeTruthy();
-  await page.context().storageState({ path: authStatePath });
+  const storageState = await page.context().storageState();
+  await writeFile(authStorageStatePath, JSON.stringify(storageState), {
+    encoding: "utf8",
+    flag: "wx",
+    mode: 0o600
+  });
 });
