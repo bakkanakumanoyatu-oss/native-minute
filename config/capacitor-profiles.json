@@ -1,0 +1,15 @@
+{
+  "remote-dev": {
+    "webDir": "www",
+    "server": {
+      "url": "https://native-minute.vercel.app",
+      "cleartext": false
+    }
+  },
+  "local-spike": {
+    "webDir": "apps/mobile/dist"
+  },
+  "production": {
+    "webDir": "apps/mobile/dist"
+  }
+}

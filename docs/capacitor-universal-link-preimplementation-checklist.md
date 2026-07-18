@@ -109,7 +109,7 @@ Allowed only if explicitly approved for simulator/local smoke:
 2. Add AASA delivery in repo and verify production HTTPS response after deploy.
 3. Add iOS Associated Domains entitlement for `applinks:native-minute.vercel.app`.
 4. Add Capacitor iOS 8-compatible Universal Link forwarding.
-5. Run `npx cap sync ios`.
+5. Select the intended profile explicitly. For this legacy hosted preflight, run `npm run mobile:sync:ios:remote-dev`; for the B1C local bundle use `npm run mobile:sync:ios`. Do not use raw `npx cap sync ios` or treat the hosted preflight as a production-ready local bundle.
 6. Run repo checks: `git diff --check`, `npm run lint`, `npm run build`, `npm run typecheck`.
 7. Human runs Xcode smoke on simulator and preferably physical iPhone.
 8. Only after auth/session passes, continue to app-display screenshot readiness.

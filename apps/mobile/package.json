@@ -1,0 +1,35 @@
+{
+  "name": "@native-minute/mobile",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "MOBILE_PROFILE=development vite --host 127.0.0.1",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" --max-warnings=0",
+    "typecheck": "npm run typecheck:source && npm run typecheck:tests",
+    "typecheck:source": "tsc --noEmit -p tsconfig.json",
+    "typecheck:tests": "tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest run",
+    "build:local-spike": "npm run typecheck && MOBILE_PROFILE=local-spike vite build",
+    "build:production": "npm run typecheck && MOBILE_PROFILE=production vite build"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@typescript-eslint/eslint-plugin": "^8.64.0",
+    "@typescript-eslint/parser": "^8.64.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "typescript": "^5.7.3",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
+  }
+}

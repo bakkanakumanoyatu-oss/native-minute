@@ -1,0 +1,204 @@
+:root {
+  color: #1f2a24;
+  background: #f4f0e8;
+  font-family:
+    Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+    "Yu Gothic UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 90% 5%, rgba(222, 154, 88, 0.2), transparent 32rem),
+    #f4f0e8;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  min-height: 48px;
+  width: 100%;
+  margin-top: 1.25rem;
+  border: 0;
+  border-radius: 999px;
+  color: #fffdf8;
+  background: #204f3b;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: progress;
+  opacity: 0.62;
+}
+
+.app-shell {
+  width: min(100%, 34rem);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding:
+    max(2rem, env(safe-area-inset-top))
+    max(1.25rem, env(safe-area-inset-right))
+    max(2rem, env(safe-area-inset-bottom))
+    max(1.25rem, env(safe-area-inset-left));
+}
+
+.brand-mark {
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  place-items: center;
+  border-radius: 1.1rem;
+  color: #fffdf8;
+  background: #204f3b;
+  box-shadow: 0 0.7rem 1.8rem rgba(32, 79, 59, 0.2);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.product-name {
+  margin: 0.9rem 0 0.25rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.profile-badge {
+  display: inline-flex;
+  margin: 0 0 2rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(32, 79, 59, 0.18);
+  border-radius: 999px;
+  color: #52665b;
+  background: rgba(255, 253, 248, 0.72);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.intro-card,
+.status-card {
+  border: 1px solid rgba(31, 42, 36, 0.1);
+  border-radius: 1.5rem;
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: 0 1.1rem 2.6rem rgba(68, 57, 43, 0.08);
+}
+
+.intro-card {
+  padding: 1.75rem;
+}
+
+.intro-card h1 {
+  margin: 0.3rem 0 0.8rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 10vw, 3rem);
+  line-height: 1.05;
+}
+
+.intro-card > p:not(.eyebrow) {
+  color: #52665b;
+  line-height: 1.75;
+}
+
+.scope-note {
+  margin-bottom: 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(31, 42, 36, 0.1);
+  font-size: 0.9rem;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #9b5c2f;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.status-card {
+  margin-top: 1rem;
+  padding: 1.25rem;
+}
+
+.status-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.status-heading h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+}
+
+.status-card > p {
+  margin: 0.85rem 0 0;
+  color: #617168;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.status-dot {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #d99a52;
+  box-shadow: 0 0 0 0.3rem rgba(217, 154, 82, 0.14);
+}
+
+.status-connected .status-dot {
+  background: #2e8b63;
+  box-shadow: 0 0 0 0.3rem rgba(46, 139, 99, 0.14);
+}
+
+.status-offline .status-dot,
+.status-network-error .status-dot,
+.status-server-error .status-dot,
+.status-timeout .status-dot,
+.status-invalid-response .status-dot {
+  background: #b8654a;
+  box-shadow: 0 0 0 0.3rem rgba(184, 101, 74, 0.14);
+}
+
+footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 1.75rem;
+  color: #75827b;
+  font-size: 0.72rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .status-checking .status-dot {
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.4;
+    transform: scale(0.82);
+  }
+}

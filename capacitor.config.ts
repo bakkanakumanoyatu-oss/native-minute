@@ -1,16 +1,23 @@
 import type { CapacitorConfig } from '@capacitor/cli';
+import profileConfig from './config/capacitor-profiles.json';
+
+type CapacitorProfile = keyof typeof profileConfig;
+
+const requestedProfile = process.env.CAPACITOR_PROFILE?.trim();
+
+if (!requestedProfile || !Object.prototype.hasOwnProperty.call(profileConfig, requestedProfile)) {
+  throw new Error(
+    'CAPACITOR_PROFILE must be one of: remote-dev, local-spike, production.'
+  );
+}
+
+const profile = requestedProfile as CapacitorProfile;
+const selectedProfile = profileConfig[profile];
 
 const config: CapacitorConfig = {
   appId: 'com.nativeminutes.app',
   appName: 'Native Minutes',
-  webDir: 'www',
-  // Preflight only: this hosted WebView URL is for iOS native shell,
-  // app-display, permissions, and WebView cookie/session smoke checks.
-  // It is not a final Store-submission-ready architecture claim.
-  server: {
-    url: 'https://native-minute.vercel.app',
-    cleartext: false
-  }
+  ...selectedProfile
 };
 
 export default config;

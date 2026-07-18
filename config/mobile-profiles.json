@@ -1,0 +1,11 @@
+{
+  "development": {
+    "bffBaseUrl": "http://localhost:3000"
+  },
+  "local-spike": {
+    "bffBaseUrl": "https://native-minute.vercel.app"
+  },
+  "production": {
+    "bffBaseUrl": "https://native-minute.vercel.app"
+  }
+}

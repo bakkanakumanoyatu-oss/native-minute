@@ -2,6 +2,9 @@
   "name": "native-minute",
   "private": true,
   "version": "0.1.0",
+  "workspaces": [
+    "apps/mobile"
+  ],
   "scripts": {
     "dev": "NEXT_DIST_DIR=.next-dev next dev",
     "build": "next build",
@@ -10,6 +13,18 @@
     "typecheck": "tsc --noEmit --incremental false",
     "check:auth-artifacts": "node scripts/check-auth-artifacts.mjs",
     "check:auth-artifacts:self-test": "node scripts/check-auth-artifacts.mjs --self-test",
+    "mobile:dev": "npm run dev --workspace @native-minute/mobile",
+    "mobile:lint": "npm run lint --workspace @native-minute/mobile",
+    "mobile:typecheck": "npm run typecheck --workspace @native-minute/mobile",
+    "mobile:test": "npm run test --workspace @native-minute/mobile",
+    "mobile:build": "npm run build:local-spike --workspace @native-minute/mobile",
+    "mobile:build:production": "npm run build:production --workspace @native-minute/mobile",
+    "mobile:sync:ios": "npm run mobile:build && CAPACITOR_PROFILE=local-spike npx cap sync ios",
+    "mobile:sync:ios:production": "npm run mobile:build:production && CAPACITOR_PROFILE=production npx cap sync ios",
+    "mobile:sync:ios:remote-dev": "CAPACITOR_PROFILE=remote-dev npx cap sync ios",
+    "check:mobile-release": "node scripts/check-mobile-release.mjs --profile production",
+    "check:mobile-release:local-spike": "node scripts/check-mobile-release.mjs --profile local-spike",
+    "check:mobile-release:self-test": "node scripts/check-mobile-release-self-test.mjs",
     "voice:preflight": "node scripts/voice-provider-preflight.mjs",
     "voice:style-smoke": "node scripts/voice-style-mapping-smoke.mjs",
     "pronunciation:preflight": "node scripts/pronunciation-provider-preflight.mjs",

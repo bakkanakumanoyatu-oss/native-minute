@@ -15,6 +15,10 @@ function isAuthFlowPath(pathname: string) {
   return pathname === "/auth/callback" || pathname.startsWith("/api/auth/");
 }
 
+function isPublicMobileHealthPath(pathname: string) {
+  return pathname === "/api/mobile/health";
+}
+
 function isStaticAssetPath(pathname: string) {
   return pathname.startsWith("/_next/") || pathname === "/favicon.ico";
 }
@@ -32,7 +36,7 @@ export async function middleware(request: NextRequest) {
   const nextPath = `${pathname}${request.nextUrl.search}`;
   const protectedPath = isProtectedPath(pathname);
 
-  if (isStaticAssetPath(pathname) || isAuthFlowPath(pathname)) {
+  if (isStaticAssetPath(pathname) || isAuthFlowPath(pathname) || isPublicMobileHealthPath(pathname)) {
     return nextResponse(request);
   }
 
