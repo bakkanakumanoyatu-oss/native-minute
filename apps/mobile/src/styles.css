@@ -30,6 +30,30 @@ input {
   font: inherit;
 }
 
+label {
+  display: block;
+  margin: 1.25rem 0 0.45rem;
+  color: #33493e;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(31, 42, 36, 0.22);
+  border-radius: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  color: #1f2a24;
+  background: #fff;
+}
+
+input:focus-visible,
+button:focus-visible {
+  outline: 3px solid rgba(217, 154, 82, 0.45);
+  outline-offset: 2px;
+}
+
 button {
   min-height: 48px;
   width: 100%;
@@ -116,6 +140,97 @@ button:disabled {
 .intro-card > p:not(.eyebrow) {
   color: #52665b;
   line-height: 1.75;
+}
+
+.auth-notice,
+.auth-error,
+.empty-state {
+  margin-top: 1rem;
+  border-radius: 1rem;
+  padding: 1rem;
+  line-height: 1.55;
+}
+
+.auth-notice,
+.empty-state {
+  border: 1px solid rgba(46, 139, 99, 0.2);
+  background: rgba(46, 139, 99, 0.08);
+}
+
+.auth-error {
+  border: 1px solid rgba(184, 101, 74, 0.24);
+  color: #783e2c;
+  background: rgba(184, 101, 74, 0.08);
+}
+
+.auth-notice p,
+.auth-error p,
+.empty-state p {
+  margin-bottom: 0;
+}
+
+.secondary-button {
+  color: #204f3b;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(32, 79, 59, 0.35);
+}
+
+.scripts-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.scripts-heading h1 {
+  flex: 1;
+}
+
+.text-button {
+  width: auto;
+  min-height: 40px;
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  color: #204f3b;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(32, 79, 59, 0.24);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.script-list {
+  display: grid;
+  gap: 0.85rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.script-list li {
+  border: 1px solid rgba(31, 42, 36, 0.1);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: #fff;
+}
+
+.script-list h2 {
+  margin: 0.55rem 0;
+  font-size: 1.05rem;
+}
+
+.script-list p {
+  margin: 0;
+  color: #52665b;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.script-meta {
+  display: flex;
+  gap: 0.5rem;
+  color: #75827b;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .scope-note {

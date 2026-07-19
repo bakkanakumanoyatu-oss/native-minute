@@ -29,10 +29,10 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createSupabaseRouteClient();
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut({ scope: "local" });
 
   if (error) {
-    return supabase.applyToResponse(jsonError("サインアウトできませんでした。", 400, { detail: error.message }));
+    return supabase.applyToResponse(jsonError("サインアウトできませんでした。", 400));
   }
 
   return clearTransientAuthCookies(request, supabase.applyToResponse(jsonOk({ signedOut: true })));

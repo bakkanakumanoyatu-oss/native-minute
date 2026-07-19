@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchHealth, initialHealthState } from "./api";
+import { fetchHealth, fetchMobileScripts, initialHealthState } from "./api";
 
 const BFF_BASE_URL = "https://native-minute.example";
 
@@ -95,5 +95,87 @@ describe("fetchHealth", () => {
     await vi.advanceTimersByTimeAsync(10);
 
     await expect(resultPromise).resolves.toEqual({ kind: "timeout" });
+  });
+});
+
+describe("fetchMobileScripts", () => {
+  it("sends one Bearer credential without cookies and validates owned-list data", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          data: {
+            scripts: [
+              {
+                id: "script-fixture",
+                title: "Morning update",
+                content: "A one-minute practice script.",
+                targetSeconds: 60,
+                locale: "en-US",
+                createdAt: "2026-07-18T00:00:00.000Z",
+                updatedAt: "2026-07-19T00:00:00.000Z"
+              }
+            ]
+          }
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    await expect(
+      fetchMobileScripts(BFF_BASE_URL, "access-material-fixture", { fetchImpl })
+    ).resolves.toMatchObject({ kind: "success", scripts: [{ id: "script-fixture" }] });
+    expect(fetchImpl).toHaveBeenCalledWith(
+      BFF_BASE_URL + "/api/mobile/scripts",
+      expect.objectContaining({
+        method: "GET",
+        credentials: "omit",
+        cache: "no-store",
+        headers: expect.objectContaining({
+          Authorization: "Bearer access-material-fixture"
+        })
+      })
+    );
+  });
+
+  it.each([
+    [401, "session_expired", "unauthorized"],
+    [403, "account_deletion_in_progress", "forbidden"]
+  ] as const)("maps status %s to a safe state", async (status, reasonCode, kind) => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ ok: false, error: { reasonCode } }), {
+        status,
+        headers: { "Content-Type": "application/json" }
+      })
+    );
+
+    await expect(
+      fetchMobileScripts(BFF_BASE_URL, "access-material-fixture", { fetchImpl })
+    ).resolves.toEqual({ kind, reasonCode });
+  });
+
+  it("honors only a bounded Retry-After value", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ ok: false, error: { reasonCode: "rate_limited" } }), {
+        status: 429,
+        headers: { "Retry-After": "45" }
+      })
+    );
+
+    await expect(
+      fetchMobileScripts(BFF_BASE_URL, "access-material-fixture", { fetchImpl })
+    ).resolves.toEqual({ kind: "rate-limited", retryAfterSeconds: 45 });
+  });
+
+  it("rejects an unsafe or malformed success body", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, data: { scripts: [{ id: "only-id" }] } }), {
+        status: 200
+      })
+    );
+
+    await expect(
+      fetchMobileScripts(BFF_BASE_URL, "access-material-fixture", { fetchImpl })
+    ).resolves.toEqual({ kind: "invalid-response" });
   });
 });

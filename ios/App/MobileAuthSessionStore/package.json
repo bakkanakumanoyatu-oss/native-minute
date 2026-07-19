@@ -1,0 +1,13 @@
+{
+  "name": "native-minute-mobile-auth-session-store",
+  "version": "0.1.0",
+  "private": true,
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  },
+  "peerDependencies": {
+    "@capacitor/core": ">=8.0.0"
+  }
+}

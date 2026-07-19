@@ -1,11 +1,17 @@
 {
   "development": {
-    "bffBaseUrl": "http://localhost:3000"
+    "bffBaseUrl": "http://localhost:3000",
+    "authCallbackMode": "custom-scheme",
+    "authCallbackUri": "com.nativeminutes.app.debug://auth/callback"
   },
   "local-spike": {
-    "bffBaseUrl": "https://native-minute.vercel.app"
+    "bffBaseUrl": "https://native-minute.vercel.app",
+    "authCallbackMode": "custom-scheme",
+    "authCallbackUri": "com.nativeminutes.app.debug://auth/callback"
   },
   "production": {
-    "bffBaseUrl": "https://native-minute.vercel.app"
+    "bffBaseUrl": "https://native-minute.vercel.app",
+    "authCallbackMode": "unconfigured",
+    "authCallbackUri": null
   }
 }
