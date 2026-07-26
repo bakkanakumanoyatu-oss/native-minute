@@ -12,7 +12,11 @@ export type MobileAuthReasonCode =
   | "auth_session_expired"
   | "auth_session_invalid"
   | "auth_refresh_failed"
-  | "auth_secure_store_unavailable"
+  | "auth_secure_store_device_locked"
+  | "auth_secure_store_interaction_not_allowed"
+  | "auth_secure_store_missing_entitlement"
+  | "auth_secure_store_plugin_unavailable"
+  | "auth_secure_store_unexpected_status"
   | "auth_unavailable";
 
 export type MobileAuthState =

@@ -37,10 +37,17 @@ export interface MobileAuthSessionStore {
   clearPendingPkce(): Promise<void>;
 }
 
+export type MobileAuthSecureStoreReason =
+  | "secure_storage_device_locked"
+  | "secure_storage_interaction_not_allowed"
+  | "secure_storage_missing_entitlement"
+  | "secure_storage_plugin_unavailable"
+  | "secure_storage_unexpected_status";
+
 export type MobileAuthSessionStoreReason =
   | "invalid_session_envelope"
   | "invalid_pending_pkce_envelope"
-  | "secure_storage_unavailable";
+  | MobileAuthSecureStoreReason;
 
 export class MobileAuthSessionStoreError extends Error {
   readonly reason: MobileAuthSessionStoreReason;
@@ -207,11 +214,43 @@ function decodePendingPkce(value: unknown, nowSeconds: number) {
   return isPendingPkceEnvelope(parsed, nowSeconds) ? parsed : null;
 }
 
+const NATIVE_SECURE_STORE_REASON_BY_MESSAGE = new Map<
+  string,
+  MobileAuthSecureStoreReason
+>([
+  ["secure_storage_device_locked", "secure_storage_device_locked"],
+  [
+    "secure_storage_interaction_not_allowed",
+    "secure_storage_interaction_not_allowed"
+  ],
+  ["secure_storage_missing_entitlement", "secure_storage_missing_entitlement"],
+  ["secure_storage_unexpected_status", "secure_storage_unexpected_status"]
+]);
+
+function classifyPluginError(error: unknown): MobileAuthSecureStoreReason {
+  if (!isRecord(error)) {
+    return "secure_storage_unexpected_status";
+  }
+
+  if (error.code === "UNIMPLEMENTED") {
+    return "secure_storage_plugin_unavailable";
+  }
+
+  if (error.code !== "UNAVAILABLE" || typeof error.message !== "string") {
+    return "secure_storage_unexpected_status";
+  }
+
+  return (
+    NATIVE_SECURE_STORE_REASON_BY_MESSAGE.get(error.message) ??
+    "secure_storage_unexpected_status"
+  );
+}
+
 async function runPluginCall<T>(operation: () => Promise<T>): Promise<T> {
   try {
     return await operation();
-  } catch {
-    throw new MobileAuthSessionStoreError("secure_storage_unavailable");
+  } catch (error) {
+    throw new MobileAuthSessionStoreError(classifyPluginError(error));
   }
 }
 
@@ -234,7 +273,7 @@ export class KeychainMobileAuthSessionStore implements MobileAuthSessionStore {
     nowSeconds: () => number = () => Math.floor(Date.now() / 1000)
   ) {
     if (!STORAGE_NAMESPACE_PATTERN.test(namespace)) {
-      throw new MobileAuthSessionStoreError("secure_storage_unavailable");
+      throw new MobileAuthSessionStoreError("secure_storage_unexpected_status");
     }
 
     this.namespace = namespace;

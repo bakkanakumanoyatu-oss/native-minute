@@ -6,7 +6,11 @@ import {
   type MobileSupabaseAuth
 } from "./mobile-auth";
 import { InMemoryMobileAuthSessionStore } from "./session-store.test-support";
-import type { MobileAuthSessionStore, PendingPkceEnvelope } from "./session-store";
+import type {
+  MobileAuthSecureStoreReason,
+  MobileAuthSessionStore,
+  PendingPkceEnvelope
+} from "./session-store";
 import { beginPendingPkceExchange } from "./session-store";
 
 const NOW_SECONDS = 1_800_000_000;
@@ -170,6 +174,30 @@ function callbackFromPending(pending: PendingPkceEnvelope) {
 }
 
 describe("MobileAuthService", () => {
+  it.each([
+    ["secure_storage_device_locked", "auth_secure_store_device_locked"],
+    [
+      "secure_storage_interaction_not_allowed",
+      "auth_secure_store_interaction_not_allowed"
+    ],
+    ["secure_storage_missing_entitlement", "auth_secure_store_missing_entitlement"],
+    ["secure_storage_plugin_unavailable", "auth_secure_store_plugin_unavailable"],
+    ["secure_storage_unexpected_status", "auth_secure_store_unexpected_status"]
+  ] as const)(
+    "maps %s to the matching fixed auth reason",
+    async (storeReason: MobileAuthSecureStoreReason, authReason) => {
+      const harness = createHarness();
+      harness.store.setFailureReason(storeReason);
+
+      await harness.service.start();
+
+      expect(harness.service.getState()).toEqual({
+        kind: "fatal_error",
+        reasonCode: authReason
+      });
+    }
+  );
+
   it("sends a generic Magic Link request, persists PKCE, and enforces cooldown", async () => {
     const { service, store, auth } = createHarness();
 
@@ -412,6 +440,19 @@ describe("MobileAuthService", () => {
     expect(harness.auth.refreshCount).toBe(1);
     expect(harness.service.getState()).toEqual({ kind: "unauthenticated" });
     await expect(harness.store.loadSession()).resolves.toBeNull();
+  });
+
+  it("preserves the classified Keychain reason when local logout cannot clear storage", async () => {
+    const harness = createHarness();
+    await harness.service.start();
+    harness.store.setFailureReason("secure_storage_missing_entitlement");
+
+    await harness.service.signOut();
+
+    expect(harness.service.getState()).toEqual({
+      kind: "fatal_error",
+      reasonCode: "auth_secure_store_missing_entitlement"
+    });
   });
 
   it("blocks a new Magic Link request while a callback exchange is in flight", async () => {

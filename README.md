@@ -197,6 +197,21 @@ B1D1では、local mobileのemail Magic Link + PKCE、device-only Keychain sessi
 
 Mobile AuthのDebug live buildは、public client設定の`MOBILE_SUPABASE_URL`と`MOBILE_SUPABASE_PUBLISHABLE_KEY`をbuild commandへ一時的に渡す契約です。値を`.env.local`、profile JSON、source、docsへ保存しません。secret/service-role keyとlegacy JWT keyは拒否し、`sb_publishable_`形式だけを許可します。dynamic transaction queryを持つDebug redirectのDashboard許可patternはpath限定の`com.nativeminutes.app.debug://auth/callback**`で、scheme全体を許可しません。
 
+### iOS Simulator runtime signing boundary
+
+compile-onlyのSimulator xcodebuildと、Keychainへ到達するruntime smokeは別のgateです。compile-only成果物は必要に応じて署名を省略できますが、その`.app`をinstall / launchしてKeychain runtime smokeに使ってはいけません。
+
+runtime smokeでは通常のSimulator署名でbuildし、install前に次を実行します。
+
+```bash
+npm run check:ios-simulator-runtime-signing -- --app /absolute/path/to/App.app
+npm run ios:simulator:runtime-smoke -- --app /absolute/path/to/App.app --device booted
+```
+
+runtime guardは`CODE_SIGNING_ALLOWED=NO`または`CODE_SIGNING_REQUIRED=NO`（同等のfalse値を含む）をinspection前に拒否します。bundleのstrict codesign、Simulator用`application-identifier`、Keychain利用条件を確認してからだけinstall / launchします。現在のKeychain pluginはcustom access groupを指定しないため、明示的な`keychain-access-groups`がない通常Simulator buildもdefault access groupでvalidです。Simulator eraseやKeychain itemの手動削除は前提にしません。
+
+directな`simctl install` / `simctl launch`は、同checkerをPASSした`.app`に対する診断以外ではB1D1 runtime smoke手順として扱いません。checker自体のregressionは`npm run check:ios-simulator-runtime-signing:self-test`で確認します。
+
 ## main loop
 
 1. `login` する

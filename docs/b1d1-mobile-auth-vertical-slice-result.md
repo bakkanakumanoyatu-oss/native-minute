@@ -161,6 +161,29 @@ production buildをready扱いしないためのrelease gateであり、実装�
 
 User A/Bを使うcross-user RLS live proofはB1D1 closeoutの確認事実には含めず、release hardeningとして残す。
 
+## Post-closeout recurrence hardening
+
+Keychain errorはnative diagnostic、auth state、user copyを分離し、次の固定分類へ更新した。
+
+| Safe category | Auth reason code | User copy rule |
+|---|---|---|
+| protected data unavailable | `auth_secure_store_device_locked` | この分類だけが端末ロック解除を案内する |
+| `errSecInteractionNotAllowed` while protected data is available | `auth_secure_store_interaction_not_allowed` | lockと断定せずapp再起動を案内する |
+| `errSecMissingEntitlement` | `auth_secure_store_missing_entitlement` | 通常署名buildの再installを案内する |
+| Capacitor plugin unavailable | `auth_secure_store_plugin_unavailable` | pluginを含む最新版buildを案内する |
+| unknown Keychain status / malformed native error | `auth_secure_store_unexpected_status` | statusを推測せずgeneric recoveryを案内する |
+
+nativeからはallowlist済みの固定messageだけを返し、OSStatus数値、Keychain value、session、tokenを渡さない。TypeScript側はCapacitorの固定`code`と完全一致messageだけを分類し、未知のdetailを保持・表示・log出力しない。session envelope、pending PKCE envelope、Keychain service/item identity、restore / refresh / logout契約は変更していない。
+
+Simulator runtime smokeは`npm run ios:simulator:runtime-smoke -- --app <absolute-App.app>`を正式経路とする。このrunnerはinstall / launch前に次をfail closedで確認する。
+
+- `CODE_SIGNING_ALLOWED` / `CODE_SIGNING_REQUIRED`がfalseではない
+- bundle strict signatureがvalid
+- Simulator用`application-identifier`が存在
+- current pluginのdefault Keychain access group条件を満たす
+
+compile-only xcodebuildはこのruntime gateへ接続しないため、compile-only用途まで署名必須にはしない。runtime runnerはSimulator erase、app uninstall、Keychain item手動削除を行わない。
+
 ## Known limitations / deferred
 
 - Debug custom schemeは別appによるscheme claimを防げないため、PKCEでcode theftを限定してもproduction primaryにはしない。

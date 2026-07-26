@@ -1,6 +1,7 @@
 import Capacitor
 import Foundation
 import Security
+import UIKit
 
 private enum MobileAuthKeychainItem: String {
     case session = "session.v1"
@@ -8,8 +9,18 @@ private enum MobileAuthKeychainItem: String {
 }
 
 private enum MobileAuthKeychainError: Error {
-    case unavailable
+    case deviceLocked
+    case interactionNotAllowed
+    case missingEntitlement
+    case unexpectedStatus
     case corruptValue
+}
+
+private enum MobileAuthKeychainReason: String {
+    case deviceLocked = "secure_storage_device_locked"
+    case interactionNotAllowed = "secure_storage_interaction_not_allowed"
+    case missingEntitlement = "secure_storage_missing_entitlement"
+    case unexpectedStatus = "secure_storage_unexpected_status"
 }
 
 private final class MobileAuthKeychain {
@@ -45,7 +56,7 @@ private final class MobileAuthKeychain {
         }
 
         guard updateStatus == errSecItemNotFound else {
-            throw MobileAuthKeychainError.unavailable
+            throw keychainError(for: updateStatus)
         }
 
         var addQuery = query
@@ -59,12 +70,15 @@ private final class MobileAuthKeychain {
 
         // A concurrent first write can win between update and add. Retrying the
         // atomic replacement preserves a single Keychain item.
-        if addStatus == errSecDuplicateItem,
-           SecItemUpdate(query as CFDictionary, updates as CFDictionary) == errSecSuccess {
-            return
+        if addStatus == errSecDuplicateItem {
+            let retryStatus = SecItemUpdate(query as CFDictionary, updates as CFDictionary)
+            if retryStatus == errSecSuccess {
+                return
+            }
+            throw keychainError(for: retryStatus)
         }
 
-        throw MobileAuthKeychainError.unavailable
+        throw keychainError(for: addStatus)
     }
 
     func load(_ item: MobileAuthKeychainItem) throws -> String? {
@@ -79,7 +93,7 @@ private final class MobileAuthKeychain {
         }
 
         guard status == errSecSuccess else {
-            throw MobileAuthKeychainError.unavailable
+            throw keychainError(for: status)
         }
 
         guard let data = result as? Data,
@@ -94,8 +108,22 @@ private final class MobileAuthKeychain {
     func clear(_ item: MobileAuthKeychainItem) throws {
         let status = SecItemDelete(baseQuery(for: item) as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else {
-            throw MobileAuthKeychainError.unavailable
+            throw keychainError(for: status)
         }
+    }
+
+    private func keychainError(for status: OSStatus) -> MobileAuthKeychainError {
+        if status == errSecInteractionNotAllowed {
+            return UIApplication.shared.isProtectedDataAvailable
+                ? .interactionNotAllowed
+                : .deviceLocked
+        }
+
+        if status == errSecMissingEntitlement {
+            return .missingEntitlement
+        }
+
+        return .unexpectedStatus
     }
 
     private func baseQuery(for item: MobileAuthKeychainItem) -> [CFString: Any] {
@@ -185,8 +213,10 @@ public final class MobileAuthSessionStorePlugin: CAPPlugin, CAPBridgedPlugin {
         do {
             try keychain.replace(value, for: item)
             call.resolve()
+        } catch let error as MobileAuthKeychainError {
+            reject(call, error: error)
         } catch {
-            call.unavailable("secure_storage_unavailable")
+            call.unavailable(MobileAuthKeychainReason.unexpectedStatus.rawValue)
         }
     }
 
@@ -203,9 +233,11 @@ public final class MobileAuthSessionStorePlugin: CAPPlugin, CAPBridgedPlugin {
             }
         } catch MobileAuthKeychainError.corruptValue {
             try? keychain.clear(item)
-            call.unavailable("secure_storage_unavailable")
+            call.unavailable(MobileAuthKeychainReason.unexpectedStatus.rawValue)
+        } catch let error as MobileAuthKeychainError {
+            reject(call, error: error)
         } catch {
-            call.unavailable("secure_storage_unavailable")
+            call.unavailable(MobileAuthKeychainReason.unexpectedStatus.rawValue)
         }
     }
 
@@ -217,8 +249,27 @@ public final class MobileAuthSessionStorePlugin: CAPPlugin, CAPBridgedPlugin {
         do {
             try keychain.clear(item)
             call.resolve()
+        } catch let error as MobileAuthKeychainError {
+            reject(call, error: error)
         } catch {
-            call.unavailable("secure_storage_unavailable")
+            call.unavailable(MobileAuthKeychainReason.unexpectedStatus.rawValue)
         }
+    }
+
+    private func reject(_ call: CAPPluginCall, error: MobileAuthKeychainError) {
+        let reason: MobileAuthKeychainReason
+
+        switch error {
+        case .deviceLocked:
+            reason = .deviceLocked
+        case .interactionNotAllowed:
+            reason = .interactionNotAllowed
+        case .missingEntitlement:
+            reason = .missingEntitlement
+        case .unexpectedStatus, .corruptValue:
+            reason = .unexpectedStatus
+        }
+
+        call.unavailable(reason.rawValue)
     }
 }

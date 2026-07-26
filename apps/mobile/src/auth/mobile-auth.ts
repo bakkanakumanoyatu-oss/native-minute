@@ -21,6 +21,7 @@ import {
   initialMobileAuthState,
   reduceMobileAuthState,
   type MobileAuthEvent,
+  type MobileAuthReasonCode,
   type MobileAuthState
 } from "./state-machine";
 import { createSupabaseKeychainStorage } from "./supabase-storage";
@@ -113,8 +114,25 @@ function isRetryableAuthError(error: AuthErrorLike) {
   return status === undefined || status === 0 || status === 429 || status >= 500;
 }
 
-function isSecureStoreError(error: unknown) {
-  return error instanceof MobileAuthSessionStoreError;
+export function secureStoreAuthReason(error: unknown): MobileAuthReasonCode | null {
+  if (!(error instanceof MobileAuthSessionStoreError)) {
+    return null;
+  }
+
+  switch (error.reason) {
+    case "secure_storage_device_locked":
+      return "auth_secure_store_device_locked";
+    case "secure_storage_interaction_not_allowed":
+      return "auth_secure_store_interaction_not_allowed";
+    case "secure_storage_missing_entitlement":
+      return "auth_secure_store_missing_entitlement";
+    case "secure_storage_plugin_unavailable":
+      return "auth_secure_store_plugin_unavailable";
+    case "secure_storage_unexpected_status":
+    case "invalid_session_envelope":
+    case "invalid_pending_pkce_envelope":
+      return "auth_secure_store_unexpected_status";
+  }
 }
 
 export class MobileAuthService implements MobileAuthController {
@@ -190,9 +208,10 @@ export class MobileAuthService implements MobileAuthController {
 
       await this.restore();
     } catch (error) {
+      const secureStoreReason = secureStoreAuthReason(error);
       this.transition({
         type: "FATAL_FAILURE",
-        reasonCode: isSecureStoreError(error) ? "auth_secure_store_unavailable" : "auth_unavailable"
+        reasonCode: secureStoreReason ?? "auth_unavailable"
       });
     }
   }
@@ -317,9 +336,9 @@ export class MobileAuthService implements MobileAuthController {
         }
         this.transition({
           type: "FATAL_FAILURE",
-          reasonCode: "auth_secure_store_unavailable"
+          reasonCode: "auth_secure_store_unexpected_status"
         });
-        return { ok: false, reasonCode: "auth_secure_store_unavailable" };
+        return { ok: false, reasonCode: "auth_secure_store_unexpected_status" };
       }
 
       this.transition({ type: "LINK_SENT", cooldownUntil: this.cooldownUntil });
@@ -336,13 +355,13 @@ export class MobileAuthService implements MobileAuthController {
       if (!operationIsCurrent()) {
         return { ok: false, reasonCode: "auth_operation_in_progress" };
       }
-      const reasonCode = isSecureStoreError(error)
-        ? "auth_secure_store_unavailable"
-        : "auth_request_failed";
-      this.transition({
-        type: isSecureStoreError(error) ? "FATAL_FAILURE" : "RECOVERABLE_FAILURE",
-        reasonCode
-      });
+      const secureStoreReason = secureStoreAuthReason(error);
+      const reasonCode = secureStoreReason ?? "auth_request_failed";
+      if (secureStoreReason) {
+        this.transition({ type: "FATAL_FAILURE", reasonCode: secureStoreReason });
+      } else {
+        this.transition({ type: "RECOVERABLE_FAILURE", reasonCode });
+      }
       return { ok: false, reasonCode };
     }
   }
@@ -413,11 +432,12 @@ export class MobileAuthService implements MobileAuthController {
       );
     } catch (error) {
       this.replayGuard.cancel(callback.transactionId);
+      const reasonCode = secureStoreAuthReason(error) ?? "auth_unavailable";
       this.transition({
         type: "FATAL_FAILURE",
-        reasonCode: isSecureStoreError(error) ? "auth_secure_store_unavailable" : "auth_unavailable"
+        reasonCode
       });
-      return { ok: false, reasonCode: "auth_secure_store_unavailable" };
+      return { ok: false, reasonCode };
     }
 
     if (!beginResult.ok && beginResult.reason === "missing") {
@@ -483,9 +503,9 @@ export class MobileAuthService implements MobileAuthController {
         await this.store.clearSession();
         this.transition({
           type: "FATAL_FAILURE",
-          reasonCode: "auth_secure_store_unavailable"
+          reasonCode: "auth_secure_store_unexpected_status"
         });
-        return { ok: false, reasonCode: "auth_secure_store_unavailable" };
+        return { ok: false, reasonCode: "auth_secure_store_unexpected_status" };
       }
 
       this.transition({ type: "SESSION_ESTABLISHED", userId });
@@ -495,19 +515,18 @@ export class MobileAuthService implements MobileAuthController {
       if (exchangeGeneration !== this.authGeneration) {
         return { ok: false, reasonCode: "auth_session_missing" };
       }
-      this.transition({
-        type: isSecureStoreError(error) ? "FATAL_FAILURE" : "RECOVERABLE_FAILURE",
-        reasonCode: isSecureStoreError(error)
-          ? "auth_secure_store_unavailable"
-          : "auth_exchange_failed",
-        ...(isSecureStoreError(error) ? {} : { restartRequired: true })
-      });
-      return {
-        ok: false,
-        reasonCode: isSecureStoreError(error)
-          ? "auth_secure_store_unavailable"
-          : "auth_exchange_failed"
-      };
+      const secureStoreReason = secureStoreAuthReason(error);
+      const reasonCode = secureStoreReason ?? "auth_exchange_failed";
+      if (secureStoreReason) {
+        this.transition({ type: "FATAL_FAILURE", reasonCode: secureStoreReason });
+      } else {
+        this.transition({
+          type: "RECOVERABLE_FAILURE",
+          reasonCode,
+          restartRequired: true
+        });
+      }
+      return { ok: false, reasonCode };
     } finally {
       await this.store.clearPendingPkce().catch(() => undefined);
       this.replayGuard.finish(callback.transactionId);
@@ -544,14 +563,12 @@ export class MobileAuthService implements MobileAuthController {
     try {
       candidate = await this.store.loadSession();
     } catch (error) {
+      const reasonCode = secureStoreAuthReason(error) ?? "auth_unavailable";
       this.transition({
         type: "FATAL_FAILURE",
-        reasonCode: isSecureStoreError(error) ? "auth_secure_store_unavailable" : "auth_unavailable"
+        reasonCode
       });
-      return {
-        ok: false,
-        reasonCode: isSecureStoreError(error) ? "auth_secure_store_unavailable" : "auth_unavailable"
-      };
+      return { ok: false, reasonCode };
     }
 
     if (!candidate) {
@@ -589,12 +606,13 @@ export class MobileAuthService implements MobileAuthController {
       if (refreshGeneration !== this.authGeneration) {
         return { ok: false, reasonCode: "auth_session_missing" };
       }
-      if (isSecureStoreError(error)) {
+      const secureStoreReason = secureStoreAuthReason(error);
+      if (secureStoreReason) {
         this.transition({
           type: "FATAL_FAILURE",
-          reasonCode: "auth_secure_store_unavailable"
+          reasonCode: secureStoreReason
         });
-        return { ok: false, reasonCode: "auth_secure_store_unavailable" };
+        return { ok: false, reasonCode: secureStoreReason };
       }
 
       this.transition({ type: "SESSION_ESTABLISHED", userId: candidate.userId });
@@ -615,9 +633,7 @@ export class MobileAuthService implements MobileAuthController {
 
       return { ok: true } as const;
     } catch (error) {
-      const reasonCode = isSecureStoreError(error)
-        ? "auth_secure_store_unavailable"
-        : "auth_unavailable";
+      const reasonCode = secureStoreAuthReason(error) ?? "auth_unavailable";
       return { ok: false, reasonCode } as const;
     }
   }
@@ -651,10 +667,15 @@ export class MobileAuthService implements MobileAuthController {
         this.store.clearPendingPkce(),
         this.store.clearSession()
       ]);
-      if (clearResults.some((result) => result.status === "rejected")) {
+      const firstRejected = clearResults.find(
+        (result): result is PromiseRejectedResult => result.status === "rejected"
+      );
+      if (firstRejected) {
         this.transition({
           type: "FATAL_FAILURE",
-          reasonCode: "auth_secure_store_unavailable"
+          reasonCode:
+            secureStoreAuthReason(firstRejected.reason) ??
+            "auth_secure_store_unexpected_status"
         });
       } else {
         this.transition({ type: "SIGNED_OUT" });
@@ -668,10 +689,10 @@ export class MobileAuthService implements MobileAuthController {
       await this.loginOperation?.catch(() => undefined);
       await this.store.clearPendingPkce();
       this.transition({ type: "SIGNED_OUT" });
-    } catch {
+    } catch (error) {
       this.transition({
         type: "FATAL_FAILURE",
-        reasonCode: "auth_secure_store_unavailable"
+        reasonCode: secureStoreAuthReason(error) ?? "auth_secure_store_unexpected_status"
       });
     }
   }

@@ -94,7 +94,16 @@ const AUTH_ERROR_COPY: Partial<Record<string, string>> = {
   auth_session_expired: "セッションの有効期限が切れました。もう一度ログインしてください。",
   auth_session_invalid: "セッションを確認できませんでした。もう一度ログインしてください。",
   auth_refresh_failed: "通信を確認してもう一度お試しください。",
-  auth_secure_store_unavailable: "端末の安全な保存領域を利用できません。端末のロックを解除して再試行してください。",
+  auth_secure_store_device_locked:
+    "端末の安全な保存領域はロック中です。端末のロックを解除して再試行してください。",
+  auth_secure_store_interaction_not_allowed:
+    "端末の安全な保存領域と通信できません。アプリを再起動して再試行してください。",
+  auth_secure_store_missing_entitlement:
+    "このアプリbuildでは安全な保存領域を利用できません。通常署名された最新版を再インストールしてください。",
+  auth_secure_store_plugin_unavailable:
+    "このアプリbuildに安全な保存機能が含まれていません。最新版を再インストールしてください。",
+  auth_secure_store_unexpected_status:
+    "端末の安全な保存領域で予期しない問題が発生しました。アプリを再起動して再試行してください。",
   auth_not_configured: "このbuildではMobile Auth接続が未設定です。",
   auth_unavailable: "認証サービスを利用できません。"
 };

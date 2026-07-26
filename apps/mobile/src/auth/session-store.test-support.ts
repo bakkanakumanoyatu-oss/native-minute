@@ -2,6 +2,7 @@ import {
   isMobileAuthSessionEnvelope,
   isPendingPkceEnvelope,
   MobileAuthSessionStoreError,
+  type MobileAuthSecureStoreReason,
   type MobileAuthSessionEnvelope,
   type MobileAuthSessionStore,
   type PendingPkceEnvelope
@@ -11,7 +12,7 @@ import {
 export class InMemoryMobileAuthSessionStore implements MobileAuthSessionStore {
   private session: MobileAuthSessionEnvelope | null = null;
   private pendingPkce: PendingPkceEnvelope | null = null;
-  private available = true;
+  private failureReason: MobileAuthSecureStoreReason | null = null;
   private readonly nowSeconds: () => number;
 
   constructor(nowSeconds: () => number = () => Math.floor(Date.now() / 1000)) {
@@ -19,7 +20,11 @@ export class InMemoryMobileAuthSessionStore implements MobileAuthSessionStore {
   }
 
   setAvailable(available: boolean) {
-    this.available = available;
+    this.failureReason = available ? null : "secure_storage_unexpected_status";
+  }
+
+  setFailureReason(reason: MobileAuthSecureStoreReason | null) {
+    this.failureReason = reason;
   }
 
   async saveSession(session: MobileAuthSessionEnvelope) {
@@ -74,8 +79,8 @@ export class InMemoryMobileAuthSessionStore implements MobileAuthSessionStore {
   }
 
   private assertAvailable() {
-    if (!this.available) {
-      throw new MobileAuthSessionStoreError("secure_storage_unavailable");
+    if (this.failureReason) {
+      throw new MobileAuthSessionStoreError(this.failureReason);
     }
   }
 }

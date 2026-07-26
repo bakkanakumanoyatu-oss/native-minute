@@ -57,4 +57,22 @@ describe("native mobile auth configuration", () => {
     expect(installGeneration).toContain("install-generation");
     expect(installGeneration).not.toMatch(/access[_-]?token|refresh[_-]?token|code[_-]?verifier/i);
   });
+
+  it("classifies Keychain failures without exposing OSStatus or guessing device lock", () => {
+    const plugin = readRepositoryFile(
+      "ios/App/MobileAuthSessionStore/ios/Sources/MobileAuthSessionStorePlugin/MobileAuthSessionStorePlugin.swift"
+    );
+
+    expect(plugin).toContain("errSecInteractionNotAllowed");
+    expect(plugin).toContain("errSecMissingEntitlement");
+    expect(plugin).toContain("UIApplication.shared.isProtectedDataAvailable");
+    expect(plugin).toContain("secure_storage_device_locked");
+    expect(plugin).toContain("secure_storage_interaction_not_allowed");
+    expect(plugin).toContain("secure_storage_missing_entitlement");
+    expect(plugin).toContain("secure_storage_unexpected_status");
+    expect(plugin).not.toContain("\\(status)");
+    expect(plugin).not.toContain("String(status)");
+    expect(plugin).not.toContain("String(describing: error)");
+    expect(plugin).not.toContain("error.localizedDescription");
+  });
 });

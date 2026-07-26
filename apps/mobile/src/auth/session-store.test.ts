@@ -51,7 +51,7 @@ function makePending(overrides: Partial<PendingPkceEnvelope> = {}): PendingPkceE
 class MemoryPlugin implements MobileAuthSessionStorePlugin {
   sessions = new Map<string, string>();
   pendingTransactions = new Map<string, string>();
-  available = true;
+  failure: unknown = null;
 
   async saveSession(options: { namespace: string; value: string }) {
     this.assertAvailable();
@@ -84,8 +84,8 @@ class MemoryPlugin implements MobileAuthSessionStorePlugin {
   }
 
   private assertAvailable() {
-    if (!this.available) {
-      throw new Error("native detail must be discarded");
+    if (this.failure !== null) {
+      throw this.failure;
     }
   }
 }
@@ -142,9 +142,68 @@ describe("KeychainMobileAuthSessionStore", () => {
     expect(plugin.sessions.has(STORAGE_NAMESPACE)).toBe(false);
   });
 
-  it("maps a locked or unavailable Keychain to a value-free safe reason", async () => {
+  it.each([
+    {
+      label: "device locked",
+      pluginError: {
+        code: "UNAVAILABLE",
+        message: "secure_storage_device_locked",
+        detail: "native detail must be discarded"
+      },
+      reason: "secure_storage_device_locked"
+    },
+    {
+      label: "interaction not allowed",
+      pluginError: {
+        code: "UNAVAILABLE",
+        message: "secure_storage_interaction_not_allowed",
+        detail: "native detail must be discarded"
+      },
+      reason: "secure_storage_interaction_not_allowed"
+    },
+    {
+      label: "missing entitlement",
+      pluginError: {
+        code: "UNAVAILABLE",
+        message: "secure_storage_missing_entitlement",
+        detail: "native detail must be discarded"
+      },
+      reason: "secure_storage_missing_entitlement"
+    },
+    {
+      label: "plugin unavailable",
+      pluginError: {
+        code: "UNIMPLEMENTED",
+        message: "native detail must be discarded"
+      },
+      reason: "secure_storage_plugin_unavailable"
+    },
+    {
+      label: "unexpected native status",
+      pluginError: {
+        code: "UNAVAILABLE",
+        message: "secure_storage_unexpected_status",
+        detail: "native detail must be discarded"
+      },
+      reason: "secure_storage_unexpected_status"
+    },
+    {
+      label: "unknown plugin error",
+      pluginError: new Error("native detail must be discarded"),
+      reason: "secure_storage_unexpected_status"
+    },
+    {
+      label: "object prototype property",
+      pluginError: {
+        code: "UNAVAILABLE",
+        message: "toString",
+        detail: "native detail must be discarded"
+      },
+      reason: "secure_storage_unexpected_status"
+    }
+  ] as const)("maps $label to a value-free fixed reason", async ({ pluginError, reason }) => {
     const plugin = new MemoryPlugin();
-    plugin.available = false;
+    plugin.failure = pluginError;
     const store = new KeychainMobileAuthSessionStore(
       STORAGE_NAMESPACE,
       plugin,
@@ -156,7 +215,7 @@ describe("KeychainMobileAuthSessionStore", () => {
     const error = await store.loadSession().catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(MobileAuthSessionStoreError);
-    expect(error).toMatchObject({ reason: "secure_storage_unavailable" });
+    expect(error).toMatchObject({ reason });
     expect(String(error)).not.toContain("native detail");
     expect(consoleError).not.toHaveBeenCalled();
     expect(consoleLog).not.toHaveBeenCalled();
