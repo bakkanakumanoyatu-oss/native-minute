@@ -181,7 +181,7 @@ logout と成功した callback 後は login continuity cookie と PKCE verifier
 Gate 0 smoke で magic link を短時間に何度も送ると Supabase Auth の email rate limit に当たります。その場合は callback failure と混同せず、しばらく待ってから新しい link を発行します。UI は rate limit を raw detail なしの日本語 message として表示します。
 `/auth/callback` と `/api/auth/*` は middleware の auth 初期化を通さず、PKCE verifier cookie と callback exchange の間に余計な auth 読み出しを挟みません。
 callback failure は、`PKCE verifier cookie が callback に届いていない` 場合と、`cookie はあるが Supabase exchange 自体が失敗した` 場合を分けて扱います。server log の `Auth callback exchange failed` で切り分けます。
-Capacitor iOS native smoke では、shell 起動と Home 表示は PASS しましたが、magic link callback が iOS WebView ではなく Mac Chrome で開いたため、Chrome 側に PKCE verifier cookie がなく `callback_pkce_missing` になりました。Home 以外の protected route が未ログイン prompt へ行くことは route guard として想定内です。native auth は、deep link / universal link、native 用 login 導線、または TestFlight 前 auth callback gate として別途判断します。`server.url` は preflight-only のままで、Store submission ready architecture とは扱いません。
+B1D1以前のCapacitor iOS historical preflightでは、magic link callbackがiOS WebViewではなくMac Chromeで開き、Chrome側にPKCE verifier cookieがなく`callback_pkce_missing`になりました。このsame-WebView/cookie経路は完成版に採用していません。B1D1ではlocal frontend、native callback、Keychain session、Bearer BFFへ分離しました。`server.url`はpreflight-onlyのままで、Store submission ready architectureとは扱いません。
 
 ## Capacitor iOS sync profiles
 
@@ -193,7 +193,7 @@ Capacitor iOS native smoke では、shell 起動と Home 表示は PASS しま�
 
 B1C local-spikeは`server.url`、cleartext、localhost allowNavigationを含みません。Developer checkoutで行うlocalhost / cleartext / allowNavigationのauth smokeは別の開発専用経路で、local-spikeやproduction-ready構成として扱いません。Preview BFFを確認するときだけ、`MOBILE_BFF_BASE_URL=<preview-origin>`を同じコマンドへ一時的に渡せます。このoverrideはlocal-spike限定で、profile JSON、`.env`、commitへ保存しません。
 
-B1D1では、local mobileのemail Magic Link + PKCE、device-only Keychain session、Bearer-only `GET /api/mobile/scripts`、read-only local `/scripts`を最小実装しました。Debug callbackはcustom scheme限定で、production profileはUniversal Links / AASA / Associated Domainsが完了するまでrelease guardが意図的にFAILします。live email/callback/RLS smokeはSupabase redirect allowlistの人間操作待ちです。詳細は[Phase B1D1 result](./docs/b1d1-mobile-auth-vertical-slice-result.md)を参照してください。
+B1D1では、local mobileのemail Magic Link + PKCE、device-only Keychain session、Bearer-only `GET /api/mobile/scripts`、read-only local `/scripts`を最小実装しました。通常署名SimulatorでMagic Link送受信、Debug callback、Bearer BFF、Keychain save/restore、再起動restore、logout、logout後の再起動までPASSしています。Debug callbackはcustom scheme限定で、production profileはUniversal Links / AASA / Associated Domainsが完了するまでrelease guardが意図的にFAILします。User A/B cross-user RLS proofとreviewer accountは後続gateです。詳細は[Phase B1D1 result](./docs/b1d1-mobile-auth-vertical-slice-result.md)を参照してください。
 
 Mobile AuthのDebug live buildは、public client設定の`MOBILE_SUPABASE_URL`と`MOBILE_SUPABASE_PUBLISHABLE_KEY`をbuild commandへ一時的に渡す契約です。値を`.env.local`、profile JSON、source、docsへ保存しません。secret/service-role keyとlegacy JWT keyは拒否し、`sb_publishable_`形式だけを許可します。dynamic transaction queryを持つDebug redirectのDashboard許可patternはpath限定の`com.nativeminutes.app.debug://auth/callback**`で、scheme全体を許可しません。
 

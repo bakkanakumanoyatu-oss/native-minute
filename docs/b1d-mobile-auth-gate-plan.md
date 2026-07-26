@@ -4,6 +4,8 @@ Status: **DESIGN COMPLETE — IMPLEMENTATION BLOCKED ON HUMAN DECISIONS**
 
 Scope: design and contract only; no authentication implementation, DB/config/migration change, Apple Developer operation, Supabase setting change, commit, or push.
 
+Historical status note (2026-07-26): this file remains the original B1D design baseline. The B1D1 minimum vertical slice was subsequently implemented and completed as `PASS — LIVE VERTICAL SLICE VERIFIED`; see `docs/b1d1-mobile-auth-vertical-slice-result.md`. B1D2 and production Universal Links remain unstarted.
+
 ## 1. Executive summary
 
 The recommended production architecture is:
@@ -957,4 +959,6 @@ These tasks are ordered; none is executed in B1D-Plan.
 9. Implement session restore, single-flight refresh, local logout, explicit global revoke, Web logout-scope coexistence, and local `/scripts` UI.
 10. Run repository/security checks, two-user staging integration, two physical-device auth/restore/logout/revoke smoke, reviewer smoke, and only then update implementation status docs.
 
-End state for this document: **design complete, implementation not started, old same-WebView auth smoke still PENDING, Mobile Auth Gate awaiting human decisions.**
+Historical end state for this design checkpoint: **design complete, implementation not started, old same-WebView auth smoke still PENDING, Mobile Auth Gate awaiting human decisions.**
+
+Current superseding state: **B1D1 minimum vertical slice implemented and live-verified; B1D2, production Universal Links, reviewer access, and physical-device release gates remain pending.**

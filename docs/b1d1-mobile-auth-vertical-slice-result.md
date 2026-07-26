@@ -1,8 +1,9 @@
 # Phase B1D1 — Mobile Auth minimum vertical slice result
 
-判定: **PARTIAL — STATIC VERTICAL SLICE VERIFIED**
+判定: **PASS — LIVE VERTICAL SLICE VERIFIED**
 
 実装日: 2026-07-19
+closeout記録日: 2026-07-26
 対象branch: `feature/mobile-auth-gate`
 設計checkpoint: `40694efd9aa9049ba58e61c203c3199efd877b08`
 
@@ -12,7 +13,9 @@ local mobile frontendの最小経路を、Web cookie sessionとは分離したMo
 
 `local /login → Supabase email Magic Link + PKCE → Keychain session → Bearer GET /api/mobile/scripts → local /scripts → restore → logout`
 
-code、mock callback、契約test、local bundle、Capacitor sync、Debug Simulator向けxcodebuildはPASSした。実メールを使うlive callback、実Keychainのruntime操作、実ユーザーA/BでのRLS確認は、Supabase Dashboardのredirect allowlist変更と人間のメール操作が必要な停止条件に当たるため未実施である。production readyやlive auth PASSは主張しない。
+static checkpointでは、code、mock callback、契約test、local bundle、Capacitor sync、Debug Simulator向けcompile-only xcodebuildまでをPASSとした。その後、公開staging BFFとstaging Supabaseを使うsigned Simulator live smokeで、実メールMagic Link、Debug callback、Keychain session、Bearer BFF、再起動restore、logout、logout後の再起動を一連でPASSした。
+
+B1D1はlocal mobile authの最小vertical sliceとして完了した。production callback、Universal Links、reviewer account、App Store提出toolchainの完了は主張しない。
 
 ## 実装済みscope
 
@@ -104,6 +107,8 @@ publicなmobile接続値はbuild processから一時注入する契約にした�
 | root build | PASS |
 | root test command | PASS — Mobile Auth / UI / BFF contract 11 files / 96 tests |
 | CLI xcodebuild Debug / generic iOS Simulator | PASS |
+| 通常署名Simulator Debug build | PASS — `signed=true`、`application_identifier_present=true`、`keychain_entitlement_ready=true` |
+| signed Simulator live auth | PASS — Magic Link、callback、Keychain save/restore/clear、Bearer BFF、logout |
 
 root lint/typecheck/buildは、worktreeの`.env.local`を開かずNext.jsの自動読込も避けるため、environment fileを除外した一時copyで実行した。secret値は表示していない。
 
@@ -137,21 +142,24 @@ production buildをready扱いしないためのrelease gateであり、実装�
 
 実DBにUser A/Bを作って行うRLS live proofは未実施であり、mock/contract testをlive proofとは扱わない。
 
-## Live smoke状態
+## Live smoke closeout
 
-**PENDING — HUMAN / DASHBOARD STOP**
+**PASS — SIGNED SIMULATOR LIVE VERTICAL SLICE**
 
-未実施:
+時系列:
 
-- Supabase redirect allowlist変更
-- 実メールMagic Link送信
-- signed callbackのSimulator/実機open
-- Keychain runtime save/restore/logout
-- deployed Preview BFFでのBearer scripts GET
-- User A/Bによるowned scripts/RLS live確認
-- force-quit/relaunchの人間観測
+1. static checkpointで96 tests、local build、Capacitor sync、compile-only Debug xcodebuildをPASSした。
+2. 最初のlive attemptは、起動時のpending PKCE restoreでKeychain accessに失敗して停止した。
+3. safe failure categoryは`KEYCHAIN_MISSING_ENTITLEMENT`、OSStatus categoryは`errSecMissingEntitlement (-34018)`だった。
+4. 原因はSimulator runtime buildへ`CODE_SIGNING_ALLOWED=NO`を指定したことだった。plugin registered / available、Keychain API到達はすべて`true`で、stale buildやsource defectではなかった。
+5. signing overrideを外した通常署名Debug buildで、`signed`、`application_identifier_present`、`keychain_entitlement_ready`がすべて`true`になり、`-34018`は再発しなかった。
+6. local `/login`からMagic Linkを送信・受信し、Debug callback後にlocal `/scripts`を表示した。mobile BFFはBearer principalで接続し、cookie fallbackやservice roleを使わなかった。
+7. app再起動後にKeychain sessionを復元して`/scripts`を再表示した。
+8. logoutでKeychain sessionを削除して`/login`へ戻り、さらにappを再起動しても`/login`のままであることを確認した。
 
-この停止では、Dashboard設定を勝手に変更せず、live credential、magic link、auth code、token、PKCE verifierを要求・表示・保存していない。
+このlive smokeでは、secret、メールアドレス、Magic Link、callback code、token、PKCE verifier、Keychain保存値、DB passwordを記録していない。source、environment file、production、Developer checkoutも変更していない。
+
+User A/Bを使うcross-user RLS live proofはB1D1 closeoutの確認事実には含めず、release hardeningとして残す。
 
 ## Known limitations / deferred
 
@@ -162,12 +170,11 @@ production buildをready扱いしないためのrelease gateであり、実装�
 - device-loss時の個別session revoke、all-device sign-out、account deletion mobile UIは後続scope。
 - production callback、staging/production分離のlive値、App Store提出toolchainは未達。
 - Developer checkoutの旧same-WebView auth smokeはPENDINGのままで、本線へ統合していない。
+- User A/B cross-user RLS live proofとreviewer accountは未実施。
 
-## Exact next human action
+## Exact next phase
 
-Supabase Auth DashboardのRedirect URLsへ、Debug/local-spike専用のpath-scoped pattern `com.nativeminutes.app.debug://auth/callback**`を許可対象として追加し、完了したことだけを報告する。末尾の`**`はtransaction/state/nonce queryを含む実際の`redirectTo`だけを同じcallback pathで許可するために必要であり、scheme全体のbroad patternにはしない。magic link、auth code、token、Dashboard secretの共有は不要。
-
-その確認前にCodexはlive email送信、Preview deploy、Universal Links、password reviewer、production変更へ進まない。
+B1D1はここでcloseする。次の正式PhaseはB1D2だが、別の明示指示があるまでUniversal Links、Associated Domains、AASA、Apple Developer設定、production callback、reviewer account実装へ進まない。
 
 ## Rollback
 
