@@ -15,6 +15,8 @@ import { beginPendingPkceExchange } from "./session-store";
 
 const NOW_SECONDS = 1_800_000_000;
 const CALLBACK_URI = "com.nativeminutes.app.debug://auth/callback";
+const HTTPS_CALLBACK_URI =
+  "https://native-minute-staging.vercel.app/mobile/auth/callback";
 
 function makeSession(expiresAt = NOW_SECONDS + 3_600): Session {
   return {
@@ -121,6 +123,7 @@ class FakeLifecycle implements MobileAppLifecycle {
   launchUrl: string | undefined;
   private urlListener: ((url: string) => void) | null = null;
   private stateListener: ((isActive: boolean) => void) | null = null;
+  private retainedUrl: string | undefined;
 
   async getLaunchUrl() {
     return this.launchUrl ? { url: this.launchUrl } : undefined;
@@ -128,6 +131,11 @@ class FakeLifecycle implements MobileAppLifecycle {
 
   async addUrlOpenListener(listener: (url: string) => void) {
     this.urlListener = listener;
+    const retainedUrl = this.retainedUrl;
+    this.retainedUrl = undefined;
+    if (retainedUrl) {
+      listener(retainedUrl);
+    }
     return { remove: async () => void (this.urlListener = null) };
   }
 
@@ -138,6 +146,15 @@ class FakeLifecycle implements MobileAppLifecycle {
 
   emitUrl(url: string) {
     this.urlListener?.(url);
+  }
+
+  retainUrlUntilListener(url: string) {
+    if (this.urlListener) {
+      this.urlListener(url);
+      return;
+    }
+
+    this.retainedUrl = url;
   }
 
   emitActive() {
@@ -151,7 +168,10 @@ function deterministicIds() {
   return () => ids[index++] ?? `opaque-fixture-${index}`;
 }
 
-function createHarness(nowSeconds = () => NOW_SECONDS) {
+function createHarness(
+  nowSeconds = () => NOW_SECONDS,
+  callbackUri = CALLBACK_URI
+) {
   const store = new InMemoryMobileAuthSessionStore(nowSeconds);
   const auth = new FakeAuth(store);
   const lifecycle = new FakeLifecycle();
@@ -159,7 +179,7 @@ function createHarness(nowSeconds = () => NOW_SECONDS) {
     auth,
     store,
     lifecycle,
-    callbackUri: CALLBACK_URI,
+    callbackUri,
     configured: true,
     nowSeconds,
     generateOpaqueId: deterministicIds()
@@ -317,6 +337,93 @@ describe("MobileAuthService", () => {
     await vi.waitFor(() => {
       expect(warm.service.getState()).toEqual({ kind: "authenticated", userId: "fixture-user" });
     });
+  });
+
+  it("handles exact HTTPS callbacks through the cold and warm lifecycle paths", async () => {
+    const cold = createHarness(() => NOW_SECONDS, HTTPS_CALLBACK_URI);
+    await cold.service.requestMagicLink("reader@example.test");
+    const coldPending = await cold.store.loadPendingPkce();
+    cold.lifecycle.launchUrl = callbackFromPending(coldPending!);
+
+    await cold.service.start();
+
+    expect(cold.service.getState()).toEqual({
+      kind: "authenticated",
+      userId: "fixture-user"
+    });
+    expect(cold.auth.exchangeCount).toBe(1);
+
+    const warm = createHarness(() => NOW_SECONDS, HTTPS_CALLBACK_URI);
+    await warm.service.start();
+    await warm.service.requestMagicLink("reader@example.test");
+    const warmPending = await warm.store.loadPendingPkce();
+    warm.lifecycle.emitUrl(callbackFromPending(warmPending!));
+
+    await vi.waitFor(() => {
+      expect(warm.service.getState()).toEqual({
+        kind: "authenticated",
+        userId: "fixture-user"
+      });
+    });
+    expect(warm.auth.exchangeCount).toBe(1);
+  });
+
+  it("consumes an HTTPS callback retained before listener registration", async () => {
+    const harness = createHarness(() => NOW_SECONDS, HTTPS_CALLBACK_URI);
+    await harness.service.requestMagicLink("reader@example.test");
+    const pending = await harness.store.loadPendingPkce();
+    harness.lifecycle.retainUrlUntilListener(callbackFromPending(pending!));
+
+    await harness.service.start();
+
+    await vi.waitFor(() => {
+      expect(harness.service.getState()).toEqual({
+        kind: "authenticated",
+        userId: "fixture-user"
+      });
+    });
+    expect(harness.auth.exchangeCount).toBe(1);
+  });
+
+  it("exchanges once when launch URL and retained appUrlOpen deliver the same HTTPS callback", async () => {
+    const harness = createHarness(() => NOW_SECONDS, HTTPS_CALLBACK_URI);
+    await harness.service.requestMagicLink("reader@example.test");
+    const pending = await harness.store.loadPendingPkce();
+    const callbackUrl = callbackFromPending(pending!);
+    harness.lifecycle.launchUrl = callbackUrl;
+    harness.lifecycle.retainUrlUntilListener(callbackUrl);
+
+    await harness.service.start();
+
+    await vi.waitFor(() => {
+      expect(harness.service.getState()).toEqual({
+        kind: "authenticated",
+        userId: "fixture-user"
+      });
+    });
+    expect(harness.auth.exchangeCount).toBe(1);
+
+    harness.lifecycle.emitUrl(callbackUrl);
+    await vi.waitFor(() => expect(harness.auth.exchangeCount).toBe(1));
+  });
+
+  it("rejects a wrong HTTPS lifecycle target before provider exchange", async () => {
+    const harness = createHarness(() => NOW_SECONDS, HTTPS_CALLBACK_URI);
+    await harness.service.start();
+    await harness.service.requestMagicLink("reader@example.test");
+    const pending = await harness.store.loadPendingPkce();
+    const wrongTarget = new URL(callbackFromPending(pending!));
+    wrongTarget.hostname = "wrong.example";
+    harness.lifecycle.emitUrl(wrongTarget.toString());
+
+    await vi.waitFor(() => {
+      expect(harness.service.getState()).toEqual({
+        kind: "recoverable_error",
+        reasonCode: "auth_callback_invalid",
+        restartRequired: false
+      });
+    });
+    expect(harness.auth.exchangeCount).toBe(0);
   });
 
   it("restores a valid session, refreshes a near-expiry session, and clears local logout", async () => {

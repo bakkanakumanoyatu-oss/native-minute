@@ -12,6 +12,8 @@ import { runMobileReleaseGuard } from "./check-mobile-release.mjs";
 
 const BFF_ORIGIN = "https://native-minute.example";
 const PRODUCTION_CALLBACK = BFF_ORIGIN + "/mobile/auth/callback";
+const STAGING_ORIGIN = "https://native-minute-staging.vercel.app";
+const STAGING_CALLBACK = STAGING_ORIGIN + "/mobile/auth/callback";
 const APP_BUNDLE_ID = "com.nativeminutes.app";
 const DEVELOPMENT_TEAM = "ABCDE12345";
 const APP_IDENTIFIER = DEVELOPMENT_TEAM + "." + APP_BUNDLE_ID;
@@ -124,7 +126,9 @@ function writeInfoPlistFixture(rootDir, customScheme = null) {
 
 function createFixture(rootDir, profile = "production", options = {}) {
   const localCallback = "com.nativeminutes.app.debug:/auth/callback";
-  const productionCallback = options.productionCallback ?? PRODUCTION_CALLBACK;
+  const bffOrigin = options.bffOrigin ?? BFF_ORIGIN;
+  const productionCallback =
+    options.productionCallback ?? bffOrigin + "/mobile/auth/callback";
 
   writeJsonFixture(rootDir, "config/capacitor-profiles.json", {
     "local-spike": {
@@ -136,12 +140,12 @@ function createFixture(rootDir, profile = "production", options = {}) {
   });
   writeJsonFixture(rootDir, "config/mobile-profiles.json", {
     "local-spike": {
-      bffBaseUrl: BFF_ORIGIN,
+      bffBaseUrl: bffOrigin,
       authCallbackMode: "custom-scheme",
       authCallbackUri: localCallback
     },
     production: {
-      bffBaseUrl: BFF_ORIGIN,
+      bffBaseUrl: bffOrigin,
       authCallbackMode: "universal-link",
       authCallbackUri: productionCallback
     }
@@ -156,7 +160,7 @@ function createFixture(rootDir, profile = "production", options = {}) {
   );
   writeJsonFixture(rootDir, "apps/mobile/dist/mobile-build.json", {
     profile,
-    bffOrigin: BFF_ORIGIN,
+    bffOrigin,
     authCallbackMode: profile === "production" ? "universal-link" : "custom-scheme",
     authConfigured: true
   });
@@ -168,7 +172,7 @@ function createFixture(rootDir, profile = "production", options = {}) {
   });
   writeJsonFixture(rootDir, "ios/App/App/public/mobile-build.json", {
     profile,
-    bffOrigin: BFF_ORIGIN,
+    bffOrigin,
     authCallbackMode: profile === "production" ? "universal-link" : "custom-scheme",
     authConfigured: true
   });
@@ -230,6 +234,18 @@ try {
       rootDir,
       { profile: "production" },
       "Expected the Universal Link production fixture to pass."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "production", {
+      bffOrigin: STAGING_ORIGIN,
+      productionCallback: STAGING_CALLBACK
+    });
+    assertPass(
+      rootDir,
+      { profile: "production" },
+      "Expected the selected staging HTTPS origin to pass the synthetic release fixture."
     );
   });
 

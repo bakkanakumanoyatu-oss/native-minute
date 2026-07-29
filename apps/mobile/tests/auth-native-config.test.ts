@@ -37,7 +37,9 @@ describe("native mobile auth configuration", () => {
     expect(infoPlist).toContain("com.nativeminutes.app.debug");
     expect(appDelegate).toContain("ApplicationDelegateProxy.shared.application");
     expect(lifecyclePlugin).toContain("Notification.Name.capacitorOpenURL");
+    expect(lifecyclePlugin).toContain("Notification.Name.capacitorOpenUniversalLink");
     expect(lifecyclePlugin).toContain("ApplicationDelegateProxy.shared.lastURL");
+    expect(lifecyclePlugin).toContain("retainUntilConsumed: true");
   });
 
   it("uses the device-only Keychain class without a preference fallback", () => {

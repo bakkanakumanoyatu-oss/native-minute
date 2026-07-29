@@ -6,6 +6,8 @@ import { getSupabaseAnonKey, getSupabaseUrl, hasSupabaseConfig } from "@/lib/sup
 import type { SupabaseCookiesToSet } from "@/lib/supabase/types";
 
 const PROTECTED_PATH_PREFIXES = ["/scripts", "/setup", "/progress", "/settings"];
+const APPLE_APP_SITE_ASSOCIATION_PATH =
+  "/.well-known/apple-app-site-association";
 
 function isProtectedPath(pathname: string) {
   return PROTECTED_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -17,6 +19,10 @@ function isAuthFlowPath(pathname: string) {
 
 function isMobileApiPath(pathname: string) {
   return pathname === "/api/mobile" || pathname.startsWith("/api/mobile/");
+}
+
+function isAppleAppSiteAssociationPath(pathname: string) {
+  return pathname === APPLE_APP_SITE_ASSOCIATION_PATH;
 }
 
 function isStaticAssetPath(pathname: string) {
@@ -37,6 +43,10 @@ export async function middleware(request: NextRequest) {
   const protectedPath = isProtectedPath(pathname);
 
   if (isMobileApiPath(pathname)) {
+    return nextResponse(request);
+  }
+
+  if (isAppleAppSiteAssociationPath(pathname)) {
     return nextResponse(request);
   }
 

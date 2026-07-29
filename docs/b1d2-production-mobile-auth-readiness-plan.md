@@ -1,14 +1,16 @@
 # B1D2 Production Mobile Auth readiness / execution plan
 
-> Status: **PLAN ONLY — NOT IMPLEMENTED**
+> Status: **PRE-APPROVAL REPO PREPARATION — APPLE IDENTITY NOT IMPLEMENTED**
 >
 > 調査基準日: 2026-07-26
 > 人間確認情報の反映日: 2026-07-29
+> pre-approval preparation更新日: 2026-07-29
 > 調査worktree: `/Users/karasawatakahiro/.codex/worktrees/b4db/native-minute`
 > 調査branch: `feature/mobile-auth-gate`
 > 調査HEAD: `1e344297b5bc75ac4a8dad438df231fea0242241`
+> pre-approval preparation開始HEAD: `7c85ff5dab2973dd682f97ce1224c9c8b31b184f`
 
-この文書は、B1D2実装前のreadiness調査と、将来明示承認を受けて実行するための計画である。今回変更したのはこの計画文書だけであり、source code、Xcode project、entitlement、AASA、Supabase、Vercel、DNS、Apple Developer、DB、dependency、deploy、productionは変更していない。
+この文書は、B1D2実装前のreadiness調査と、将来明示承認を受けて実行するための計画である。初回plan確定ではこの文書だけを変更した。pre-approval preparationではApple identityを必要としないsynthetic callback/lifecycle test、release相当fixture、AASA middleware safetyと事実同期だけを行い、Xcode project、entitlement、AASA本文、Supabase、Vercel、DNS、Apple Developer、DB、dependency、deploy、productionは変更していない。
 
 ## 判定ラベル
 
@@ -35,6 +37,9 @@
 | finalization開始時のscope確認 | plan文書以外のtracked/untracked変更なし | 事実（repo） |
 | recent log | `1e34429`, `ed9de92`, `b5e2b46`, `40694ef`, `ab18d05` | 事実（repo） |
 | `npm run check:workspace` | このHEADの`package.json`にscriptがなく、`Missing script: check:workspace`で未実行 | 事実（repo） |
+| pre-approval preparation開始時のHEAD | `7c85ff5dab2973dd682f97ce1224c9c8b31b184f` | 事実（repo） |
+| pre-approval preparation開始時のlocal / remote | 一致 | 事実（repo） |
+| pre-approval preparation開始時の`git status --short` | 出力なし | 事実（repo） |
 
 `check:workspace`の欠落は今回のplan-only作業で補修しない。worktreeは`pwd`、Git top-level、branch、HEADの完全一致で確認した。将来の実装verification前には、workspace guardの正しい運用をrepo ownerが確認する。
 
@@ -58,7 +63,9 @@ auth contractが競合する場合、B1D1実装後の`docs/b1d1-mobile-auth-vert
 - **事実（repo）**: B1D1は`PASS — LIVE VERTICAL SLICE VERIFIED`。
 - **事実（repo）**: Magic Link送信、custom-scheme callback、Bearer BFF、Keychain保存、再起動復元、logout、logout後再起動を通常署名Simulatorで確認済み。
 - **事実（repo）**: pending PKCEの永続pre-exchange mark、duplicate/racing callback拒否、crash/relaunch後のreplay拒否、Keychain reason-code hardening、unsigned runtime smoke拒否を実装済み。
-- **事実（repo）**: User A/Bのlive cross-user RLS proof、reviewer account、Universal Links、実iPhone、App Store提出toolchainは未完了。
+- **事実（repo/toolchain、人間確認）**: macOS 26.6 / Xcode 26.6 baseline、iOS 26.5 Simulator通常署名build、install、launch、process生存はPASS。
+- **事実（pre-approval preparation）**: HTTPS callbackのsynthetic parser/lifecycle test、release相当fixture、AASA middleware pass-through guardだけを追加した。focused testsは43/43、全mobile testsは128/128、mobile/root lint・typecheck・buildとrelease/auth artifact guardsはPASS。Apple identity実装ではない。
+- **事実（repo）**: User A/Bのlive cross-user RLS proof、reviewer account、Universal Links、実iPhone Universal Link smokeは未完了。
 
 ### 1.4 iOS app identity / signing
 
@@ -78,7 +85,7 @@ auth contractが競合する場合、B1D1実装後の`docs/b1d1-mobile-auth-vert
 | provisioning profile | repoから確認不可 | 未確認 |
 | Apple App ID登録状態 | repoから確認不可 | 未確認 |
 
-**推奨**: production bundle IDは、Apple側で矛盾が見つからない限り`com.nativeminutes.app`を維持する。Debug custom schemeは即削除せず、configuration-specific Info.plist等でDebug限定にする。ReleaseにはUniversal Linkだけを載せる。
+`com.nativeminutes.app`は現行repo値であり、production bundle IDの候補にすぎない。Apple承認後にexisting App IDと利用可否を確認するまで、production / stagingのbundle ID方針は確定しない。Debug custom schemeは即削除せず、方針確定後にconfiguration-specific Info.plist等でDebug限定にする候補とする。ReleaseではUniversal Linkを主経路にする計画だが、Apple identity確定前に設定しない。
 
 staging bundle IDを別にするか、同じbundle IDでconfiguration/profileだけ分けるかは未決である。別bundle IDは分離が強い一方、追加App ID、AASA appID、provisioning、Xcode configurationが必要になる。
 
@@ -121,7 +128,8 @@ Capacitor公式:
 | production auth callback | `unconfigured` / `null` | 事実（repo） |
 | dedicated staging profile | なし | 事実（repo） |
 | staging Vercel project | 既存`native-minute-staging` projectを使用する前提 | 事実（人間確認） |
-| dedicated staging auth origin | stable `.vercel.app` originが第一候補だがexact hostnameは未決定 | 未確認 |
+| dedicated staging auth origin | `https://native-minute-staging.vercel.app`を選定済み | 事実（人間確認） |
+| staging originのexternal mapping | Vercel projectとのexact mapping、Deployment Protection、public AASA条件、redirect、loggingは未確認 | 未確認 |
 | final production domain | repo candidateはあるが外部確定を確認できない | 未確認 |
 | AASA | file/routeなし | 事実（repo） |
 | `/mobile/auth/callback` fallback | route/pageなし | 事実（repo） |
@@ -134,23 +142,22 @@ production release guardは、未設定callback、AASA欠落、Associated Domain
 - **事実（公式）**: AASAのapp identifierは`<Application Identifier Prefix>.<Bundle Identifier>`。Application Identifier PrefixがTeam IDと異なる可能性があるため、Portalまたは署名済みappで確認する。
 - **事実（公式）**: AASAはuncompressed 128 KB以下に保つ。
 - **事実（公式）**: Apple CDNのorigin取得やdevice cacheは即時ではなく、instant invalidationはない。資料上の目安はorigin取得が最大およそ24時間、deviceの更新確認がおよそ週次だが、保証SLAとして扱わない。開発時のdeveloper modeは補助で、最終合格はpublish-before-install、通常CDN、fresh install/deviceで行う。
-- **事実（repo/toolchain、最終観測）**: このworktreeの既存調査ではXcode 16.2 / iOS SDK 18.2を観測した。
 - **事実（公式、2026-07-26時点）**: 2026-04-28以降のApp Store Connect uploadはXcode 26以上かつiOS 26 SDK以上が必要である。これはdeployment targetをiOS 26へ上げる要件ではない。
 - **事実（公式）**: Xcode 26.0はmacOS Sequoia 15.6以降を必要とする。Appleのcurrent matrixではXcode 26.0〜26.3はmacOS Sequoia 15.6以降、26.4以降はmacOS Tahoe 26.2以降であり、選ぶ26.x版ごとに条件を確認する。
-- **事実（人間確認）**: 対象機はMacBook Air、Model Identifier `Mac15,12`、Apple M3である。current macOSは14.6.1、Build 23G93である。
-- **判定**: current macOS 14.6.1はXcode 26.0の最低要件macOS Sequoia 15.6を満たさないため、B1D2用Xcode 26系導入前にOS更新が必要である。
-- **未確認**: `Mac15,12`が実際に選ぶ更新先macOSへ対応するか、組織のupdate policy、空き容量、導入時点で選択可能なXcode 26.xとそのmacOS要件。
-- **停止**: Xcode 16.2 / iOS SDK 18.2をApp Store upload proofとして扱わない。Mac modelから未確認のOS互換性を推測しない。OS/Xcode更新実施時と提出直前にAppleの最新公式要件を再確認する。
+- **事実（人間確認）**: 対象機はMacBook Air、Model Identifier `Mac15,12`、Apple M3。current macOSは26.6である。
+- **事実（repo/toolchain）**: Xcode 26.6 baseline、iOS 26.5 Simulator通常署名build、install、launch、process生存はPASS。
+- **未確認**: App Store提出時点の最新Apple要件と、Apple membership有効化後のdistribution signing / archive。
+- **停止**: Simulator baselineをApple identity、Associated Domains、distribution provisioning、実機Universal Link proofの代用にしない。提出直前にAppleの最新公式要件を再確認する。
 
 #### Toolchain開始前gate
 
-更新作業の開始時に、対象Macの更新先macOS対応、空き容量、admin/update policyと、実際に選ぶXcode 26.xのApple公式system requirementを再確認する。互換性を推測で補わない。確認後は次を順番どおりに通過するまで、B1D2のsigned actual-device実装へ進まない。
+toolchain更新時に定めた次の順序を維持する。1〜4は完了済みで、5はApple membershipとidentity確定待ちである。
 
-1. **backup**: owner、復旧方法、必要データのbackup完了を人間が確認する。
-2. **macOS update**: 対象Macが対応し変更承認がある場合だけ、Xcode 26.xの要件を満たすmacOSへ更新する。非対応または更新不可なら別の対応Mac/CIを決める。
-3. **Xcode 26系導入**: 導入時点の公式要件に合うXcode 26.x、iOS 26 SDK、command-line toolsを導入し、active developer directoryとlicense状態を確認する。
-4. **既存branchのbaseline build**: dependencyやprojectを変更する前に、現B1D1相当のCapacitor baselineをchosen toolchainでbuildする。
-5. **signed actual-device build**: Apple identity/signing条件を満たしたstaging buildを実iPhoneへ署名・installする。
+1. **backup**: 完了。
+2. **macOS update**: macOS 26.6へ更新済み。
+3. **Xcode 26系導入**: Xcode 26.6導入済み。
+4. **既存branchのbaseline build**: B1D1 baselineとiOS 26.5 Simulator runtime smokeはPASS。
+5. **signed actual-device build**: 未開始。Apple membership有効化、identity、signing条件を満たした後だけ行う。
 
 実行順序は`backup → macOS update → Xcode 26系導入 → 既存branchのbaseline build → signed actual-device build`で固定する。OS更新とXcode導入はこのplan確定作業では行わない。
 
@@ -175,28 +182,40 @@ Apple公式:
 
 | # | Human decision | 現在確認できる事実 | 人間が決める/確認する内容 | 分類 |
 |---|---|---|---|---|
-| 1 | macOS current versionとXcode 26導入可否 | MacBook Air / `Mac15,12` / Apple M3、macOS 14.6.1（Build 23G93）は人間確認済み。OS更新とXcode 26系導入は未実施 | update時点のMac対応とApple公式要件、backup、更新先macOS、選ぶXcode 26.x、owner、代替Mac/CI | **B1D2開始前に必須** |
-| 2 | Apple Developer Program加入状況・予定 | 現在未登録。必要であれば今から加入可能 | enrollmentを開始し、membership有効化後にroleとIdentifiers/Capabilities/Profiles権限を確認 | **B1D2開始前に必須** |
-| 3a | staging final domain | 既存`native-minute-staging` Vercel projectのstable `.vercel.app` originが第一候補。exact hostnameは未決 | BFF/callback共通のexact stable origin、public AASA、TLS、Deployment Protection、owner | **B1D2開始前に必須** |
+| 1 | macOS current versionとXcode 26導入可否 | MacBook Air / `Mac15,12` / Apple M3、macOS 26.6 / Xcode 26.6 baseline PASS | 提出時点のApple公式要件を再確認 | **B1D2開始前に必須** |
+| 2 | Apple Developer Program加入状況・予定 | 申込み済み、Apple側の承認待ち。membershipはまだ有効ではない | membership有効化後にroleとIdentifiers/Capabilities/Profiles権限を確認 | **B1D2開始前に必須** |
+| 3a | staging final domain | `native-minute-staging.vercel.app`を選定済み。Vercel mapping / public条件は未確認 | Vercel projectとのexact mapping、BFF/callback共通origin、public AASA、TLS、Deployment Protection、redirect、logging、owner | **B1D2開始前に必須** |
 | 3b | production final domain | 未決定。repoにcurrent candidateはあるがfinal確定ではない | final BFF/callback common originとowner | **production前までに決定** |
 | 4 | Debug / staging / production bundle identifier | repoのDebug/Releaseは現在`com.nativeminutes.app`、staging configurationはない。最終3環境mappingは未決 | Debug維持、staging別IDの要否、production App IDとの一致 | **B1D2開始前に必須** |
-| 5 | Apple Team ID / App ID Prefix | repo未設定。membership未登録であり、両者は同一と推定できない | membership有効化後、Portal/signed entitlementによる実値とAASA app identifier | **B1D2開始前に必須** |
+| 5 | Apple Team ID / App ID Prefix | repo未設定。申込み済みだがmembership承認待ちであり、両者は同一と推定できない | membership有効化後、Portal/signed entitlementによる実値とAASA app identifier | **B1D2開始前に必須** |
 | 6a | Supabase staging project対応 | 既存staging projectを使う前提だが、B1D2のexact project/profile対応は未確認 | 実装前にstaging project mapping、Site URL、redirect allowlist/template ownerを再確認 | **B1D2開始前に必須** |
 | 6b | Supabase production project対応 | repoからDashboard/project mappingを確認できない | production project、final callback、change owner | **staging実装中に決定可** |
 | 7 | reviewer login方式 | current mobileはMagic Link-only、password UIなし | Magic Link継続とpassword optionの比較、最終方式、credential owner | **production前までに決定** |
-| 8 | 実iPhoneの利用可否 | iPhone 14を利用可能。current iOS versionは未確認 | actual-device smoke前にiOS version、signing prerequisites、test ownerと日程を確認 | **B1D2開始前に必須** |
+| 8 | 実iPhoneの利用可否 | iPhone 14 / iOS 26.2.1を利用可能 | actual-device smoke前にsigning prerequisites、test ownerと日程を確認 | **B1D2開始前に必須** |
 
 ### 1.10 B1D2開始前に必須の人間判断
 
 この表の「B1D2開始前に必須」は、値を消費するgated implementationの開始条件であり、membership前でも可能なPhase Aのrepo-only preparationまで停止する意味ではない。phaseごとのgateは8章で定義する。
 
-- Phase Aはmembership、Team ID、exact domain未確定でも進行可能。
-- Phase Bはbackup、macOS update、Xcode 26系導入後に開始する。
+- Phase AのうちApple identityを消費しないsynthetic test / guard preparationは実施可能。identity、bundle ID、Xcode configurationは未開始。
+- Phase Bのtoolchain baselineは完了。
 - Phase Cはmembership有効化、bundle identity、Team ID/App ID Prefix確認後に開始する。
-- Phase Dはstable staging originとSupabase staging mapping確定後に開始する。
-- Phase EはC/Dを通過し、iPhone 14のiOS versionを確認してから開始する。
+- Phase Dは選定済みstaging originのVercel exact mapping / public条件とSupabase staging mapping確定後に開始する。
+- Phase EはC/Dを通過してから、確認済みのiPhone 14 / iOS 26.2.1で開始する。
 
 未確定情報を推測で補わず、Phase C〜Eは必要情報が揃うまでPASS扱いにしない。
+
+### 1.11 External decision packet
+
+Apple承認後とexternal設定前に、人間が次を確認する。秘密値や実credentialは記録せず、status、owner、確認日だけを残す。
+
+| Surface | 人間確認事項 | 現在状態 |
+|---|---|---|
+| Apple | Team ID、Application Identifier Prefix、existing App ID、current bundle ID利用可否 | membership承認待ちのため未確認 |
+| Supabase | staging project、Site URL、redirect allowlist、Magic Link template | Dashboard mapping未確認 |
+| Vercel | `native-minute-staging.vercel.app`とprojectのexact mapping、Deployment Protection | 未確認 |
+| AASA delivery | public HTTP 200、no redirect、no auth、JSON content type | AASA本文・deployとも未実施 |
+| Callback privacy | platform / middleware / runtime / analytics / log drainでquery全文を保持しないこと | 未確認 |
 
 ## 2. B1D1から維持する固定前提
 
@@ -296,11 +315,11 @@ bundle IDは次のどちらかを実装前に決める。
 
 ## 5. Apple側の人間操作一覧
 
-### 5.1 Apple Developer Program加入前にできること
+### 5.1 Apple Developer Program承認前にできること
 
-- **事実（人間確認）**: Apple Developer Programは現在未登録であり、必要であれば今から加入可能。
-- **推奨**: enrollmentは外部lead timeを見込み、今から開始する。
-- Toolchain開始前gateのMac compatibility確認、必要なOS更新、Xcode 26導入後に、source/Simulator test、callback parser/lifecycle unit test。
+- **事実（人間確認）**: Apple Developer Programは申込み済みで、Apple側の承認待ち。membershipはまだ有効ではない。
+- macOS 26.6 / Xcode 26.6 baselineとiOS 26.5 Simulator runtime smoke。
+- Apple identityを必要としないHTTPS callback parser/lifecycle synthetic test、release相当fixture、AASA middleware safety。
 - bundle ID、staging identity、domain、callback pathのdecision packet作成。
 - AASA draftとpublic endpointのsynthetic validation。
 - 無料Personal Teamの範囲で限定的な自端末buildを試す。
@@ -316,7 +335,7 @@ repo-only preparationはmembership有効化前でも可能である。一方、A
 | A1 | Apple Developer AccountでIdentifiers/Capabilities/Profilesを管理できる権限を確認 | operation別permissionだけ記録。個人情報は残さない |
 | A2 | App Store Connectでapp record/review情報を管理できるroleを別に確認 | Developer Account権限の代用にしない |
 | A3 | Team IDとApplication Identifier Prefixを確認 | AASA用prefixをPortalまたはsigned entitlementから二重確認 |
-| A4 | production explicit App IDとbundle ID一致を確認 | `com.nativeminutes.app`との一致 |
+| A4 | production explicit App IDと選定後のbundle ID一致を確認 | Portal確認後に選定したexact bundle IDとの一致 |
 | A5 | staging App ID方針を決定・必要なら登録 | staging/prodの識別表 |
 | A6 | 対象App IDでAssociated Domains capabilityを有効化 | capability status |
 | A7 | capability変更後のdevelopment/distribution provisioning profileを再生成またはautomatic signingで更新 | signed appでentitlement確認 |
@@ -391,9 +410,8 @@ Supabase公式:
 ### 7.1 domain decision
 
 - **事実（repo）**: current production candidate originは`https://native-minute.vercel.app`。
-- **事実（人間確認）**: stagingには既存`native-minute-staging` Vercel projectを使用する前提である。
-- **推奨**: そのprojectのdeploymentごとに変わらないstable `.vercel.app` originを第一候補とする。deployment固有Preview URLは採用しない。
-- **未確認**: exact staging origin。repoまたは既存の非秘密文書から安全に確定できない限り、hostnameを推測して記録しない。
+- **事実（人間確認）**: staging originは`https://native-minute-staging.vercel.app`を選定済み。
+- **未確認**: そのoriginと既存Vercel project/environmentのexact mapping、TLS ownership、Deployment Protection scope、public AASA条件、redirect、logging。
 - **未確認**: これをfinal production auth domainとして維持するか、custom domainを使うか。
 - **未確認**: staging Vercel environment、TLS ownership、Deployment Protection scope。
 - **事実（repo）**: current release guardは各environmentのUniversal Link callbackとBFF base URLに同一originを要求する。
@@ -461,8 +479,8 @@ Phase Aは今後別途承認された実装turnで先行可能である。Phase 
 
 ### Stage 0 — decision freeze
 
-1. Phase C/Dの開始前にstaging host、bundle ID方針、Apple prefix、Supabase staging projectを確定し、production domain/projectとreviewer方式には決定期限とownerを付ける。
-2. `<staging-host>`をstaging BFF originと同一にし、callbackを`https://<staging-host>/mobile/auth/callback`に固定する。
+1. Phase C/Dの開始前に、選定済み`native-minute-staging.vercel.app`のVercel mapping/public条件、bundle ID方針、Apple prefix、Supabase staging projectを確定し、production domain/projectとreviewer方式には決定期限とownerを付ける。
+2. staging callback候補を`https://native-minute-staging.vercel.app/mobile/auth/callback`に固定する。ただしVercel/Supabase確認前にruntime/production configへ有効化しない。
 3. AASA scopeをcallback単一pathに固定する。
 4. log/query、Deployment Protection、SMTPのownerを決める。
 
@@ -488,7 +506,7 @@ Phase Aは今後別途承認された実装turnで先行可能である。Phase 
 1. source guardとは別のsigned-artifact checkerで、resolved Info.plist、embedded provisioning profile、codesign entitlement、application identifierを照合。
 2. Developer ModeのCDN bypassは反復debugだけに使う。
 3. Simulatorでrouting sanityを確認する。
-4. iPhone 14のcurrent iOS versionを人間が確認してから、通常signed staging buildをinstallし、通常Apple CDN経路でAASAを確認する。
+4. 確認済みのiPhone 14 / iOS 26.2.1へ通常signed staging buildをinstallし、通常Apple CDN経路でAASAを確認する。
 5. AppDelegate/SceneDelegateを変更していないbaselineで、cold/warm Universal Linkが`delegate/proxy -> repo-local plugin -> JS handler`へ届くかsafe boolean markerだけで確認する。
 6. baselineがPASSならnative ingressを変更しない。FAILならentitlement、AASA、signing、CDNを先に除外する。
 7. 受信不足がdelegate入口に限定された場合だけ、Capacitor 8.4標準template相当の最小forwardingを追加し、同じsigned actual-device matrixを再実行する。
@@ -497,7 +515,7 @@ Phase Aは今後別途承認された実装turnで先行可能である。Phase 
 
 10章の`AD-real` / `AD-synth`行を同一signed buildで実行する。`Repo` / `Edge`行は対応する主surfaceで先にPASSさせ、実provider callbackを加工してnegative testへ流用しない。
 
-使用予定端末はiPhone 14である。evidenceにはOS versionだけを必要最小限に記録し、個人情報、UDID、Apple ID、端末名は記録しない。
+使用予定端末はiPhone 14 / iOS 26.2.1である。evidenceにはOS versionだけを必要最小限に記録し、個人情報、UDID、Apple ID、端末名は記録しない。
 
 - installed / not installed
 - cold / warm
@@ -718,9 +736,9 @@ Apple公式:
 | U1 | final production BFF/callback common origin | product/infra | repo config前 |
 | U2 | stable public staging BFF/callback common origin | infra | staging deploy前 |
 | U3 | stagingを別bundle IDにするか | iOS/product | Apple App ID作成前 |
-| U4 | Apple Program enrollment完了時期、Developer Account権限、Team ID、Application Identifier Prefix | Developer Account owner | Phase C / AASA確定前 |
+| U4 | Apple Program承認時期、membership有効化、Developer Account権限、Team ID、Application Identifier Prefix | Developer Account owner | Phase C / AASA確定前 |
 | U5 | existing App ID / App Store Connect recordとASC role | release owner | signing前 |
-| U6 | `Mac15,12`の更新先macOS対応、chosen Xcode 26.x、OS/Xcode更新日程、Capacitor 8.4 baseline | device owner/iOS engineer | Phase B前 |
+| U6 | 提出時点のApple toolchain要件再確認とdistribution archive | device owner/iOS engineer | production readiness前。macOS 26.6 / Xcode 26.6 baselineはPASS |
 | U7 | staging/prod Supabase project分離 | auth owner | allowlist変更前 |
 | U8 | dynamic callback queryのnarrow allowlist pattern | auth owner | Magic Link staging前 |
 | U9 | Magic Link template、expiry、rate limit、new-user policy | auth owner | staging smoke前 |
@@ -732,11 +750,10 @@ Apple公式:
 
 ## 15. 外部待ち事項
 
-- Apple Developer Program enrollment開始、membership有効化、role付与。
+- Apple Developer Program申込みは完了。現在はApple承認、membership有効化、role付与待ち。
 - Team ID/Application Identifier Prefix/App ID/Associated Domains capabilityの確認。
-- provisioning profile再生成と正式な実機署名。iPhone 14は利用可能だがcurrent iOS versionは未確認。
-- `Mac15,12`の更新先macOS対応確認、backup/OS update approval、chosen Xcode 26.x導入。current macOS 14.6.1では更新が必要。
-- exact staging origin、production domain、DNS、TLS、Vercel environment。stagingは既存`native-minute-staging` projectのstable `.vercel.app` originが第一候補。
+- provisioning profile再生成と正式な実機署名。iPhone 14 / iOS 26.2.1は確認済み。
+- production domain、DNS、TLS、Vercel environment。staging originは`native-minute-staging.vercel.app`を選定済みだが、project mappingとpublic条件は未確認。
 - Deployment Protection scopeとpublic AASA endpoint。
 - Supabase staging/prod Auth管理権限。
 - mail provider/DNS authentication、link tracking設定。
@@ -747,11 +764,11 @@ Apple公式:
 
 ## 16. 推奨実装順序
 
-1. **Phase A — repo-only preparation**: profile、HTTPS validation、config/test/guardの最小差分を準備し、B1D1 regressionを確認する。AppDelegate/SceneDelegate、`@capacitor/app`追加は前提にしない。
-2. **Phase B — toolchain baseline**: 導入時点のApple公式要件とMac対応を再確認し、`backup → macOS update → Xcode 26系導入 → 既存branchのbaseline build`を順に完了する。
+1. **Pre-approval repo preparation**: Apple identity不要のHTTPS parser/lifecycle tests、release相当fixture、AASA middleware safetyは完了。profile、identity、Xcode configurationは未開始。
+2. **Phase B — toolchain baseline**: macOS 26.6 / Xcode 26.6とiOS 26.5 Simulatorで完了。
 3. **Phase C — Apple identity / signing**: membership有効化後にbundle ID、Team ID/App ID Prefix、App ID、Associated Domains、profileを確定し、signed entitlementを確認する。
-4. **Phase D — staging AASA / Universal Link**: exact stable staging origin確定後、AASA/fallback/headers、Supabase staging allowlist/template、edge deliveryを検証する。
-5. **Phase E — iPhone 14 smoke**: iOS version確認後、current repo-local `appUrlOpen` ingressのcold/warm baselineとM01〜M25の対象surfaceを確認する。
+4. **Phase D — staging AASA / Universal Link**: 選定済みstaging originのVercel mapping/public条件確定後、AASA/fallback/headers、Supabase staging allowlist/template、edge deliveryを検証する。
+5. **Phase E — iPhone 14 smoke**: Phase C/D通過後、iPhone 14 / iOS 26.2.1でcurrent repo-local `appUrlOpen` ingressのcold/warm baselineとM01〜M25の対象surfaceを確認する。
 6. **Conditional minimal native forwarding**: Phase Eで受信不足をdelegate入口に限定できた場合だけ最小forwardingを比較・承認し、同じmatrixを再実行する。baseline PASSならskipする。
 7. **Phase F — production readiness review**: security、reviewer方式比較、rollback、toolchain、owner sign-offをまとめる。
 8. **Separately authorized production cutover**: Phase F完了後も別承認を必須とし、9章のadditive順序で実施する。
@@ -768,7 +785,7 @@ Apple公式:
 | Phase B / Toolchain | backupなし、`Mac15,12`の更新先macOS対応を公式要件で確認できない、必要OSへ更新不可で代替Macなし、chosen Xcode 26.x / iOS 26 SDKでbaseline buildできない |
 | Phase C / Apple identity | membership未有効、bundle ID、Apple prefix、App ID、Associated Domains、profileをfreezeできない |
 | Phase D / staging edge | exact stable origin、public AASA、Deployment Protection、Supabase staging mappingをfreezeできない |
-| Phase E / actual device | Phase C/D未PASS、iPhone 14のiOS version未確認、signed install不可、staging smoke必須行がFAIL |
+| Phase E / actual device | Phase C/D未PASS、signed install不可、staging smoke必須行がFAIL。iPhone 14 / iOS 26.2.1は確認済み |
 | Repo implementation | Keychain envelope/item identity、PKCE binding、pre-exchange mark、replay/reason code、refresh/logout、Bearer BFF、DB、dependencyの重大変更が必要 |
 | Native ingress | current baseline failureだけでAppDelegate変更へ進む、外部association/signing原因を除外できない、または条件付き最小forwarding後もcold/warmを安全に渡せない |
 | Callback | state/nonce/transactionを保持できない、またはexact targetを緩める必要がある |
@@ -786,19 +803,20 @@ Apple公式:
 
 ## 18. 工数見積もり
 
-前提: Apple/domain/Supabase/Vercelのownerが応答し、B1D1 Keychain/PKCE/Bearer contractを変更せず、1つのiOS release targetを維持する。OS update/hardware replacementのelapsed timeは含めない。
+前提: Apple/domain/Supabase/Vercelのownerが応答し、B1D1 Keychain/PKCE/Bearer contractを変更せず、1つのiOS release targetを維持する。macOS/Xcode baselineとpre-approval synthetic testsは完了済みとして除外する。
 
-| 作業 | Engineer effort |
+| 残Unit | Engineer effort |
 |---|---:|
-| decision freeze / external checklist | 0.5〜1.0人日 |
-| Mac compatibility decision / Xcode 26 baseline / signing preflight | 0.5〜1.5人日 |
-| profile / callback / config分離 / current native ingress baseline | 1.0〜1.5人日 |
-| entitlement / AASA / fallback / headers | 0.75〜1.25人日 |
-| guard / tests / B1D1 regression | 0.75〜1.25人日 |
-| staging external setup支援 / edge verification | 0.5〜1.0人日 |
-| physical iPhone smoke / evidence / fixes | 1.0〜2.0人日 |
-| production readiness / approved cutover smoke | 0.5〜1.0人日 |
-| **base合計** | **5〜9人日** |
+| Unit A — identity / configuration mapping | 0.75〜1.25人日 |
+| Unit B — final configでのlifecycle regression、conditional gap diagnosis | 0.25〜0.5人日 |
+| Unit C — Associated Domains / signing / signed artifact check | 0.5〜1.0人日 |
+| Unit D — staging AASA / fallback / headers / edge verification | 0.75〜1.25人日 |
+| Unit E — Supabase staging redirect/template設定支援とWeb regression | 0.5〜1.0人日 |
+| Unit F — physical iPhone smoke / evidence / focused fixes | 1.0〜2.0人日 |
+| production readiness review | 0.5〜1.0人日 |
+| **remaining base合計** | **4.25〜8.0人日** |
+
+手戻りbufferは`+1〜2人日`を別枠にし、remaining engineering effortは**5.25〜10人日**を目安とする。Apple承認、profile、DNS/mail、AASA CDN/device cacheの待ちはengineer effortに含めない。
 
 追加可能性:
 
@@ -808,7 +826,7 @@ Apple公式:
 - SMTP/domain deliverability remediation: `+1〜3人日`相当、DNS待ち別
 - App Store account deletion gap: B1D2範囲外。post-B1D2 gateで別見積もり
 
-external elapsed timeはApple enrollment、DNS/mail、profile、AASA CDN cacheを含めて概ね1〜3週以上になり得る。これはengineer effortと分けて管理する。
+external elapsed timeはApple承認、DNS/mail、profile、AASA CDN cacheを含めて概ね1〜3週以上になり得る。これはengineer effortと分けて管理する。
 
 ## 19. B1D2完了後に初めて進める次工程
 
