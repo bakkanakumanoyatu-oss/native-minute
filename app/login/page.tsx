@@ -7,6 +7,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   login_required: "続けるにはメールリンクでログインしてください。",
   supabase_not_configured: "ログインの準備がまだ完了していません。時間をおいてもう一度お試しください。",
   missing_code: "ログインリンクを確認できませんでした。もう一度メールを送ってください。",
+  sign_in_failed: "ログイン用メールを送信できませんでした。メールアドレスを確認して、もう一度お試しください。",
   callback_failed: "ログインを完了できませんでした。もう一度お試しください。",
   callback_pkce_missing:
     "ログインを完了できませんでした。メールを開いたブラウザで、このページからもう一度ログインリンクを送ってください。",
@@ -18,6 +19,7 @@ type LoginPageProps = {
   searchParams?: {
     error?: string;
     next?: string;
+    sent?: string;
   };
 };
 
@@ -49,6 +51,7 @@ function getLoginReturnTargetState(rawNextPath: string | undefined) {
 
 export default function LoginPage({ searchParams }: LoginPageProps) {
   const message = searchParams?.error ? ERROR_MESSAGES[searchParams.error] ?? "ログインを続けられませんでした。" : null;
+  const sent = searchParams?.sent === "1";
   const returnTarget = getLoginReturnTargetState(searchParams?.next);
   const configReady = hasSupabaseConfig();
 
@@ -60,6 +63,11 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
       {!configReady ? (
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
           ログインの準備がまだ完了していません。時間をおいてもう一度お試しください。
+        </div>
+      ) : null}
+      {sent ? (
+        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-900">
+          ログインリンクを送信しました。メールを確認し、同じアプリ画面でリンクを開いてください。
         </div>
       ) : null}
       {message ? (

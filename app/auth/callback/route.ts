@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { buildLoginHref, LOGIN_CONTINUITY_COOKIE, getInternalPath, getRequestOrigin } from "@/lib/navigation";
-import { createSupabaseRouteClient } from "@/lib/supabase/route";
+import { createSupabaseRouteClient, getSafeAuthCookieSummary, isSupabasePkceVerifierCookieName } from "@/lib/supabase/route";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 
 const EMAIL_OTP_TYPES = new Set<EmailOtpType>(["signup", "invite", "magiclink", "recovery", "email_change", "email"]);
@@ -14,8 +14,10 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const requestOrigin = getRequestOrigin(request);
   const nextPath = getInternalPath(requestUrl.searchParams.get("next") ?? request.cookies.get(LOGIN_CONTINUITY_COOKIE)?.value, "/scripts");
-  const cookieNames = request.cookies.getAll().map((cookie) => cookie.name);
-  const hasPkceVerifierCookie = cookieNames.some((name) => name.endsWith("-code-verifier"));
+  const requestCookies = request.cookies.getAll();
+  const cookieNames = requestCookies.map((cookie) => cookie.name);
+  const cookieSummary = getSafeAuthCookieSummary(requestCookies, LOGIN_CONTINUITY_COOKIE);
+  const hasPkceVerifierCookie = cookieSummary.hasPkceVerifierCookie;
 
   function redirectTo(path: string) {
     return NextResponse.redirect(new URL(path, requestOrigin), 307);
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     if (options.clearPkceVerifierCookies) {
       cookieNames
-        .filter((name) => name.endsWith("-code-verifier"))
+        .filter((name) => isSupabasePkceVerifierCookieName(name))
         .forEach((name) => {
           response.cookies.set(name, "", {
             path: "/",
@@ -72,7 +74,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const supabase = createSupabaseRouteClient();
+  const supabase = createSupabaseRouteClient(request);
   const { error } = tokenHash
     ? await supabase.auth.verifyOtp({
         token_hash: tokenHash,
@@ -85,13 +87,12 @@ export async function GET(request: NextRequest) {
 
     console.error("Auth callback exchange failed", {
       message: error.message,
-      code: error.code ?? null,
+      supabaseErrorCode: error.code ?? null,
       origin: requestOrigin,
       nextPath,
       callbackMode: tokenHash ? "token_hash" : "code",
       otpType: tokenHash ? otpType : null,
-      hasPkceVerifierCookie,
-      callbackCookieNames: cookieNames.filter((name) => name.includes("auth-token") || name === LOGIN_CONTINUITY_COOKIE)
+      cookieSummary
     });
 
     return finalize(supabase.applyToResponse(

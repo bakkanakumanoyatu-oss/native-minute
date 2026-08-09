@@ -116,6 +116,14 @@ function getFirstForwardedValue(value: string | null) {
 }
 
 export function getRequestOrigin(request: { headers: Headers; nextUrl: { origin: string; protocol: string } }) {
+  try {
+    if (request.nextUrl.origin) {
+      return new URL(request.nextUrl.origin).origin;
+    }
+  } catch {
+    // Fall back to proxy headers below when Next cannot provide a valid origin.
+  }
+
   const forwardedProto = getFirstForwardedValue(request.headers.get("x-forwarded-proto"));
   const forwardedHost = getFirstForwardedValue(request.headers.get("x-forwarded-host"));
   const host = forwardedHost || request.headers.get("host")?.trim();

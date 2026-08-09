@@ -5,6 +5,11 @@
 - Then read `docs/current-state.md`.
 - Use `README.md` as setup/reference, not as the freshest implementation log.
 
+## Workspace guard
+- The correct working directory is `/Users/karasawatakahiro/Developer/native-minute`.
+- Do not edit `/Users/karasawatakahiro/Desktop/native-minute` or the quarantined Desktop checkout.
+- Run `npm run check:workspace` before meaningful verification; it fails outside the Developer checkout.
+
 ## Product focus
 - Native Minute is a fixed 1-minute English practice MVP.
 - Prioritize the main loop: `setup/voice -> scripts -> listen -> record -> review -> progress`.

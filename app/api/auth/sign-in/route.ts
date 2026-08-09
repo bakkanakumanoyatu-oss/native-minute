@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildAuthCallbackHref, LOGIN_CONTINUITY_COOKIE, getInternalPath, getRequestOrigin } from "@/lib/navigation";
-import { createSupabaseRouteClient } from "@/lib/supabase/route";
+import {
+  buildAuthCallbackHref,
+  buildLoginHref,
+  LOGIN_CONTINUITY_COOKIE,
+  getInternalPath,
+  getRequestOrigin
+} from "@/lib/navigation";
+import { createSupabaseRouteClient, getSafeAuthCookieSummary, isSupabasePkceVerifierCookieName } from "@/lib/supabase/route";
 import { getPublicAppUrl } from "@/lib/env";
 import { jsonError, jsonOk } from "@/lib/http";
 import { signInSchema } from "@/schemas/auth";
@@ -12,6 +18,29 @@ function expireCookie(response: NextResponse, name: string) {
     maxAge: 0,
     expires: new Date(0)
   });
+}
+
+function isFormPostRequest(request: NextRequest) {
+  const contentType = request.headers.get("content-type") ?? "";
+  return contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data");
+}
+
+async function readSignInPayload(request: NextRequest) {
+  if (isFormPostRequest(request)) {
+    const formData = await request.formData().catch(() => null);
+    const email = formData?.get("email") ?? formData?.get("login-email");
+    return {
+      payload: {
+        email: typeof email === "string" ? email : ""
+      },
+      isFormPost: true
+    };
+  }
+
+  return {
+    payload: await request.json().catch(() => null),
+    isFormPost: false
+  };
 }
 
 type SignInFailureKind =
@@ -71,23 +100,71 @@ function classifySignInFailure(input: {
   };
 }
 
-export async function POST(request: NextRequest) {
-  if (!hasSupabaseConfig()) {
-    return jsonError("ログインの準備がまだ完了していません。時間をおいてもう一度お試しください。", 503);
+function buildLoginSentHref(nextPath: string) {
+  return `/login?sent=1&next=${encodeURIComponent(nextPath)}`;
+}
+
+function redirectTo(requestOrigin: string, path: string, status = 303) {
+  return NextResponse.redirect(new URL(path, requestOrigin), status);
+}
+
+function signInFailureResponse(input: {
+  message: string;
+  status: number;
+  isFormPost: boolean;
+  nextPath: string;
+  requestOrigin: string;
+}) {
+  if (input.isFormPost) {
+    return redirectTo(input.requestOrigin, buildLoginHref(input.nextPath, "sign_in_failed", "/scripts"), 303);
   }
 
-  const nextPath = getInternalPath(request.nextUrl.searchParams.get("next"), "/scripts");
+  return jsonError(input.message, input.status);
+}
 
-  const payload = await request.json().catch(() => null);
+function shouldExposeSetCookieSummary(request: NextRequest) {
+  return process.env.NODE_ENV !== "production" && request.nextUrl.searchParams.get("debugAuthCookies") !== "0";
+}
+
+function attachSafeSetCookieSummary(response: NextResponse, request: NextRequest) {
+  const setCookieSummary = getSafeAuthCookieSummary(response.cookies.getAll(), LOGIN_CONTINUITY_COOKIE);
+
+  if (shouldExposeSetCookieSummary(request)) {
+    response.headers.set("x-native-minute-auth-set-cookie-summary", JSON.stringify(setCookieSummary));
+  }
+
+  return setCookieSummary;
+}
+
+export async function POST(request: NextRequest) {
+  const nextPath = getInternalPath(request.nextUrl.searchParams.get("next"), "/scripts");
+  const requestOrigin = getRequestOrigin(request);
+  const { payload, isFormPost } = await readSignInPayload(request);
+
+  if (!hasSupabaseConfig()) {
+    return signInFailureResponse({
+      message: "ログインの準備がまだ完了していません。時間をおいてもう一度お試しください。",
+      status: 503,
+      isFormPost,
+      nextPath,
+      requestOrigin
+    });
+  }
+
   const parsed = signInSchema.safeParse(payload);
 
   if (!parsed.success) {
-    return jsonError(parsed.error.issues[0]?.message ?? "メールアドレスを確認してください。", 400);
+    return signInFailureResponse({
+      message: parsed.error.issues[0]?.message ?? "メールアドレスを確認してください。",
+      status: 400,
+      isFormPost,
+      nextPath,
+      requestOrigin
+    });
   }
 
-  const supabase = createSupabaseRouteClient();
+  const supabase = createSupabaseRouteClient(request);
   const callbackPath = buildAuthCallbackHref(nextPath, "/scripts");
-  const requestOrigin = getRequestOrigin(request);
   const publicAppUrl = getPublicAppUrl();
   const emailRedirectTo = new URL(callbackPath, requestOrigin).toString();
   const { error } = await supabase.auth.signInWithOtp({
@@ -98,7 +175,10 @@ export async function POST(request: NextRequest) {
   });
 
   if (!error) {
-    const response = supabase.applyToResponse(jsonOk({ sent: true }));
+    const response = supabase.applyToResponse(
+      isFormPost ? redirectTo(requestOrigin, buildLoginSentHref(nextPath), 303) : jsonOk({ sent: true })
+    );
+
     response.cookies.set(LOGIN_CONTINUITY_COOKIE, nextPath, {
       httpOnly: true,
       sameSite: "lax",
@@ -106,6 +186,27 @@ export async function POST(request: NextRequest) {
       path: "/",
       maxAge: 10 * 60
     });
+
+    const setCookieSummary = attachSafeSetCookieSummary(response, request);
+
+    if (!setCookieSummary.hasPkceVerifierCookie || !setCookieSummary.hasLoginContinuityCookie) {
+      console.error("Auth sign-in response missing expected auth cookies", {
+        originMatchesPublicAppUrl: requestOrigin === publicAppUrl,
+        origin: requestOrigin,
+        publicAppUrl,
+        nextPath,
+        setCookieSummary
+      });
+
+      return signInFailureResponse({
+        message: "ログイン用メールの準備に失敗しました。少し待ってからもう一度お試しください。",
+        status: 500,
+        isFormPost,
+        nextPath,
+        requestOrigin
+      });
+    }
+
     return response;
   }
 
@@ -117,15 +218,29 @@ export async function POST(request: NextRequest) {
     originMatchesPublicAppUrl: requestOrigin === publicAppUrl,
     origin: requestOrigin,
     publicAppUrl,
-    emailRedirectTo,
+    callbackPath,
     nextPath
   });
 
-  const response = jsonError(failure.message, 400);
+  const response = signInFailureResponse({
+    message: failure.message,
+    status: 400,
+    isFormPost,
+    nextPath,
+    requestOrigin
+  });
+
   supabase
     .getPendingCookies()
-    .filter((cookie) => cookie.name.endsWith("-code-verifier"))
+    .filter((cookie) => isSupabasePkceVerifierCookieName(cookie.name))
     .forEach((cookie) => expireCookie(response, cookie.name));
 
   return response;
+}
+
+export function GET(request: NextRequest) {
+  const nextPath = getInternalPath(request.nextUrl.searchParams.get("next"), "/scripts");
+  const requestOrigin = getRequestOrigin(request);
+
+  return redirectTo(requestOrigin, buildLoginHref(nextPath, "sign_in_failed", "/scripts"), 303);
 }

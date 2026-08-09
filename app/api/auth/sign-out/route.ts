@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     return jsonError("Supabase の環境変数が未設定です。", 503);
   }
 
-  const supabase = createSupabaseRouteClient();
+  const supabase = createSupabaseRouteClient(request);
   const { error } = await supabase.auth.signOut();
 
   if (error) {

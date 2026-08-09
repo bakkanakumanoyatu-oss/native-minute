@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AppNav } from "@/components/navigation/app-nav";
@@ -7,6 +7,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Native Minute",
   description: "固定1分の英語練習を毎日回すための MVP"
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "overlays-content"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

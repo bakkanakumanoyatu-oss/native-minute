@@ -18,8 +18,8 @@ test.describe("protected route guards", () => {
       expect(currentUrl.pathname).toBe("/login");
       expect(currentUrl.searchParams.get("error")).toBe("login_required");
       expect(currentUrl.searchParams.get("next")).toBe(targetPath);
-      await expect(page.getByText("ログインが必要です。続けるにはメールリンクでサインインしてください。")).toBeVisible();
-      await expect(page.getByText(`希望する戻り先: ${targetPath}`)).toBeVisible();
+      await expect(page.getByText("続けるにはメールリンクでログインしてください。")).toBeVisible();
+      await expect(page.getByText("ログイン後に練習へ戻ります")).toBeVisible();
     }
   });
 });
