@@ -6,6 +6,7 @@
     "apps/mobile"
   ],
   "scripts": {
+    "check:workspace": "python3 scripts/check_workspace_root.py",
     "dev": "NEXT_DIST_DIR=.next-dev next dev",
     "build": "next build",
     "start": "next start",

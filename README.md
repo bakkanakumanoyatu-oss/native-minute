@@ -12,6 +12,11 @@
 という main loop を最短で回すことを優先しています。
 
 Codex の運用前提は [AGENTS.md](./AGENTS.md) と [docs/current-state.md](./docs/current-state.md) にまとめています。
+
+## workspace guard
+
+この repo の正しい作業場所は `/Users/karasawatakahiro/Developer/native-minute` です。`/Users/karasawatakahiro/Desktop/native-minute` や隔離済み Desktop checkout は編集・参照しません。作業前と検証前に `npm run check:workspace` を実行すると、cwd / git root / Desktop 側 checkout の存在を検査して、混線時は non-zero で停止します。
+
 App Store / Google Play 掲載へ向かう store-release-mainline の現状、Gate map、Web beta smoke、Gate 1.5 voice consent / clone voice server-side architecture review は [docs/store-release-mainline-inventory.md](./docs/store-release-mainline-inventory.md) にまとめています。
 Script Studio の設計メモは [docs/script-studio-plan.md](./docs/script-studio-plan.md) にあり、freeze / quota / cost control の詳細は [docs/script-studio-freeze-quota-plan.md](./docs/script-studio-freeze-quota-plan.md) に分けています。Phase S4d で、見本音声生成前の preflight design を [docs/script-studio-voice-generation-preflight-plan.md](./docs/script-studio-voice-generation-preflight-plan.md) に固定し、Phase S4e で `/scripts/[id]/listen` に preflight-only の UX copy を追加しました。Phase S4f では quota event design を [docs/script-studio-quota-event-plan.md](./docs/script-studio-quota-event-plan.md) に固定し、Phase S4g では listen の provider/cache 状態表示を少し整理しました。Phase S4h では `/scripts/new` と `/scripts/[id]/listen` に quota preflight copy only を追加し、Phase S4i ではその表示密度を少し圧縮しました。Phase S5a〜S5e で quota event の schema / write path / implementation plan を固定し、Phase S5f で Script Studio text generation の `script_generation_attempt` だけを non-blocking に記録する初回実装を追加しました。S5f-db-smoke-plan では dev DB migration / mock provider smoke checklist を同 quota event plan に追加しています。Phase S5g では voice generation quota event の初回実装計画を、Phase S5h ではその schema extension plan を同 doc に固定し、Phase S5i で voice quota 用の schema extension / DB types / write service の受け皿を追加しました。Phase S5j では `speakScript` service 境界に non-blocking の voice quota event write を接続しました。S5k-plan では `0009/0010` 適用後の text + voice DB smoke checklist と SQL query を同 doc に統合しました。S5 close check では dev DB 適用後に mock text generation と mock voice generation/cache hit の quota event 記録、privacy spot check、RLS spot check を確認しました。freeze 保存、quota enforcement、voice generation gating にはまだ接続していません。Audio Library の S6a design-only メモは [docs/audio-library-plan.md](./docs/audio-library-plan.md)、S6b の migration / RLS / service interface plan は [docs/audio-library-migration-plan.md](./docs/audio-library-migration-plan.md) にあります。S6c で script-scoped library 用の DB migration / DB types / service skeleton を追加し、S6d/S6e で saved model audio と saved best take の API boundary を追加しました。S6f では listen で現在の見本音声を Audio Library に保存 / 保存解除できる小さな UI、S6g では review で現在の録音をベスト保存 / 保存解除できる小さな UI、S6h では `/progress` に script ごとの Audio Library summary を追加しました。S6i では listen / review / progress をまたぐ Audio Library smoke を確認しました。S7a では speed / voice style の design-only メモを [docs/speed-voice-style-plan.md](./docs/speed-voice-style-plan.md) に追加し、playbackRate と生成時 speed / style の境界を固定しました。S7b では拡張 preset 定義と provider mapper 境界を追加し、S7c では既存4 preset の copy / compatibility alias を整理しました。S7d では listen の生成 style / 再生速度 copy、S7f では listen の表示密度と操作直後の pending feedback、S7g では saved model audio metadata snapshot 表示、S7h では mock 前提の provider-specific mapping 境界、S7i では `npm run voice:style-smoke` による lightweight static smoke を追加しました。旧データは `style: 旧データ / 詳細なし` と表示します。既存 UI / API accepted preset と cache identity はそのまま維持しています。
 Brush-up v1 の設計メモは [docs/brush-up-v1-design-plan.md](./docs/brush-up-v1-design-plan.md) にあります。今回は本実装せず、既存お手本を上書きしない candidate 方針、Review 起点、既存 `script_audios` / saved model audio で足りる可能性と storage identity の未決点を整理しています。
@@ -433,6 +438,7 @@ S12e では、この human microphone smoke は通過済みです。別環境で
 ## 最小スモーク
 
 - lint
+  - `npm run check:workspace`
   - `npm run lint`
 - build
   - `npm run build`

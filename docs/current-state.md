@@ -10,6 +10,11 @@
 7. `/scripts/[id]/review/[takeId]` で短い評価を見て、直す / ベストを残す。
 8. `/progress` で最大5本の練習スロットから成果を選び、最新結果 / ベスト結果 / 保存済み録音を見る。
 
+
+## Workspace guard
+- 正しい working directory / git root は `/Users/karasawatakahiro/Developer/native-minute`。`/Users/karasawatakahiro/Desktop/native-minute` と隔離済み Desktop checkout は編集・参照しない。
+- `npm run check:workspace` を追加し、cwd / git root / Desktop 側 checkout の存在を検査して、混線時は non-zero で停止する。
+
 ## Store release mainline
 - Native Minute は App Store / Google Play 掲載を長期ゴールにする `store-release-mainline` として進める。現在は Next.js Web core を維持し、UI/UX 改善フェーズはいったん区切って、公開に向けた安全性・運用性・ストア準備へ移る。
 - Phase B1Cは`PARTIAL — ARCHITECTURE VERIFIED`。local Capacitor bundle、Simulator local shell、release guard、protected Ready Preview上のBFF health / CORSをPASSとし、Deployment Protectionを弱めずbypass credentialをmobile bundleへ入れないためSimulator connectedは意図的にDEFERRED。productionとDeveloper checkoutは未変更で、判定詳細は`docs/b1c-local-capacitor-bundle-spike-result.md`を正とする。
