@@ -11,7 +11,10 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const SCRIPT_DIRECTORY = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = resolve(SCRIPT_DIRECTORY, "..");
-const RELEASE_PROFILES = new Set(["local-spike", "production"]);
+const RELEASE_PROFILES = new Set(["local-spike", "staging", "production"]);
+const STAGING_BUNDLE_ID = "com.nativeminutes.app.staging";
+const STAGING_BFF_ORIGIN = "https://native-minute-staging.vercel.app";
+const STAGING_CALLBACK = STAGING_BFF_ORIGIN + "/mobile/auth/callback";
 const LOOPBACK_URL_PATTERN = /https?:\/\/(?:localhost|127\.0\.0\.1|\[?::1\]?)(?::\d+)?/i;
 const SUPABASE_VENDOR_LOOPBACK_LITERAL = "http://localhost:9999";
 const RAW_SECRET_PATTERN =
@@ -521,6 +524,112 @@ function findProductionTargetContract(rootDir, expectedBundleId) {
   };
 }
 
+function findTargetBuildSettings(rootDir, configurationName) {
+  const projectPath = resolve(rootDir, "ios/App/App.xcodeproj/project.pbxproj");
+
+  if (!existsSync(projectPath)) {
+    return null;
+  }
+
+  const project = readFileSync(projectPath, "utf8");
+  const pattern = new RegExp(
+    "[A-F0-9]+ \\/\\*\\s*" + configurationName +
+      "\\s*\\*\\/ = \\{\\s*isa = XCBuildConfiguration;([\\s\\S]*?)\\n\\s*\\};",
+    "g"
+  );
+
+  for (const match of project.matchAll(pattern)) {
+    const settings = match[1];
+
+    if (readXcodeBuildSetting(settings, "PRODUCT_BUNDLE_IDENTIFIER")) {
+      return settings;
+    }
+  }
+
+  return null;
+}
+
+function scanStagingConfigurationContract({
+  rootDir,
+  capacitorProfile,
+  mobileProfile,
+  mobileProfilePath,
+  webDir,
+  webMetadata,
+  nativeMetadata,
+  generatedConfig,
+  findings
+}) {
+  const sourceMappingValid =
+    capacitorProfile?.appId === STAGING_BUNDLE_ID &&
+    mobileProfile?.bundleId === STAGING_BUNDLE_ID &&
+    mobileProfile?.xcodeConfiguration === "Staging" &&
+    mobileProfile?.capacitorProfile === "staging";
+
+  if (!sourceMappingValid) {
+    addFinding(findings, "staging_profile_identity_mismatch", mobileProfilePath);
+  }
+
+  const callback = parseProductionUniversalLink(mobileProfile);
+
+  if (
+    mobileProfile?.bffBaseUrl !== STAGING_BFF_ORIGIN ||
+    mobileProfile?.authCallbackUri !== STAGING_CALLBACK ||
+    callback?.href !== STAGING_CALLBACK
+  ) {
+    addFinding(findings, "staging_https_auth_callback_mismatch", mobileProfilePath);
+  }
+
+  for (const [metadata, path] of [
+    [webMetadata, webDir + "/mobile-build.json"],
+    [nativeMetadata, "ios/App/App/public/mobile-build.json"]
+  ]) {
+    if (
+      metadata?.bundleId !== STAGING_BUNDLE_ID ||
+      metadata?.xcodeConfiguration !== "Staging" ||
+      metadata?.capacitorProfile !== "staging" ||
+      metadata?.authCallbackMode !== "universal-link"
+    ) {
+      addFinding(findings, "staging_build_metadata_mismatch", path);
+    }
+  }
+
+  if (generatedConfig?.appId !== STAGING_BUNDLE_ID) {
+    addFinding(findings, "staging_capacitor_app_id_mismatch", "ios/App/App/capacitor.config.json");
+  }
+
+  const stagingSettings = findTargetBuildSettings(rootDir, "Staging");
+  const stagingInfoPlist = readXcodeBuildSetting(stagingSettings ?? "", "INFOPLIST_FILE");
+
+  if (
+    readXcodeBuildSetting(stagingSettings ?? "", "PRODUCT_BUNDLE_IDENTIFIER") !==
+      STAGING_BUNDLE_ID ||
+    stagingInfoPlist !== "App/Info.plist" ||
+    readXcodeBuildSetting(stagingSettings ?? "", "DEVELOPMENT_TEAM") ||
+    readXcodeBuildSetting(stagingSettings ?? "", "CODE_SIGN_ENTITLEMENTS")
+  ) {
+    addFinding(findings, "staging_xcode_configuration_mismatch", "ios/App/App.xcodeproj/project.pbxproj");
+  }
+
+  const stagingInfoPath = resolve(rootDir, "ios/App", stagingInfoPlist ?? "");
+
+  if (
+    !stagingInfoPlist ||
+    !existsSync(stagingInfoPath) ||
+    plistHasCustomUrlScheme(readFileSync(stagingInfoPath, "utf8"))
+  ) {
+    addFinding(findings, "staging_debug_scheme_leak", stagingInfoPlist ?? "ios/App/App/Info.plist");
+  }
+
+  if (
+    webDir &&
+    existsSync(resolve(rootDir, webDir)) &&
+    !directoryContainsLiteral(resolve(rootDir, webDir), STAGING_CALLBACK)
+  ) {
+    addFinding(findings, "staging_https_auth_callback_missing", webDir);
+  }
+}
+
 function hasAssociatedDomainsContract(targetContract, callbackHost) {
   if (!targetContract?.entitlementPath || !callbackHost) {
     return false;
@@ -949,6 +1058,18 @@ export function runMobileReleaseGuard(options = {}) {
       nativeMetadata,
       expectedBundleId:
         typeof generatedConfig?.appId === "string" ? generatedConfig.appId : null,
+      findings
+    });
+  } else if (profile === "staging") {
+    scanStagingConfigurationContract({
+      rootDir,
+      capacitorProfile,
+      mobileProfile,
+      mobileProfilePath,
+      webDir,
+      webMetadata,
+      nativeMetadata,
+      generatedConfig,
       findings
     });
   }

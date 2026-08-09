@@ -1,16 +1,29 @@
 # B1D2 Production Mobile Auth readiness / execution plan
 
-> Status: **PRE-APPROVAL REPO PREPARATION — APPLE IDENTITY NOT IMPLEMENTED**
+> Status: **UNIT A IMPLEMENTED — STAGING CONFIGURATION / IDENTITY MAPPED; UNIT C+ NOT STARTED**
 >
 > 調査基準日: 2026-07-26
 > 人間確認情報の反映日: 2026-07-29
 > pre-approval preparation更新日: 2026-07-29
+> Unit A更新日: 2026-08-09
 > 調査worktree: `/Users/karasawatakahiro/.codex/worktrees/b4db/native-minute`
 > 調査branch: `feature/mobile-auth-gate`
 > 調査HEAD: `1e344297b5bc75ac4a8dad438df231fea0242241`
 > pre-approval preparation開始HEAD: `7c85ff5dab2973dd682f97ce1224c9c8b31b184f`
 
 この文書は、B1D2実装前のreadiness調査と、将来明示承認を受けて実行するための計画である。初回plan確定ではこの文書だけを変更した。pre-approval preparationではApple identityを必要としないsynthetic callback/lifecycle test、release相当fixture、AASA middleware safetyと事実同期だけを行い、Xcode project、entitlement、AASA本文、Supabase、Vercel、DNS、Apple Developer、DB、dependency、deploy、productionは変更していない。
+
+### 2026-08-09 Unit A authoritative update
+
+この節は、本文中の2026-07-29時点のApple承認待ち・staging mapping未確認という記述を上書きする。今回repo内で実装・検証するのはUnit Aだけで、Unit C以降には進まない。
+
+- Apple Developer ProgramはActive。Team IDとApplication Identifier Prefixは確認済みで今回のaccountでは一致するが、実値はrepoへ保存しない。
+- staging Explicit App ID `com.nativeminutes.app.staging`は登録済み。production App ID `com.nativeminutes.app`は未登録。Associated Domainsは未有効化。
+- Vercel project `native-minute-staging`と`https://native-minute-staging.vercel.app`のProduction Deployment mapping、認証なしpublic browser accessは人間確認済み。Vercel AuthenticationはStandard Protection、Password ProtectionはOFF。AASA endpointは現在404。
+- Supabase project `native-minute-staging`は人間確認済み。Site URLは`http://localhost:3000`、current redirectはDebug custom scheme、staging HTTPS redirectは未登録、Magic Link templateはdefault、Custom SMTPは未設定。DB password rotationは未完了または不明。
+- repoではDebug/Releaseを維持し、Release由来で`DEBUG`を持たない`Staging` configurationを追加した。Staging bundle IDは`com.nativeminutes.app.staging`、Info.plistはcustom schemeなし、Team/provisioning/entitlementはrepo固定しない。
+- `staging` mobile/Capacitor profileはStaging configuration、staging bundle ID、staging BFF origin、exact `https://native-minute-staging.vercel.app/mobile/auth/callback`へ対応する。Debug custom schemeはDebug専用Info plistとdevelopment/local-spike profileだけに残す。production callbackは引き続きunconfigured。
+- Apple Portal、Associated Domains、entitlement、AASA本文、Vercel/Supabase Dashboard、Magic Link template、AppDelegate、SceneDelegate、dependency、DB/migration、productionは変更していない。
 
 ## 判定ラベル
 

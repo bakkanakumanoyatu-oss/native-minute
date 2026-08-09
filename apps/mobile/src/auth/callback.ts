@@ -24,7 +24,7 @@ function readSingleParameter(url: URL, key: string) {
   return values[0];
 }
 
-export function buildDebugCallbackTarget(
+export function buildMobileAuthCallbackTarget(
   callbackUri: string,
   identity: PendingCallbackIdentity
 ) {

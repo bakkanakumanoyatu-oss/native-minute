@@ -2,7 +2,7 @@ import { registerPlugin, type PluginListenerHandle } from "@capacitor/core";
 import { createClient, type Session } from "@supabase/supabase-js";
 import { mobileEnvironment } from "../lib/environment";
 import {
-  buildDebugCallbackTarget,
+  buildMobileAuthCallbackTarget,
   CallbackReplayGuard,
   parseMobileAuthCallback,
   type ParsedMobileAuthCallback
@@ -282,7 +282,7 @@ export class MobileAuthService implements MobileAuthController {
       state: this.generateOpaqueId(),
       nonce: this.generateOpaqueId()
     };
-    const redirectUri = buildDebugCallbackTarget(this.callbackUri, identity);
+    const redirectUri = buildMobileAuthCallbackTarget(this.callbackUri, identity);
 
     try {
       await this.store.clearPendingPkce();
@@ -413,7 +413,7 @@ export class MobileAuthService implements MobileAuthController {
       return { ok: false, reasonCode: "auth_not_configured" };
     }
 
-    const expectedRedirect = buildDebugCallbackTarget(this.callbackUri, {
+    const expectedRedirect = buildMobileAuthCallbackTarget(this.callbackUri, {
       transactionId: callback.transactionId,
       state: callback.state,
       nonce: callback.nonce

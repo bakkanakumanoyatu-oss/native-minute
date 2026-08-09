@@ -1,15 +1,32 @@
 {
   "development": {
+    "bundleId": "com.nativeminutes.app",
+    "xcodeConfiguration": "Debug",
+    "capacitorProfile": "remote-dev",
     "bffBaseUrl": "http://localhost:3000",
     "authCallbackMode": "custom-scheme",
     "authCallbackUri": "com.nativeminutes.app.debug://auth/callback"
   },
   "local-spike": {
+    "bundleId": "com.nativeminutes.app",
+    "xcodeConfiguration": "Debug",
+    "capacitorProfile": "local-spike",
     "bffBaseUrl": "https://native-minute.vercel.app",
     "authCallbackMode": "custom-scheme",
     "authCallbackUri": "com.nativeminutes.app.debug://auth/callback"
   },
+  "staging": {
+    "bundleId": "com.nativeminutes.app.staging",
+    "xcodeConfiguration": "Staging",
+    "capacitorProfile": "staging",
+    "bffBaseUrl": "https://native-minute-staging.vercel.app",
+    "authCallbackMode": "universal-link",
+    "authCallbackUri": "https://native-minute-staging.vercel.app/mobile/auth/callback"
+  },
   "production": {
+    "bundleId": "com.nativeminutes.app",
+    "xcodeConfiguration": "Release",
+    "capacitorProfile": "production",
     "bffBaseUrl": "https://native-minute.vercel.app",
     "authCallbackMode": "unconfigured",
     "authCallbackUri": null

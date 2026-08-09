@@ -1,5 +1,6 @@
 {
   "remote-dev": {
+    "appId": "com.nativeminutes.app",
     "webDir": "www",
     "server": {
       "url": "https://native-minute.vercel.app",
@@ -7,9 +8,15 @@
     }
   },
   "local-spike": {
+    "appId": "com.nativeminutes.app",
+    "webDir": "apps/mobile/dist"
+  },
+  "staging": {
+    "appId": "com.nativeminutes.app.staging",
     "webDir": "apps/mobile/dist"
   },
   "production": {
+    "appId": "com.nativeminutes.app",
     "webDir": "apps/mobile/dist"
   }
 }

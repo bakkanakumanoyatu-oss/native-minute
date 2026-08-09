@@ -7,7 +7,7 @@ const requestedProfile = process.env.CAPACITOR_PROFILE?.trim();
 
 if (!requestedProfile || !Object.prototype.hasOwnProperty.call(profileConfig, requestedProfile)) {
   throw new Error(
-    'CAPACITOR_PROFILE must be one of: remote-dev, local-spike, production.'
+    'CAPACITOR_PROFILE must be one of: remote-dev, local-spike, staging, production.'
   );
 }
 
@@ -15,7 +15,6 @@ const profile = requestedProfile as CapacitorProfile;
 const selectedProfile = profileConfig[profile];
 
 const config: CapacitorConfig = {
-  appId: 'com.nativeminutes.app',
   appName: 'Native Minutes',
   ...selectedProfile
 };

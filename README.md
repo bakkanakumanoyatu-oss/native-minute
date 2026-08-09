@@ -193,12 +193,15 @@ B1D1以前のCapacitor iOS historical preflightでは、magic link callbackがiO
 `capacitor.config.ts` は明示profileを必須にするため、rawな `npx cap sync ios` は使いません。
 
 - B1C local bundle: `npm run mobile:sync:ios`
+- B1D2 staging local bundle: `npm run mobile:sync:ios:staging`
 - production local bundle検査: `npm run mobile:sync:ios:production`
 - legacy hosted preflight: `npm run mobile:sync:ios:remote-dev`
 
 B1C local-spikeは`server.url`、cleartext、localhost allowNavigationを含みません。Developer checkoutで行うlocalhost / cleartext / allowNavigationのauth smokeは別の開発専用経路で、local-spikeやproduction-ready構成として扱いません。Preview BFFを確認するときだけ、`MOBILE_BFF_BASE_URL=<preview-origin>`を同じコマンドへ一時的に渡せます。このoverrideはlocal-spike限定で、profile JSON、`.env`、commitへ保存しません。
 
 B1D1では、local mobileのemail Magic Link + PKCE、device-only Keychain session、Bearer-only `GET /api/mobile/scripts`、read-only local `/scripts`を最小実装しました。通常署名SimulatorでMagic Link送受信、Debug callback、Bearer BFF、Keychain save/restore、再起動restore、logout、logout後の再起動までPASSしています。Debug callbackはcustom scheme限定で、production profileはUniversal Links / AASA / Associated Domainsが完了するまでrelease guardが意図的にFAILします。User A/B cross-user RLS proofとreviewer accountは後続gateです。詳細は[Phase B1D1 result](./docs/b1d1-mobile-auth-vertical-slice-result.md)を参照してください。
+
+B1D2 Unit Aでは、Xcode `Staging` configuration、`com.nativeminutes.app.staging`、`staging` mobile/Capacitor profile、`https://native-minute-staging.vercel.app/mobile/auth/callback`を1対1に対応させました。Debug custom schemeはDebug専用Info plistに残し、Staging/ReleaseのInfo plistには含めません。Associated Domains、entitlement、AASA、Supabase HTTPS redirect、実機Universal Linkはまだ未実装です。
 
 Mobile AuthのDebug live buildは、public client設定の`MOBILE_SUPABASE_URL`と`MOBILE_SUPABASE_PUBLISHABLE_KEY`をbuild commandへ一時的に渡す契約です。値を`.env.local`、profile JSON、source、docsへ保存しません。secret/service-role keyとlegacy JWT keyは拒否し、`sb_publishable_`形式だけを許可します。dynamic transaction queryを持つDebug redirectのDashboard許可patternはpath限定の`com.nativeminutes.app.debug://auth/callback**`で、scheme全体を許可しません。
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildDebugCallbackTarget,
+  buildMobileAuthCallbackTarget,
   CallbackReplayGuard,
   parseMobileAuthCallback
 } from "./callback";
@@ -15,7 +15,7 @@ const IDENTITY = {
 };
 
 function validCallback(callbackUri = CALLBACK_URI) {
-  const url = new URL(buildDebugCallbackTarget(callbackUri, IDENTITY));
+  const url = new URL(buildMobileAuthCallbackTarget(callbackUri, IDENTITY));
   url.searchParams.set("code", "authorization-code-fixture");
   return url.toString();
 }

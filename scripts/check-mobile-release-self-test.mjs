@@ -15,6 +15,7 @@ const PRODUCTION_CALLBACK = BFF_ORIGIN + "/mobile/auth/callback";
 const STAGING_ORIGIN = "https://native-minute-staging.vercel.app";
 const STAGING_CALLBACK = STAGING_ORIGIN + "/mobile/auth/callback";
 const APP_BUNDLE_ID = "com.nativeminutes.app";
+const STAGING_BUNDLE_ID = "com.nativeminutes.app.staging";
 const DEVELOPMENT_TEAM = "ABCDE12345";
 const APP_IDENTIFIER = DEVELOPMENT_TEAM + "." + APP_BUNDLE_ID;
 
@@ -124,6 +125,29 @@ function writeInfoPlistFixture(rootDir, customScheme = null) {
   );
 }
 
+function writeStagingXcodeFixture(rootDir, options = {}) {
+  writeFixture(
+    rootDir,
+    "ios/App/App.xcodeproj/project.pbxproj",
+    [
+      "// !$*UTF8*$!",
+      "{ objects = {",
+      "  ABCDEF0123456789ABCDEF01 /* Staging */ = {",
+      "    isa = XCBuildConfiguration;",
+      "    buildSettings = {",
+      `      INFOPLIST_FILE = ${options.infoPlist ?? "App/Info.plist"};`,
+      ...(options.developmentTeam ? [`      DEVELOPMENT_TEAM = ${DEVELOPMENT_TEAM};`] : []),
+      ...(options.entitlements ? ["      CODE_SIGN_ENTITLEMENTS = App/App.entitlements;"] : []),
+      `      PRODUCT_BUNDLE_IDENTIFIER = ${options.bundleId ?? STAGING_BUNDLE_ID};`,
+      "      SWIFT_ACTIVE_COMPILATION_CONDITIONS = \"\";",
+      "    };",
+      "    name = Staging;",
+      "  };",
+      "}; }"
+    ].join("\n")
+  );
+}
+
 function createFixture(rootDir, profile = "production", options = {}) {
   const localCallback = "com.nativeminutes.app.debug:/auth/callback";
   const bffOrigin = options.bffOrigin ?? BFF_ORIGIN;
@@ -132,6 +156,10 @@ function createFixture(rootDir, profile = "production", options = {}) {
 
   writeJsonFixture(rootDir, "config/capacitor-profiles.json", {
     "local-spike": {
+      webDir: "apps/mobile/dist"
+    },
+    staging: {
+      appId: options.stagingCapacitorAppId ?? STAGING_BUNDLE_ID,
       webDir: "apps/mobile/dist"
     },
     production: {
@@ -143,6 +171,14 @@ function createFixture(rootDir, profile = "production", options = {}) {
       bffBaseUrl: bffOrigin,
       authCallbackMode: "custom-scheme",
       authCallbackUri: localCallback
+    },
+    staging: {
+      bundleId: options.stagingBundleId ?? STAGING_BUNDLE_ID,
+      xcodeConfiguration: options.stagingConfiguration ?? "Staging",
+      capacitorProfile: options.stagingProfile ?? "staging",
+      bffBaseUrl: STAGING_ORIGIN,
+      authCallbackMode: "universal-link",
+      authCallbackUri: options.stagingCallback ?? STAGING_CALLBACK
     },
     production: {
       bffBaseUrl: bffOrigin,
@@ -156,25 +192,38 @@ function createFixture(rootDir, profile = "production", options = {}) {
     "apps/mobile/dist/assets/app.js",
     profile === "production"
       ? `const callback = ${JSON.stringify(productionCallback)};`
-      : `const callback = ${JSON.stringify(localCallback)};`
+      : profile === "staging"
+        ? `const callback = ${JSON.stringify(options.stagingCallback ?? STAGING_CALLBACK)};`
+        : `const callback = ${JSON.stringify(localCallback)};`
   );
+  const metadata =
+    profile === "staging"
+      ? {
+          profile,
+          bundleId: STAGING_BUNDLE_ID,
+          xcodeConfiguration: "Staging",
+          capacitorProfile: "staging",
+          bffOrigin: STAGING_ORIGIN,
+          authCallbackMode: "universal-link",
+          authConfigured: true
+        }
+      : {
+          profile,
+          bffOrigin,
+          authCallbackMode: profile === "production" ? "universal-link" : "custom-scheme",
+          authConfigured: true
+        };
   writeJsonFixture(rootDir, "apps/mobile/dist/mobile-build.json", {
-    profile,
-    bffOrigin,
-    authCallbackMode: profile === "production" ? "universal-link" : "custom-scheme",
-    authConfigured: true
+    ...metadata
   });
   writeFixture(rootDir, "apps/mobile/src/App.tsx", "export const appName = \"Native Minutes\";");
   writeJsonFixture(rootDir, "ios/App/App/capacitor.config.json", {
-    appId: APP_BUNDLE_ID,
+    appId: profile === "staging" ? STAGING_BUNDLE_ID : APP_BUNDLE_ID,
     appName: "Native Minutes",
     webDir: "apps/mobile/dist"
   });
   writeJsonFixture(rootDir, "ios/App/App/public/mobile-build.json", {
-    profile,
-    bffOrigin,
-    authCallbackMode: profile === "production" ? "universal-link" : "custom-scheme",
-    authConfigured: true
+    ...metadata
   });
   writeInfoPlistFixture(rootDir, options.customScheme ?? null);
   writeFixture(
@@ -196,6 +245,10 @@ function createFixture(rootDir, profile = "production", options = {}) {
       callback: productionCallback,
       ...options.universalLink
     });
+  }
+
+  if (profile === "staging") {
+    writeStagingXcodeFixture(rootDir, options.stagingXcode);
   }
 }
 
@@ -228,6 +281,34 @@ function assertCategories(rootDir, options, categories, message) {
 }
 
 try {
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", { universalLinks: false });
+    assertPass(
+      rootDir,
+      { profile: "staging" },
+      "Expected the Unit A staging identity/configuration fixture to pass."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", {
+      universalLinks: false,
+      stagingCallback: "https://wrong.example/mobile/auth/callback",
+      stagingCapacitorAppId: APP_BUNDLE_ID,
+      stagingXcode: { bundleId: APP_BUNDLE_ID }
+    });
+    assertCategories(
+      rootDir,
+      { profile: "staging" },
+      [
+        "staging_profile_identity_mismatch",
+        "staging_https_auth_callback_mismatch",
+        "staging_xcode_configuration_mismatch"
+      ],
+      "Expected staging profile/configuration mismatches to fail closed."
+    );
+  });
+
   withFixture((rootDir) => {
     createFixture(rootDir, "production");
     assertPass(
@@ -759,7 +840,7 @@ try {
   });
 
   console.log(
-    "PASS: mobile release guard self-test covered production, local-spike, and blocked auth fixtures."
+    "PASS: mobile release guard self-test covered production, staging, local-spike, and blocked auth fixtures."
   );
 } catch (error) {
   const reason = error instanceof Error ? error.message : "unknown_fixture_failure";

@@ -1,4 +1,4 @@
-export type MobileProfile = "development" | "local-spike" | "production";
+export type MobileProfile = "development" | "local-spike" | "staging" | "production";
 
 const DEBUG_AUTH_CALLBACK_URI = "com.nativeminutes.app.debug://auth/callback";
 const SUPABASE_PUBLISHABLE_KEY_PATTERN = /^sb_publishable_[A-Za-z0-9_-]{16,}$/;
@@ -51,8 +51,28 @@ function parseMobileAuthConfig(profile: MobileProfile) {
       throw new Error("Production mobile authentication is blocked until Universal Links are configured.");
     }
 
-    if (callbackUri !== DEBUG_AUTH_CALLBACK_URI) {
+    if (
+      (profile === "development" || profile === "local-spike") &&
+      callbackUri !== DEBUG_AUTH_CALLBACK_URI
+    ) {
       throw new Error("Invalid debug mobile authentication callback.");
+    }
+
+    if (profile === "staging") {
+      const callback = new URL(callbackUri);
+
+      if (
+        callback.protocol !== "https:" ||
+        callback.origin !== new URL(__BFF_BASE_URL__).origin ||
+        callback.pathname !== "/mobile/auth/callback" ||
+        callback.search ||
+        callback.hash ||
+        callback.username ||
+        callback.password ||
+        callback.port
+      ) {
+        throw new Error("Invalid staging mobile authentication callback.");
+      }
     }
   }
 
