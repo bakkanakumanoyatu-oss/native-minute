@@ -9,6 +9,7 @@ const STAGING_CALLBACK_URI =
   "https://native-minute-staging.vercel.app/mobile/auth/callback";
 const PRODUCTION_BUNDLE_ID = "com.nativeminutes.app";
 const STAGING_BUNDLE_ID = "com.nativeminutes.app.staging";
+const STAGING_ASSOCIATED_DOMAIN = "applinks:native-minute-staging.vercel.app";
 
 function readRepositoryFile(path: string) {
   return readFileSync(resolve(REPOSITORY_ROOT, path), "utf8");
@@ -91,16 +92,23 @@ describe("native mobile auth configuration", () => {
     const debug = targetBuildSettings(project, "Debug");
     const staging = targetBuildSettings(project, "Staging");
     const release = targetBuildSettings(project, "Release");
+    const stagingEntitlements = readRepositoryFile("ios/App/App/App-Staging.entitlements");
+    const associatedDomains = [
+      ...stagingEntitlements.matchAll(/<string>\s*([^<]+?)\s*<\/string>/g)
+    ].map((match) => match[1]);
 
     expect(debug).toContain("INFOPLIST_FILE = \"App/Info-Debug.plist\"");
     expect(debug).toContain(`PRODUCT_BUNDLE_IDENTIFIER = ${PRODUCTION_BUNDLE_ID}`);
     expect(debug).toContain("SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG");
+    expect(debug).not.toContain("DEVELOPMENT_TEAM");
+    expect(debug).not.toContain("CODE_SIGN_ENTITLEMENTS");
 
     expect(staging).toContain("INFOPLIST_FILE = App/Info.plist");
     expect(staging).toContain(`PRODUCT_BUNDLE_IDENTIFIER = ${STAGING_BUNDLE_ID}`);
     expect(staging).toContain('SWIFT_ACTIVE_COMPILATION_CONDITIONS = ""');
-    expect(staging).not.toContain("DEVELOPMENT_TEAM");
-    expect(staging).not.toContain("CODE_SIGN_ENTITLEMENTS");
+    expect(staging).toMatch(/DEVELOPMENT_TEAM = [A-Z0-9]{10}/);
+    expect(staging).toContain("CODE_SIGN_ENTITLEMENTS = App/App-Staging.entitlements");
+    expect(associatedDomains).toEqual([STAGING_ASSOCIATED_DOMAIN]);
 
     expect(release).toContain("INFOPLIST_FILE = App/Info.plist");
     expect(release).toContain(`PRODUCT_BUNDLE_IDENTIFIER = ${PRODUCTION_BUNDLE_ID}`);

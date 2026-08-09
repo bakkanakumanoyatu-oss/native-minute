@@ -203,6 +203,8 @@ B1D1では、local mobileのemail Magic Link + PKCE、device-only Keychain sessi
 
 B1D2 Unit Aでは、Xcode `Staging` configuration、`com.nativeminutes.app.staging`、`staging` mobile/Capacitor profile、`https://native-minute-staging.vercel.app/mobile/auth/callback`を1対1に対応させました。Debug custom schemeはDebug専用Info plistに残し、Staging/ReleaseのInfo plistには含めません。Associated Domains、entitlement、AASA、Supabase HTTPS redirect、実機Universal Linkはまだ未実装です。
 
+B1D2 Unit C retryでは、Stagingだけに`App-Staging.entitlements`とexact `applinks:native-minute-staging.vercel.app`を追加し、`CODE_SIGN_ENTITLEMENTS`、Automatic signing、staging bundle ID、対象Developer TeamをStaging configurationへ限定しました。Apple Development certificate / private key、iPhone 14 Plus / iOS 26.2.1のwired接続、development profileを再確認し、実機destination向けsigned Staging buildが成功しました。artifactのstrict codesign、staging bundle / application identifier、exact Associated Domain 1件、embedded profile capability / device整合、Debug scheme非混入、production callback非有効化を確認したためUnit CはPASSです。AASAは404、Supabase staging HTTPS redirectは未登録で、install / launchとUniversal Link実機smoke、Unit D以降は未実施です。
+
 Mobile AuthのDebug live buildは、public client設定の`MOBILE_SUPABASE_URL`と`MOBILE_SUPABASE_PUBLISHABLE_KEY`をbuild commandへ一時的に渡す契約です。値を`.env.local`、profile JSON、source、docsへ保存しません。secret/service-role keyとlegacy JWT keyは拒否し、`sb_publishable_`形式だけを許可します。dynamic transaction queryを持つDebug redirectのDashboard許可patternはpath限定の`com.nativeminutes.app.debug://auth/callback**`で、scheme全体を許可しません。
 
 ### iOS Simulator runtime signing boundary

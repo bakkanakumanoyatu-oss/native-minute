@@ -1,11 +1,12 @@
 # B1D2 Production Mobile Auth readiness / execution plan
 
-> Status: **UNIT A IMPLEMENTED — STAGING CONFIGURATION / IDENTITY MAPPED; UNIT C+ NOT STARTED**
+> Status: **UNIT C PASS — SIGNED STAGING DEVELOPMENT ARTIFACT VERIFIED; UNIT D+ NOT STARTED**
 >
 > 調査基準日: 2026-07-26
 > 人間確認情報の反映日: 2026-07-29
 > pre-approval preparation更新日: 2026-07-29
 > Unit A更新日: 2026-08-09
+> Unit C retry更新日: 2026-08-09
 > 調査worktree: `/Users/karasawatakahiro/.codex/worktrees/b4db/native-minute`
 > 調査branch: `feature/mobile-auth-gate`
 > 調査HEAD: `1e344297b5bc75ac4a8dad438df231fea0242241`
@@ -24,6 +25,17 @@
 - repoではDebug/Releaseを維持し、Release由来で`DEBUG`を持たない`Staging` configurationを追加した。Staging bundle IDは`com.nativeminutes.app.staging`、Info.plistはcustom schemeなし、Team/provisioning/entitlementはrepo固定しない。
 - `staging` mobile/Capacitor profileはStaging configuration、staging bundle ID、staging BFF origin、exact `https://native-minute-staging.vercel.app/mobile/auth/callback`へ対応する。Debug custom schemeはDebug専用Info plistとdevelopment/local-spike profileだけに残す。production callbackは引き続きunconfigured。
 - Apple Portal、Associated Domains、entitlement、AASA本文、Vercel/Supabase Dashboard、Magic Link template、AppDelegate、SceneDelegate、dependency、DB/migration、productionは変更していない。
+
+### 2026-08-09 Unit C retry authoritative update
+
+この節は、Unit A節の「Associated Domains未有効・Unit C未着手」と、本文中の古いiPhone 14 / Apple承認待ち / signing未確認という現在状態を上書きする。historical snapshot自体は書き換えない。
+
+- Apple Portalではstaging Explicit App ID `com.nativeminutes.app.staging`のAssociated Domains capabilityが有効化・保存済み。production App IDは未登録のまま。
+- Xcode Apple Accountsの対象Developer Team、Apple Development certificate、iPhone 14 Plus / iOS 26.2.1のpairing・Connected・Developer Mode enabledは確認済み。Team ID、device identifier、account credentialは文書へ保存しない。
+- repoではStaging専用`App-Staging.entitlements`へexact `applinks:native-minute-staging.vercel.app`を1件だけ設定し、Staging targetだけに`CODE_SIGN_ENTITLEMENTS`、Automatic signing、対象Teamを対応させた。Debug/Releaseにはentitlement/Teamを追加していない。
+- Keychain AccessでApple Development certificateに対応するprivate keyが存在することを人間確認後、usable identity 1件、wired接続中iPhone、development profileのbundle / device整合を再確認した。profileのAssociated Domains authorizationはcapability wildcard `*`として存在する。
+- `-allowProvisioningUpdates` / device registrationをStaging development buildだけに限定してAutomatic Signingを再実行し、signed Staging artifactを生成した。artifactのstrict codesign、staging bundle / application identifier、exact Associated Domain 1件、embedded development profile / connected device整合、Debug scheme非混入、production callback非有効化を確認し、Unit CはPASS。
+- AASA endpointは404・本文未配置、Supabase staging HTTPS redirectは未登録、Magic Linkはdefault。AASA、Vercel/Supabase設定、AppDelegate/SceneDelegate、Universal Link実機smoke、Unit D/E/F、production signingは未着手。
 
 ## 判定ラベル
 

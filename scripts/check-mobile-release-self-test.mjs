@@ -14,6 +14,7 @@ const BFF_ORIGIN = "https://native-minute.example";
 const PRODUCTION_CALLBACK = BFF_ORIGIN + "/mobile/auth/callback";
 const STAGING_ORIGIN = "https://native-minute-staging.vercel.app";
 const STAGING_CALLBACK = STAGING_ORIGIN + "/mobile/auth/callback";
+const STAGING_ASSOCIATED_DOMAIN = "applinks:native-minute-staging.vercel.app";
 const APP_BUNDLE_ID = "com.nativeminutes.app";
 const STAGING_BUNDLE_ID = "com.nativeminutes.app.staging";
 const DEVELOPMENT_TEAM = "ABCDE12345";
@@ -126,6 +127,20 @@ function writeInfoPlistFixture(rootDir, customScheme = null) {
 }
 
 function writeStagingXcodeFixture(rootDir, options = {}) {
+  if (options.entitlements !== false) {
+    writeFixture(
+      rootDir,
+      "ios/App/App/App-Staging.entitlements",
+      [
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+        "<plist version=\"1.0\"><dict>",
+        "<key>com.apple.developer.associated-domains</key>",
+        `<array><string>${options.associatedDomain ?? STAGING_ASSOCIATED_DOMAIN}</string></array>`,
+        "</dict></plist>"
+      ].join("\n")
+    );
+  }
+
   writeFixture(
     rootDir,
     "ios/App/App.xcodeproj/project.pbxproj",
@@ -136,8 +151,13 @@ function writeStagingXcodeFixture(rootDir, options = {}) {
       "    isa = XCBuildConfiguration;",
       "    buildSettings = {",
       `      INFOPLIST_FILE = ${options.infoPlist ?? "App/Info.plist"};`,
-      ...(options.developmentTeam ? [`      DEVELOPMENT_TEAM = ${DEVELOPMENT_TEAM};`] : []),
-      ...(options.entitlements ? ["      CODE_SIGN_ENTITLEMENTS = App/App.entitlements;"] : []),
+      "      CODE_SIGN_STYLE = Automatic;",
+      ...(options.developmentTeam === false
+        ? []
+        : [`      DEVELOPMENT_TEAM = ${DEVELOPMENT_TEAM};`]),
+      ...(options.entitlements === false
+        ? []
+        : ["      CODE_SIGN_ENTITLEMENTS = App/App-Staging.entitlements;"]),
       `      PRODUCT_BUNDLE_IDENTIFIER = ${options.bundleId ?? STAGING_BUNDLE_ID};`,
       "      SWIFT_ACTIVE_COMPILATION_CONDITIONS = \"\";",
       "    };",
@@ -286,7 +306,20 @@ try {
     assertPass(
       rootDir,
       { profile: "staging" },
-      "Expected the Unit A staging identity/configuration fixture to pass."
+      "Expected the Unit C staging identity/entitlement fixture to pass."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", {
+      universalLinks: false,
+      stagingXcode: { associatedDomain: "applinks:wrong.example" }
+    });
+    assertCategories(
+      rootDir,
+      { profile: "staging" },
+      ["staging_associated_domains_mismatch"],
+      "Expected an unexpected staging Associated Domains value to fail closed."
     );
   });
 

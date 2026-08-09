@@ -15,6 +15,8 @@ const RELEASE_PROFILES = new Set(["local-spike", "staging", "production"]);
 const STAGING_BUNDLE_ID = "com.nativeminutes.app.staging";
 const STAGING_BFF_ORIGIN = "https://native-minute-staging.vercel.app";
 const STAGING_CALLBACK = STAGING_BFF_ORIGIN + "/mobile/auth/callback";
+const STAGING_ASSOCIATED_DOMAIN = "applinks:native-minute-staging.vercel.app";
+const STAGING_ENTITLEMENTS_PATH = "App/App-Staging.entitlements";
 const LOOPBACK_URL_PATTERN = /https?:\/\/(?:localhost|127\.0\.0\.1|\[?::1\]?)(?::\d+)?/i;
 const SUPABASE_VENDOR_LOOPBACK_LITERAL = "http://localhost:9999";
 const RAW_SECRET_PATTERN =
@@ -600,15 +602,57 @@ function scanStagingConfigurationContract({
 
   const stagingSettings = findTargetBuildSettings(rootDir, "Staging");
   const stagingInfoPlist = readXcodeBuildSetting(stagingSettings ?? "", "INFOPLIST_FILE");
+  const stagingDevelopmentTeam = readXcodeBuildSetting(
+    stagingSettings ?? "",
+    "DEVELOPMENT_TEAM"
+  );
+  const stagingEntitlementsSetting = readXcodeBuildSetting(
+    stagingSettings ?? "",
+    "CODE_SIGN_ENTITLEMENTS"
+  );
+  const stagingEntitlementsPath = resolveEntitlementsPath(
+    rootDir,
+    stagingEntitlementsSetting
+  );
 
   if (
     readXcodeBuildSetting(stagingSettings ?? "", "PRODUCT_BUNDLE_IDENTIFIER") !==
       STAGING_BUNDLE_ID ||
     stagingInfoPlist !== "App/Info.plist" ||
-    readXcodeBuildSetting(stagingSettings ?? "", "DEVELOPMENT_TEAM") ||
-    readXcodeBuildSetting(stagingSettings ?? "", "CODE_SIGN_ENTITLEMENTS")
+    readXcodeBuildSetting(stagingSettings ?? "", "CODE_SIGN_STYLE") !== "Automatic" ||
+    !stagingDevelopmentTeam ||
+    !/^[A-Z0-9]{10}$/.test(stagingDevelopmentTeam)
   ) {
     addFinding(findings, "staging_xcode_configuration_mismatch", "ios/App/App.xcodeproj/project.pbxproj");
+  }
+
+  const associatedDomains = stagingEntitlementsPath
+    ? [...readFileSync(stagingEntitlementsPath, "utf8").matchAll(/<string>\s*([^<]+?)\s*<\/string>/gi)]
+        .map((match) => match[1].trim())
+    : [];
+
+  if (
+    stagingEntitlementsSetting !== STAGING_ENTITLEMENTS_PATH ||
+    associatedDomains.length !== 1 ||
+    associatedDomains[0] !== STAGING_ASSOCIATED_DOMAIN
+  ) {
+    addFinding(
+      findings,
+      "staging_associated_domains_mismatch",
+      stagingEntitlementsSetting ?? "ios/App/App/App-Staging.entitlements"
+    );
+  }
+
+  for (const configurationName of ["Debug", "Release"]) {
+    const settings = findTargetBuildSettings(rootDir, configurationName);
+
+    if (readXcodeBuildSetting(settings ?? "", "CODE_SIGN_ENTITLEMENTS")) {
+      addFinding(
+        findings,
+        "staging_associated_domains_isolation_mismatch",
+        "ios/App/App.xcodeproj/project.pbxproj"
+      );
+    }
   }
 
   const stagingInfoPath = resolve(rootDir, "ios/App", stagingInfoPlist ?? "");
