@@ -1,6 +1,6 @@
 # B1D2 Production Mobile Auth readiness / execution plan
 
-> Status: **UNIT D1 REPO AASA VERIFIED — LIVE DEPLOY PENDING; UNIT E/F NOT STARTED**
+> Status: **UNIT E EXTERNAL REDIRECT VERIFIED — UNIT F NOT STARTED; B1D2 INCOMPLETE**
 >
 > 調査基準日: 2026-07-26
 > 人間確認情報の反映日: 2026-07-29
@@ -8,6 +8,7 @@
 > Unit A更新日: 2026-08-09
 > Unit C retry更新日: 2026-08-09
 > Unit D1更新日: 2026-08-09
+> Unit D2 / Unit E更新日: 2026-08-09
 > 調査worktree: `/Users/karasawatakahiro/.codex/worktrees/b4db/native-minute`
 > 調査branch: `feature/mobile-auth-gate`
 > 調査HEAD: `1e344297b5bc75ac4a8dad438df231fea0242241`
@@ -48,6 +49,17 @@
 - Next.jsはredirect/rewriteなしでstatic artifactを直接配信し、exact pathへ`Content-Type: application/json`を設定する。既存middlewareのAASA pass-throughはSupabase auth client、redirect、cookieを使用しない。
 - local production serverでAASAの200、no redirect、no cookie、JSON Content-Type、valid/exact JSONを確認した。live `https://native-minute-staging.vercel.app/.well-known/apple-app-site-association`はまだ404で、Vercel deploy/project設定変更は未実施。
 - Supabase staging HTTPS redirectは未登録。Magic Link送信、actual Universal Link smoke、AppDelegate/SceneDelegate変更、Unit E/Fは未着手。
+
+### 2026-08-09 Unit D2 / Unit E authoritative update
+
+この節は、Unit A/C/D1節のlive AASA 404、未deploy、Supabase staging HTTPS redirect未登録というexternal stateを上書きする。repoのauth contract、historical snapshot、Unit F以降の未実施状態は上書きしない。
+
+- Unit D2ではverified commit `b4cddb51386b3f8d668b5727de7802bd895edf01`を`native-minute-staging`のProduction Branch `feature/mobile-auth-gate`へfast-forwardした。`native-minute`側のProduction Branch `main`は変更していない。
+- production `https://native-minute-staging.vercel.app/.well-known/apple-app-site-association`はHTTP 200、`application/json`、no redirect、exact `46P9QD3T3Q.com.nativeminutes.app.staging`、exact `/mobile/auth/callback`をPASSした。
+- Supabase project `native-minute-staging`では、人間がAuthentication → URL ConfigurationのRedirect URLsへexact `https://native-minute-staging.vercel.app/mobile/auth/callback`を追加し、`Successfully added 1 URL`を確認した。staging HTTPS entryにwildcardはない。
+- Debug redirect `com.nativeminutes.app.debug://auth/callback**`は残っている。Site URLは`http://localhost:3000`から変更せず、Magic Link templateはdefault、Custom SMTPは未設定、DB password rotationは未完了または不明。
+- repoのstaging profile / BFF origin / callback validator / parserとSupabaseのHTTPS redirectはexact一致する。Debug fallbackを維持し、production callbackは引き続きunconfiguredである。
+- Unit EではDashboardの追加操作を再実行せず、repo code/config/auth contract、Vercel、Apple、DB/migration、dependencyを変更しない。Magic Link送信、iPhone install/launch、actual Universal Link smoke、Unit Fは未実施で、B1D2はまだ未完了。
 
 ## 判定ラベル
 
