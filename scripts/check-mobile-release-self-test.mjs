@@ -19,6 +19,8 @@ const APP_BUNDLE_ID = "com.nativeminutes.app";
 const STAGING_BUNDLE_ID = "com.nativeminutes.app.staging";
 const DEVELOPMENT_TEAM = "ABCDE12345";
 const APP_IDENTIFIER = DEVELOPMENT_TEAM + "." + APP_BUNDLE_ID;
+const STAGING_APPLICATION_IDENTIFIER =
+  "46P9QD3T3Q.com.nativeminutes.app.staging";
 
 function writeFixture(rootDir, filePath, contents) {
   const absolutePath = resolve(rootDir, filePath);
@@ -168,6 +170,27 @@ function writeStagingXcodeFixture(rootDir, options = {}) {
   );
 }
 
+function writeStagingAasaFixture(rootDir, options = {}) {
+  writeJsonFixture(
+    rootDir,
+    "public/.well-known/apple-app-site-association",
+    {
+      applinks: {
+        details: [
+          {
+            appIDs: [
+              options.appIdentifier ?? STAGING_APPLICATION_IDENTIFIER
+            ],
+            components: options.components ?? [
+              { "/": new URL(STAGING_CALLBACK).pathname }
+            ]
+          }
+        ]
+      }
+    }
+  );
+}
+
 function createFixture(rootDir, profile = "production", options = {}) {
   const localCallback = "com.nativeminutes.app.debug:/auth/callback";
   const bffOrigin = options.bffOrigin ?? BFF_ORIGIN;
@@ -269,6 +292,10 @@ function createFixture(rootDir, profile = "production", options = {}) {
 
   if (profile === "staging") {
     writeStagingXcodeFixture(rootDir, options.stagingXcode);
+
+    if (options.stagingAasa !== false) {
+      writeStagingAasaFixture(rootDir, options.stagingAasa);
+    }
   }
 }
 
@@ -306,7 +333,61 @@ try {
     assertPass(
       rootDir,
       { profile: "staging" },
-      "Expected the Unit C staging identity/entitlement fixture to pass."
+      "Expected the Unit D1 staging identity/entitlement/AASA fixture to pass."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", {
+      universalLinks: false,
+      stagingAasa: { appIdentifier: APP_IDENTIFIER }
+    });
+    assertCategories(
+      rootDir,
+      { profile: "staging" },
+      ["staging_aasa_contract_mismatch"],
+      "Expected an AASA identifier for another app to fail closed."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", {
+      universalLinks: false,
+      stagingAasa: { components: [{ "/": "/mobile/auth/*" }] }
+    });
+    assertCategories(
+      rootDir,
+      { profile: "staging" },
+      ["staging_aasa_contract_mismatch"],
+      "Expected a wildcard staging AASA path to fail closed."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", {
+      universalLinks: false,
+      stagingAasa: false
+    });
+    assertCategories(
+      rootDir,
+      { profile: "staging" },
+      ["staging_aasa_contract_mismatch"],
+      "Expected a missing staging AASA artifact to fail closed."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", { universalLinks: false });
+    writeFixture(
+      rootDir,
+      "public/.well-known/apple-app-site-association",
+      "{malformed-json"
+    );
+    assertCategories(
+      rootDir,
+      { profile: "staging" },
+      ["staging_aasa_contract_mismatch"],
+      "Expected malformed staging AASA JSON to fail closed."
     );
   });
 

@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "46P9QD3T3Q.com.nativeminutes.app.staging"
+        ],
+        "components": [
+          {
+            "/": "/mobile/auth/callback"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,12 +1,13 @@
 # B1D2 Production Mobile Auth readiness / execution plan
 
-> Status: **UNIT C PASS — SIGNED STAGING DEVELOPMENT ARTIFACT VERIFIED; UNIT D+ NOT STARTED**
+> Status: **UNIT D1 REPO AASA VERIFIED — LIVE DEPLOY PENDING; UNIT E/F NOT STARTED**
 >
 > 調査基準日: 2026-07-26
 > 人間確認情報の反映日: 2026-07-29
 > pre-approval preparation更新日: 2026-07-29
 > Unit A更新日: 2026-08-09
 > Unit C retry更新日: 2026-08-09
+> Unit D1更新日: 2026-08-09
 > 調査worktree: `/Users/karasawatakahiro/.codex/worktrees/b4db/native-minute`
 > 調査branch: `feature/mobile-auth-gate`
 > 調査HEAD: `1e344297b5bc75ac4a8dad438df231fea0242241`
@@ -36,6 +37,17 @@
 - Keychain AccessでApple Development certificateに対応するprivate keyが存在することを人間確認後、usable identity 1件、wired接続中iPhone、development profileのbundle / device整合を再確認した。profileのAssociated Domains authorizationはcapability wildcard `*`として存在する。
 - `-allowProvisioningUpdates` / device registrationをStaging development buildだけに限定してAutomatic Signingを再実行し、signed Staging artifactを生成した。artifactのstrict codesign、staging bundle / application identifier、exact Associated Domain 1件、embedded development profile / connected device整合、Debug scheme非混入、production callback非有効化を確認し、Unit CはPASS。
 - AASA endpointは404・本文未配置、Supabase staging HTTPS redirectは未登録、Magic Linkはdefault。AASA、Vercel/Supabase設定、AppDelegate/SceneDelegate、Universal Link実機smoke、Unit D/E/F、production signingは未着手。
+
+### 2026-08-09 Unit D1 authoritative update
+
+この節は、Unit C節の「AASA本文未配置・Unit D未着手」というrepo状態だけを上書きする。live deploymentと後続external stateは上書きしない。
+
+- Unit C commit `2c6a188`は`origin/codex/b1d2-unit-c`へ通常push済みで、signed Staging development artifact verificationはPASS。
+- signed artifact / embedded profileと人間確認済みApplication Identifier Prefixから、staging AASA application identifierを`<App ID Prefix>.com.nativeminutes.app.staging`として一意に確定した。Team IDとPrefixが今回一致する事実を一般的な導出規則にはしていない。
+- repoにextensionなしの`public/.well-known/apple-app-site-association`を追加し、`applinks`のrecommended `appIDs` + `components`形式でstaging app 1件とexact `/mobile/auth/callback` 1件だけを許可した。wildcard、query binding、他service、他app/pathは含めない。
+- Next.jsはredirect/rewriteなしでstatic artifactを直接配信し、exact pathへ`Content-Type: application/json`を設定する。既存middlewareのAASA pass-throughはSupabase auth client、redirect、cookieを使用しない。
+- local production serverでAASAの200、no redirect、no cookie、JSON Content-Type、valid/exact JSONを確認した。live `https://native-minute-staging.vercel.app/.well-known/apple-app-site-association`はまだ404で、Vercel deploy/project設定変更は未実施。
+- Supabase staging HTTPS redirectは未登録。Magic Link送信、actual Universal Link smoke、AppDelegate/SceneDelegate変更、Unit E/Fは未着手。
 
 ## 判定ラベル
 

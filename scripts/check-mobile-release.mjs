@@ -17,6 +17,8 @@ const STAGING_BFF_ORIGIN = "https://native-minute-staging.vercel.app";
 const STAGING_CALLBACK = STAGING_BFF_ORIGIN + "/mobile/auth/callback";
 const STAGING_ASSOCIATED_DOMAIN = "applinks:native-minute-staging.vercel.app";
 const STAGING_ENTITLEMENTS_PATH = "App/App-Staging.entitlements";
+const STAGING_APPLICATION_IDENTIFIER =
+  "46P9QD3T3Q.com.nativeminutes.app.staging";
 const LOOPBACK_URL_PATTERN = /https?:\/\/(?:localhost|127\.0\.0\.1|\[?::1\]?)(?::\d+)?/i;
 const SUPABASE_VENDOR_LOOPBACK_LITERAL = "http://localhost:9999";
 const RAW_SECRET_PATTERN =
@@ -643,6 +645,20 @@ function scanStagingConfigurationContract({
     );
   }
 
+  if (
+    !inspectExactAasaContract(
+      rootDir,
+      new URL(STAGING_CALLBACK).pathname,
+      STAGING_APPLICATION_IDENTIFIER
+    )
+  ) {
+    addFinding(
+      findings,
+      "staging_aasa_contract_mismatch",
+      "public/.well-known/apple-app-site-association"
+    );
+  }
+
   for (const configurationName of ["Debug", "Release"]) {
     const settings = findTargetBuildSettings(rootDir, configurationName);
 
@@ -782,6 +798,53 @@ function inspectAasaContract(rootDir, callbackPath, expectedAppIdentifier) {
     return "invalid";
   } catch {
     return "invalid";
+  }
+}
+
+function inspectExactAasaContract(rootDir, callbackPath, expectedAppIdentifier) {
+  const existingPaths = AASA_CONTRACT_PATHS.filter((filePath) =>
+    existsSync(resolve(rootDir, filePath))
+  );
+
+  if (
+    existingPaths.length !== 1 ||
+    existingPaths[0] !== "public/.well-known/apple-app-site-association"
+  ) {
+    return false;
+  }
+
+  try {
+    const payload = JSON.parse(
+      readFileSync(resolve(rootDir, existingPaths[0]), "utf8")
+    );
+    const applinks = payload?.applinks;
+    const details = applinks?.details;
+    const detail = Array.isArray(details) ? details[0] : null;
+    const appIdentifiers = detail?.appIDs;
+    const components = detail?.components;
+    const component = Array.isArray(components) ? components[0] : null;
+    const hasExactKeys = (value, keys) =>
+      value !== null &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      Object.keys(value).sort().join("\0") === [...keys].sort().join("\0");
+
+    return (
+      hasExactKeys(payload, ["applinks"]) &&
+      hasExactKeys(applinks, ["details"]) &&
+      Array.isArray(details) &&
+      details.length === 1 &&
+      hasExactKeys(detail, ["appIDs", "components"]) &&
+      Array.isArray(appIdentifiers) &&
+      appIdentifiers.length === 1 &&
+      appIdentifiers[0] === expectedAppIdentifier &&
+      Array.isArray(components) &&
+      components.length === 1 &&
+      hasExactKeys(component, ["/"]) &&
+      component["/"] === callbackPath
+    );
+  } catch {
+    return false;
   }
 }
 
