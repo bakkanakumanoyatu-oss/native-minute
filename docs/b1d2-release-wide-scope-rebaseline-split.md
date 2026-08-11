@@ -54,7 +54,7 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | D5 | `PARTIAL` | Unit D1 repo/local response、Unit D2 live response、Unit F3 diagnosticsあり。case単位のfinal ledger closeが残る |
 | D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
 | D7 | `OPEN` | M03/M06A/M13をactual-device/network proofで閉じ、7件（M04/M05/M08/M17/M22/M24/M25）が残る |
-| D8 | `OPEN — PENDING_PREREQUISITE_WEB_STAGING_AUTH` | mobileはread-onlyでcurrent User A resourceなし。Web通常authからowned scriptを作るprerequisiteがWeb cookie session未成立で停止。current Supabase allowlistの未記録mobile query wildcardをHuman reconciliationするまでWeb callback追加をSTOP |
+| D8 | `OPEN — CONFIG PREREQUISITE RESOLVED; ACTUAL PROOF PENDING` | mobileはread-onlyでcurrent User A resourceなし。既存mobile query redirectをauthorizedとしてreconcileし、exact Web callbackを追加済み。Web cookie login、User A owned script、User A/B isolationのactual proofが残る |
 | D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M13 offline actualはPASS。M04/M05 live fallback prerequisiteは解消し、actual-device sequenceとM22 AASA outage等が残る |
 | D13 | `PASS_AT_CHECKPOINT` | Unit F3のfocused/all mobile tests、lint/typecheck、staging/release/auth guards、signed build |
 | D15 | `PASS_AT_CHECKPOINT` | Unit A/C/D/E/F3のcontract-unchanged記録とregression tests |
@@ -91,8 +91,8 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M21 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | provider revoke後のexpiry/refresh挙動 |
 | M22 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | source/configはfail safe、AASA unavailable時のEdge/actual-device proofが残る |
 | M23 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | mail scanner/prefetch挙動とreviewer運用 |
-| M24 | A | `PENDING_PREREQUISITE_WEB_STAGING_AUTH` | mobile read-only / current User A resourceなし。Web cookie auth prerequisiteに加え、current Supabase allowlistの未記録mobile query wildcardをreconcileするまでWeb callback追加をSTOP |
-| M25 | A | `PENDING_PREREQUISITE_WEB_STAGING_AUTH` | Web cookie session未成立。mobile session非破壊はactual確認したがcoexistence PASSではない。allowlist reconciliationが先行条件 |
+| M24 | A | `READY_PENDING_WEB_COOKIE_AND_USER_AB_ACTUAL_PROOF` | mobile read-only / current User A resourceなし。exact Web callback config prerequisiteは解消。通常Web authでUser A owned scriptを作り、User A/B isolationをactual proofする |
+| M25 | A | `READY_PENDING_WEB_COOKIE_MOBILE_BEARER_COEXISTENCE_PROOF` | exact Web callback config prerequisiteは解消。既存mobile session非破壊の部分観測だけではPASSにせず、Web cookieとmobile Bearerの同時成立・相互非破壊をactual proofする |
 | M26 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production installed cold/warm |
 | M27 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production restore/refresh/logout |
 | M28 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production safe negative sample、query/tokenなし |
@@ -161,7 +161,7 @@ exact AASA target `/mobile/auth/callback`にrecovery-only entryを追加し、ca
 
 focused repo proofはquery値のbody/header非混入、application logging/query reader/provider/session primitive不在、malformed/extra queryの同一safe response、AASA exact contract regressionをPASSした。後続承認でrequest-time runtime sourceをverified deploymentとしてfixed staging aliasへpromoteし、callback 303、recovery 200、exact AASA、production isolationもPASSした。platform/infrastructure raw-query loggingはrepoから判断不能のため`UNKNOWN`であり、「ログされない」とは推定しない。actual-deviceとMagic Linkは未実施で、M04/M05を最終PASSとはしない。詳細は[M04/M05 safe Safari fallback result](./b1d2a-m04-m05-safe-safari-fallback-result.md)と[staging prerequisite remediation result](./b1d2a-staging-prerequisite-remediation-result.md)を正とする。
 
-Conditional Remediation BはSupabase staging URL Configurationをread-only確認したが、last-known 2 redirectsに加えて未記録のmobile query wildcardが存在したため、approved STOP conditionを適用した。exact Web callbackは追加せず、M24/M25は`PENDING_PREREQUISITE_WEB_STAGING_AUTH`のままとする。
+Conditional Remediation Bの初回確認は、last-known repo resultにないmobile query wildcardを検出したためapproved STOP conditionを適用した。このhistorical STOPは保持する。後続Human DecisionはHuman-provided historical Unit E evidenceと照合し、`https://native-minute-staging.vercel.app/mobile/auth/callback\?**`をquery-bearing mobile redirectTo用のauthorized entryとしてreconcileした。既存Debug / exact mobile / mobile queryを維持し、exact Web callback `https://native-minute-staging.vercel.app/auth/callback?next=%2Fscripts`を1件だけ追加した。post-checkは4 entriesちょうど、Site URL / default templates / Custom SMTP不変をPASSした。Remediation Bは`WEB_STAGING_AUTH_CONFIGURATION_PREREQUISITE_RESOLVED_CONFIG_ONLY`で、M24/M25は上表のactual proof pendingへ移行する。
 
 ## 名前の衝突
 
@@ -198,4 +198,4 @@ Codexは外部Workのテンプレート本文を制作、翻訳、編集、補�
 
 ## 次のsingle action
 
-current Supabase allowlistに存在する未記録のmobile query wildcardをHuman Decisionでreconcileする。ここから自動でMagic Link送信、M04/M05またはM24/M25の実機操作、Supabase変更、他case、B1D2B、Gate 2へ進まない。
+別Human DecisionでM24/M25のcombined actual proofを実行する。自然なrate-limit解除後にfresh Web Magic Linkを1通だけ使い、Web cookie login、通常User A authからowned script作成、User A/B isolation、mobile Bearer/Web cookie coexistenceをcase単位で確認する。ここから自動でMagic Link送信、M04/M05またはM24/M25の実機操作、他case、B1D2B、Gate 2へ進まない。

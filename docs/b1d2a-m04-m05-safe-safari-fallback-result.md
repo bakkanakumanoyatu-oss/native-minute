@@ -68,7 +68,7 @@ Human Decisions `HDC_B1D2A_M04_M05_FORCE_DYNAMIC_CALLBACK_RUNTIME_V1` and `HDC_B
 
 Public fixed-domain proof returned callback HTTP 303, fixed query-free recovery Location, empty body, no cookie, adopted privacy headers, no synthetic sentinel reflection, and callback `x-vercel-cache: MISS` rather than `PRERENDER`. Recovery returned 200 with the fixed guidance. AASA returned 200 without redirect and retained the exact staging app ID and callback path. Production `native-minute` remained unchanged.
 
-Therefore `STAGING_FALLBACK_DEPLOYMENT_PREREQUISITE_RESOLVED`. No actual-device, Magic Link, install, or provider auth flow ran. Detailed external evidence and the separately stopped Remediation B result are authoritative in [staging prerequisite remediation result](./b1d2a-staging-prerequisite-remediation-result.md).
+Therefore `STAGING_FALLBACK_DEPLOYMENT_PREREQUISITE_RESOLVED`. No actual-device, Magic Link, install, or provider auth flow ran. Detailed external evidence, the historical Remediation B STOP, and its later authorized allowlist reconciliation/config-only resolution are authoritative in [staging prerequisite remediation result](./b1d2a-staging-prerequisite-remediation-result.md).
 
 ## Focused proof command
 
@@ -103,7 +103,7 @@ B1D2A remains `OPEN`, with 7 cases:
 - actual-device / prerequisite: M08, M24, M25
 - network/failure condition: M17, M22
 
-Updated remaining engineering effort is approximately 1.75–3.0 person-days, excluding provider delivery, AASA/device cache waiting, and review iteration. The M04/M05 implementation and live prerequisite portions are complete; their later combined device sequence is estimated at 0.25–0.5 day.
+After the later Web callback configuration prerequisite resolution, updated remaining engineering effort is approximately 1.5–2.75 person-days, excluding provider delivery, AASA/device cache waiting, and review iteration. The M04/M05 implementation and live prerequisite portions are complete; their later combined device sequence is estimated at 0.25–0.5 day.
 
 ## Next single action
 

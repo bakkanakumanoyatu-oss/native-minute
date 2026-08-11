@@ -107,3 +107,9 @@ commit、push、clean statusはGit historyと実行報告で記録する。
 ## Next single action
 
 current Supabase allowlistに存在する未記録のmobile query wildcardをHuman Decisionでreconcileする。M04/M05 actual-device、M24/M25 actual proof、M22、Web callback追加、B1D2B、Gate 2へ自動で進まない。
+
+## Later prerequisite reconciliation — current status
+
+The next action above was completed under Human Decision `HDC_B1D2A_REDIRECT_ALLOWLIST_RECONCILIATION_AND_WEB_CALLBACK_V1`. Human-provided historical Unit E evidence established that the existing mobile query entry was intentional and required for query-bearing mobile `redirectTo`; it is retained as `AUTHORIZED_EXISTING_MOBILE_QUERY_REDIRECT`. The exact Web callback `https://native-minute-staging.vercel.app/auth/callback?next=%2Fscripts` was then added as the only new Redirect URL. Post-check confirmed the existing three entries unchanged, four entries total, and unchanged Site URL/default templates/Custom SMTP.
+
+Remediation B is now `WEB_STAGING_AUTH_CONFIGURATION_PREREQUISITE_RESOLVED_CONFIG_ONLY`. M24 is `READY_PENDING_WEB_COOKIE_AND_USER_AB_ACTUAL_PROOF`; M25 is `READY_PENDING_WEB_COOKIE_MOBILE_BEARER_COEXISTENCE_PROOF`. Neither case is PASS, no Magic Link or actual functional proof ran, and the remaining B1D2A case count stays seven. The next single action is a separately approved combined M24/M25 actual-proof wave after the rate limit clears naturally.
