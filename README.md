@@ -217,6 +217,8 @@ Human Decisionにより、最初からrelease-wideだったoriginal B1D2を履�
 
 B1D2A remaining repo-only evidence batchでは、残19件をA〜Hへ再分類し、既存focused test 5 files / 75 testsを変更せず再実行してM06B/M07/M09/M12/M16/M18を`PASS_EXISTING_TEST_REEXECUTION`として閉じました。これはrepo-generated test evidenceでありactual-device evidenceではありません。B1D2Aは13件を残して`OPEN`です。source implementationはM04/M05/M14、actual-deviceはM03/M06A/M08/M24/M25、network/failure conditionはM13/M17/M22、exact repo proof不足の`UNKNOWN`はM10/M11です。source/test変更、Magic Link、iPhone/Simulator、external actionは行っていません。詳細は[B1D2A remaining repo-only evidence closeout result](./docs/b1d2a-remaining-repo-only-evidence-closeout-result.md)を参照してください。
 
+B1D2A P0 repo-only negative/timeout waveでは、M10 wrong nonce/transactionとM11 required callback params欠落をprovider exchange前にfixed safe reasonで拒否するfocused proofを追加し、両件を`PASS_FOCUSED_REPO_PROOF`としました。M14はpersisted pending PKCE `expiresAt`を既存deadlineとしてSupabase exchange fetchへAbortSignalを渡し、stalled exchangeのbounded終了、既存new-link recovery、session/pending clear、same callback exchange最大1回を証明して`PASS_FOCUSED_REPO_FAULT_PROOF`としました。repo-generated proofでありactual-device proofではありません。B1D2Aは10件を残して`OPEN`です。詳細は[P0 repo-only negative / timeout wave result](./docs/b1d2a-p0-repo-only-negative-timeout-wave-result.md)を参照してください。
+
 Mobile AuthのDebug live buildは、public client設定の`MOBILE_SUPABASE_URL`と`MOBILE_SUPABASE_PUBLISHABLE_KEY`をbuild commandへ一時的に渡す契約です。値を`.env.local`、profile JSON、source、docsへ保存しません。secret/service-role keyとlegacy JWT keyは拒否し、`sb_publishable_`形式だけを許可します。dynamic transaction queryを持つDebug redirectのDashboard許可patternはpath限定の`com.nativeminutes.app.debug://auth/callback**`で、scheme全体を許可しません。
 
 ### iOS Simulator runtime signing boundary

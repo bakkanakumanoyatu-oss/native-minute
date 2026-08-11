@@ -13,6 +13,7 @@
 > Unit F4更新日: 2026-08-11
 > scope rebaseline更新日: 2026-08-11
 > B1D2A repo-only evidence batch更新日: 2026-08-11
+> B1D2A P0 negative/timeout wave更新日: 2026-08-11
 > 調査worktree: `/Users/karasawatakahiro/.codex/worktrees/b4db/native-minute`
 > 調査branch: `feature/mobile-auth-gate`
 > 調査HEAD: `1e344297b5bc75ac4a8dad438df231fea0242241`
@@ -100,6 +101,14 @@ Unit Fはphysical iPhone smoke / evidence / focused fixes、original Plan Phase 
 残19件をcase単位でA〜Hへ再分類し、既存focused testを変更せず5 files / 75 tests再実行した。M06B / M07 / M09 / M12 / M16 / M18はdeterministic repo contractを十分に証明するため`PASS_EXISTING_TEST_REEXECUTION`として閉じた。これはrepo-generated test evidenceであり、actual-device evidenceではない。source/test追加・変更、Magic Link、iPhone/Simulator、Supabase/Vercel/Apple/provider、network/failure操作は行っていない。
 
 B1D2Aは13件を残して`OPEN`である。M04/M05/M14はsource implementation、M03/M06A/M08/M24/M25はactual-device、M13/M17/M22はnetwork/failure condition、M10/M11はexact focused repo proofが必要である。M01/M02/M15/M19/M20の既存status/provenanceは変更せず、contradictionと追加Human Decision requirementはなかった。case別classification、根拠、最小next proof、P0/P1 execution waveは[`b1d2a-remaining-repo-only-evidence-closeout-result.md`](./b1d2a-remaining-repo-only-evidence-closeout-result.md)を正とする。このupdateから自動で残waveへ進まない。
+
+### 2026-08-11 B1D2A P0 repo-only negative / timeout authoritative update
+
+M10/M11/M14だけをrepo内で実行した。M10はwrong nonce / transaction、M11はcurrent required fields `code / transaction_id / state / nonce`各欠落について、provider exchange 0、session mutationなし、pending未消費、fixed safe reasonをfocused testで証明し、両件を`PASS_FOCUSED_REPO_PROOF`とした。required fieldやvalidation semanticは追加していない。
+
+M14は、persistent `exchangeStartedAt`は存在するがprovider exchange timeoutがなかったため、persisted pending PKCE `expiresAt`を既存deadlineとして利用した。remaining lifetimeでAbortSignalを発火し、production Supabase adapterがactive exchange fetchだけへ渡す。新しいtimeout policy値、retry、reason code、API contract、Keychain envelopeは追加していない。deterministic stalled faultでbounded abort、既存`auth_exchange_failed` + new-link recovery、session/pending clear、same callback duplicate rejection、exchange count 1をPASSし、`PASS_FOCUSED_REPO_FAULT_PROOF`とした。
+
+これはrepo-generated proofでありactual-device proofではない。B1D2Aは10件を残して`OPEN`で、M04/M05、M03/M06A/M08/M24/M25、M13/M17/M22が残る。詳細は[`b1d2a-p0-repo-only-negative-timeout-wave-result.md`](./b1d2a-p0-repo-only-negative-timeout-wave-result.md)を正とし、このupdateからM04/M05、Magic Link、device/external operationへ自動で進まない。
 
 ## 判定ラベル
 

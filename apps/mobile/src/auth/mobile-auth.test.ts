@@ -1,5 +1,5 @@
 import type { Session } from "@supabase/supabase-js";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   MobileAuthService,
   type MobileAppLifecycle,
@@ -54,6 +54,7 @@ class FakeAuth implements MobileSupabaseAuth {
   refreshError: { status?: number } | null = null;
   requestCount = 0;
   exchangeCount = 0;
+  exchangeAbortCount = 0;
   refreshCount = 0;
   signOutCount = 0;
   requestGate: Promise<void> | null = null;
@@ -75,9 +76,38 @@ class FakeAuth implements MobileSupabaseAuth {
     return { error: this.requestError };
   }
 
-  async exchangeCodeForSession() {
+  async exchangeCodeForSession(_code: string, signal: AbortSignal) {
     this.exchangeCount += 1;
-    await this.exchangeGate;
+    if (this.exchangeGate) {
+      await new Promise<void>((resolve, reject) => {
+        const gate = this.exchangeGate!;
+        const cleanup = () => signal.removeEventListener("abort", onAbort);
+        const onAbort = () => {
+          cleanup();
+          this.exchangeAbortCount += 1;
+          const error = new Error("aborted");
+          error.name = "AbortError";
+          reject(error);
+        };
+
+        if (signal.aborted) {
+          onAbort();
+          return;
+        }
+
+        signal.addEventListener("abort", onAbort, { once: true });
+        gate.then(
+          () => {
+            cleanup();
+            resolve();
+          },
+          (error) => {
+            cleanup();
+            reject(error);
+          }
+        );
+      });
+    }
     if (this.exchangeError) {
       return { data: { session: null }, error: this.exchangeError };
     }
@@ -193,6 +223,10 @@ function callbackFromPending(pending: PendingPkceEnvelope) {
   return url.toString();
 }
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe("MobileAuthService", () => {
   it.each([
     ["secure_storage_device_locked", "auth_secure_store_device_locked"],
@@ -267,6 +301,51 @@ describe("MobileAuthService", () => {
     });
     expect(auth.exchangeCount).toBe(1);
   });
+
+  it.each([
+    ["nonce", "different-nonce"],
+    ["transaction_id", "different-transaction"]
+  ] as const)(
+    "rejects a wrong %s before provider exchange without consuming the pending transaction",
+    async (parameter, value) => {
+      const { service, store, auth } = createHarness();
+      await service.requestMagicLink("reader@example.test");
+      const pending = await store.loadPendingPkce();
+      expect(pending).not.toBeNull();
+
+      const mismatch = new URL(callbackFromPending(pending!));
+      mismatch.searchParams.set(parameter, value);
+
+      await expect(service.handleCallbackUrl(mismatch.toString())).resolves.toEqual({
+        ok: false,
+        reasonCode: "auth_callback_state_mismatch"
+      });
+      expect(auth.exchangeCount).toBe(0);
+      await expect(store.loadSession()).resolves.toBeNull();
+      await expect(store.loadPendingPkce()).resolves.toEqual(pending);
+    }
+  );
+
+  it.each(["code", "transaction_id", "state", "nonce"] as const)(
+    "rejects a callback missing required parameter %s with a fixed safe result",
+    async (parameter) => {
+      const { service, store, auth } = createHarness();
+      await service.requestMagicLink("reader@example.test");
+      const pending = await store.loadPendingPkce();
+      expect(pending).not.toBeNull();
+
+      const malformed = new URL(callbackFromPending(pending!));
+      malformed.searchParams.delete(parameter);
+
+      await expect(service.handleCallbackUrl(malformed.toString())).resolves.toEqual({
+        ok: false,
+        reasonCode: "auth_callback_invalid"
+      });
+      expect(auth.exchangeCount).toBe(0);
+      await expect(store.loadSession()).resolves.toBeNull();
+      await expect(store.loadPendingPkce()).resolves.toEqual(pending);
+    }
+  );
 
   it("fails an expired transaction closed without attempting an exchange", async () => {
     let now = NOW_SECONDS;
@@ -506,6 +585,41 @@ describe("MobileAuthService", () => {
       reasonCode: "auth_session_invalid"
     });
     await expect(refresh.store.loadSession()).resolves.toBeNull();
+  });
+
+  it("bounds a stalled provider exchange and rejects replay without a second exchange", async () => {
+    vi.useFakeTimers();
+    const harness = createHarness();
+    await harness.service.requestMagicLink("reader@example.test");
+    const pending = await harness.store.loadPendingPkce();
+    expect(pending).not.toBeNull();
+    const expiringPending = { ...pending!, expiresAt: NOW_SECONDS + 1 };
+    await harness.store.savePendingPkce(expiringPending);
+    harness.auth.exchangeGate = new Promise<void>(() => undefined);
+    const callbackUrl = callbackFromPending(expiringPending);
+
+    const exchange = harness.service.handleCallbackUrl(callbackUrl);
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    await expect(exchange).resolves.toEqual({
+      ok: false,
+      reasonCode: "auth_exchange_failed"
+    });
+    expect(harness.service.getState()).toEqual({
+      kind: "recoverable_error",
+      reasonCode: "auth_exchange_failed",
+      restartRequired: true
+    });
+    expect(harness.auth.exchangeCount).toBe(1);
+    expect(harness.auth.exchangeAbortCount).toBe(1);
+    await expect(harness.store.loadSession()).resolves.toBeNull();
+    await expect(harness.store.loadPendingPkce()).resolves.toBeNull();
+
+    await expect(harness.service.handleCallbackUrl(callbackUrl)).resolves.toEqual({
+      ok: false,
+      reasonCode: "auth_callback_duplicate"
+    });
+    expect(harness.auth.exchangeCount).toBe(1);
   });
 
   it("preserves the Keychain candidate on retryable refresh failure", async () => {

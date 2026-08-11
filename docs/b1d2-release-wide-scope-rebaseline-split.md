@@ -53,9 +53,9 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | D4 | `PARTIAL` | Unit F4 warmとaccepted Human safe evidenceのM01 coldはPASS。foreground M03が残る |
 | D5 | `PARTIAL` | Unit D1 repo/local response、Unit D2 live response、Unit F3 diagnosticsあり。case単位のfinal ledger closeが残る |
 | D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
-| D7 | `OPEN` | repo-only batchで6件を追加close。13件（source 3 / actual-device 5 / network-failure 3 / exact repo proof 2）が残る |
+| D7 | `OPEN` | P0 repo-only waveでM10/M11/M14をclose。10件（source + later device 2 / actual-device 5 / network-failure 3）が残る |
 | D8 | `OPEN` | M24 User A/B actual-device proofが残る |
-| D9 | `OPEN` | Aへ割り当てたfallback/offline/replay/AASA outage等が残る |
+| D9 | `OPEN` | M10/M11 negativeとM14 bounded timeoutはPASS。fallback/offline/AASA outage等が残る |
 | D13 | `PASS_AT_CHECKPOINT` | Unit F3のfocused/all mobile tests、lint/typecheck、staging/release/auth guards、signed build |
 | D15 | `PASS_AT_CHECKPOINT` | Unit A/C/D/E/F3のcontract-unchanged記録とregression tests |
 
@@ -77,11 +77,11 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M07 | A | `PASS_EXISTING_TEST_REEXECUTION` | launch URL / retained warm raceのexchange最大1回。既存focused test再実行PASS |
 | M08 | A | `OPEN_NEEDS_ACTUAL_DEVICE` | repo pending-expiryはPASS、actual expired provider linkが残る |
 | M09 | A | `PASS_EXISTING_TEST_REEXECUTION` | wrong stateをprovider exchange前に拒否。既存focused test再実行PASS |
-| M10 | A | `UNKNOWN` | source比較は存在するがwrong nonce/transactionのexact zero-exchange testがない |
-| M11 | A | `UNKNOWN` | duplicate/extra/fragment/userinfo testはあるがmissing required-param proofがない |
+| M10 | A | `PASS_FOCUSED_REPO_PROOF` | wrong nonce/transactionをprovider exchange前に拒否し、exchange 0、session mutationなし |
+| M11 | A | `PASS_FOCUSED_REPO_PROOF` | 4 required params各欠落をfixed safe reasonで拒否し、exchange 0、raw detailなし |
 | M12 | A | `PASS_EXISTING_TEST_REEXECUTION` | wrong protocol/host/path/portとStaging/ReleaseのDebug target隔離。既存focused test再実行PASS |
 | M13 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | offline-before-tap/no-crash/new-link recovery proofが残る |
-| M14 | A | `OPEN_NEEDS_SOURCE_IMPLEMENTATION` | persistent replay barrierはあるがbounded provider exchange timeoutがない |
+| M14 | A | `PASS_FOCUSED_REPO_FAULT_PROOF` | persisted pending expiryをdeadlineにexchangeをabortし、same callbackのexchange最大1回 |
 | M15 | A | `PASS_AT_CHECKPOINT` | Unit F4 terminate/relaunch、Keychain restore、Bearer BFF、callback非再消費 |
 | M16 | A | `PASS_EXISTING_TEST_REEXECUTION` | access expiry、single-flight refresh、BFF retry最大1回。既存focused testとB1D1 contract再確認PASS |
 | M17 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | retryable failure時のsession保持はPASS、failure→recovery/retry proofが残る |
@@ -149,6 +149,12 @@ M01 cold、M19 logout、M20 logout-restartは、Human-provided historical actual
 
 残13件は、source implementation 3件（M04/M05/M14）、actual-device 5件（M03/M06A/M08/M24/M25）、network/failure condition 3件（M13/M17/M22）、exact repo proof不足の`UNKNOWN` 2件（M10/M11）である。contradictionと追加Human Decision requirementはなかった。case別根拠、focused command、最小next proof、execution waveは[remaining repo-only evidence closeout result](./b1d2a-remaining-repo-only-evidence-closeout-result.md)を正とする。
 
+## B1D2A P0 repo-only negative / timeout wave
+
+M10/M11は既存semanticを変えず、wrong nonce/transactionと4 required params欠落のcase-level testを追加して`PASS_FOCUSED_REPO_PROOF`とした。いずれもprovider exchange 0、session mutationなし、fixed safe reasonを証明する。
+
+M14はexisting pending PKCE `expiresAt`を新しいpolicy値を作らずexchange deadlineとして使い、AbortSignalをactive Supabase exchange fetchへ渡す最小実装とdeterministic stalled-fault testを追加した。timeout後は既存`auth_exchange_failed` + new-link recovery、session/pending clear、同一callbackのduplicate拒否、exchange count 1を証明し、`PASS_FOCUSED_REPO_FAULT_PROOF`とした。repo-generated proofでありactual-device proofではない。詳細は[P0 repo-only negative / timeout wave result](./b1d2a-p0-repo-only-negative-timeout-wave-result.md)を正とする。
+
 ## 名前の衝突
 
 - `Unit F`: current execution unitsでのphysical iPhone smoke / evidence / focused fixes。
@@ -184,4 +190,4 @@ Codexは外部Workのテンプレート本文を制作、翻訳、編集、補�
 
 ## 次のsingle action
 
-別途承認後、P0 / Wave 1としてM10/M11のexact negative repo proofだけを追加する。このbatchから自動でtest/source変更、Magic Link送信、実機/Network操作、B1D2B、Gate 2へ進まない。
+別途承認後、次のP0 waveとしてM04/M05 safe Safari fallback実装と明示承認されたproofだけを扱う。このwaveから自動でsource変更、Magic Link送信、実機/Network操作、B1D2B、Gate 2へ進まない。

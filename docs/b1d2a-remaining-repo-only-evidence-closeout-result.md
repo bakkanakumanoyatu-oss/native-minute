@@ -114,3 +114,7 @@ No existing result, test, implementation, or inspected Git history contradicts t
 ## Next single action
 
 After separate approval, execute only **P0 / Wave 1: M10 and M11 exact repo negative-proof completion**. Do not automatically continue to source implementation, Magic Link delivery, device/network execution, B1D2B, or Gate 2.
+
+## 2026-08-11 follow-up
+
+The separately authorized P0 repo-only negative / timeout wave closed M10 and M11 as `PASS_FOCUSED_REPO_PROOF` and M14 as `PASS_FOCUSED_REPO_FAULT_PROOF`. The classifications and estimates above remain the historical start snapshot for that wave. Current proof and the remaining 10-case ledger are recorded in [the P0 wave result](./b1d2a-p0-repo-only-negative-timeout-wave-result.md).

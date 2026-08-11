@@ -37,7 +37,7 @@ export interface MobileSupabaseAuth {
     email: string;
     options: { emailRedirectTo: string; shouldCreateUser: boolean };
   }): Promise<{ error: AuthErrorLike }>;
-  exchangeCodeForSession(code: string): Promise<{
+  exchangeCodeForSession(code: string, signal: AbortSignal): Promise<{
     data: { session: Session | null };
     error: AuthErrorLike;
   }>;
@@ -475,9 +475,17 @@ export class MobileAuthService implements MobileAuthController {
 
     this.transition({ type: "CALLBACK_EXCHANGE_STARTED" });
     const exchangeGeneration = this.authGeneration;
+    const exchangeAbortController = new AbortController();
+    const exchangeTimeout = setTimeout(
+      () => exchangeAbortController.abort(),
+      Math.max(0, beginResult.pending.expiresAt - this.nowSeconds()) * 1_000
+    );
 
     try {
-      const { data, error } = await auth.exchangeCodeForSession(callback.code);
+      const { data, error } = await auth.exchangeCodeForSession(
+        callback.code,
+        exchangeAbortController.signal
+      );
       if (exchangeGeneration !== this.authGeneration) {
         await this.store.clearSession().catch(() => undefined);
         return { ok: false, reasonCode: "auth_session_missing" };
@@ -528,6 +536,7 @@ export class MobileAuthService implements MobileAuthController {
       }
       return { ok: false, reasonCode };
     } finally {
+      clearTimeout(exchangeTimeout);
       await this.store.clearPendingPkce().catch(() => undefined);
       this.replayGuard.finish(callback.transactionId);
     }
@@ -811,7 +820,17 @@ export function createMobileAuthService() {
   }
 
   const storage = createSupabaseKeychainStorage(store, authConfig.storageKey);
+  const exchangeFetchContext: { signal: AbortSignal | null } = { signal: null };
   const supabase = createClient(authConfig.supabaseUrl, authConfig.publishableKey, {
+    global: {
+      fetch: (input, init) =>
+        globalThis.fetch(
+          input,
+          exchangeFetchContext.signal
+            ? { ...init, signal: exchangeFetchContext.signal }
+            : init
+        )
+    },
     auth: {
       flowType: "pkce",
       storageKey: authConfig.storageKey,
@@ -821,9 +840,26 @@ export function createMobileAuthService() {
       detectSessionInUrl: false
     }
   });
+  const supabaseAuth = supabase.auth;
+  const auth: MobileSupabaseAuth = {
+    signInWithOtp: (input) => supabaseAuth.signInWithOtp(input),
+    exchangeCodeForSession: async (code, signal) => {
+      exchangeFetchContext.signal = signal;
+      try {
+        return await supabaseAuth.exchangeCodeForSession(code);
+      } finally {
+        if (exchangeFetchContext.signal === signal) {
+          exchangeFetchContext.signal = null;
+        }
+      }
+    },
+    getSession: () => supabaseAuth.getSession(),
+    refreshSession: () => supabaseAuth.refreshSession(),
+    signOut: (options) => supabaseAuth.signOut(options)
+  };
 
   return new MobileAuthService({
-    auth: supabase.auth as MobileSupabaseAuth,
+    auth,
     store,
     lifecycle: capacitorLifecycle,
     callbackUri: authConfig.callbackUri,
