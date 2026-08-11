@@ -90,9 +90,9 @@
 
 `HDC_B1D2_RELEASE_WIDE_SCOPE_SPLIT_AND_EXTERNAL_TEMPLATE_WORK_V2`により、original B1D2を履歴を変えず`B1D2A_STAGING_AUTH_CORE`、`B1D2B_RELEASE_READINESS`、`B1D2C_DEFERRED_HARDENING`へ分割した。original B1D2は`REBASELINED_SPLIT`、Aは`OPEN`、Bは`OPEN — APP_STORE_RELEASE_BLOCKER`、Cは`DEFERRED_WITH_OWNER_AND_REVIEW_GATE`である。AだけをPASSしてもoriginal B1D2全体をPASSと表現しない。
 
-最初の完全なscope baselineは`7c85ff5dab2973dd682f97ce1224c9c8b31b184f`、evidence checkpointは`fb011b9c740a98a9cff267d078f9ac7d80f00dd7`で、D1〜D15 / M01〜M28はすべてbaselineからoriginal、later-added D/Mは`0`である。exact mapping、DoD/evidence ledger、F5 reconciliation、External Template Work境界は[`b1d2-release-wide-scope-rebaseline-split.md`](./b1d2-release-wide-scope-rebaseline-split.md)を正とする。
+最初の完全なscope baselineは`7c85ff5dab2973dd682f97ce1224c9c8b31b184f`、evidence checkpointは`fb011b9c740a98a9cff267d078f9ac7d80f00dd7`で、D1〜D15 / M01〜M28はすべてbaselineからoriginal、later-added D/Mは`0`である。exact mapping、DoD/evidence ledger、Unit F safe evidence reconciliation、External Template Work境界は[`b1d2-release-wide-scope-rebaseline-split.md`](./b1d2-release-wide-scope-rebaseline-split.md)を正とする。
 
-Unit Fはphysical iPhone smoke / evidence / focused fixes、original Plan Phase Fはproduction readiness reviewであり、同名の別工程である。M01/M19/M20はUnit F5 result doc不在とrepo記述不一致のため`UNKNOWN_PENDING_SAFE_EVIDENCE_RECONCILIATION`とし、既存safe evidenceで閉じられる場合は同じactual-device testを機械的にやり直さない。
+Unit Fはphysical iPhone smoke / evidence / focused fixes、original Plan Phase Fはproduction readiness reviewであり、同名の別工程である。Unit F4のcold/logout未実施記述はそのrunの履歴として維持する。その後提示されたM01/M19/M20のHuman-provided historical actual-device evidenceは、repo implementation/testsとの整合とcontradiction不在を確認して`PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE`として受理した。repo direct resultや今回の再実行とは表現せず、exact実行日時とexact tested build identifier / commitは`UNKNOWN`のままとする。case別provenanceは[`b1d2-unit-f-safe-evidence-reconciliation-result.md`](./b1d2-unit-f-safe-evidence-reconciliation-result.md)を正とする。
 
 ## 判定ラベル
 

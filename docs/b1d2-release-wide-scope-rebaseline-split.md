@@ -50,7 +50,7 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | D1 | `PARTIAL` | Unit A/C/Eにstaging identity/config/external mappingあり。A ownerとfinal ledger closeが残る |
 | D2 | `PASS_AT_CHECKPOINT` | Unit AのDebug/Staging/Release Info.plistとexact staging callback isolation |
 | D3 | `PASS_AT_CHECKPOINT` | Unit Cのsource/signed entitlement、profile、exact staging domain |
-| D4 | `PARTIAL` | Unit F4 warmはPASS。coldはM01 reconciliation、foregroundはM03が残る |
+| D4 | `PARTIAL` | Unit F4 warmとaccepted Human safe evidenceのM01 coldはPASS。foreground M03が残る |
 | D5 | `PARTIAL` | Unit D1 repo/local response、Unit D2 live response、Unit F3 diagnosticsあり。case単位のfinal ledger closeが残る |
 | D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
 | D7 | `OPEN` | Aへ割り当てたmatrixにOPEN/UNKNOWNが残る |
@@ -63,11 +63,11 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 
 ## M01〜M28 exact mapping / evidence ledger
 
-`PASS_AT_CHECKPOINT`はcheckpointにGit-authoritativeなsafe evidenceがあるという意味に限定する。`OPEN`は未実施だけでなく、repoでcase単位のcloseoutを確定できない場合も含む。
+`PASS_AT_CHECKPOINT`はcheckpointにGit-authoritativeなsafe evidenceがあるという意味に限定する。`PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE`はHuman-provided historical actual-device evidenceを、repo implementationとの整合とcontradiction不在を確認してprovenance付きで受理したことを意味し、repo direct evidenceや今回の再実行を意味しない。`OPEN`は未実施だけでなく、repoでcase単位のcloseoutを確定できない場合も含む。
 
 | ID | Scope | Checkpoint status | Required close evidence / current source |
 |---|---|---|---|
-| M01 | A | `UNKNOWN_PENDING_SAFE_EVIDENCE_RECONCILIATION` | cold actual-device。過去会話の実施記録とrepo記述が不一致 |
+| M01 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided cold actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M02 | A | `PASS_AT_CHECKPOINT` | Unit F4 warm actual-device。checkpoint plan / README / current-state |
 | M03 | A | `OPEN` | foreground delivery、duplicate navigationなし |
 | M04 | A | `OPEN` | app-not-installed Safari fallbackとprivacy-safe surface |
@@ -86,8 +86,8 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M16 | A | `OPEN` | access expiry、single-flight refresh、BFF retry最大1回 |
 | M17 | A | `OPEN` | transient refresh outageでsession保持、復旧後retry |
 | M18 | A | `OPEN` | invalid refreshでstale sessionを残さない |
-| M19 | A | `UNKNOWN_PENDING_SAFE_EVIDENCE_RECONCILIATION` | logout actual-device。過去会話の実施記録とrepo記述が不一致 |
-| M20 | A | `UNKNOWN_PENDING_SAFE_EVIDENCE_RECONCILIATION` | logout-restart actual-device。過去会話の実施記録とrepo記述が不一致 |
+| M19 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
+| M20 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout-restart actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M21 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | provider revoke後のexpiry/refresh挙動 |
 | M22 | A | `OPEN` | AASA outage時にcustom schemeへfallbackせずfail safe |
 | M23 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | mail scanner/prefetch挙動とreviewer運用 |
@@ -102,7 +102,7 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 B1D2Aを`CLOSED_COMMITTED_PASS`にできるのは、次をすべて満たしたときだけである。
 
 1. D1〜D9のA列とD13/D15のA列をsafe evidenceで閉じる。
-2. M01〜M20、M22、M24、M25をcase単位でPASSにする。F5不整合は後述のsafe reconciliationで解消する。
+2. M01〜M20、M22、M24、M25をcase単位でPASSにする。M01/M19/M20のsafe reconciliationは完了済みである。
 3. staging identity/config/signing、Associated Domains/AASA/Supabase mapping、warm/cold/foreground/fallback/negative/auth lifecycle、User A/B、Web coexistence、final staging guardsを1つのevidence ledgerへ固定する。
 4. B1D1のKeychain envelope/item identity、native-owned PKCE binding、`exchangeStartedAt`、one-time/replay reasons、refresh/logout、Bearer-only BFF、Web cookie separationを変えない。
 5. Unit F result、`docs/current-state.md`、`README.md`を同期し、docs/code/verificationの対象commitをpushしてworking treeをcleanにする。
@@ -137,11 +137,11 @@ B1D2A close後も、B1D2Bを閉じるまでApp Store releaseへ進めない。
 
 Cの項目は消さない。App Store RCに必要と判明した場合だけ、ownerの提案とHuman DecisionによりBへ昇格する。今回新しいD/M IDは作らない。
 
-## F5 evidence reconciliation
+## Unit F safe evidence reconciliation
 
-過去会話にはM01 cold、M19 logout、M20 logout-restartをactual deviceで実施した記録がある。一方、evidence checkpointにはUnit F5 result docがなく、README / current-state / planには未実施と読める記述が残る。このため3件の正本statusは一律`UNKNOWN_PENDING_SAFE_EVIDENCE_RECONCILIATION`とする。PASSを推測・捏造しない。
+M01 cold、M19 logout、M20 logout-restartは、Human-provided historical actual-device evidenceをcase単位で受理し、`PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE`とした。repo-native Unit F5 result / runtime logは存在せず、今回actual-device testを再実行したものでもない。iPhone 14 Plus / iOS 26.2.1というHuman-provided provenanceは記録するが、exact実行日時とexact tested build identifier / commitは`UNKNOWN`のまま捏造しない。
 
-既存のsafe evidenceでcase、build、結果を確定できるなら、同じactual-device testを機械的にやり直さずledgerとUnit F resultを同期して閉じる。safe evidenceが不足する場合はUNKNOWN/OPENを維持し、別の明示承認を得るまでMagic Link送信や実機再試験へ進まない。
+`fb011b9`時点のnative ingress、launch URL保持、JS callback、validation / PKCE / Keychain / Bearer BFF、logout secure deletion、restart restore実装とtestsを照合し、候補結果を技術的に成立させ得ることを確認した。関連sourceはreconciliation start HEADまで同一で、失敗result/logその他のcontradictionはなかった。Unit F4のcold/logout未実施記述は同runのscope boundaryであり、後続Human-provided historical evidenceのFAILを示さない。case別分類とUNKNOWNは[Unit F safe evidence reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md)を正とする。
 
 ## 名前の衝突
 
@@ -178,4 +178,4 @@ Codexは外部Workのテンプレート本文を制作、翻訳、編集、補�
 
 ## 次のsingle action
 
-`B1D2A_SAFE_EVIDENCE_RECONCILIATION`として、M01/M19/M20の既存safe evidenceだけを照合し、Unit F5 evidenceの有無と3 caseのstatusをrepo正本へ確定する。今回のdocs-only splitから自動で実装、Magic Link送信、実機操作へ進まない。
+Humanが次に扱うB1D2A caseを1件だけ明示選択・承認する。D4の残gapに沿う場合の候補はM03 foreground delivery evidenceである。このreconciliationから自動で実装、Magic Link送信、実機操作、B1D2B、Gate 2へ進まない。
