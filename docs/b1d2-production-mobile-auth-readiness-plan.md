@@ -1,6 +1,6 @@
 # B1D2 Production Mobile Auth readiness / execution plan
 
-> Status: **UNIT F3/F4 WARM UNIVERSAL LINK PASS — FINAL CLOSEOUT PENDING; B1D2 INCOMPLETE**
+> Status: **REBASELINED_SPLIT — B1D2A OPEN / B1D2B APP_STORE_RELEASE_BLOCKER / B1D2C DEFERRED_WITH_OWNER_AND_REVIEW_GATE**
 >
 > 調査基準日: 2026-07-26
 > 人間確認情報の反映日: 2026-07-29
@@ -11,6 +11,7 @@
 > Unit D2 / Unit E更新日: 2026-08-09
 > Unit F3更新日: 2026-08-09
 > Unit F4更新日: 2026-08-11
+> scope rebaseline更新日: 2026-08-11
 > 調査worktree: `/Users/karasawatakahiro/.codex/worktrees/b4db/native-minute`
 > 調査branch: `feature/mobile-auth-gate`
 > 調査HEAD: `1e344297b5bc75ac4a8dad438df231fea0242241`
@@ -84,6 +85,14 @@
 - Native Minute Stagingの`/SCRIPTS`表示、Bearer BFF接続を人間/Codexで確認した。appを通常terminateして再launch後もKeychain session restoreとauthenticated UIをPASSし、callback再消費はなかった。
 - email、Magic Link、dynamic callback URL、auth code、token、state/nonce/transaction、PKCE verifier、Keychain本文、device identifier、certificate ownerは文書へ保存していない。
 - cold callback、logout、duplicate/expired/wrong-state、refresh強制、B1D2 final closeoutは未実施。B1D2はまだ未完了である。
+
+### 2026-08-11 Human Decision scope rebaseline
+
+`HDC_B1D2_RELEASE_WIDE_SCOPE_SPLIT_AND_EXTERNAL_TEMPLATE_WORK_V2`により、original B1D2を履歴を変えず`B1D2A_STAGING_AUTH_CORE`、`B1D2B_RELEASE_READINESS`、`B1D2C_DEFERRED_HARDENING`へ分割した。original B1D2は`REBASELINED_SPLIT`、Aは`OPEN`、Bは`OPEN — APP_STORE_RELEASE_BLOCKER`、Cは`DEFERRED_WITH_OWNER_AND_REVIEW_GATE`である。AだけをPASSしてもoriginal B1D2全体をPASSと表現しない。
+
+最初の完全なscope baselineは`7c85ff5dab2973dd682f97ce1224c9c8b31b184f`、evidence checkpointは`fb011b9c740a98a9cff267d078f9ac7d80f00dd7`で、D1〜D15 / M01〜M28はすべてbaselineからoriginal、later-added D/Mは`0`である。exact mapping、DoD/evidence ledger、F5 reconciliation、External Template Work境界は[`b1d2-release-wide-scope-rebaseline-split.md`](./b1d2-release-wide-scope-rebaseline-split.md)を正とする。
+
+Unit Fはphysical iPhone smoke / evidence / focused fixes、original Plan Phase Fはproduction readiness reviewであり、同名の別工程である。M01/M19/M20はUnit F5 result doc不在とrepo記述不一致のため`UNKNOWN_PENDING_SAFE_EVIDENCE_RECONCILIATION`とし、既存safe evidenceで閉じられる場合は同じactual-device testを機械的にやり直さない。
 
 ## 判定ラベル
 
@@ -671,6 +680,8 @@ verification surface:
 | M28 | Edge + AD-synth | production / safe negative sample | secretなしdummy fallback/targetだけを確認 | fail closed、query/token evidenceなし |
 
 M01〜M25の各surfaceがstaging必須である。real provider callbackを加工してnegative testへ再利用しない。M26〜M28は別承認されたproduction cutover後の最小再確認である。
+
+この行はoriginal scope provenanceとして維持する。Human Decision後のexecution ownerは、AがM01〜M20/M22/M24/M25、Bがstaging release-readiness surfaceのM21/M23とproduction M26〜M28である。stagingで行うという元のverification environmentは変更しない。
 
 ## 11. security / privacy境界
 
