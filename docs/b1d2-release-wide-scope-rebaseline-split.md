@@ -53,7 +53,7 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | D4 | `PARTIAL` | Unit F4 warmとaccepted Human safe evidenceのM01 coldはPASS。foreground M03が残る |
 | D5 | `PARTIAL` | Unit D1 repo/local response、Unit D2 live response、Unit F3 diagnosticsあり。case単位のfinal ledger closeが残る |
 | D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
-| D7 | `OPEN` | Aへ割り当てたmatrixにOPEN/UNKNOWNが残る |
+| D7 | `OPEN` | repo-only batchで6件を追加close。13件（source 3 / actual-device 5 / network-failure 3 / exact repo proof 2）が残る |
 | D8 | `OPEN` | M24 User A/B actual-device proofが残る |
 | D9 | `OPEN` | Aへ割り当てたfallback/offline/replay/AASA outage等が残る |
 | D13 | `PASS_AT_CHECKPOINT` | Unit F3のfocused/all mobile tests、lint/typecheck、staging/release/auth guards、signed build |
@@ -63,36 +63,36 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 
 ## M01〜M28 exact mapping / evidence ledger
 
-`PASS_AT_CHECKPOINT`はcheckpointにGit-authoritativeなsafe evidenceがあるという意味に限定する。`PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE`はHuman-provided historical actual-device evidenceを、repo implementationとの整合とcontradiction不在を確認してprovenance付きで受理したことを意味し、repo direct evidenceや今回の再実行を意味しない。`OPEN`は未実施だけでなく、repoでcase単位のcloseoutを確定できない場合も含む。
+`PASS_AT_CHECKPOINT`はcheckpointにGit-authoritativeなsafe evidenceがあるという意味に限定する。`PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE`はHuman-provided historical actual-device evidenceを、repo implementationとの整合とcontradiction不在を確認してprovenance付きで受理したことを意味し、repo direct evidenceや今回の再実行を意味しない。`PASS_EXISTING_TEST_REEXECUTION`は既存focused testを変更せず再実行し、unchanged implementation/contractと合わせてcaseを閉じたrepo-generated evidenceであり、actual-device evidenceではない。`OPEN_*` / `UNKNOWN`は未実施だけでなく、repoでcase単位のcloseoutを確定できない場合も含む。
 
 | ID | Scope | Checkpoint status | Required close evidence / current source |
 |---|---|---|---|
 | M01 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided cold actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M02 | A | `PASS_AT_CHECKPOINT` | Unit F4 warm actual-device。checkpoint plan / README / current-state |
-| M03 | A | `OPEN` | foreground delivery、duplicate navigationなし |
-| M04 | A | `OPEN` | app-not-installed Safari fallbackとprivacy-safe surface |
-| M05 | A | `OPEN` | install-after-fallback、新しいlink前提 |
-| M06A | A | `OPEN` | consumed-link retapで二重sessionなし |
-| M06B | A | `OPEN` | safe dummy duplicateでexchange最大1回 |
-| M07 | A | `OPEN` | launch/warm raceでexchange最大1回 |
-| M08 | A | `OPEN` | expired guidance、sessionなし |
-| M09 | A | `OPEN` | wrong-stateをprovider exchange前に拒否 |
-| M10 | A | `OPEN` | wrong nonce/transactionをprovider exchange前に拒否 |
-| M11 | A | `OPEN` | malformed/duplicate/extra paramsを拒否、URL detail非表示 |
-| M12 | A | `OPEN` | wrong protocol/host/path/port/Debug targetを拒否 |
-| M13 | A | `OPEN` | offlineでcrashせず、新しいlinkを案内 |
-| M14 | A | `OPEN` | exchange timeoutで同じcodeを再利用しない |
+| M03 | A | `OPEN_NEEDS_ACTUAL_DEVICE` | foreground delivery、duplicate navigationなし。repo lifecycleはcorroborating evidenceのみ |
+| M04 | A | `OPEN_NEEDS_SOURCE_IMPLEMENTATION` | app-not-installed Safari fallback route/pageがrepoに存在しない |
+| M05 | A | `OPEN_NEEDS_SOURCE_IMPLEMENTATION` | M04 fallback/guidance実装後、installと新しいlinkのdevice proofが必要 |
+| M06A | A | `OPEN_NEEDS_ACTUAL_DEVICE` | consumed email-link retapのprovider/OS挙動と二重sessionなし |
+| M06B | A | `PASS_EXISTING_TEST_REEXECUTION` | duplicate final callbackのexchange最大1回。既存focused test再実行PASS |
+| M07 | A | `PASS_EXISTING_TEST_REEXECUTION` | launch URL / retained warm raceのexchange最大1回。既存focused test再実行PASS |
+| M08 | A | `OPEN_NEEDS_ACTUAL_DEVICE` | repo pending-expiryはPASS、actual expired provider linkが残る |
+| M09 | A | `PASS_EXISTING_TEST_REEXECUTION` | wrong stateをprovider exchange前に拒否。既存focused test再実行PASS |
+| M10 | A | `UNKNOWN` | source比較は存在するがwrong nonce/transactionのexact zero-exchange testがない |
+| M11 | A | `UNKNOWN` | duplicate/extra/fragment/userinfo testはあるがmissing required-param proofがない |
+| M12 | A | `PASS_EXISTING_TEST_REEXECUTION` | wrong protocol/host/path/portとStaging/ReleaseのDebug target隔離。既存focused test再実行PASS |
+| M13 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | offline-before-tap/no-crash/new-link recovery proofが残る |
+| M14 | A | `OPEN_NEEDS_SOURCE_IMPLEMENTATION` | persistent replay barrierはあるがbounded provider exchange timeoutがない |
 | M15 | A | `PASS_AT_CHECKPOINT` | Unit F4 terminate/relaunch、Keychain restore、Bearer BFF、callback非再消費 |
-| M16 | A | `OPEN` | access expiry、single-flight refresh、BFF retry最大1回 |
-| M17 | A | `OPEN` | transient refresh outageでsession保持、復旧後retry |
-| M18 | A | `OPEN` | invalid refreshでstale sessionを残さない |
+| M16 | A | `PASS_EXISTING_TEST_REEXECUTION` | access expiry、single-flight refresh、BFF retry最大1回。既存focused testとB1D1 contract再確認PASS |
+| M17 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | retryable failure時のsession保持はPASS、failure→recovery/retry proofが残る |
+| M18 | A | `PASS_EXISTING_TEST_REEXECUTION` | invalid refresh 401で`auth_session_invalid`、Keychain clear。external revokeは別のM21 |
 | M19 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M20 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout-restart actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M21 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | provider revoke後のexpiry/refresh挙動 |
-| M22 | A | `OPEN` | AASA outage時にcustom schemeへfallbackせずfail safe |
+| M22 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | source/configはfail safe、AASA unavailable時のEdge/actual-device proofが残る |
 | M23 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | mail scanner/prefetch挙動とreviewer運用 |
-| M24 | A | `OPEN` | User A/B cross-user isolation actual-device proof |
-| M25 | A | `OPEN` | Web cookieとmobile Bearerのcoexistence |
+| M24 | A | `OPEN_NEEDS_ACTUAL_DEVICE` | BFF/RLS contractはcorroborating、User A/B cross-user isolation actual-device proofが残る |
+| M25 | A | `OPEN_NEEDS_ACTUAL_DEVICE` | cookie/Bearer分離contractはcorroborating、live Web/mobile coexistence proofが残る |
 | M26 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production installed cold/warm |
 | M27 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production restore/refresh/logout |
 | M28 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production safe negative sample、query/tokenなし |
@@ -143,6 +143,12 @@ M01 cold、M19 logout、M20 logout-restartは、Human-provided historical actual
 
 `fb011b9`時点のnative ingress、launch URL保持、JS callback、validation / PKCE / Keychain / Bearer BFF、logout secure deletion、restart restore実装とtestsを照合し、候補結果を技術的に成立させ得ることを確認した。関連sourceはreconciliation start HEADまで同一で、失敗result/logその他のcontradictionはなかった。Unit F4のcold/logout未実施記述は同runのscope boundaryであり、後続Human-provided historical evidenceのFAILを示さない。case別分類とUNKNOWNは[Unit F safe evidence reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md)を正とする。
 
+## B1D2A remaining repo-only evidence closeout batch
+
+残19件をA〜Hへcase単位で再分類し、既存focused test 5 files / 75 testsを変更せず再実行してM06B / M07 / M09 / M12 / M16 / M18を`PASS_EXISTING_TEST_REEXECUTION`として閉じた。これはrepo-generated test evidenceであり、actual-device testの再実行ではない。source/test追加・変更、Magic Link、iPhone/Simulator、network/external service操作は行っていない。
+
+残13件は、source implementation 3件（M04/M05/M14）、actual-device 5件（M03/M06A/M08/M24/M25）、network/failure condition 3件（M13/M17/M22）、exact repo proof不足の`UNKNOWN` 2件（M10/M11）である。contradictionと追加Human Decision requirementはなかった。case別根拠、focused command、最小next proof、execution waveは[remaining repo-only evidence closeout result](./b1d2a-remaining-repo-only-evidence-closeout-result.md)を正とする。
+
 ## 名前の衝突
 
 - `Unit F`: current execution unitsでのphysical iPhone smoke / evidence / focused fixes。
@@ -178,4 +184,4 @@ Codexは外部Workのテンプレート本文を制作、翻訳、編集、補�
 
 ## 次のsingle action
 
-Humanが次に扱うB1D2A caseを1件だけ明示選択・承認する。D4の残gapに沿う場合の候補はM03 foreground delivery evidenceである。このreconciliationから自動で実装、Magic Link送信、実機操作、B1D2B、Gate 2へ進まない。
+別途承認後、P0 / Wave 1としてM10/M11のexact negative repo proofだけを追加する。このbatchから自動でtest/source変更、Magic Link送信、実機/Network操作、B1D2B、Gate 2へ進まない。

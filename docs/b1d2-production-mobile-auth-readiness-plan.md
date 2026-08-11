@@ -12,6 +12,7 @@
 > Unit F3更新日: 2026-08-09
 > Unit F4更新日: 2026-08-11
 > scope rebaseline更新日: 2026-08-11
+> B1D2A repo-only evidence batch更新日: 2026-08-11
 > 調査worktree: `/Users/karasawatakahiro/.codex/worktrees/b4db/native-minute`
 > 調査branch: `feature/mobile-auth-gate`
 > 調査HEAD: `1e344297b5bc75ac4a8dad438df231fea0242241`
@@ -93,6 +94,12 @@
 最初の完全なscope baselineは`7c85ff5dab2973dd682f97ce1224c9c8b31b184f`、evidence checkpointは`fb011b9c740a98a9cff267d078f9ac7d80f00dd7`で、D1〜D15 / M01〜M28はすべてbaselineからoriginal、later-added D/Mは`0`である。exact mapping、DoD/evidence ledger、Unit F safe evidence reconciliation、External Template Work境界は[`b1d2-release-wide-scope-rebaseline-split.md`](./b1d2-release-wide-scope-rebaseline-split.md)を正とする。
 
 Unit Fはphysical iPhone smoke / evidence / focused fixes、original Plan Phase Fはproduction readiness reviewであり、同名の別工程である。Unit F4のcold/logout未実施記述はそのrunの履歴として維持する。その後提示されたM01/M19/M20のHuman-provided historical actual-device evidenceは、repo implementation/testsとの整合とcontradiction不在を確認して`PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE`として受理した。repo direct resultや今回の再実行とは表現せず、exact実行日時とexact tested build identifier / commitは`UNKNOWN`のままとする。case別provenanceは[`b1d2-unit-f-safe-evidence-reconciliation-result.md`](./b1d2-unit-f-safe-evidence-reconciliation-result.md)を正とする。
+
+### 2026-08-11 B1D2A remaining repo-only evidence authoritative update
+
+残19件をcase単位でA〜Hへ再分類し、既存focused testを変更せず5 files / 75 tests再実行した。M06B / M07 / M09 / M12 / M16 / M18はdeterministic repo contractを十分に証明するため`PASS_EXISTING_TEST_REEXECUTION`として閉じた。これはrepo-generated test evidenceであり、actual-device evidenceではない。source/test追加・変更、Magic Link、iPhone/Simulator、Supabase/Vercel/Apple/provider、network/failure操作は行っていない。
+
+B1D2Aは13件を残して`OPEN`である。M04/M05/M14はsource implementation、M03/M06A/M08/M24/M25はactual-device、M13/M17/M22はnetwork/failure condition、M10/M11はexact focused repo proofが必要である。M01/M02/M15/M19/M20の既存status/provenanceは変更せず、contradictionと追加Human Decision requirementはなかった。case別classification、根拠、最小next proof、P0/P1 execution waveは[`b1d2a-remaining-repo-only-evidence-closeout-result.md`](./b1d2a-remaining-repo-only-evidence-closeout-result.md)を正とする。このupdateから自動で残waveへ進まない。
 
 ## 判定ラベル
 
