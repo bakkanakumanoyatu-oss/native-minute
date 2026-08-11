@@ -1,5 +1,7 @@
 const RECOVERY_PATH = "/mobile/auth/recovery";
 
+export const dynamic = "force-dynamic";
+
 const PRIVATE_RESPONSE_HEADERS = {
   "Cache-Control": "private, no-store, max-age=0",
   "Referrer-Policy": "no-referrer",
