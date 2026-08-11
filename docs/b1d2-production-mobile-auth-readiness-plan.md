@@ -124,6 +124,12 @@ M04はlive staging callback / recoveryがHTTP 404のため`PENDING_PREREQUISITE_
 
 B1D2AはM22を含む7件を残して`OPEN`である。source、test、Supabase、Vercel、Apple、production設定は変更していない。case別provenance、実行しなかった条件、残件は[`b1d2a-consolidated-actual-device-network-wave-result.md`](./b1d2a-consolidated-actual-device-network-wave-result.md)を正とする。次はread-onlyの`WEB_STAGING_AUTH_PREREQUISITE_DIAGNOSTIC`で原因点を切り分け、外部変更はHuman Decisionへ戻す。
 
+### 2026-08-11 M04/M05 live promotion and Web allowlist reconciliation update
+
+verified staging deployment `dpl_C2evjjuZi35mHMp1sNdaejXJPdui`、source `8bdbaac7e776e84a0e495ee410eba5cb3c460bb4`をformal promoteし、fixed `native-minute-staging.vercel.app`がexact deploymentへ向いたことを確認した。public fixed URLでcallback 303、fixed recovery Location、body 0、no cookie、no-store/no-referrer/noindex、synthetic sentinel非反射、callback非PRERENDER、recovery 200、AASA 200 / no redirect / exact staging app/pathをPASSした。production `native-minute`はdeployment `dpl_7FzKMVfgKdYjGWqPpJoFrpbFgruG`、source `b0e61c0504ad3be31e2eaa4c8cfdaaafbffb280c`、branch `main`のまま変更していない。`STAGING_FALLBACK_DEPLOYMENT_PREREQUISITE_RESOLVED`とし、M04は`IMPLEMENTED_LIVE_READY_PENDING_ACTUAL_DEVICE`、M05は`READY_PENDING_ACTUAL_DEVICE_AFTER_M04`で、最終PASSではない。
+
+Conditional Remediation Bでは、Supabase staging Site URL `http://localhost:3000`、default email templates、Custom SMTP未設定、exact Web callback未登録をread-only確認した。一方、last-knownのDebug + exact mobile HTTPS redirectに加え、未記録の`https://native-minute-staging.vercel.app/mobile/auth/callback\?**`が存在した。security-sensitive allowlist差分のためapproved STOP conditionを適用し、Web callback entryは追加していない。M24/M25は`PENDING_PREREQUISITE_WEB_STAGING_AUTH`を維持する。詳細は[`b1d2a-staging-prerequisite-remediation-result.md`](./b1d2a-staging-prerequisite-remediation-result.md)を正とする。B1D2Aは同じ7件を残して`OPEN`で、updated remaining engineering effortはprovider/cache待ちとreview iterationを除き約1.75〜3.0人日である。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。

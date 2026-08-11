@@ -54,8 +54,8 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | D5 | `PARTIAL` | Unit D1 repo/local response、Unit D2 live response、Unit F3 diagnosticsあり。case単位のfinal ledger closeが残る |
 | D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
 | D7 | `OPEN` | M03/M06A/M13をactual-device/network proofで閉じ、7件（M04/M05/M08/M17/M22/M24/M25）が残る |
-| D8 | `OPEN — PENDING_PREREQUISITE_WEB_STAGING_AUTH` | mobileはread-onlyでcurrent User A resourceなし。Web通常authからowned scriptを作るprerequisiteがWeb cookie session未成立で停止 |
-| D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M13 offline actualはPASS。M04/M05 live fallback、M22 AASA outage等が残る |
+| D8 | `OPEN — PENDING_PREREQUISITE_WEB_STAGING_AUTH` | mobileはread-onlyでcurrent User A resourceなし。Web通常authからowned scriptを作るprerequisiteがWeb cookie session未成立で停止。current Supabase allowlistの未記録mobile query wildcardをHuman reconciliationするまでWeb callback追加をSTOP |
+| D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M13 offline actualはPASS。M04/M05 live fallback prerequisiteは解消し、actual-device sequenceとM22 AASA outage等が残る |
 | D13 | `PASS_AT_CHECKPOINT` | Unit F3のfocused/all mobile tests、lint/typecheck、staging/release/auth guards、signed build |
 | D15 | `PASS_AT_CHECKPOINT` | Unit A/C/D/E/F3のcontract-unchanged記録とregression tests |
 
@@ -70,8 +70,8 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M01 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided cold actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M02 | A | `PASS_AT_CHECKPOINT` | Unit F4 warm actual-device。checkpoint plan / README / current-state |
 | M03 | A | `PASS_ACTUAL_DEVICE_FOREGROUND_DELIVERY` | iPhone 14 Plus / iOS 26.2.1。fresh linkから`/SCRIPTS`を1回表示しduplicate UI/navigationなし。[wave result](./b1d2a-consolidated-actual-device-network-wave-result.md) |
-| M04 | A | `PENDING_PREREQUISITE_STAGING_FALLBACK_DEPLOYMENT` | repo fixed 303 proofは維持。live callback/recoveryがHTTP 404のためapp-not-installed actualを開始せず、staging反映がprerequisite |
-| M05 | A | `PENDING_PREREQUISITE_M04_STAGING_FALLBACK_DEPLOYMENT` | M04 live fallback未反映のため、fallback後install / fresh-link exact sequenceを開始していない |
+| M04 | A | `IMPLEMENTED_LIVE_READY_PENDING_ACTUAL_DEVICE` | verified staging deploymentをfixed aliasへpromote。live callback 303、query-free recovery、空body、no cookie、privacy headers、非PRERENDERをPASS。app-not-installed actualは未実施。[remediation result](./b1d2a-staging-prerequisite-remediation-result.md) |
+| M05 | A | `READY_PENDING_ACTUAL_DEVICE_AFTER_M04` | M04 live prerequisiteは解消。fallback後install / fresh-link exact actual-device sequenceは未実施。[remediation result](./b1d2a-staging-prerequisite-remediation-result.md) |
 | M06A | A | `PASS_ACTUAL_DEVICE_CONSUMED_LINK_RETAP` | M03で消費した同じlinkを再tapし`/SCRIPTS` sessionを維持。duplicate navigation/crashなし。[wave result](./b1d2a-consolidated-actual-device-network-wave-result.md) |
 | M06B | A | `PASS_EXISTING_TEST_REEXECUTION` | duplicate final callbackのexchange最大1回。既存focused test再実行PASS |
 | M07 | A | `PASS_EXISTING_TEST_REEXECUTION` | launch URL / retained warm raceのexchange最大1回。既存focused test再実行PASS |
@@ -91,8 +91,8 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M21 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | provider revoke後のexpiry/refresh挙動 |
 | M22 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | source/configはfail safe、AASA unavailable時のEdge/actual-device proofが残る |
 | M23 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | mail scanner/prefetch挙動とreviewer運用 |
-| M24 | A | `PENDING_PREREQUISITE_WEB_STAGING_AUTH` | mobile read-only / current User A resourceなし。Web通常authからowned scriptを作るprerequisiteがWeb callbackのlocalhost遷移で停止 |
-| M25 | A | `PENDING_PREREQUISITE_WEB_STAGING_AUTH` | Web callbackがlocalhostへ遷移しcookie session未成立。mobile session非破壊はactual確認したがcoexistence PASSではない |
+| M24 | A | `PENDING_PREREQUISITE_WEB_STAGING_AUTH` | mobile read-only / current User A resourceなし。Web cookie auth prerequisiteに加え、current Supabase allowlistの未記録mobile query wildcardをreconcileするまでWeb callback追加をSTOP |
+| M25 | A | `PENDING_PREREQUISITE_WEB_STAGING_AUTH` | Web cookie session未成立。mobile session非破壊はactual確認したがcoexistence PASSではない。allowlist reconciliationが先行条件 |
 | M26 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production installed cold/warm |
 | M27 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production restore/refresh/logout |
 | M28 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production safe negative sample、query/tokenなし |
@@ -155,11 +155,13 @@ M10/M11は既存semanticを変えず、wrong nonce/transactionと4 required para
 
 M14はexisting pending PKCE `expiresAt`を新しいpolicy値を作らずexchange deadlineとして使い、AbortSignalをactive Supabase exchange fetchへ渡す最小実装とdeterministic stalled-fault testを追加した。timeout後は既存`auth_exchange_failed` + new-link recovery、session/pending clear、同一callbackのduplicate拒否、exchange count 1を証明し、`PASS_FOCUSED_REPO_FAULT_PROOF`とした。repo-generated proofでありactual-device proofではない。詳細は[P0 repo-only negative / timeout wave result](./b1d2a-p0-repo-only-negative-timeout-wave-result.md)を正とする。
 
-## B1D2A M04/M05 safe Safari fallback local proof
+## B1D2A M04/M05 safe Safari fallback local/live proof
 
 exact AASA target `/mobile/auth/callback`にrecovery-only entryを追加し、callback queryを読まずfixed `303`でquery-free `/mobile/auth/recovery`へ移す。callback/recoveryはmiddlewareのWeb auth/Supabase経路より前にbypassし、provider exchange、Web session/Set-Cookie、Keychain処理、custom scheme遷移を行わない。response/pageには`no-store`、`no-referrer`、`noindex`を設定し、recovery UIはinstall/open後に到達済みLink Aを再利用せずfresh Link Bを取得するよう案内する。
 
-focused repo proofはquery値のbody/header非混入、application logging/query reader/provider/session primitive不在、malformed/extra queryの同一safe response、AASA exact contract regressionをPASSした。platform/infrastructure raw-query loggingはrepoから判断不能のため`UNKNOWN`であり、「ログされない」とは推定しない。actual-device、Magic Link、provider/live operationは未実施で、M04/M05を最終PASSとはしない。詳細は[M04/M05 safe Safari fallback result](./b1d2a-m04-m05-safe-safari-fallback-result.md)を正とする。
+focused repo proofはquery値のbody/header非混入、application logging/query reader/provider/session primitive不在、malformed/extra queryの同一safe response、AASA exact contract regressionをPASSした。後続承認でrequest-time runtime sourceをverified deploymentとしてfixed staging aliasへpromoteし、callback 303、recovery 200、exact AASA、production isolationもPASSした。platform/infrastructure raw-query loggingはrepoから判断不能のため`UNKNOWN`であり、「ログされない」とは推定しない。actual-deviceとMagic Linkは未実施で、M04/M05を最終PASSとはしない。詳細は[M04/M05 safe Safari fallback result](./b1d2a-m04-m05-safe-safari-fallback-result.md)と[staging prerequisite remediation result](./b1d2a-staging-prerequisite-remediation-result.md)を正とする。
+
+Conditional Remediation BはSupabase staging URL Configurationをread-only確認したが、last-known 2 redirectsに加えて未記録のmobile query wildcardが存在したため、approved STOP conditionを適用した。exact Web callbackは追加せず、M24/M25は`PENDING_PREREQUISITE_WEB_STAGING_AUTH`のままとする。
 
 ## 名前の衝突
 
@@ -196,4 +198,4 @@ Codexは外部Workのテンプレート本文を制作、翻訳、編集、補�
 
 ## 次のsingle action
 
-別途承認後、M04/M05だけのactual-device waveとして、app未installでfresh Link AをSafari fallbackへ到達させ、app install後はLink Aを再利用せずfresh Link Bでnative authを確認する。ここから自動でMagic Link送信、実機/Network操作、他case、B1D2B、Gate 2へ進まない。
+current Supabase allowlistに存在する未記録のmobile query wildcardをHuman Decisionでreconcileする。ここから自動でMagic Link送信、M04/M05またはM24/M25の実機操作、Supabase変更、他case、B1D2B、Gate 2へ進まない。

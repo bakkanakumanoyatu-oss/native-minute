@@ -1,6 +1,6 @@
 # B1D2A M04/M05 safe Safari fallback result
 
-Status: `COMPLETED_LOCAL_SCOPE — ACTUAL DEVICE PENDING`
+Status: `IMPLEMENTED_LIVE_READY — ACTUAL DEVICE PENDING`
 
 - Mode: `B1D2A_M04_M05_SAFE_SAFARI_FALLBACK_IMPLEMENT_LOCAL_PROOF_V1`
 - Human Decision: `HDC_B1D2A_SAFARI_FALLBACK_PRIVACY_AND_LINK_REUSE_V1`
@@ -8,10 +8,10 @@ Status: `COMPLETED_LOCAL_SCOPE — ACTUAL DEVICE PENDING`
 - Start branch: `codex/b1d2-unit-f`
 - Start HEAD / remote: `b61a2363372f16b38040e0583d1ef5061d51a922`
 - Scope: M04 and M05 only
-- Actual-device / Simulator / Magic Link / provider-live / external-service action: none
+- Actual-device / Simulator / Magic Link / provider-live auth action: none; a later approved Vercel staging promote/live proof is recorded below
 - DB / migration / Supabase schema / native auth / PKCE / Keychain / Bearer BFF / dependency change: none
 
-This is repo-generated local implementation and focused proof. It is not actual-device evidence and does not make M04 or M05 a final PASS.
+This is repo-generated implementation plus local and fixed-staging live HTTP proof. It is not actual-device evidence and does not make M04 or M05 a final PASS.
 
 ## Existing fallback and privacy/log audit
 
@@ -45,7 +45,7 @@ The focused test covers valid-looking, duplicate/extra, and malformed callback q
 - adopted no-store/no-referrer/noindex headers are configured
 - existing AASA exact-path and native callback validation/auth regressions remain green
 
-Final M04 status: `IMPLEMENTED_LOCAL_PROOF_PENDING_ACTUAL_DEVICE`.
+Final M04 status: `IMPLEMENTED_LIVE_READY_PENDING_ACTUAL_DEVICE`.
 
 ## M05 local readiness and exact actual-device sequence
 
@@ -61,6 +61,14 @@ M05 is not defined as reuse of the link that reached Safari. A later, separately
 8. Confirm successful authentication.
 
 Final M05 status: `READY_PENDING_ACTUAL_DEVICE_AFTER_M04`.
+
+## Live staging promotion follow-up
+
+Human Decisions `HDC_B1D2A_M04_M05_FORCE_DYNAMIC_CALLBACK_RUNTIME_V1` and `HDC_B1D2A_PROMOTE_VERIFIED_STAGING_DEPLOYMENT_V1` approved the minimal request-time correction and promotion of verified staging deployment `dpl_C2evjjuZi35mHMp1sNdaejXJPdui`, source `8bdbaac7e776e84a0e495ee410eba5cb3c460bb4`. The fixed staging alias resolved to that exact deployment after formal promotion.
+
+Public fixed-domain proof returned callback HTTP 303, fixed query-free recovery Location, empty body, no cookie, adopted privacy headers, no synthetic sentinel reflection, and callback `x-vercel-cache: MISS` rather than `PRERENDER`. Recovery returned 200 with the fixed guidance. AASA returned 200 without redirect and retained the exact staging app ID and callback path. Production `native-minute` remained unchanged.
+
+Therefore `STAGING_FALLBACK_DEPLOYMENT_PREREQUISITE_RESOLVED`. No actual-device, Magic Link, install, or provider auth flow ran. Detailed external evidence and the separately stopped Remediation B result are authoritative in [staging prerequisite remediation result](./b1d2a-staging-prerequisite-remediation-result.md).
 
 ## Focused proof command
 
@@ -89,13 +97,13 @@ The built local production server also returned:
 
 ## Remaining B1D2A cases and effort
 
-B1D2A remains `OPEN`, with 10 cases:
+B1D2A remains `OPEN`, with 7 cases:
 
-- local-ready + actual-device pending: M04, M05
-- actual-device: M03, M06A, M08, M24, M25
-- network/failure condition: M13, M17, M22
+- live-ready + actual-device pending: M04, M05
+- actual-device / prerequisite: M08, M24, M25
+- network/failure condition: M17, M22
 
-Estimated remaining engineering effort is approximately 2.0–3.25 person-days, excluding provider delivery, AASA/device cache waiting, and review iteration. The M04/M05 implementation portion is complete; their later combined device sequence is estimated at 0.25–0.5 day.
+Updated remaining engineering effort is approximately 1.75–3.0 person-days, excluding provider delivery, AASA/device cache waiting, and review iteration. The M04/M05 implementation and live prerequisite portions are complete; their later combined device sequence is estimated at 0.25–0.5 day.
 
 ## Next single action
 

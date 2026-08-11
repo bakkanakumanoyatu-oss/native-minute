@@ -47,8 +47,8 @@ Magic Link、メールアドレス、callback URL、code、token、state、nonce
 
 | Case | Final status | Provenance | Secret-free observed outcome / exact gap |
 |---|---|---|---|
-| M04 | `PENDING_PREREQUISITE_STAGING_FALLBACK_DEPLOYMENT` | `LIVE_EDGE` + `REPO_DIRECT_EVIDENCE` | repo HEADにはfixed 303 callbackとquery-free recoveryがあるが、live stagingのcallback / recoveryはいずれもHTTP 404だった。app-not-installed actual tapは、既知404を再現するだけなので実行していない。platform raw-query loggingは`UNKNOWN`のまま |
-| M05 | `PENDING_PREREQUISITE_M04_STAGING_FALLBACK_DEPLOYMENT` | `REPO_DIRECT_EVIDENCE` | M04のlive fallbackが未deployのため、Link A fallback後のinstall / fresh Link Bというexact sequenceを開始していない。Link A再利用も行っていない |
+| M04 | `IMPLEMENTED_LIVE_READY_PENDING_ACTUAL_DEVICE` | `LIVE_EDGE` + `REPO_DIRECT_EVIDENCE` | wave時点のlive 404は、後続承認でverified deploymentを固定staging aliasへpromoteして解消。fixed URLで303、query-free recovery、空body、no cookie、privacy headers、非PRERENDERをPASS。app-not-installed actual tapは未実施で、platform raw-query loggingは`UNKNOWN`のまま |
+| M05 | `READY_PENDING_ACTUAL_DEVICE_AFTER_M04` | `LIVE_EDGE` + `REPO_DIRECT_EVIDENCE` | M04のlive fallback prerequisiteは後続promoteで解消。Link A fallback後のinstall / fresh Link Bというactual-device sequenceはまだ開始しておらず、Link A再利用も行っていない |
 | M03 | `PASS_ACTUAL_DEVICE_FOREGROUND_DELIVERY` | `ACTUAL_DEVICE` + contemporaneous human observation + corroborating repo implementation | signed staging appの`/LOGIN`をforegroundにした状態からfresh linkを1回開き、`/SCRIPTS`が1回だけ表示された。duplicate UI/navigation、crash、追加tapなし |
 | M06A | `PASS_ACTUAL_DEVICE_CONSUMED_LINK_RETAP` | `ACTUAL_DEVICE` + contemporaneous human observation + corroborating replay guard | M03で正常消費した同じlinkをapp processを終了せず1回だけ再tapし、既存`/SCRIPTS` sessionを維持した。新しいnavigation、visible session replacement、crashなし。exchange最大1回の内部contractは既存repo proofをcorroborating evidenceとし、actual UI観測だけからnetwork countを捏造しない |
 | M08 | `PENDING_EXTERNAL_EXPIRY_WINDOW` | `UNKNOWN` + existing repo pending-expiry proof | provider TTLを変更・偽装せず、dedicatedな未消費expired staging linkを確保できなかった。M13用linkやconsumed linkは流用していない |
@@ -60,18 +60,18 @@ Magic Link、メールアドレス、callback URL、code、token、state、nonce
 ## Evidence interpretation
 
 - M03 / M06A / M13だけを、このwaveのactual-device / controlled-network evidenceで閉じる。
-- M04 / M05はlocal implementation不足ではなく、current live staging deployment prerequisiteで停止する。repo実装をlive evidenceと混同しない。
+- M04 / M05のwave時点のlive deployment prerequisiteは、後続のverified deployment promoteとfixed-domain proofで解消した。actual-device proofとは混同せず、両caseを最終PASSにしない。
 - M08はreal provider expiryが未成立であり、repo TTL testをactual provider proofへ昇格しない。
 - M17はrepo retryable-refresh contractをactual outage proofへ昇格しない。
-- M24 / M25はWeb cookie sessionが共通prerequisiteである。current Web sign-inのlocalhost遷移と既知staging auth設定を次のread-only diagnosticで切り分けるまで、外部変更へ進まない。
+- M24 / M25はWeb cookie sessionが共通prerequisiteである。後続read-only Dashboard確認で未記録のmobile query wildcard redirectが見つかったため、Web callback追加前にcurrent allowlistのHuman reconciliationを必要とする。
 
 ## Defects and prerequisite gaps
 
-1. `STAGING_FALLBACK_DEPLOYMENT_GAP`: current branchのM04/M05 callback / recovery routeがlive fixed staging domainへ未反映。
-2. `WEB_STAGING_AUTH_PREREQUISITE`: Web sign-in emailの戻り先がlocalhostとなり、staging Web cookie sessionを確立できない。
+1. `STAGING_FALLBACK_DEPLOYMENT_GAP`: `RESOLVED`。verified deployment `dpl_C2evjjuZi35mHMp1sNdaejXJPdui`をfixed staging aliasへpromoteし、live callback 303 / recovery 200 / exact AASAをPASS。
+2. `WEB_STAGING_AUTH_PREREQUISITE`: Web sign-in emailの戻り先がlocalhostとなり、staging Web cookie sessionを確立できない。current allowlistにはlast-knownにないmobile query wildcardがあり、Web callback追加をSTOPした。
 3. `EXTERNAL_AUTH_EMAIL_RATE_LIMIT`: M13 recovery用fresh requestが固定safe rate-limit UIで抑止された。古いlinkの再利用や連打は行っていない。
 
-sourceまたはauth/security architectureの修正は行っていない。1と2はこのwaveで外部変更せず、Human Decision前のread-only diagnosticへ残す。
+sourceまたはauth/security architectureは変更していない。1の後続解消と2のread-only STOP詳細は[staging prerequisite remediation result](./b1d2a-staging-prerequisite-remediation-result.md)を正とする。
 
 ## Remaining B1D2A cases
 
@@ -79,8 +79,8 @@ B1D2Aは`OPEN`で、残件は10件から7件へ減った。
 
 | Priority | Cases | Minimum next proof |
 |---|---|---|
-| P0 | M04 / M05 | current verified sourceをstagingへ反映する別承認後、app-not-installed fallback → install → fresh linkのexact sequence |
-| P0 | M24 / M25 | `WEB_STAGING_AUTH_PREREQUISITE_DIAGNOSTIC`でWeb redirectTo、staging URL/env、Supabase Site URL / allowlist、callback route、Vercel staging envをread-only切り分けし、外部変更はHuman Decisionへ戻す |
+| P0 | M04 / M05 | live prerequisite解消済み。別承認後、app-not-installed fallback → install → fresh linkのexact actual-device sequence |
+| P0 | M24 / M25 | unexpected mobile query wildcardをHuman reconciliationし、current allowlistを正本化してからWeb callback追加可否を再判定 |
 | P1 | M08 | real provider TTLを確認し、dedicatedな未消費linkが実際にexpiredになった後だけactual proof |
 | P1 | M17 | token/TTL/configを偽装せず、authenticated sessionが実際にrefresh条件へ入るcontrolled outage / recovery window |
 | P2 | M22 | separately approved AASA outage/cache fail-safe wave |
@@ -106,4 +106,4 @@ commit、push、clean statusはGit historyと実行報告で記録する。
 
 ## Next single action
 
-`WEB_STAGING_AUTH_PREREQUISITE_DIAGNOSTIC`をread-onlyで実施し、原因点を特定してから、必要な外部変更だけをHuman Decisionへ戻す。M22、Web callback修正、Supabase/Vercel変更、B1D2B、Gate 2へ自動で進まない。
+current Supabase allowlistに存在する未記録のmobile query wildcardをHuman Decisionでreconcileする。M04/M05 actual-device、M24/M25 actual proof、M22、Web callback追加、B1D2B、Gate 2へ自動で進まない。
