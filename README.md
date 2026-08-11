@@ -221,6 +221,8 @@ B1D2A P0 repo-only negative/timeout waveでは、M10 wrong nonce/transactionとM
 
 B1D2A M04/M05 safe Safari fallbackでは、exact AASA target `/mobile/auth/callback`にqueryを読まないfixed `303` entryを追加し、query-free `/mobile/auth/recovery`へ移すrecovery-only surfaceを実装しました。Web auth/Supabase middleware、provider exchange、Web session/Set-Cookie、Keychain、custom scheme自動遷移は使わず、no-store/no-referrer/noindexと、install/open後に到達済みLink Aを再利用せずfresh Link Bを発行するguidanceをfocused proofしています。M04は`IMPLEMENTED_LOCAL_PROOF_PENDING_ACTUAL_DEVICE`、M05は`READY_PENDING_ACTUAL_DEVICE_AFTER_M04`で、actual-device最終PASSではありません。platform raw-query loggingはrepoから判断不能のため`UNKNOWN`です。詳細は[M04/M05 safe Safari fallback result](./docs/b1d2a-m04-m05-safe-safari-fallback-result.md)を参照してください。
 
+B1D2A consolidated actual-device / network waveでは、iPhone 14 Plus / iOS 26.2.1でM03 foreground delivery、M06A consumed-link retap、M13 offline-before-tapをPASSしました。M04/M05はlive staging fallback未反映、M08はreal provider expiry待ち、M17はcontrolled refresh trigger不足、M24/M25はWeb staging cookie session未成立のprerequisiteで停止しています。Web auth失敗後もmobile `/SCRIPTS`を維持した部分観測だけをM25 coexistence PASSへ昇格していません。B1D2AはM22を含む7件を残して`OPEN`です。case別provenanceと次のread-only diagnosticは[consolidated actual-device / network wave result](./docs/b1d2a-consolidated-actual-device-network-wave-result.md)を参照してください。
+
 Mobile AuthのDebug live buildは、public client設定の`MOBILE_SUPABASE_URL`と`MOBILE_SUPABASE_PUBLISHABLE_KEY`をbuild commandへ一時的に渡す契約です。値を`.env.local`、profile JSON、source、docsへ保存しません。secret/service-role keyとlegacy JWT keyは拒否し、`sb_publishable_`形式だけを許可します。dynamic transaction queryを持つDebug redirectのDashboard許可patternはpath限定の`com.nativeminutes.app.debug://auth/callback**`で、scheme全体を許可しません。
 
 ### iOS Simulator runtime signing boundary

@@ -50,12 +50,12 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | D1 | `PARTIAL` | Unit A/C/Eにstaging identity/config/external mappingあり。A ownerとfinal ledger closeが残る |
 | D2 | `PASS_AT_CHECKPOINT` | Unit AのDebug/Staging/Release Info.plistとexact staging callback isolation |
 | D3 | `PASS_AT_CHECKPOINT` | Unit Cのsource/signed entitlement、profile、exact staging domain |
-| D4 | `PARTIAL` | Unit F4 warmとaccepted Human safe evidenceのM01 coldはPASS。foreground M03が残る |
+| D4 | `PASS_AT_CHECKPOINT` | Unit F4 warm、accepted Human safe evidenceのM01 cold、このwaveのM03 foreground actual-deviceをcase単位でPASS |
 | D5 | `PARTIAL` | Unit D1 repo/local response、Unit D2 live response、Unit F3 diagnosticsあり。case単位のfinal ledger closeが残る |
 | D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
-| D7 | `OPEN` | M04/M05 local fallback proofまで完了。10件（local-ready + actual-device 2 / actual-device 5 / network-failure 3）が残る |
-| D8 | `OPEN` | M24 User A/B actual-device proofが残る |
-| D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M04/M05 fallback local proofは完了。fallback actual-device、offline、AASA outage等が残る |
+| D7 | `OPEN` | M03/M06A/M13をactual-device/network proofで閉じ、7件（M04/M05/M08/M17/M22/M24/M25）が残る |
+| D8 | `OPEN — PENDING_PREREQUISITE_WEB_STAGING_AUTH` | mobileはread-onlyでcurrent User A resourceなし。Web通常authからowned scriptを作るprerequisiteがWeb cookie session未成立で停止 |
+| D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M13 offline actualはPASS。M04/M05 live fallback、M22 AASA outage等が残る |
 | D13 | `PASS_AT_CHECKPOINT` | Unit F3のfocused/all mobile tests、lint/typecheck、staging/release/auth guards、signed build |
 | D15 | `PASS_AT_CHECKPOINT` | Unit A/C/D/E/F3のcontract-unchanged記録とregression tests |
 
@@ -69,30 +69,30 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 |---|---|---|---|
 | M01 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided cold actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M02 | A | `PASS_AT_CHECKPOINT` | Unit F4 warm actual-device。checkpoint plan / README / current-state |
-| M03 | A | `OPEN_NEEDS_ACTUAL_DEVICE` | foreground delivery、duplicate navigationなし。repo lifecycleはcorroborating evidenceのみ |
-| M04 | A | `IMPLEMENTED_LOCAL_PROOF_PENDING_ACTUAL_DEVICE` | fixed 303でquery-free recoveryへ移し、no-store/no-referrer、query非表示、exchange/session/custom-schemeなしをfocused proof。app-not-installed実機確認が残る |
-| M05 | A | `READY_PENDING_ACTUAL_DEVICE_AFTER_M04` | install/open後に到達済みLink Aを再利用せずfresh Link Bを発行するguidance/procedureを固定。actual-device sequenceが残る |
-| M06A | A | `OPEN_NEEDS_ACTUAL_DEVICE` | consumed email-link retapのprovider/OS挙動と二重sessionなし |
+| M03 | A | `PASS_ACTUAL_DEVICE_FOREGROUND_DELIVERY` | iPhone 14 Plus / iOS 26.2.1。fresh linkから`/SCRIPTS`を1回表示しduplicate UI/navigationなし。[wave result](./b1d2a-consolidated-actual-device-network-wave-result.md) |
+| M04 | A | `PENDING_PREREQUISITE_STAGING_FALLBACK_DEPLOYMENT` | repo fixed 303 proofは維持。live callback/recoveryがHTTP 404のためapp-not-installed actualを開始せず、staging反映がprerequisite |
+| M05 | A | `PENDING_PREREQUISITE_M04_STAGING_FALLBACK_DEPLOYMENT` | M04 live fallback未反映のため、fallback後install / fresh-link exact sequenceを開始していない |
+| M06A | A | `PASS_ACTUAL_DEVICE_CONSUMED_LINK_RETAP` | M03で消費した同じlinkを再tapし`/SCRIPTS` sessionを維持。duplicate navigation/crashなし。[wave result](./b1d2a-consolidated-actual-device-network-wave-result.md) |
 | M06B | A | `PASS_EXISTING_TEST_REEXECUTION` | duplicate final callbackのexchange最大1回。既存focused test再実行PASS |
 | M07 | A | `PASS_EXISTING_TEST_REEXECUTION` | launch URL / retained warm raceのexchange最大1回。既存focused test再実行PASS |
-| M08 | A | `OPEN_NEEDS_ACTUAL_DEVICE` | repo pending-expiryはPASS、actual expired provider linkが残る |
+| M08 | A | `PENDING_EXTERNAL_EXPIRY_WINDOW` | repo pending-expiryはPASS。dedicatedな未消費provider linkのreal expiry conditionが残る |
 | M09 | A | `PASS_EXISTING_TEST_REEXECUTION` | wrong stateをprovider exchange前に拒否。既存focused test再実行PASS |
 | M10 | A | `PASS_FOCUSED_REPO_PROOF` | wrong nonce/transactionをprovider exchange前に拒否し、exchange 0、session mutationなし |
 | M11 | A | `PASS_FOCUSED_REPO_PROOF` | 4 required params各欠落をfixed safe reasonで拒否し、exchange 0、raw detailなし |
 | M12 | A | `PASS_EXISTING_TEST_REEXECUTION` | wrong protocol/host/path/portとStaging/ReleaseのDebug target隔離。既存focused test再実行PASS |
-| M13 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | offline-before-tap/no-crash/new-link recovery proofが残る |
+| M13 | A | `PASS_ACTUAL_DEVICE_OFFLINE_BEFORE_TAP` | tap前に機内モードON/Wi-Fi OFF。offline failure、crash/false authなし、復旧後LOGIN維持、同link非再利用。[wave result](./b1d2a-consolidated-actual-device-network-wave-result.md) |
 | M14 | A | `PASS_FOCUSED_REPO_FAULT_PROOF` | persisted pending expiryをdeadlineにexchangeをabortし、same callbackのexchange最大1回 |
 | M15 | A | `PASS_AT_CHECKPOINT` | Unit F4 terminate/relaunch、Keychain restore、Bearer BFF、callback非再消費 |
 | M16 | A | `PASS_EXISTING_TEST_REEXECUTION` | access expiry、single-flight refresh、BFF retry最大1回。既存focused testとB1D1 contract再確認PASS |
-| M17 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | retryable failure時のsession保持はPASS、failure→recovery/retry proofが残る |
+| M17 | A | `PENDING_CONTROLLED_REFRESH_TRIGGER` | retryable failure時のsession/Keychain保持はrepo PASS。actual authenticated refresh failure→recovery条件が残る |
 | M18 | A | `PASS_EXISTING_TEST_REEXECUTION` | invalid refresh 401で`auth_session_invalid`、Keychain clear。external revokeは別のM21 |
 | M19 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M20 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout-restart actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M21 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | provider revoke後のexpiry/refresh挙動 |
 | M22 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | source/configはfail safe、AASA unavailable時のEdge/actual-device proofが残る |
 | M23 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | mail scanner/prefetch挙動とreviewer運用 |
-| M24 | A | `OPEN_NEEDS_ACTUAL_DEVICE` | BFF/RLS contractはcorroborating、User A/B cross-user isolation actual-device proofが残る |
-| M25 | A | `OPEN_NEEDS_ACTUAL_DEVICE` | cookie/Bearer分離contractはcorroborating、live Web/mobile coexistence proofが残る |
+| M24 | A | `PENDING_PREREQUISITE_WEB_STAGING_AUTH` | mobile read-only / current User A resourceなし。Web通常authからowned scriptを作るprerequisiteがWeb callbackのlocalhost遷移で停止 |
+| M25 | A | `PENDING_PREREQUISITE_WEB_STAGING_AUTH` | Web callbackがlocalhostへ遷移しcookie session未成立。mobile session非破壊はactual確認したがcoexistence PASSではない |
 | M26 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production installed cold/warm |
 | M27 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production restore/refresh/logout |
 | M28 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production safe negative sample、query/tokenなし |

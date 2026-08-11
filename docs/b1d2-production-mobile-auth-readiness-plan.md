@@ -116,6 +116,14 @@ Human Decision `HDC_B1D2A_SAFARI_FALLBACK_PRIVACY_AND_LINK_REUSE_V1`に従い、
 
 recovery UIはNative Minuteをinstall/openした後、Safariへ到達したLink Aを再利用せずfresh Magic Link Bを発行してnative callbackへ進むよう固定した。focused proofとauth/AASA regressionはPASSしたが、actual-device、Magic Link、live provider/API operationは行っていない。M04は`IMPLEMENTED_LOCAL_PROOF_PENDING_ACTUAL_DEVICE`、M05は`READY_PENDING_ACTUAL_DEVICE_AFTER_M04`で、最終PASSではない。platform/infrastructure raw-query loggingはrepoから判断不能のため`UNKNOWN`とする。詳細は[`b1d2a-m04-m05-safe-safari-fallback-result.md`](./b1d2a-m04-m05-safe-safari-fallback-result.md)を正とする。
 
+### 2026-08-11 consolidated actual-device / network wave authoritative update
+
+iPhone 14 Plus / iOS 26.2.1のsigned staging buildで、M03 foreground delivery、M06A consumed-link retap、M13 offline-before-tapをcase単位のactual-device evidenceとしてPASSした。M13のoffline tapではfalse authenticationやcrashがなく、network復旧後も`/LOGIN`を維持した。復旧用fresh requestはprovider rate limitで安全に抑止され、成功扱いにはしていない。
+
+M04はlive staging callback / recoveryがHTTP 404のため`PENDING_PREREQUISITE_STAGING_FALLBACK_DEPLOYMENT`、M05は`PENDING_PREREQUISITE_M04_STAGING_FALLBACK_DEPLOYMENT`とする。M08は`PENDING_EXTERNAL_EXPIRY_WINDOW`、M17は`PENDING_CONTROLLED_REFRESH_TRIGGER`である。mobile `/SCRIPTS`はread-onlyであり、M24 / M25に必要なWeb cookie sessionはWeb Magic Linkがlocalhostへ遷移して成立しなかったため、両件を`PENDING_PREREQUISITE_WEB_STAGING_AUTH`とする。mobile sessionがWeb auth失敗で破壊されない部分観測だけをM25 PASSへ昇格しない。
+
+B1D2AはM22を含む7件を残して`OPEN`である。source、test、Supabase、Vercel、Apple、production設定は変更していない。case別provenance、実行しなかった条件、残件は[`b1d2a-consolidated-actual-device-network-wave-result.md`](./b1d2a-consolidated-actual-device-network-wave-result.md)を正とする。次はread-onlyの`WEB_STAGING_AUTH_PREREQUISITE_DIAGNOSTIC`で原因点を切り分け、外部変更はHuman Decisionへ戻す。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。
