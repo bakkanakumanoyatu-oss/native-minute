@@ -54,7 +54,7 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | D5 | `PARTIAL` | Unit D1 repo/local response、Unit D2 live response、Unit F3 diagnosticsあり。case単位のfinal ledger closeが残る |
 | D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
 | D7 | `OPEN` | M03/M06A/M13をactual-device/network proofで閉じ、7件（M04/M05/M08/M17/M22/M24/M25）が残る |
-| D8 | `OPEN — CONFIG PREREQUISITE RESOLVED; ACTUAL PROOF PENDING` | mobileはread-onlyでcurrent User A resourceなし。既存mobile query redirectをauthorizedとしてreconcileし、exact Web callbackを追加済み。Web cookie login、User A owned script、User A/B isolationのactual proofが残る |
+| D8 | `OPEN — BLOCKED_WEB_USER_A_SCRIPTS_SERVER_EXCEPTION` | config prerequisiteは解消済み。fresh Web linkはstaging `/scripts`へ到達したがserver-side exceptionとなりSTOP。cookie成立、owned script作成、User A/B isolationは未確認 |
 | D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M13 offline actualはPASS。M04/M05 live fallback prerequisiteは解消し、actual-device sequenceとM22 AASA outage等が残る |
 | D13 | `PASS_AT_CHECKPOINT` | Unit F3のfocused/all mobile tests、lint/typecheck、staging/release/auth guards、signed build |
 | D15 | `PASS_AT_CHECKPOINT` | Unit A/C/D/E/F3のcontract-unchanged記録とregression tests |
@@ -91,8 +91,8 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M21 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | provider revoke後のexpiry/refresh挙動 |
 | M22 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | source/configはfail safe、AASA unavailable時のEdge/actual-device proofが残る |
 | M23 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | mail scanner/prefetch挙動とreviewer運用 |
-| M24 | A | `READY_PENDING_WEB_COOKIE_AND_USER_AB_ACTUAL_PROOF` | mobile read-only / current User A resourceなし。exact Web callback config prerequisiteは解消。通常Web authでUser A owned scriptを作り、User A/B isolationをactual proofする |
-| M25 | A | `READY_PENDING_WEB_COOKIE_MOBILE_BEARER_COEXISTENCE_PROOF` | exact Web callback config prerequisiteは解消。既存mobile session非破壊の部分観測だけではPASSにせず、Web cookieとmobile Bearerの同時成立・相互非破壊をactual proofする |
+| M24 | A | `OPEN_BLOCKED_WEB_USER_A_SCRIPTS_SERVER_EXCEPTION` | User A fresh Web linkはqueryなしのstaging `/scripts`へ到達したがserver-side exception。resource作成とUser A/B actual isolationは未着手。[combined proof result](./b1d2a-m24-m25-combined-actual-proof-result.md) |
+| M25 | A | `OPEN_BLOCKED_WEB_USER_A_SCRIPTS_SERVER_EXCEPTION` | Web cookie成立を確定できず、Mobile phaseとcoexistence actual proofは未着手。[combined proof result](./b1d2a-m24-m25-combined-actual-proof-result.md) |
 | M26 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production installed cold/warm |
 | M27 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production restore/refresh/logout |
 | M28 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | production safe negative sample、query/tokenなし |
@@ -163,6 +163,8 @@ focused repo proofはquery値のbody/header非混入、application logging/query
 
 Conditional Remediation Bの初回確認は、last-known repo resultにないmobile query wildcardを検出したためapproved STOP conditionを適用した。このhistorical STOPは保持する。後続Human DecisionはHuman-provided historical Unit E evidenceと照合し、`https://native-minute-staging.vercel.app/mobile/auth/callback\?**`をquery-bearing mobile redirectTo用のauthorized entryとしてreconcileした。既存Debug / exact mobile / mobile queryを維持し、exact Web callback `https://native-minute-staging.vercel.app/auth/callback?next=%2Fscripts`を1件だけ追加した。post-checkは4 entriesちょうど、Site URL / default templates / Custom SMTP不変をPASSした。Remediation Bは`WEB_STAGING_AUTH_CONFIGURATION_PREREQUISITE_RESOLVED_CONFIG_ONLY`で、M24/M25は上表のactual proof pendingへ移行する。
 
+M24/M25 combined actual proofでは、User Aのfresh Web linkはlocalhostや`callback_failed`ではなくqueryなしのstaging `/scripts`へ到達したが、server-side exception（safe digest `182509400`）となった。cookie session成立を推定せず直ちにSTOPし、resource作成、Mobile User A/B、coexistence/isolationは未着手。M24/M25は上表のOPEN statusへ戻し、残件は7件のままとする。
+
 ## 名前の衝突
 
 - `Unit F`: current execution unitsでのphysical iPhone smoke / evidence / focused fixes。
@@ -198,4 +200,4 @@ Codexは外部Workのテンプレート本文を制作、翻訳、編集、補�
 
 ## 次のsingle action
 
-別Human DecisionでM24/M25のcombined actual proofを実行する。自然なrate-limit解除後にfresh Web Magic Linkを1通だけ使い、Web cookie login、通常User A authからowned script作成、User A/B isolation、mobile Bearer/Web cookie coexistenceをcase単位で確認する。ここから自動でMagic Link送信、M04/M05またはM24/M25の実機操作、他case、B1D2B、Gate 2へ進まない。
+別Human Decisionでread-only `WEB_USER_A_SCRIPTS_SERVER_EXCEPTION_DIAGNOSTIC`を実行し、safe digest `182509400`をstaging runtime logsと照合してcallback exchange/cookie作成の成否と`/scripts` server failure点を特定する。ここから自動でMagic Link再送、refresh、source/config変更、M24/M25再開、他case、B1D2B、Gate 2へ進まない。

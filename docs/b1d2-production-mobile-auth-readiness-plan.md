@@ -132,6 +132,12 @@ Conditional Remediation Bの初回read-only確認では、Supabase staging Site 
 
 後続Human Decision `HDC_B1D2A_REDIRECT_ALLOWLIST_RECONCILIATION_AND_WEB_CALLBACK_V1`は、Human-provided historical Unit E evidenceに基づき、このmobile query entryをquery-bearing mobile redirectTo用の`AUTHORIZED_EXISTING_MOBILE_QUERY_REDIRECT`としてreconcileした。既存Debug / exact mobile / mobile queryの3件を変更せず、source traceどおりのexact Web callback `https://native-minute-staging.vercel.app/auth/callback?next=%2Fscripts`を1件だけ追加した。post-checkはRedirect URLs 4件ちょうど、Site URL不変、default templates不変、Custom SMTP offをPASSし、live callback 303 / recovery 200 / exact AASAも維持した。Remediation Bは`WEB_STAGING_AUTH_CONFIGURATION_PREREQUISITE_RESOLVED_CONFIG_ONLY`。M24は`READY_PENDING_WEB_COOKIE_AND_USER_AB_ACTUAL_PROOF`、M25は`READY_PENDING_WEB_COOKIE_MOBILE_BEARER_COEXISTENCE_PROOF`であり、actual proofのPASSではない。詳細は[`b1d2a-staging-prerequisite-remediation-result.md`](./b1d2a-staging-prerequisite-remediation-result.md)を正とする。B1D2Aは同じ7件を残して`OPEN`で、updated remaining engineering effortはprovider/cache待ちとreview iterationを除き約1.5〜2.75人日である。
 
+### 2026-08-11 M24/M25 combined actual-proof STOP
+
+User Aは通常staging Web UIからfresh Web Magic Linkを1通だけ発行して開いた。localhost fallbackや`callback_failed`ではなく、queryなしの`https://native-minute-staging.vercel.app/scripts`へ到達したが、live pageはserver-side exception（safe digest `182509400`）となった。`/scripts`表示とrefresh persistenceを確認できないためWeb cookie session成立を推定せず、approved failure policyどおりSTOPした。User A owned resource作成、Mobile User A/B、M25 coexistence、M24 isolationはすべて未着手である。
+
+M24/M25はともに`OPEN_BLOCKED_WEB_USER_A_SCRIPTS_SERVER_EXCEPTION`。source/configを変更せず、root causeは`UNKNOWN`のまま。詳細は[`b1d2a-m24-m25-combined-actual-proof-result.md`](./b1d2a-m24-m25-combined-actual-proof-result.md)を正とする。B1D2Aは7件を残して`OPEN`で、updated remaining engineering effortは約1.75〜3.5人日。次は別承認のread-only `WEB_USER_A_SCRIPTS_SERVER_EXCEPTION_DIAGNOSTIC`である。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。
