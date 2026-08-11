@@ -8,6 +8,10 @@ import type { SupabaseCookiesToSet } from "@/lib/supabase/types";
 const PROTECTED_PATH_PREFIXES = ["/scripts", "/setup", "/progress", "/settings"];
 const APPLE_APP_SITE_ASSOCIATION_PATH =
   "/.well-known/apple-app-site-association";
+const MOBILE_AUTH_FALLBACK_PATHS = new Set([
+  "/mobile/auth/callback",
+  "/mobile/auth/recovery"
+]);
 
 function isProtectedPath(pathname: string) {
   return PROTECTED_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -25,6 +29,10 @@ function isAppleAppSiteAssociationPath(pathname: string) {
   return pathname === APPLE_APP_SITE_ASSOCIATION_PATH;
 }
 
+function isMobileAuthFallbackPath(pathname: string) {
+  return MOBILE_AUTH_FALLBACK_PATHS.has(pathname);
+}
+
 function isStaticAssetPath(pathname: string) {
   return pathname.startsWith("/_next/") || pathname === "/favicon.ico";
 }
@@ -39,8 +47,11 @@ function nextResponse(request: NextRequest) {
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const nextPath = `${pathname}${request.nextUrl.search}`;
   const protectedPath = isProtectedPath(pathname);
+
+  if (isMobileAuthFallbackPath(pathname)) {
+    return nextResponse(request);
+  }
 
   if (isMobileApiPath(pathname)) {
     return nextResponse(request);
@@ -53,6 +64,8 @@ export async function middleware(request: NextRequest) {
   if (isStaticAssetPath(pathname) || isAuthFlowPath(pathname)) {
     return nextResponse(request);
   }
+
+  const nextPath = `${pathname}${request.nextUrl.search}`;
 
   if (!hasSupabaseConfig()) {
     if (protectedPath) {

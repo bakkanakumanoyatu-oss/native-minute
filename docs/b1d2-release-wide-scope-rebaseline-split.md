@@ -53,9 +53,9 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | D4 | `PARTIAL` | Unit F4 warmとaccepted Human safe evidenceのM01 coldはPASS。foreground M03が残る |
 | D5 | `PARTIAL` | Unit D1 repo/local response、Unit D2 live response、Unit F3 diagnosticsあり。case単位のfinal ledger closeが残る |
 | D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
-| D7 | `OPEN` | P0 repo-only waveでM10/M11/M14をclose。10件（source + later device 2 / actual-device 5 / network-failure 3）が残る |
+| D7 | `OPEN` | M04/M05 local fallback proofまで完了。10件（local-ready + actual-device 2 / actual-device 5 / network-failure 3）が残る |
 | D8 | `OPEN` | M24 User A/B actual-device proofが残る |
-| D9 | `OPEN` | M10/M11 negativeとM14 bounded timeoutはPASS。fallback/offline/AASA outage等が残る |
+| D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M04/M05 fallback local proofは完了。fallback actual-device、offline、AASA outage等が残る |
 | D13 | `PASS_AT_CHECKPOINT` | Unit F3のfocused/all mobile tests、lint/typecheck、staging/release/auth guards、signed build |
 | D15 | `PASS_AT_CHECKPOINT` | Unit A/C/D/E/F3のcontract-unchanged記録とregression tests |
 
@@ -70,8 +70,8 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M01 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided cold actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M02 | A | `PASS_AT_CHECKPOINT` | Unit F4 warm actual-device。checkpoint plan / README / current-state |
 | M03 | A | `OPEN_NEEDS_ACTUAL_DEVICE` | foreground delivery、duplicate navigationなし。repo lifecycleはcorroborating evidenceのみ |
-| M04 | A | `OPEN_NEEDS_SOURCE_IMPLEMENTATION` | app-not-installed Safari fallback route/pageがrepoに存在しない |
-| M05 | A | `OPEN_NEEDS_SOURCE_IMPLEMENTATION` | M04 fallback/guidance実装後、installと新しいlinkのdevice proofが必要 |
+| M04 | A | `IMPLEMENTED_LOCAL_PROOF_PENDING_ACTUAL_DEVICE` | fixed 303でquery-free recoveryへ移し、no-store/no-referrer、query非表示、exchange/session/custom-schemeなしをfocused proof。app-not-installed実機確認が残る |
+| M05 | A | `READY_PENDING_ACTUAL_DEVICE_AFTER_M04` | install/open後に到達済みLink Aを再利用せずfresh Link Bを発行するguidance/procedureを固定。actual-device sequenceが残る |
 | M06A | A | `OPEN_NEEDS_ACTUAL_DEVICE` | consumed email-link retapのprovider/OS挙動と二重sessionなし |
 | M06B | A | `PASS_EXISTING_TEST_REEXECUTION` | duplicate final callbackのexchange最大1回。既存focused test再実行PASS |
 | M07 | A | `PASS_EXISTING_TEST_REEXECUTION` | launch URL / retained warm raceのexchange最大1回。既存focused test再実行PASS |
@@ -155,6 +155,12 @@ M10/M11は既存semanticを変えず、wrong nonce/transactionと4 required para
 
 M14はexisting pending PKCE `expiresAt`を新しいpolicy値を作らずexchange deadlineとして使い、AbortSignalをactive Supabase exchange fetchへ渡す最小実装とdeterministic stalled-fault testを追加した。timeout後は既存`auth_exchange_failed` + new-link recovery、session/pending clear、同一callbackのduplicate拒否、exchange count 1を証明し、`PASS_FOCUSED_REPO_FAULT_PROOF`とした。repo-generated proofでありactual-device proofではない。詳細は[P0 repo-only negative / timeout wave result](./b1d2a-p0-repo-only-negative-timeout-wave-result.md)を正とする。
 
+## B1D2A M04/M05 safe Safari fallback local proof
+
+exact AASA target `/mobile/auth/callback`にrecovery-only entryを追加し、callback queryを読まずfixed `303`でquery-free `/mobile/auth/recovery`へ移す。callback/recoveryはmiddlewareのWeb auth/Supabase経路より前にbypassし、provider exchange、Web session/Set-Cookie、Keychain処理、custom scheme遷移を行わない。response/pageには`no-store`、`no-referrer`、`noindex`を設定し、recovery UIはinstall/open後に到達済みLink Aを再利用せずfresh Link Bを取得するよう案内する。
+
+focused repo proofはquery値のbody/header非混入、application logging/query reader/provider/session primitive不在、malformed/extra queryの同一safe response、AASA exact contract regressionをPASSした。platform/infrastructure raw-query loggingはrepoから判断不能のため`UNKNOWN`であり、「ログされない」とは推定しない。actual-device、Magic Link、provider/live operationは未実施で、M04/M05を最終PASSとはしない。詳細は[M04/M05 safe Safari fallback result](./b1d2a-m04-m05-safe-safari-fallback-result.md)を正とする。
+
 ## 名前の衝突
 
 - `Unit F`: current execution unitsでのphysical iPhone smoke / evidence / focused fixes。
@@ -190,4 +196,4 @@ Codexは外部Workのテンプレート本文を制作、翻訳、編集、補�
 
 ## 次のsingle action
 
-別途承認後、次のP0 waveとしてM04/M05 safe Safari fallback実装と明示承認されたproofだけを扱う。このwaveから自動でsource変更、Magic Link送信、実機/Network操作、B1D2B、Gate 2へ進まない。
+別途承認後、M04/M05だけのactual-device waveとして、app未installでfresh Link AをSafari fallbackへ到達させ、app install後はLink Aを再利用せずfresh Link Bでnative authを確認する。ここから自動でMagic Link送信、実機/Network操作、他case、B1D2B、Gate 2へ進まない。

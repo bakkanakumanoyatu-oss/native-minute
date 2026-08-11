@@ -110,6 +110,12 @@ M14は、persistent `exchangeStartedAt`は存在するがprovider exchange timeo
 
 これはrepo-generated proofでありactual-device proofではない。B1D2Aは10件を残して`OPEN`で、M04/M05、M03/M06A/M08/M24/M25、M13/M17/M22が残る。詳細は[`b1d2a-p0-repo-only-negative-timeout-wave-result.md`](./b1d2a-p0-repo-only-negative-timeout-wave-result.md)を正とし、このupdateからM04/M05、Magic Link、device/external operationへ自動で進まない。
 
+### 2026-08-11 M04/M05 safe Safari fallback local-proof authoritative update
+
+Human Decision `HDC_B1D2A_SAFARI_FALLBACK_PRIVACY_AND_LINK_REUSE_V1`に従い、exact AASA target `/mobile/auth/callback`をauthentication surfaceではなくrecovery-only entryとして実装した。entryはrequest queryを読まず、fixed `303`でquery-free `/mobile/auth/recovery`へ移す。callback/recoveryはmiddlewareのWeb auth/Supabase経路より前にbypassし、provider exchange、Web session/Set-Cookie、Keychain処理、custom scheme自動遷移を行わない。`Cache-Control: private, no-store, max-age=0`、`Referrer-Policy: no-referrer`、`X-Robots-Tag: noindex, nofollow, noarchive`を設定する。
+
+recovery UIはNative Minuteをinstall/openした後、Safariへ到達したLink Aを再利用せずfresh Magic Link Bを発行してnative callbackへ進むよう固定した。focused proofとauth/AASA regressionはPASSしたが、actual-device、Magic Link、live provider/API operationは行っていない。M04は`IMPLEMENTED_LOCAL_PROOF_PENDING_ACTUAL_DEVICE`、M05は`READY_PENDING_ACTUAL_DEVICE_AFTER_M04`で、最終PASSではない。platform/infrastructure raw-query loggingはrepoから判断不能のため`UNKNOWN`とする。詳細は[`b1d2a-m04-m05-safe-safari-fallback-result.md`](./b1d2a-m04-m05-safe-safari-fallback-result.md)を正とする。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。
@@ -668,8 +674,8 @@ verification surface:
 | M01 | AD-real | staging / installed / app cold | 新規Magic Linkをtap | app cold launch、exact callbackを1回処理、local `/scripts`へ |
 | M02 | AD-real | staging / installed / app warm | background中に新規linkをtap | existing appへdelivery、同じhandlerで成功 |
 | M03 | AD-real | staging / installed / foreground | linkをtap | duplicate UI/navigationなしで成功 |
-| M04 | AD-real + Edge | staging / not installed | linkをtap | Safari fallback。address barの一時query露出は別riskとして扱い、body/DOM/analytics/referrerへ渡さずexchange/任意redirectなし |
-| M05 | AD-real | staging / install after M04 | appをinstallして同じlinkを再利用 | 再利用可能と仮定せず、新しいlinkが必要 |
+| M04 | Repo local + AD-real + Edge | staging / not installed | fresh Link Aをtap | local proofはfixed 303 → query-free recovery、body/application log/provider exchange/Web session/custom schemeなし。Safari actualとplatform logging確認が残る |
+| M05 | Repo local + AD-real | staging / install after M04 | Link Aを再利用せずfresh Link Bを発行 | guidance/procedureはlocal ready。Link Bでnative callback成功のactual-device proofが残る |
 | M06A | AD-real | staging / consumed Magic Link | 同じemail linkを再tap | providerで消費済み等によりappへ再deliveryされない場合を許容し、二重sessionなし。duplicate reasonを必須としない |
 | M06B | Repo + AD-synth | staging / final callback duplicate | 同一dummy final callbackを2回delivery | exchange最大1回、2回目はduplicate/replay reason |
 | M07 | Repo | staging / racing delivery | warm eventとlaunch URLを同時injection | session二重生成なし、最大1回exchange |

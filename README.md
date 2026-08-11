@@ -219,6 +219,8 @@ B1D2A remaining repo-only evidence batchでは、残19件をA〜Hへ再分類し
 
 B1D2A P0 repo-only negative/timeout waveでは、M10 wrong nonce/transactionとM11 required callback params欠落をprovider exchange前にfixed safe reasonで拒否するfocused proofを追加し、両件を`PASS_FOCUSED_REPO_PROOF`としました。M14はpersisted pending PKCE `expiresAt`を既存deadlineとしてSupabase exchange fetchへAbortSignalを渡し、stalled exchangeのbounded終了、既存new-link recovery、session/pending clear、same callback exchange最大1回を証明して`PASS_FOCUSED_REPO_FAULT_PROOF`としました。repo-generated proofでありactual-device proofではありません。B1D2Aは10件を残して`OPEN`です。詳細は[P0 repo-only negative / timeout wave result](./docs/b1d2a-p0-repo-only-negative-timeout-wave-result.md)を参照してください。
 
+B1D2A M04/M05 safe Safari fallbackでは、exact AASA target `/mobile/auth/callback`にqueryを読まないfixed `303` entryを追加し、query-free `/mobile/auth/recovery`へ移すrecovery-only surfaceを実装しました。Web auth/Supabase middleware、provider exchange、Web session/Set-Cookie、Keychain、custom scheme自動遷移は使わず、no-store/no-referrer/noindexと、install/open後に到達済みLink Aを再利用せずfresh Link Bを発行するguidanceをfocused proofしています。M04は`IMPLEMENTED_LOCAL_PROOF_PENDING_ACTUAL_DEVICE`、M05は`READY_PENDING_ACTUAL_DEVICE_AFTER_M04`で、actual-device最終PASSではありません。platform raw-query loggingはrepoから判断不能のため`UNKNOWN`です。詳細は[M04/M05 safe Safari fallback result](./docs/b1d2a-m04-m05-safe-safari-fallback-result.md)を参照してください。
+
 Mobile AuthのDebug live buildは、public client設定の`MOBILE_SUPABASE_URL`と`MOBILE_SUPABASE_PUBLISHABLE_KEY`をbuild commandへ一時的に渡す契約です。値を`.env.local`、profile JSON、source、docsへ保存しません。secret/service-role keyとlegacy JWT keyは拒否し、`sb_publishable_`形式だけを許可します。dynamic transaction queryを持つDebug redirectのDashboard許可patternはpath限定の`com.nativeminutes.app.debug://auth/callback**`で、scheme全体を許可しません。
 
 ### iOS Simulator runtime signing boundary
