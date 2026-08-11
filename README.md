@@ -211,6 +211,8 @@ B1D2 Unit D2ではverified commit `b4cddb5`を`native-minute-staging`のProducti
 
 B1D2 Unit Eでは、Supabase project `native-minute-staging`のRedirect URLsにexact `https://native-minute-staging.vercel.app/mobile/auth/callback`が追加済みであることを人間確認しました。Debug redirect `com.nativeminutes.app.debug://auth/callback**`は維持し、Site URLは`http://localhost:3000`、Magic Link templateはdefault、Custom SMTPは未設定、DB password rotationは未完了または不明です。callback/auth contractは変更しておらず、Unit FのMagic Link送信・実機install/launch・actual Universal Link smokeは未実施なのでB1D2はまだ未完了です。詳細は[Unit E result](./docs/b1d2-unit-e-supabase-redirect-result.md)を参照してください。
 
+B1D2 Unit F3/F4では、actual warm Magic Linkがstaging appをforegroundにした後もJS callbackへ届かず`/login`に残る`WARM_UNIVERSAL_LINK_NATIVE_TO_JS_INGRESS_MISSING`を実証し、Capacitor 8.4.0公式templateどおり、非Scene構成の`AppDelegate`へ`continue userActivity`の`ApplicationDelegateProxy` forwardingだけを追加しました。native-to-JS contract tests、実機向けsigned Staging build、既存staging appへのupdate installをPASS後、修正版で新しいMagic Linkを1通だけ使い、warm OS handoff、native/Capacitor/plugin/JS ingress、callback validation、state/nonce/transaction binding、PKCE/session exchange、Keychain save、`/SCRIPTS`、Bearer BFFをPASSしました。terminate/relaunchでもKeychain sessionを復元し、callback再消費はありませんでした。prior ingress failureは解消済みですが、cold callback、logout、B1D2 final closeoutは未実施です。
+
 Mobile AuthのDebug live buildは、public client設定の`MOBILE_SUPABASE_URL`と`MOBILE_SUPABASE_PUBLISHABLE_KEY`をbuild commandへ一時的に渡す契約です。値を`.env.local`、profile JSON、source、docsへ保存しません。secret/service-role keyとlegacy JWT keyは拒否し、`sb_publishable_`形式だけを許可します。dynamic transaction queryを持つDebug redirectのDashboard許可patternはpath限定の`com.nativeminutes.app.debug://auth/callback**`で、scheme全体を許可しません。
 
 ### iOS Simulator runtime signing boundary

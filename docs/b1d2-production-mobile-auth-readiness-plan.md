@@ -1,6 +1,6 @@
 # B1D2 Production Mobile Auth readiness / execution plan
 
-> Status: **UNIT E EXTERNAL REDIRECT VERIFIED — UNIT F NOT STARTED; B1D2 INCOMPLETE**
+> Status: **UNIT F3/F4 WARM UNIVERSAL LINK PASS — FINAL CLOSEOUT PENDING; B1D2 INCOMPLETE**
 >
 > 調査基準日: 2026-07-26
 > 人間確認情報の反映日: 2026-07-29
@@ -9,6 +9,8 @@
 > Unit C retry更新日: 2026-08-09
 > Unit D1更新日: 2026-08-09
 > Unit D2 / Unit E更新日: 2026-08-09
+> Unit F3更新日: 2026-08-09
+> Unit F4更新日: 2026-08-11
 > 調査worktree: `/Users/karasawatakahiro/.codex/worktrees/b4db/native-minute`
 > 調査branch: `feature/mobile-auth-gate`
 > 調査HEAD: `1e344297b5bc75ac4a8dad438df231fea0242241`
@@ -60,6 +62,28 @@
 - Debug redirect `com.nativeminutes.app.debug://auth/callback**`は残っている。Site URLは`http://localhost:3000`から変更せず、Magic Link templateはdefault、Custom SMTPは未設定、DB password rotationは未完了または不明。
 - repoのstaging profile / BFF origin / callback validator / parserとSupabaseのHTTPS redirectはexact一致する。Debug fallbackを維持し、production callbackは引き続きunconfiguredである。
 - Unit EではDashboardの追加操作を再実行せず、repo code/config/auth contract、Vercel、Apple、DB/migration、dependencyを変更しない。Magic Link送信、iPhone install/launch、actual Universal Link smoke、Unit Fは未実施で、B1D2はまだ未完了。
+
+### 2026-08-09 Unit F3 authoritative update
+
+この節は、Unit D2 / Unit E節の「Unit F未実施」と、1.5節のstatic inspectionだけでは実機failure proofにしない状態を上書きする。修正後のactual Magic Link happy pathはまだPASS扱いしない。
+
+- signed staging appの実機install、`authConfigured=true`、live AASA、Universal Link Diagnosticsを確認後、actual warm Magic Linkを1通だけ送信した。localhost fallback解消後、iOSはNative Minute Stagingをforegroundにしたが、JS callback handlerへ到達せず`/login`に残ったため、`WARM_UNIVERSAL_LINK_NATIVE_TO_JS_INGRESS_MISSING`を実証した。
+- installed/lock/SwiftPMのCapacitor Core/iOSは8.4.0。projectはUIApplicationDelegate lifecycleで、SceneDelegate、scene methods、`UIApplicationSceneManifest`はない。AppDelegateはcustom URLだけをforwardし、Capacitor 8.4.0公式templateにある`continue userActivity` forwardingが欠けていた。
+- `AppDelegate`へ公式templateどおり`ApplicationDelegateProxy.shared.application(... continue: ... restorationHandler: ...)`の最小forwardingだけを追加した。native側でURLをparseせず、repo-local plugin、JS callback pipeline、Debug custom scheme、PKCE/state/nonce/transaction、Keychain、Bearer BFF、AASA/signing/config contractは変更していない。SceneDelegate、`@capacitor/app`、dependencyも追加していない。
+- delegate → Capacitor proxy `lastURL` / `capacitorOpenUniversalLink` → repo-local `MobileAuthLifecyclePlugin` → retained `appUrlOpen` → existing `handleCallbackUrl()`をfocused contract testで固定し、既存のwarm/cold lifecycle exchange testもPASSした。
+- 全mobile tests、mobile lint/typecheck、staging/release/auth guards、実機destination向けsigned Staging development build、strict codesign、staging bundle/Associated Domains、`authConfigured=true`、public config pair、secret/service-role非混入、Debug scheme非混入、production callback非有効化をPASSした。既存`com.nativeminutes.app.staging`へuninstallせずupdate install済み。
+- 修正後の新しいMagic Link送信、warm callback、session exchange/Keychain save、authenticated UI、session restoreは未実施。古いlinkは再利用せず、B1D2はまだ未完了である。
+
+### 2026-08-11 Unit F4 authoritative update
+
+この節は、直前のUnit F3節にある「修正後のMagic Link再試行は未実施」という状態を上書きする。Unit F4はwarm happy pathだけを対象とし、cold、logout、negative test、final closeoutには進まない。
+
+- Unit F3のexact 5-file差分、signed Staging build、`authConfigured=true` artifact、既存staging appへのupdate installを維持したまま、新しいMagic Linkを1通だけ送信し、最新linkをwarm状態で1回だけ開いた。古いlink、追加link、再タップは使用していない。
+- iOSのwarm OS handoff、AppDelegate `continue userActivity`、Capacitor `ApplicationDelegateProxy`、`capacitorOpenUniversalLink`、repo-local `MobileAuthLifecyclePlugin`、retained `appUrlOpen`、existing `MobileAuthService.handleCallbackUrl()`へのingressをactual-device authenticated resultまで通し、prior `WARM_UNIVERSAL_LINK_NATIVE_TO_JS_INGRESS_MISSING`が解消したことを確認した。
+- exact staging callback target validation、state/nonce/transaction binding、native-owned PKCE exchange、one-time consumption、provider session exchange、device-only Keychain session save、authenticated application stateをPASSした。実値やsecret-bearing callback URLは記録していない。
+- Native Minute Stagingの`/SCRIPTS`表示、Bearer BFF接続を人間/Codexで確認した。appを通常terminateして再launch後もKeychain session restoreとauthenticated UIをPASSし、callback再消費はなかった。
+- email、Magic Link、dynamic callback URL、auth code、token、state/nonce/transaction、PKCE verifier、Keychain本文、device identifier、certificate ownerは文書へ保存していない。
+- cold callback、logout、duplicate/expired/wrong-state、refresh強制、B1D2 final closeoutは未実施。B1D2はまだ未完了である。
 
 ## 判定ラベル
 

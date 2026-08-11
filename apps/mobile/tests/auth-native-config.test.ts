@@ -116,22 +116,43 @@ describe("native mobile auth configuration", () => {
     expect(release).not.toContain("CODE_SIGN_ENTITLEMENTS");
   });
 
-  it("registers the exact debug scheme and forwards cold/warm URLs to the native bridge", () => {
+  it("registers the exact debug scheme and connects Capacitor URL ingress to the auth lifecycle", () => {
     const debugInfoPlist = readRepositoryFile("ios/App/App/Info-Debug.plist");
     const releaseInfoPlist = readRepositoryFile("ios/App/App/Info.plist");
     const appDelegate = readRepositoryFile("ios/App/App/AppDelegate.swift");
+    const capacitorProxy = readRepositoryFile(
+      "node_modules/@capacitor/ios/Capacitor/Capacitor/CAPApplicationDelegateProxy.swift"
+    );
     const lifecyclePlugin = readRepositoryFile(
       "ios/App/MobileAuthSessionStore/ios/Sources/MobileAuthSessionStorePlugin/MobileAuthLifecyclePlugin.swift"
     );
+    const mobileAuth = readRepositoryFile("apps/mobile/src/auth/mobile-auth.ts");
 
     expect(debugInfoPlist).toContain("com.nativeminutes.app.debug");
     expect(releaseInfoPlist).not.toContain("CFBundleURLTypes");
     expect(releaseInfoPlist).not.toContain("com.nativeminutes.app.debug");
-    expect(appDelegate).toContain("ApplicationDelegateProxy.shared.application");
+
+    expect(appDelegate).toContain(
+      "return ApplicationDelegateProxy.shared.application(app, open: url, options: options)"
+    );
+    expect(appDelegate).toMatch(
+      /func application\(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping \(\[UIUserActivityRestoring\]\?\) -> Void\) -> Bool/
+    );
+    expect(appDelegate).toContain(
+      "return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)"
+    );
+
+    expect(capacitorProxy).toContain("lastURL = url");
+    expect(capacitorProxy).toContain(
+      "NotificationCenter.default.post(name: .capacitorOpenUniversalLink"
+    );
     expect(lifecyclePlugin).toContain("Notification.Name.capacitorOpenURL");
     expect(lifecyclePlugin).toContain("Notification.Name.capacitorOpenUniversalLink");
     expect(lifecyclePlugin).toContain("ApplicationDelegateProxy.shared.lastURL");
+    expect(lifecyclePlugin).toContain('notifyListeners(\n            "appUrlOpen"');
     expect(lifecyclePlugin).toContain("retainUntilConsumed: true");
+    expect(mobileAuth).toContain('NativeMobileAuthLifecycle.addListener("appUrlOpen"');
+    expect(mobileAuth).toContain("void this.handleCallbackUrl(url)");
   });
 
   it("uses the device-only Keychain class without a preference fallback", () => {
