@@ -53,9 +53,9 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | D4 | `PASS_AT_CHECKPOINT` | Unit F4 warm、accepted Human safe evidenceのM01 cold、このwaveのM03 foreground actual-deviceをcase単位でPASS |
 | D5 | `PARTIAL` | Unit D1 repo/local response、Unit D2 live response、Unit F3 diagnosticsあり。case単位のfinal ledger closeが残る |
 | D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
-| D7 | `OPEN` | M22とM08をactual-device proofで閉じ、残るM17はnatural refresh trigger待ち |
+| D7 | `PASS_AT_CHECKPOINT` | M22/M08/M17をcontrolled actual-device proofで閉じた。B1D2A final closeout auditは別工程 |
 | D8 | `PASS_ACTUAL_STAGING_USER_AB_ISOLATION` | 通常Web User A flowでowned scriptを作成。Mobile User Aでは表示、正常認証/BFFのUser Bでは非表示をactual stagingで確認。Bearer verified user filterとRLSがcorroborate |
-| D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M13 offline、M04/M05 fallback/install-after-fallback、M22 AASA-unavailable actualはPASS。M17は安全な自然refresh trigger待ち |
+| D9 | `PASS_AT_CHECKPOINT` | M10/M11 negative、M14 bounded timeout、M13 offline、M04/M05 fallback、M22 AASA unavailable、M17 transient refresh recoveryをcase単位でPASS |
 | D13 | `PASS_AT_CHECKPOINT` | Unit F3のfocused/all mobile tests、lint/typecheck、staging/release/auth guards、signed build |
 | D15 | `PASS_AT_CHECKPOINT` | Unit A/C/D/E/F3のcontract-unchanged記録とregression tests |
 
@@ -84,7 +84,7 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M14 | A | `PASS_FOCUSED_REPO_FAULT_PROOF` | persisted pending expiryをdeadlineにexchangeをabortし、same callbackのexchange最大1回 |
 | M15 | A | `PASS_AT_CHECKPOINT` | Unit F4 terminate/relaunch、Keychain restore、Bearer BFF、callback非再消費 |
 | M16 | A | `PASS_EXISTING_TEST_REEXECUTION` | access expiry、single-flight refresh、BFF retry最大1回。既存focused testとB1D1 contract再確認PASS |
-| M17 | A | `READY_PENDING_NATURAL_REFRESH_WINDOW` | fresh Link Fで`/SCRIPTS` / owned script / Bearer BFF正常。current access-token expiry 3600秒とlogin観測からrefresh windowは遅くとも2026-08-12 20:02:38 JST、安全な再開時刻は20:05。appはforce-quitせずbackground。[M17 result](./b1d2a-m17-final-natural-refresh-proof-result.md) |
+| M17 | A | `PASS_ACTUAL_DEVICE_TRANSIENT_REFRESH_RECOVERY` | natural expiry後、fully offline foregroundで`/SCRIPTS`/sessionを維持しretry可能。network復旧foregroundでowned scriptとBearer BFF正常、`/LOGIN`/crash/manual retryなし。[M17 result](./b1d2a-m17-final-natural-refresh-proof-result.md) |
 | M18 | A | `PASS_EXISTING_TEST_REEXECUTION` | invalid refresh 401で`auth_session_invalid`、Keychain clear。external revokeは別のM21 |
 | M19 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M20 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout-restart actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
@@ -216,8 +216,10 @@ Codexは外部Workのテンプレート本文を制作、翻訳、編集、補�
 
 ## 次のsingle action
 
-M08 PASS evidenceをcommitした時点で停止する。次のsingle action候補は、別承認で開始するM17 natural refresh trigger proofである。ここから自動でMagic Link再送、Link E再tap、M17、source/config変更、B1D2B、Gate 2へ進まない。
+M17 PASS evidenceをcommitした時点で停止する。次のsingle actionは、別承認で開始する`B1D2A_FINAL_CLOSEOUT_AUDIT`である。case-level残件0だけでB1D2Aを自動的に`CLOSED_COMMITTED_PASS`とせず、B1D2B、Gate 2へ進まない。
 
 後続M17 final natural-refresh proofでは、current source/testsから`expiresAt <= now + 60秒`のforeground refresh、BFF `session_expired`時の1回refresh/retry、retryable failure時のauthenticated/Keychain保持、foreground再試行、single-flightを再確認した。current Supabase access-token expiryはread-onlyで3600秒、設定変更なし。fresh Link Fを1通だけ使い、iPhone 14 Plus / iOS 26.2.1でnative `/SCRIPTS`、owned script 1件、Bearer BFF、error/crashなしを確認後、appをforce-quitせずbackgroundへ置いた。
 
 raw token/Keychainを読まず、safe direct `expiresAt`もUI/logにないため、login成功観測`2026-08-12T19:03:38+09:00`と3600秒設定から保守的に算出する。refresh window entryは遅くとも`20:02:38+09:00`、安全な再開時刻は`20:05+09:00`。M17は`READY_PENDING_NATURAL_REFRESH_WINDOW`で、actual outage/recovery PASSはまだ主張しない。B1D2A case-level残件はM17の1件のまま。次は20:05以降、background中のiPhoneを先にofflineへする1操作であり、自動進行しない。
+
+20:05以降、app background中にAirplane Mode ON / Wi-Fi OFFとしてから1回foregroundした。15秒超後もnative `/SCRIPTS`とlogout actionを維持し、scripts loading / explicit offline表示、`/LOGIN`強制遷移/crashなしでretryable stateだった。in-app retry/reconnectは押していない。Airplane Mode OFF / Wi-Fi ON後にControl Centerを閉じて既存foreground pathへ戻ると、owned script 1件とBearer BFFが自動復旧し、authenticated stateを維持した。original tokenは遅くとも20:03:38にexpiredしているため、20:13以降のBearer successはrefresh recoveryのactual evidenceとなる。M17を`PASS_ACTUAL_DEVICE_TRANSIENT_REFRESH_RECOVERY`とし、provenanceは`ACTUAL_DEVICE + CONTROLLED_NETWORK + NATURAL_SESSION_REFRESH_TRIGGER`。B1D2A case-level残件は0だが、final closeout audit前なのでA全体はまだ`OPEN`。次は別承認の`B1D2A_FINAL_CLOSEOUT_AUDIT`だけであり、B1D2B/Gate 2へ進まない。

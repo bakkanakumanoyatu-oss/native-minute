@@ -2,11 +2,11 @@
 
 Mode: `B1D2A_M17_FINAL_NATURAL_REFRESH_PROOF_V1`
 
-Status: `READY_PENDING_NATURAL_REFRESH_WINDOW`
+Status: `PASS_ACTUAL_DEVICE_TRANSIENT_REFRESH_RECOVERY`
 
 ## Scope and provenance
 
-This checkpoint covers only M17 transient refresh recovery. It does not claim the outage/recovery PASS yet and does not start B1D2B, Gate 2, or template work.
+This closeout covers only M17 transient refresh recovery. It does not start the B1D2A final closeout audit, B1D2B, Gate 2, or template work.
 
 Evidence provenance is separated as follows:
 
@@ -60,23 +60,29 @@ Therefore the approved fallback is used: current `3600`-second access-token life
 
 The direct exact `expiresAt` remains `UNKNOWN`; the margin avoids pretending that the observation timestamp is the provider's exact issue timestamp.
 
-## Pending sequence
+## Actual controlled-network sequence
 
-At or after `20:05 JST`, while the same app session remains backgrounded:
+The Human resumed after the conservative natural-refresh window and performed the approved sequence without changing TTL, clock, token, Keychain, source, tests, or provider configuration:
 
-1. put the iPhone fully offline before foregrounding the app
-2. open the existing Native Minute Staging app once, causing the existing foreground refresh check
-3. confirm `/LOGIN` is not forced, no crash occurs, and a retryable state remains
-4. restore network
-5. foreground/retry once through the existing path
-6. confirm `/SCRIPTS`, the owned script, Bearer BFF, authenticated state, and no duplicate refresh storm
+1. At `2026-08-12T20:08:54+09:00`, the safe time check was beyond the `20:05` margin.
+2. While the app remained backgrounded, Airplane Mode was enabled and Wi-Fi was disabled before foregrounding.
+3. The existing app icon was tapped once. After more than 15 seconds, the app remained on `/SCRIPTS`, retained the logout action, showed scripts loading and explicit offline state, did not force `/LOGIN`, and did not crash. Safe observation record: `2026-08-12T20:12:03+09:00`.
+4. No in-app `再試行` or `再接続` action was pressed.
+5. Airplane Mode was disabled and Wi-Fi enabled while Control Center remained open.
+6. Returning to the app foreground used the existing lifecycle retry path. The app displayed `/SCRIPTS`, the one owned script, and normal BFF connection without `/LOGIN`, error, crash, or manual retry. Safe recovery observation: `2026-08-12T20:14:14+09:00`; the supplied screenshot clock showed `20:13`.
 
-Until then, do not open or terminate the app, change network, change clock/TTL/config, send another Magic Link, or modify token/Keychain/source/tests.
+Because the original access token was issued no later than the `19:03:38` authenticated baseline and the configured lifetime is `3600` seconds, it was expired by `20:03:38` at the latest. Therefore the successful authenticated Bearer scripts result after `20:13` could not be produced by the original expired access token and demonstrates successful refresh recovery.
+
+The offline observation demonstrates behavioral session retention; raw Keychain content was not read. Existing focused repo tests corroborate that retryable refresh failures return to `authenticated`, keep the stored session candidate, and single-flight concurrent refresh callers. No duplicate UI/navigation or refresh-storm symptom was observed; exact raw request counts were not logged and are not invented.
 
 ## Final disposition
 
-M17 remains the only B1D2A case-level item:
+M17:
 
-`READY_PENDING_NATURAL_REFRESH_WINDOW`
+`PASS_ACTUAL_DEVICE_TRANSIENT_REFRESH_RECOVERY`
 
-This is a material pending checkpoint, not a failure and not a PASS. The next single action is to resume at or after `20:05 JST` and first put the iPhone fully offline while Native Minute Staging remains backgrounded.
+Provenance:
+
+`ACTUAL_DEVICE + CONTROLLED_NETWORK + NATURAL_SESSION_REFRESH_TRIGGER`
+
+No product or security defect was observed. B1D2A case-level remaining count is `0`, but B1D2A is not yet marked `CLOSED_COMMITTED_PASS`. The next and only action is the separately authorized `B1D2A_FINAL_CLOSEOUT_AUDIT`. Do not start B1D2B or Gate 2 automatically.

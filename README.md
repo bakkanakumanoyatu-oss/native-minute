@@ -235,6 +235,8 @@ M08 target alignment / natural-expiry closeoutでは、M22 recovery build時の�
 
 M17 final natural-refresh proofでは、fresh Link Fの1回tapでiPhone 14 Plus / iOS 26.2.1のnative `/SCRIPTS`、owned script 1件、Bearer BFF、error/crashなしを確認しました。現行sourceはexpiry 60秒前のforeground refresh、BFF `session_expired`時の1回refresh/retry、retryable failure時のauthenticated/Keychain保持、foreground再試行、single-flightを行います。current access-token expiry 3600秒とlogin成功観測から、refresh windowは遅くとも`2026-08-12 20:02:38 JST`、安全な再開時刻は`20:05 JST`です。raw token/Keychainは読まず、appはforce-quitせずbackgroundです。M17は`READY_PENDING_NATURAL_REFRESH_WINDOW`でactual outage/recovery未実施、B1D2A残件はM17の1件です。詳細は[M17 final natural-refresh proof result](./docs/b1d2a-m17-final-natural-refresh-proof-result.md)を参照してください。
 
+20:05以降のM17 actual proofでは、app background中に機内モードON / Wi-Fi OFFとしてforegroundし、15秒超後もnative `/SCRIPTS`とlogout actionを維持、scripts loading / offline表示、`/LOGIN`/crash/manual retryなしを確認しました。network復旧後のforegroundではowned script 1件とBearer BFFが自動復旧しました。original tokenは3600秒設定上すでにexpiredしているため、このBearer successはnatural refresh recoveryのactual evidenceです。M17を`PASS_ACTUAL_DEVICE_TRANSIENT_REFRESH_RECOVERY`とし、B1D2A case-level残件は0です。ただしA全体はfinal closeout audit前なのでまだ`OPEN`で、次は別承認の`B1D2A_FINAL_CLOSEOUT_AUDIT`です。B1D2B/Gate 2へ自動進行しません。
+
 Mobile AuthのDebug live buildは、public client設定の`MOBILE_SUPABASE_URL`と`MOBILE_SUPABASE_PUBLISHABLE_KEY`をbuild commandへ一時的に渡す契約です。値を`.env.local`、profile JSON、source、docsへ保存しません。secret/service-role keyとlegacy JWT keyは拒否し、`sb_publishable_`形式だけを許可します。dynamic transaction queryを持つDebug redirectのDashboard許可patternはpath限定の`com.nativeminutes.app.debug://auth/callback**`で、scheme全体を許可しません。
 
 ### iOS Simulator runtime signing boundary

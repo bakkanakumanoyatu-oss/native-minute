@@ -194,6 +194,14 @@ fresh Link F 1通の1回tapでiPhone 14 Plus / iOS 26.2.1のnative `/SCRIPTS`、
 
 M17は`READY_PENDING_NATURAL_REFRESH_WINDOW`。actual transient outage/recoveryはまだ未実施・未PASSで、B1D2A case-level残件はM17の1件。次は20:05以降にiPhoneを先にfully offlineへしてからforegroundする既存pathであり、自動進行しない。
 
+### 2026-08-12 M17 actual transient refresh recovery
+
+safe refresh window後、appをbackgroundのままAirplane Mode ON / Wi-Fi OFFとしてから1回foregroundした。15秒超後もnative `/SCRIPTS`とlogout actionを維持し、scripts loading / explicit offline表示となった。`/LOGIN`強制遷移、crash、manual retry/reconnectはなかった。これはnatural refresh condition下のtransient failureでauthenticated behaviorが保持され、retry可能であるactual-device evidenceである。raw Keychainは読んでいない。
+
+Airplane Mode OFF / Wi-Fi ON後、Control Centerを閉じて既存foreground retry pathへ戻ると、owned script 1件とBearer BFFが自動復旧し、authenticated stateを維持した。original access tokenはlogin成功観測`19:03:38`より前に発行され、3600秒設定により遅くとも`20:03:38`にはexpiredしている。そのため`20:13`以降のauthenticated Bearer successはnatural refresh recoveryを実証する。repoのretryable failure session candidate保持、foreground retry、single-flight、BFF retry最大1回がcorroborateする。
+
+M17を`PASS_ACTUAL_DEVICE_TRANSIENT_REFRESH_RECOVERY`とする。provenanceは`ACTUAL_DEVICE + CONTROLLED_NETWORK + NATURAL_SESSION_REFRESH_TRIGGER`。B1D2A case-level残件は0だが、全case ledger/provenance/final guards/Unit F result/B1D2B/B1D2C残存を確認する別の`B1D2A_FINAL_CLOSEOUT_AUDIT`前なので、B1D2A全体はまだ`OPEN`。B1D2B/Gate 2へ自動進行しない。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。
