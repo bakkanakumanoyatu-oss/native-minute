@@ -53,9 +53,9 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | D4 | `PASS_AT_CHECKPOINT` | Unit F4 warm、accepted Human safe evidenceのM01 cold、このwaveのM03 foreground actual-deviceをcase単位でPASS |
 | D5 | `PARTIAL` | Unit D1 repo/local response、Unit D2 live response、Unit F3 diagnosticsあり。case単位のfinal ledger closeが残る |
 | D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
-| D7 | `OPEN` | M03/M04/M05/M06A/M13/M24/M25をactual-device/network proofで閉じ、3件（M08/M17/M22）が残る |
+| D7 | `OPEN` | M22をcontrolled isolated clean-install actual-device proofで閉じ、2件（M08/M17）が残る |
 | D8 | `PASS_ACTUAL_STAGING_USER_AB_ISOLATION` | 通常Web User A flowでowned scriptを作成。Mobile User Aでは表示、正常認証/BFFのUser Bでは非表示をactual stagingで確認。Bearer verified user filterとRLSがcorroborate |
-| D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M13 offline、M04/M05 fallback/install-after-fallback actualはPASS。M17は安全な自然refresh trigger待ち、M22 AASA outage等が残る |
+| D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M13 offline、M04/M05 fallback/install-after-fallback、M22 AASA-unavailable actualはPASS。M17は安全な自然refresh trigger待ち |
 | D13 | `PASS_AT_CHECKPOINT` | Unit F3のfocused/all mobile tests、lint/typecheck、staging/release/auth guards、signed build |
 | D15 | `PASS_AT_CHECKPOINT` | Unit A/C/D/E/F3のcontract-unchanged記録とregression tests |
 
@@ -89,7 +89,7 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M19 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M20 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout-restart actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M21 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | provider revoke後のexpiry/refresh挙動 |
-| M22 | A | `OPEN_NEEDS_NETWORK_OR_FAILURE_CONDITION` | source/configはfail safe、AASA unavailable時のEdge/actual-device proofが残る |
+| M22 | A | `PASS_CONTROLLED_ISOLATED_AD_REAL_FAILURE_PROOF` | isolated Preview AASA 404、clean-installed developer-mode artifact、Notesからのsecret-free actual tapでSafari safe recovery。custom scheme/認証/`/SCRIPTS`/crashなし。[actual result](./b1d2a-m22-clean-install-actual-behavior-proof-result.md) |
 | M23 | B | `OPEN — APP_STORE_RELEASE_BLOCKER` | mail scanner/prefetch挙動とreviewer運用 |
 | M24 | A | `PASS_ACTUAL_STAGING_USER_AB_ISOLATION` | 通常Web UIでUser A owned scriptを作成。Mobile User Aでは表示し、正常なauthenticated Bearer/BFF responseのUser Bでは非表示。repo owner filter/RLSがcorroborate。[combined proof result](./b1d2a-m24-m25-combined-actual-proof-result.md) |
 | M25 | A | `PASS_LIVE_WEB_COOKIE_MOBILE_BEARER_COEXISTENCE` | Web User A cookieとMobile User A Bearer/Keychainを同時維持し、両方でowned script/BFFを確認。Mobile-only logout後もWeb cookieは維持。[combined proof result](./b1d2a-m24-m25-combined-actual-proof-result.md) |
@@ -167,6 +167,10 @@ M17/M08 natural-expiry waveでは、M05直後のauthenticated mobile sessionと�
 
 M17判定後にnormal mobile logoutで`/LOGIN`へ戻り、Supabase staging Dashboardをread-onlyで確認してEmail OTP/link expiryが3600秒であることを確認した。設定は変更していない。Mobile `/LOGIN`からfresh Link Eを1通発行しようとしたがrate-limit UIとなり、発行済みとは扱わず、未消費linkの自然失効待ちとexpired tapは開始していない。M08は`PENDING_RATE_LIMIT`。詳細は[M17/M08 natural-expiry wave result](./b1d2a-m17-m08-natural-expiry-wave-result.md)を正とする。B1D2Aの残件数は3件（M08/M17/M22）で変わらない。
 
+M22 clean-install actual-behavior proofでは、verified runtime baseからAASAだけを除いたisolated Previewを用意し、fixed staging/productionへpromoteしなかった。iPhone 14 Plus / iOS 26.2.1から通常Staging appを完全uninstallしてbundle不在を確認後、exact `applinks:<isolated-preview-host>?mode=developer`を持つsigned artifactをclean installした。Vercel Authenticationを`native-minute-staging` projectだけで一時disableし、Preview AASA 404 / callback 303 / recovery 200 / Set-Cookie 0を確認した。clean-install直後の`swcd`はDeveloper Mode有効とmasked temporary domainへの`.wk` AASA data taskを記録した。
+
+Notesに置いたsecret-free Preview callbackを1回tapするとNative appは自動起動せず、Safariのsafe recoveryへ進んだ。custom scheme fallback、unexpected auth、`/SCRIPTS`、crashはなく、original M22 DoDをactual routingで満たしたためM22を`PASS_CONTROLLED_ISOLATED_AD_REAL_FAILURE_PROOF`とする。Universal Links Diagnostics UIはV2で再実行せず、以前のgreen表示をPASS根拠にしていない。Protectionは593秒で`all_except_custom_domains`へ復元し、temporary appを削除、normal Staging appを再installした。fixed staging callbackのsecret-free Notes tapがNative appを開き`/LOGIN`を維持したため、normal association復旧もPASS。詳細は[M22 clean-install actual-behavior proof result](./b1d2a-m22-clean-install-actual-behavior-proof-result.md)を正とする。B1D2A残件は2件（M08/M17）である。
+
 Conditional Remediation Bの初回確認は、last-known repo resultにないmobile query wildcardを検出したためapproved STOP conditionを適用した。このhistorical STOPは保持する。後続Human DecisionはHuman-provided historical Unit E evidenceと照合し、`https://native-minute-staging.vercel.app/mobile/auth/callback\?**`をquery-bearing mobile redirectTo用のauthorized entryとしてreconcileした。既存Debug / exact mobile / mobile queryを維持し、exact Web callback `https://native-minute-staging.vercel.app/auth/callback?next=%2Fscripts`を1件だけ追加した。post-checkは4 entriesちょうど、Site URL / default templates / Custom SMTP不変をPASSした。Remediation Bは`WEB_STAGING_AUTH_CONFIGURATION_PREREQUISITE_RESOLVED_CONFIG_ONLY`で、M24/M25は上表のactual proof pendingへ移行する。
 
 M24/M25 combined actual proofの初回User A `/scripts`はserver-side exception（safe digest `182509400`）でSTOPした。後続read-only diagnosticは`JWT issued at future`を特定し、callback exchange成功、cookie persistence、auth resolution成功、authenticated PostgREST `takes` query前段のtime validation failureまで安全に切り分けた。承認済みの既存cookie 1回reloadは正常表示となり、replacement Web linkなしでproofを再開した。通常Web UIでUser A owned scriptを作成し、Web cookieとMobile Bearer/Keychainの同時維持、Mobile-only logout後のWeb cookie維持、Mobile User Aではresource表示、正常認証/BFFのUser Bでは非表示を確認した。M24は`PASS_ACTUAL_STAGING_USER_AB_ISOLATION`、M25は`PASS_LIVE_WEB_COOKIE_MOBILE_BEARER_COEXISTENCE`で、残件は5件とする。provenanceは[combined proof result](./b1d2a-m24-m25-combined-actual-proof-result.md)を正とする。
@@ -206,4 +210,4 @@ Codexは外部Workのテンプレート本文を制作、翻訳、編集、補�
 
 ## 次のsingle action
 
-M17/M08 pending evidenceをcommitした時点で停止する。次のsingle action候補は、M08のrate limitが自然に解除される間に行う別承認のM22 controlled AASA outage proofである。ここから自動でM22、Magic Link再送、expiry tap、source/config変更、B1D2B、Gate 2へ進まない。
+M22 evidenceをcommitした時点で停止する。次のsingle action候補は、別承認のM08 fresh-link natural-expiry proofである。ここから自動でMagic Link再送、expiry待ち/tap、M17、source/config変更、B1D2B、Gate 2へ進まない。

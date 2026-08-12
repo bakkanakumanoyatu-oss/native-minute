@@ -162,6 +162,16 @@ M17判定後にnormal mobile logoutで`/LOGIN`へ戻った。Supabase staging Da
 
 B1D2Aは3件（M08/M17/M22）を残して`OPEN`で、updated remaining engineering effortは外部の自然待ちとreview iterationを除き約0.5〜1.0人日である。次のsingle action候補は別承認のM22 controlled AASA outage proofであり、自動で開始しない。
 
+### 2026-08-12 M22 clean-install actual-behavior proof
+
+M22はisolated Previewでcontrolled failureを作り、fixed staging outageにはしなかった。Preview sourceはverified runtime baseからAASA fileだけを除き、temporary signed artifactはexact `applinks:<isolated-preview-host>?mode=developer`、staging identity、`authConfigured=true`、custom schemeなしをartifactから確認した。iPhone 14 Plus / iOS 26.2.1で既存Staging appを完全uninstallしてbundle不在を確認し、temporary artifactをclean installした。
+
+Vercel Authenticationを`native-minute-staging` projectだけで一時disableし、Preview AASA 404、callback 303、recovery 200、callback Set-Cookie 0を確認後に実機proofへ進んだ。`swcd`はDeveloper Mode有効とmasked temporary domainへの`.wk` AASA取得taskを記録した。Notes上のsecret-free Preview callbackを1回tapするとNative appは自動起動せずSafari safe recoveryとなり、custom scheme fallback、unexpected auth、`/SCRIPTS`、crashはなかった。actual routingを主証拠としてM22を`PASS_CONTROLLED_ISOLATED_AD_REAL_FAILURE_PROOF`とする。Universal Links Diagnostics UIはV2で再実行せず、以前のgreen表示はPASS根拠にしていない。
+
+Protectionは593秒（9分53秒）で`all_except_custom_domains`へ復元した。temporary appを除去してnormal Staging appを再installし、fixed staging secret-free callbackのNotes tapがNative appを開いて`/LOGIN`を維持したためnormal association復旧もPASS。fixed staging AASA / Apple CDN AASAは200、callback 303、recovery 200、production deployment不変。case別provenanceは[`b1d2a-m22-clean-install-actual-behavior-proof-result.md`](./b1d2a-m22-clean-install-actual-behavior-proof-result.md)を正とする。
+
+B1D2Aは2件（M08/M17）を残して`OPEN`で、updated remaining engineering effortは外部の自然待ちとreview iterationを除き約0.25〜0.5人日である。M08/M17へ自動で進まない。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。
