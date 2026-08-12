@@ -138,6 +138,14 @@ User Aは通常staging Web UIからfresh Web Magic Linkを1通だけ発行して
 
 M24/M25はともに`OPEN_BLOCKED_WEB_USER_A_SCRIPTS_SERVER_EXCEPTION`。source/configを変更せず、root causeは`UNKNOWN`のまま。詳細は[`b1d2a-m24-m25-combined-actual-proof-result.md`](./b1d2a-m24-m25-combined-actual-proof-result.md)を正とする。B1D2Aは7件を残して`OPEN`で、updated remaining engineering effortは約1.75〜3.5人日。次は別承認のread-only `WEB_USER_A_SCRIPTS_SERVER_EXCEPTION_DIAGNOSTIC`である。
 
+### 2026-08-12 M24/M25 authorized resume and PASS
+
+後続read-only diagnosticはsafe digest `182509400`を`JWT issued at future`へ相関し、callback exchange成功、cookie persistence、`/scripts` auth resolution成功、authenticated PostgREST `takes` query前段のJWT time validation failureまで切り分けた。Human Decision `HDC_B1D2A_WEB_USER_A_EXISTING_COOKIE_SINGLE_RELOAD_AND_RESUME_M24_M25_V1`に基づき、新しいWeb Magic Linkを発行せず既存User A cookieで`/scripts`を1回だけreloadし、正常render、authenticated state維持、server exceptionなしを確認して`WEB_USER_A_EXISTING_COOKIE_RELOAD_PASS`とした。初回clock-skew exceptionは履歴として保持するが、継続blocking defectとしては再現しなかった。
+
+通常Web UIだけでUser A owned scriptを作成し、Mobile User Aでは同resourceと正常Bearer BFFを確認した。Web User A cookieとMobile User A Bearer/Keychainを同時維持し、双方の通常navigation/reconnect後もresource/sessionが維持されたため、M25を`PASS_LIVE_WEB_COOKIE_MOBILE_BEARER_COEXISTENCE`とする。Mobile-only logout後もWeb User A cookieとresource表示は維持された。続いて正常認証/BFFのMobile User BではUser A resourceが表示されず、User A positive baseline、User B authenticated response、repoのverified-user owner filter、`scripts_crud_own` RLSを合わせ、M24を`PASS_ACTUAL_STAGING_USER_AB_ISOLATION`とする。
+
+actual-device観測はHuman-reported current device result、Webはlive staging browser observation、runtimeはsafe log、owner filter/RLSはcorroborating repo implementation evidenceとして分離する。actual-device evidenceをrepo-generatedとは表現しない。source/test/config/DB/productionは変更していない。詳細は[`b1d2a-m24-m25-combined-actual-proof-result.md`](./b1d2a-m24-m25-combined-actual-proof-result.md)を正とする。B1D2Aは5件（M04/M05/M08/M17/M22）を残して`OPEN`で、updated remaining engineering effortはprovider/AASA/device cache待ちとreview iterationを除き約1.0〜1.75人日である。次の別承認actionはM04/M05 exact actual-device fallback sequenceであり、自動で開始しない。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。
