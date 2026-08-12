@@ -172,6 +172,12 @@ Protectionは593秒（9分53秒）で`all_except_custom_domains`へ復元した�
 
 B1D2Aは2件（M08/M17）を残して`OPEN`で、updated remaining engineering effortは外部の自然待ちとreview iterationを除き約0.25〜0.5人日である。M08/M17へ自動で進まない。
 
+### 2026-08-12 M08-only rate-limit recheck
+
+M08-only V1はmainline/live endpoint/通常Staging appのpreflightをPASSし、Human observerがMobile `/LOGIN`から許可されたsendを1回だけ実行した。actual-device resultはrate limitで、Link E発行は確認できなかった。current Supabase Dashboard sessionはsigned outだったためexpiry settingを新規確認したとはせず、contradictionのないlast-known read-only値3600秒を保持する。再送、link open、自然失効待ち、expired tap、provider設定変更、M17は実行していない。
+
+M08は`PENDING_RATE_LIMIT`のままで、expired-link rejection/recoveryのPASSは主張しない。case別provenanceとsafe timestampは[`b1d2a-m08-real-provider-natural-expiry-proof-result.md`](./b1d2a-m08-real-provider-natural-expiry-proof-result.md)を正とする。B1D2A残件は2件（M08/M17）、updated remaining engineering effortは外部の自然待ちとreview iterationを除き約0.25〜0.5人日で変わらない。rate limitの自然解除後に別runを開始するまで、自動再送やM17へ進まない。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。
