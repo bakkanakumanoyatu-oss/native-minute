@@ -1,6 +1,6 @@
 # B1D2 Production Mobile Auth readiness / execution plan
 
-> Status: **REBASELINED_SPLIT — B1D2A OPEN / B1D2B APP_STORE_RELEASE_BLOCKER / B1D2C DEFERRED_WITH_OWNER_AND_REVIEW_GATE**
+> Status: **REBASELINED_SPLIT — B1D2A CLOSED_COMMITTED_PASS / B1D2B APP_STORE_RELEASE_BLOCKER / B1D2C DEFERRED_WITH_OWNER_AND_REVIEW_GATE**
 >
 > 調査基準日: 2026-07-26
 > 人間確認情報の反映日: 2026-07-29
@@ -14,6 +14,7 @@
 > scope rebaseline更新日: 2026-08-11
 > B1D2A repo-only evidence batch更新日: 2026-08-11
 > B1D2A P0 negative/timeout wave更新日: 2026-08-11
+> B1D2A final closeout更新日: 2026-08-12
 > 調査worktree: `/Users/karasawatakahiro/.codex/worktrees/b4db/native-minute`
 > 調査branch: `feature/mobile-auth-gate`
 > 調査HEAD: `1e344297b5bc75ac4a8dad438df231fea0242241`
@@ -201,6 +202,14 @@ safe refresh window後、appをbackgroundのままAirplane Mode ON / Wi-Fi OFF�
 Airplane Mode OFF / Wi-Fi ON後、Control Centerを閉じて既存foreground retry pathへ戻ると、owned script 1件とBearer BFFが自動復旧し、authenticated stateを維持した。original access tokenはlogin成功観測`19:03:38`より前に発行され、3600秒設定により遅くとも`20:03:38`にはexpiredしている。そのため`20:13`以降のauthenticated Bearer successはnatural refresh recoveryを実証する。repoのretryable failure session candidate保持、foreground retry、single-flight、BFF retry最大1回がcorroborateする。
 
 M17を`PASS_ACTUAL_DEVICE_TRANSIENT_REFRESH_RECOVERY`とする。provenanceは`ACTUAL_DEVICE + CONTROLLED_NETWORK + NATURAL_SESSION_REFRESH_TRIGGER`。B1D2A case-level残件は0だが、全case ledger/provenance/final guards/Unit F result/B1D2B/B1D2C残存を確認する別の`B1D2A_FINAL_CLOSEOUT_AUDIT`前なので、B1D2A全体はまだ`OPEN`。B1D2B/Gate 2へ自動進行しない。
+
+### 2026-08-12 B1D2A final closeout authoritative update
+
+final closeout auditでrebaseline正本、B1D1/Unit A/C/D/E/F results、全B1D2A case result、current implementation/tests/historyを再照合した。M01-M20/M22/M24/M25の24 caseはすべてPASS-classで、OPEN/PENDING/UNKNOWNは0。M01/M19/M20は`HUMAN_SAFE_EVIDENCE`のまま保持し、repo-direct actual-device evidenceや今回の再実行とは表現しない。M08、M17、M22、M24/M25のspecial provenanceも各resultどおり維持する。
+
+current normal Staging artifactはexact `native-minute-staging` target、staging bundle/domain、`authConfigured=true`、secret/service-role非混入を維持する。fixed staging/AASA/CDN/callback/recoveryとproduction isolationはread-only再確認PASS。release/auth guardsとself-tests、14 files / 145 mobile tests、mobile/root typecheck/lint、root build、`git diff --check`もPASSし、verified runtime source以降にdocs以外の変更はない。B1D2A P0/P1は0。exact provider 429 codeをUIへ保持する改善だけをnon-blocking P2として明示deferする。
+
+B1D2Aは`CLOSED_COMMITTED_PASS`、`closedAt=2026-08-12T20:29:29+09:00`。original B1D2は`REBASELINED_SPLIT`、B1D2Bは`OPEN — APP_STORE_RELEASE_BLOCKER`、B1D2Cは`DEFERRED_WITH_OWNER_AND_REVIEW_GATE`のまま残す。100 templates本文制作はExternal Workであり開始していない。case/provenance/D-side/guardの統合正本は[`b1d2a-final-closeout-audit-result.md`](./b1d2a-final-closeout-audit-result.md)。Gate 2へは進まない。
 
 ## 判定ラベル
 

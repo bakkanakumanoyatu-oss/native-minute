@@ -13,7 +13,7 @@ original B1D2は最初からrelease-wideだった。`7c85ff5`の初回完全版�
 | Scope | Status | 意味 |
 |---|---|---|
 | original B1D2 | `REBASELINED_SPLIT` | A/B/Cへ追跡可能な形で分割済み。単独のPASS対象ではない |
-| `B1D2A_STAGING_AUTH_CORE` | `OPEN` | 次に`CLOSED_COMMITTED_PASS`を目指す |
+| `B1D2A_STAGING_AUTH_CORE` | `CLOSED_COMMITTED_PASS` | 2026-08-12のfinal closeout auditでcase/guard/docsを閉じた |
 | `B1D2B_RELEASE_READINESS` | `OPEN — APP_STORE_RELEASE_BLOCKER` | App Store release前に閉じる。削除・deferしない |
 | `B1D2C_DEFERRED_HARDENING` | `DEFERRED_WITH_OWNER_AND_REVIEW_GATE` | ownerとreview gateを維持し、必要ならHuman DecisionでBへ昇格する |
 
@@ -47,19 +47,19 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 
 | A-side DoD | Status | Git-authoritative evidence / remaining gap |
 |---|---|---|
-| D1 | `PARTIAL` | Unit A/C/Eにstaging identity/config/external mappingあり。A ownerとfinal ledger closeが残る |
-| D2 | `PASS_AT_CHECKPOINT` | Unit AのDebug/Staging/Release Info.plistとexact staging callback isolation |
-| D3 | `PASS_AT_CHECKPOINT` | Unit Cのsource/signed entitlement、profile、exact staging domain |
-| D4 | `PASS_AT_CHECKPOINT` | Unit F4 warm、accepted Human safe evidenceのM01 cold、このwaveのM03 foreground actual-deviceをcase単位でPASS |
-| D5 | `PARTIAL` | Unit D1 repo/local response、Unit D2 live response、Unit F3 diagnosticsあり。case単位のfinal ledger closeが残る |
-| D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
-| D7 | `PASS_AT_CHECKPOINT` | M22/M08/M17をcontrolled actual-device proofで閉じた。B1D2A final closeout auditは別工程 |
+| D1 | `PASS_AT_CLOSEOUT` | Unit A/C/Eのstaging identity/config/external mappingとcurrent artifact targetをfinal ledgerで確認 |
+| D2 | `PASS_AT_CLOSEOUT` | Unit AのDebug/Staging/Release Info.plistとexact staging callback isolation |
+| D3 | `PASS_AT_CLOSEOUT` | Unit Cのsource/signed entitlement、profile、exact staging domain |
+| D4 | `PASS_AT_CLOSEOUT` | Unit F4 warm、accepted Human safe evidenceのM01 cold、このwaveのM03 foreground actual-deviceをcase単位でPASS |
+| D5 | `PASS_AT_CLOSEOUT` | Unit D1/D2、Unit F3、M04/M05/M22とcurrent origin/CDN AASAをfinal ledgerで確認 |
+| D6 | `PASS_AT_CLOSEOUT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
+| D7 | `PASS_AT_CLOSEOUT` | M01-M20/M22/M24/M25はすべてPASS-class、case-level残件0 |
 | D8 | `PASS_ACTUAL_STAGING_USER_AB_ISOLATION` | 通常Web User A flowでowned scriptを作成。Mobile User Aでは表示、正常認証/BFFのUser Bでは非表示をactual stagingで確認。Bearer verified user filterとRLSがcorroborate |
-| D9 | `PASS_AT_CHECKPOINT` | M10/M11 negative、M14 bounded timeout、M13 offline、M04/M05 fallback、M22 AASA unavailable、M17 transient refresh recoveryをcase単位でPASS |
-| D13 | `PASS_AT_CHECKPOINT` | Unit F3のfocused/all mobile tests、lint/typecheck、staging/release/auth guards、signed build |
-| D15 | `PASS_AT_CHECKPOINT` | Unit A/C/D/E/F3のcontract-unchanged記録とregression tests |
+| D9 | `PASS_AT_CLOSEOUT` | M10/M11 negative、M14 bounded timeout、M13 offline、M04/M05 fallback、M22 AASA unavailable、M17 transient refresh recoveryをcase単位でPASS |
+| D13 | `PASS_AT_CLOSEOUT` | Unit F3 evidenceとfinal guardの145 mobile tests、lint/typecheck、staging/release/auth guards、build |
+| D15 | `PASS_AT_CLOSEOUT` | Unit A/C/D/E/F3のcontract-unchanged記録、regression tests、post-evidence source不変を確認 |
 
-このledgerの`PASS_AT_CHECKPOINT`は、その行の既存evidenceを機械的に再実行する要求ではない。A全体のcloseにはOPEN/PARTIAL/UNKNOWNの解消と、採用evidenceを参照するfinal committed ledgerが必要である。
+このledgerの`PASS_AT_CHECKPOINT`は、その行の既存evidenceを機械的に再実行する要求ではない。2026-08-12のfinal closeout auditでOPEN/PARTIAL/UNKNOWNを解消し、採用evidenceを参照するfinal committed ledgerを固定した。D1/D5を含むA-side DoDはすべてclose済みである。
 
 ## M01〜M28 exact mapping / evidence ledger
 
@@ -107,7 +107,7 @@ B1D2Aを`CLOSED_COMMITTED_PASS`にできるのは、次をすべて満たした�
 4. B1D1のKeychain envelope/item identity、native-owned PKCE binding、`exchangeStartedAt`、one-time/replay reasons、refresh/logout、Bearer-only BFF、Web cookie separationを変えない。
 5. Unit F result、`docs/current-state.md`、`README.md`を同期し、docs/code/verificationの対象commitをpushしてworking treeをcleanにする。
 
-現checkpointではB1D2Aは`OPEN`であり、上記未充足caseのPASSを主張しない。
+2026-08-12のfinal closeout auditで全条件を確認し、B1D2Aを`CLOSED_COMMITTED_PASS`とした。`closedAt`は`2026-08-12T20:29:29+09:00`。case-level PASS-class 24、OPEN/PENDING/UNKNOWN 0、P0 0、P1 0で、詳細は[final closeout audit result](./b1d2a-final-closeout-audit-result.md)を正とする。original B1D2は`REBASELINED_SPLIT`、B1D2Bは`OPEN — APP_STORE_RELEASE_BLOCKER`、B1D2Cは`DEFERRED_WITH_OWNER_AND_REVIEW_GATE`のままである。
 
 ## B1D2B release blockers
 
