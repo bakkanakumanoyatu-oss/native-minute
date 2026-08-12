@@ -146,6 +146,14 @@ M24/M25はともに`OPEN_BLOCKED_WEB_USER_A_SCRIPTS_SERVER_EXCEPTION`。source/c
 
 actual-device観測はHuman-reported current device result、Webはlive staging browser observation、runtimeはsafe log、owner filter/RLSはcorroborating repo implementation evidenceとして分離する。actual-device evidenceをrepo-generatedとは表現しない。source/test/config/DB/productionは変更していない。詳細は[`b1d2a-m24-m25-combined-actual-proof-result.md`](./b1d2a-m24-m25-combined-actual-proof-result.md)を正とする。B1D2Aは5件（M04/M05/M08/M17/M22）を残して`OPEN`で、updated remaining engineering effortはprovider/AASA/device cache待ちとreview iterationを除き約1.0〜1.75人日である。次の別承認actionはM04/M05 exact actual-device fallback sequenceであり、自動で開始しない。
 
+### 2026-08-12 M04/M05 actual-device fallback closeout
+
+iPhone 14 Plus / iOS 26.2.1で、Mobile用fresh Link Aを通常Staging `/LOGIN`から1通だけ発行した。Link Aを開く前にappをuninstallし、Codexのdevice inspectionでstaging bundle不在を確認した。Link Aを1回だけtapするとSafari safe recoveryが表示され、app起動、認証成功表示、秘密callback値の表示、custom scheme自動遷移、crashはなかった。recovery guidanceはbrowserでsessionを作らず、install後に新しいlinkを発行し、現在のLink Aを再利用しないよう明示した。既存live 303/no-cookie/query-free recoveryとrepoのprovider/Web-session bypassをcorroborationとして、M04を`PASS_ACTUAL_DEVICE_SAFE_SAFARI_FALLBACK`とする。platform/infrastructure raw-query loggingは引き続き`UNKNOWN`である。
+
+既存signed device artifactが残っていなかったため、同期済み`authConfigured=true` bundleをcurrent `App` scheme / `Staging` configurationでtemporary directoryへ1回だけbuildした。strict codesign、staging application identifier、exact Associated Domain、staging metadataを確認し、source/config/signing設定/provisioning/productionは変更していない。同じverified artifactをM05で再buildせずinstall・通常起動した。Link Aを再利用せず、normal Staging `/LOGIN`からfresh Link Bを1通だけ発行して1回tapし、native `/SCRIPTS`、Bearer BFF、Safari recovery/localhost/callback failure/duplicate/crashなしを確認したため、M05を`PASS_ACTUAL_DEVICE_FRESH_LINK_AFTER_INSTALL`とする。
+
+actual-device/Human observation、Codex device install-state、live staging Web/Auth、corroborating repo implementationをprovenance別に記録する。詳細は[`b1d2a-m04-m05-actual-device-fallback-closeout-result.md`](./b1d2a-m04-m05-actual-device-fallback-closeout-result.md)を正とする。B1D2Aは3件（M08/M17/M22）を残して`OPEN`で、updated remaining engineering effortはprovider expiry/AASA device cache待ちとreview iterationを除き約0.75〜1.25人日である。次の別承認actionはM08 real provider-expiry proofであり、自動で開始しない。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。
@@ -704,8 +712,8 @@ verification surface:
 | M01 | AD-real | staging / installed / app cold | 新規Magic Linkをtap | app cold launch、exact callbackを1回処理、local `/scripts`へ |
 | M02 | AD-real | staging / installed / app warm | background中に新規linkをtap | existing appへdelivery、同じhandlerで成功 |
 | M03 | AD-real | staging / installed / foreground | linkをtap | duplicate UI/navigationなしで成功 |
-| M04 | Repo local + AD-real + Edge | staging / not installed | fresh Link Aをtap | local proofはfixed 303 → query-free recovery、body/application log/provider exchange/Web session/custom schemeなし。Safari actualとplatform logging確認が残る |
-| M05 | Repo local + AD-real | staging / install after M04 | Link Aを再利用せずfresh Link Bを発行 | guidance/procedureはlocal ready。Link Bでnative callback成功のactual-device proofが残る |
+| M04 | Repo local + AD-real + Edge | staging / not installed | fresh Link Aをtap | `PASS_ACTUAL_DEVICE_SAFE_SAFARI_FALLBACK`。app不在、Safari recovery、非認証、秘密値非表示、custom scheme遷移/crashなし。platform raw-query loggingのみ`UNKNOWN` |
+| M05 | Repo local + AD-real | staging / install after M04 | Link Aを再利用せずfresh Link Bを発行 | `PASS_ACTUAL_DEVICE_FRESH_LINK_AFTER_INSTALL`。verified signed Staging artifact、fresh Link B、native `/SCRIPTS`、Bearer BFF、duplicate/crashなし |
 | M06A | AD-real | staging / consumed Magic Link | 同じemail linkを再tap | providerで消費済み等によりappへ再deliveryされない場合を許容し、二重sessionなし。duplicate reasonを必須としない |
 | M06B | Repo + AD-synth | staging / final callback duplicate | 同一dummy final callbackを2回delivery | exchange最大1回、2回目はduplicate/replay reason |
 | M07 | Repo | staging / racing delivery | warm eventとlaunch URLを同時injection | session二重生成なし、最大1回exchange |
