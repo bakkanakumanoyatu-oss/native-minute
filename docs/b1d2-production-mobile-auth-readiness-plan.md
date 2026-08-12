@@ -186,6 +186,14 @@ current Email OTP/link expiry `3600`秒を変更せず、Mobile `/LOGIN`からfr
 
 M08を`PASS_ACTUAL_DEVICE_EXPIRED_PROVIDER_LINK`とする。provenanceは`ACTUAL_DEVICE + LIVE_STAGING_AUTH + NATURAL_PROVIDER_EXPIRY`で、repo/build/live/config evidenceとは分離する。B1D2AはM17の1件だけを残して`OPEN`、updated remaining engineering effortは自然待ちとreview iterationを除き約0.25人日である。M17へ自動進行しない。
 
+### 2026-08-12 M17 final natural-refresh window checkpoint
+
+current M17 contractは`autoRefreshToken=false`のもと、persisted expiryの60秒前からforeground activationでrefreshする。BFFのexact `401 session_expired`もrefreshとBearer retryを最大1回行う。network/429/5xx等のretryable refresh failureは`authenticated`へ戻してKeychain候補を保持し、network復旧後のforegroundで再試行できる。`refreshOperation`がconcurrent refreshをsingle-flightする。source/test変更はない。
+
+fresh Link F 1通の1回tapでiPhone 14 Plus / iOS 26.2.1のnative `/SCRIPTS`、owned script 1件、Bearer BFF、error/crashなしを確認した。current Supabase access-token expiryはread-onlyで3600秒。safe direct `expiresAt`はUI/Auth Logsで取得できず、raw token decodeとKeychain dumpを禁止どおり避けたため、login成功観測`2026-08-12T19:03:38+09:00`から保守的に推定する。refresh window entryは遅くとも`20:02:38+09:00`、安全な再開時刻は`20:05+09:00`。appはforce-quitせずbackgroundにある。
+
+M17は`READY_PENDING_NATURAL_REFRESH_WINDOW`。actual transient outage/recoveryはまだ未実施・未PASSで、B1D2A case-level残件はM17の1件。次は20:05以降にiPhoneを先にfully offlineへしてからforegroundする既存pathであり、自動進行しない。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。

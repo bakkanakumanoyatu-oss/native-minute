@@ -84,7 +84,7 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M14 | A | `PASS_FOCUSED_REPO_FAULT_PROOF` | persisted pending expiryをdeadlineにexchangeをabortし、same callbackのexchange最大1回 |
 | M15 | A | `PASS_AT_CHECKPOINT` | Unit F4 terminate/relaunch、Keychain restore、Bearer BFF、callback非再消費 |
 | M16 | A | `PASS_EXISTING_TEST_REEXECUTION` | access expiry、single-flight refresh、BFF retry最大1回。既存focused testとB1D1 contract再確認PASS |
-| M17 | A | `PENDING_NATURAL_REFRESH_TRIGGER` | M05直後のauthenticated sessionは`/SCRIPTS` / Bearer BFF正常。exact expiryは安全なUIに露出せず、自然なexpiry 60秒前またはBFF `session_expired`へ未到達。retryable failure時のsession/Keychain保持はrepo PASS。[wave result](./b1d2a-m17-m08-natural-expiry-wave-result.md) |
+| M17 | A | `READY_PENDING_NATURAL_REFRESH_WINDOW` | fresh Link Fで`/SCRIPTS` / owned script / Bearer BFF正常。current access-token expiry 3600秒とlogin観測からrefresh windowは遅くとも2026-08-12 20:02:38 JST、安全な再開時刻は20:05。appはforce-quitせずbackground。[M17 result](./b1d2a-m17-final-natural-refresh-proof-result.md) |
 | M18 | A | `PASS_EXISTING_TEST_REEXECUTION` | invalid refresh 401で`auth_session_invalid`、Keychain clear。external revokeは別のM21 |
 | M19 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M20 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout-restart actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
@@ -217,3 +217,7 @@ Codexは外部Workのテンプレート本文を制作、翻訳、編集、補�
 ## 次のsingle action
 
 M08 PASS evidenceをcommitした時点で停止する。次のsingle action候補は、別承認で開始するM17 natural refresh trigger proofである。ここから自動でMagic Link再送、Link E再tap、M17、source/config変更、B1D2B、Gate 2へ進まない。
+
+後続M17 final natural-refresh proofでは、current source/testsから`expiresAt <= now + 60秒`のforeground refresh、BFF `session_expired`時の1回refresh/retry、retryable failure時のauthenticated/Keychain保持、foreground再試行、single-flightを再確認した。current Supabase access-token expiryはread-onlyで3600秒、設定変更なし。fresh Link Fを1通だけ使い、iPhone 14 Plus / iOS 26.2.1でnative `/SCRIPTS`、owned script 1件、Bearer BFF、error/crashなしを確認後、appをforce-quitせずbackgroundへ置いた。
+
+raw token/Keychainを読まず、safe direct `expiresAt`もUI/logにないため、login成功観測`2026-08-12T19:03:38+09:00`と3600秒設定から保守的に算出する。refresh window entryは遅くとも`20:02:38+09:00`、安全な再開時刻は`20:05+09:00`。M17は`READY_PENDING_NATURAL_REFRESH_WINDOW`で、actual outage/recovery PASSはまだ主張しない。B1D2A case-level残件はM17の1件のまま。次は20:05以降、background中のiPhoneを先にofflineへする1操作であり、自動進行しない。
