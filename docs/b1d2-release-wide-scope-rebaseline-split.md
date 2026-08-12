@@ -55,7 +55,7 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | D6 | `PASS_AT_CHECKPOINT` | Unit E exact redirectとUnit F4 dynamic binding / same-device PKCE success |
 | D7 | `OPEN` | M03/M04/M05/M06A/M13/M24/M25をactual-device/network proofで閉じ、3件（M08/M17/M22）が残る |
 | D8 | `PASS_ACTUAL_STAGING_USER_AB_ISOLATION` | 通常Web User A flowでowned scriptを作成。Mobile User Aでは表示、正常認証/BFFのUser Bでは非表示をactual stagingで確認。Bearer verified user filterとRLSがcorroborate |
-| D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M13 offline、M04/M05 fallback/install-after-fallback actualはPASS。M17 refresh failure/recoveryとM22 AASA outage等が残る |
+| D9 | `OPEN` | M10/M11 negative、M14 bounded timeout、M13 offline、M04/M05 fallback/install-after-fallback actualはPASS。M17は安全な自然refresh trigger待ち、M22 AASA outage等が残る |
 | D13 | `PASS_AT_CHECKPOINT` | Unit F3のfocused/all mobile tests、lint/typecheck、staging/release/auth guards、signed build |
 | D15 | `PASS_AT_CHECKPOINT` | Unit A/C/D/E/F3のcontract-unchanged記録とregression tests |
 
@@ -75,7 +75,7 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M06A | A | `PASS_ACTUAL_DEVICE_CONSUMED_LINK_RETAP` | M03で消費した同じlinkを再tapし`/SCRIPTS` sessionを維持。duplicate navigation/crashなし。[wave result](./b1d2a-consolidated-actual-device-network-wave-result.md) |
 | M06B | A | `PASS_EXISTING_TEST_REEXECUTION` | duplicate final callbackのexchange最大1回。既存focused test再実行PASS |
 | M07 | A | `PASS_EXISTING_TEST_REEXECUTION` | launch URL / retained warm raceのexchange最大1回。既存focused test再実行PASS |
-| M08 | A | `PENDING_EXTERNAL_EXPIRY_WINDOW` | repo pending-expiryはPASS。dedicatedな未消費provider linkのreal expiry conditionが残る |
+| M08 | A | `PENDING_RATE_LIMIT` | staging Email OTP/link expiryはread-onlyで3600秒を確認。Mobile `/LOGIN`からのLink E発行試行はrate-limit UIとなり、発行を確認できず自然失効待ちは未開始。[wave result](./b1d2a-m17-m08-natural-expiry-wave-result.md) |
 | M09 | A | `PASS_EXISTING_TEST_REEXECUTION` | wrong stateをprovider exchange前に拒否。既存focused test再実行PASS |
 | M10 | A | `PASS_FOCUSED_REPO_PROOF` | wrong nonce/transactionをprovider exchange前に拒否し、exchange 0、session mutationなし |
 | M11 | A | `PASS_FOCUSED_REPO_PROOF` | 4 required params各欠落をfixed safe reasonで拒否し、exchange 0、raw detailなし |
@@ -84,7 +84,7 @@ B1D2Aだけが`CLOSED_COMMITTED_PASS`になっても、original B1D2全体を`CL
 | M14 | A | `PASS_FOCUSED_REPO_FAULT_PROOF` | persisted pending expiryをdeadlineにexchangeをabortし、same callbackのexchange最大1回 |
 | M15 | A | `PASS_AT_CHECKPOINT` | Unit F4 terminate/relaunch、Keychain restore、Bearer BFF、callback非再消費 |
 | M16 | A | `PASS_EXISTING_TEST_REEXECUTION` | access expiry、single-flight refresh、BFF retry最大1回。既存focused testとB1D1 contract再確認PASS |
-| M17 | A | `PENDING_CONTROLLED_REFRESH_TRIGGER` | retryable failure時のsession/Keychain保持はrepo PASS。actual authenticated refresh failure→recovery条件が残る |
+| M17 | A | `PENDING_NATURAL_REFRESH_TRIGGER` | M05直後のauthenticated sessionは`/SCRIPTS` / Bearer BFF正常。exact expiryは安全なUIに露出せず、自然なexpiry 60秒前またはBFF `session_expired`へ未到達。retryable failure時のsession/Keychain保持はrepo PASS。[wave result](./b1d2a-m17-m08-natural-expiry-wave-result.md) |
 | M18 | A | `PASS_EXISTING_TEST_REEXECUTION` | invalid refresh 401で`auth_session_invalid`、Keychain clear。external revokeは別のM21 |
 | M19 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
 | M20 | A | `PASS_ACCEPTED_HUMAN_SAFE_EVIDENCE` | Human-provided logout-restart actual-device evidence。repo direct resultなし、実装/tests整合、contradictionなし。[reconciliation result](./b1d2-unit-f-safe-evidence-reconciliation-result.md) |
@@ -163,6 +163,10 @@ focused repo proofはquery値のbody/header非混入、application logging/query
 
 後続actual-device closeoutでは、Mobile用Link Aを通常Staging `/LOGIN`から1通だけ発行し、未開封のままappをuninstallして端末上の不在を確認した。Link Aの1回tapはSafari safe recoveryを表示し、app起動、認証成功、秘密値表示、custom scheme遷移、crashはなかったためM04を`PASS_ACTUAL_DEVICE_SAFE_SAFARI_FALLBACK`とした。その後、同じverified signed Staging artifactを再buildせずinstallし、Link Aを再利用せずfresh Link Bを1回tapしてnative `/SCRIPTS`とBearer BFF、duplicate/crashなしを確認し、M05を`PASS_ACTUAL_DEVICE_FRESH_LINK_AFTER_INSTALL`とした。actual-device、live Web/Auth、corroborating repo evidenceはprovenanceを分離する。詳細は[actual-device fallback closeout result](./b1d2a-m04-m05-actual-device-fallback-closeout-result.md)を正とする。
 
+M17/M08 natural-expiry waveでは、M05直後のauthenticated mobile sessionと現行refresh経路をsecret-freeで照合した。session envelopeはexpiry metadataとrefresh-capable materialを要求し、foreground時のexpiry 60秒前判定、BFF `session_expired`時の1回refresh/retry、retryable failure時のauthenticated/Keychain候補保持、single-flightをrepo evidenceで再確認したが、current sessionは自然なrefresh必要条件へ未到達で、exact expiryを安全に表示するUIもない。TTL、端末時計、token、Keychain、source/configを操作せず、M17を`PENDING_NATURAL_REFRESH_TRIGGER`とした。不足はcurrent sessionが自然なrefresh必要条件へ到達すること1点だけである。
+
+M17判定後にnormal mobile logoutで`/LOGIN`へ戻り、Supabase staging Dashboardをread-onlyで確認してEmail OTP/link expiryが3600秒であることを確認した。設定は変更していない。Mobile `/LOGIN`からfresh Link Eを1通発行しようとしたがrate-limit UIとなり、発行済みとは扱わず、未消費linkの自然失効待ちとexpired tapは開始していない。M08は`PENDING_RATE_LIMIT`。詳細は[M17/M08 natural-expiry wave result](./b1d2a-m17-m08-natural-expiry-wave-result.md)を正とする。B1D2Aの残件数は3件（M08/M17/M22）で変わらない。
+
 Conditional Remediation Bの初回確認は、last-known repo resultにないmobile query wildcardを検出したためapproved STOP conditionを適用した。このhistorical STOPは保持する。後続Human DecisionはHuman-provided historical Unit E evidenceと照合し、`https://native-minute-staging.vercel.app/mobile/auth/callback\?**`をquery-bearing mobile redirectTo用のauthorized entryとしてreconcileした。既存Debug / exact mobile / mobile queryを維持し、exact Web callback `https://native-minute-staging.vercel.app/auth/callback?next=%2Fscripts`を1件だけ追加した。post-checkは4 entriesちょうど、Site URL / default templates / Custom SMTP不変をPASSした。Remediation Bは`WEB_STAGING_AUTH_CONFIGURATION_PREREQUISITE_RESOLVED_CONFIG_ONLY`で、M24/M25は上表のactual proof pendingへ移行する。
 
 M24/M25 combined actual proofの初回User A `/scripts`はserver-side exception（safe digest `182509400`）でSTOPした。後続read-only diagnosticは`JWT issued at future`を特定し、callback exchange成功、cookie persistence、auth resolution成功、authenticated PostgREST `takes` query前段のtime validation failureまで安全に切り分けた。承認済みの既存cookie 1回reloadは正常表示となり、replacement Web linkなしでproofを再開した。通常Web UIでUser A owned scriptを作成し、Web cookieとMobile Bearer/Keychainの同時維持、Mobile-only logout後のWeb cookie維持、Mobile User Aではresource表示、正常認証/BFFのUser Bでは非表示を確認した。M24は`PASS_ACTUAL_STAGING_USER_AB_ISOLATION`、M25は`PASS_LIVE_WEB_COOKIE_MOBILE_BEARER_COEXISTENCE`で、残件は5件とする。provenanceは[combined proof result](./b1d2a-m24-m25-combined-actual-proof-result.md)を正とする。
@@ -202,4 +206,4 @@ Codexは外部Workのテンプレート本文を制作、翻訳、編集、補�
 
 ## 次のsingle action
 
-M04/M05 evidenceをcommitした時点で停止する。次の別承認actionはM08のreal provider-expiry proofである。ここから自動でMagic Link発行、expiry待ち、M17/M22、source/config変更、B1D2B、Gate 2へ進まない。
+M17/M08 pending evidenceをcommitした時点で停止する。次のsingle action候補は、M08のrate limitが自然に解除される間に行う別承認のM22 controlled AASA outage proofである。ここから自動でM22、Magic Link再送、expiry tap、source/config変更、B1D2B、Gate 2へ進まない。

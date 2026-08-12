@@ -154,6 +154,14 @@ iPhone 14 Plus / iOS 26.2.1で、Mobile用fresh Link Aを通常Staging `/LOGIN`�
 
 actual-device/Human observation、Codex device install-state、live staging Web/Auth、corroborating repo implementationをprovenance別に記録する。詳細は[`b1d2a-m04-m05-actual-device-fallback-closeout-result.md`](./b1d2a-m04-m05-actual-device-fallback-closeout-result.md)を正とする。B1D2Aは3件（M08/M17/M22）を残して`OPEN`で、updated remaining engineering effortはprovider expiry/AASA device cache待ちとreview iterationを除き約0.75〜1.25人日である。次の別承認actionはM08 real provider-expiry proofであり、自動で開始しない。
 
+### 2026-08-12 M17/M08 natural-expiry wave pending update
+
+M05直後のiPhone 14 Plus / iOS 26.2.1 authenticated sessionはnative `/SCRIPTS`とBearer BFFが正常だった。現行session envelopeはexpiry metadataとrefresh-capable materialを要求し、`autoRefreshToken=false`のもとでforeground時のexpiry 60秒前判定、BFF `session_expired`時の1回refresh/retry、retryable failure時のauthenticated state / Keychain候補保持、single-flightを行う。current sessionのexact expiryは安全なUIに露出せず、自然なrefresh必要条件にも未到達だったため、token/Keychain/TTL/clockを操作せずM17を`PENDING_NATURAL_REFRESH_TRIGGER`とした。actual transient outage/recoveryは実施していない。
+
+M17判定後にnormal mobile logoutで`/LOGIN`へ戻った。Supabase staging DashboardのEmail providerをread-onlyで確認し、Email OTP/link expiryは3600秒、Saveはdisabledのままで設定変更なしだった。Mobile `/LOGIN`からfresh Link Eを1通発行しようとしたがrate-limit UIとなり、Link E発行は確認できなかった。したがって未消費linkの自然失効待ちとexpired tapは開始せず、M08を`PENDING_RATE_LIMIT`とする。rate limit解除、TTL変更、再送は行っていない。case別provenanceは[`b1d2a-m17-m08-natural-expiry-wave-result.md`](./b1d2a-m17-m08-natural-expiry-wave-result.md)を正とする。
+
+B1D2Aは3件（M08/M17/M22）を残して`OPEN`で、updated remaining engineering effortは外部の自然待ちとreview iterationを除き約0.5〜1.0人日である。次のsingle action候補は別承認のM22 controlled AASA outage proofであり、自動で開始しない。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。
