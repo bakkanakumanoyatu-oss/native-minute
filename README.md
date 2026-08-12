@@ -231,6 +231,8 @@ M22 clean-install actual-behavior proofでは、AASAを除いたisolated Preview
 
 M08 real-provider natural-expiry proof V1では、通常Staging `/LOGIN`から認証linkのsendを1回だけ試行しましたがrate limitとなり、Link E発行は確認できませんでした。再送、link open、自然失効待ち、expired tap、provider設定変更、M17は実行していません。current Dashboard sessionはsigned outだったためexpiry値を新規確認したとはせず、last-known read-only値3600秒を保持します。M08は`PENDING_RATE_LIMIT`のまま、B1D2A残件は2件（M08/M17）で変わりません。詳細は[M08 real-provider natural-expiry proof result](./docs/b1d2a-m08-real-provider-natural-expiry-proof-result.md)を参照してください。
 
+M08 target alignment / natural-expiry closeoutでは、M22 recovery build時の一時的なWeb-to-Mobile env転用がinstall済みartifactのSupabase target mismatch原因と判明しました。tracked source/configを変えず、current `native-minute-staging`のpublic client設定だけでsigned Staging artifactをbuildし、exact staging identity/domain/project、`authConfigured=true`、secret/service-role非混入を確認してiPhone 14 Plus / iOS 26.2.1へinstallしました。expiry 3600秒のfresh Link Eを1通発行し、未開封のまま自然失効後に1回だけtapした結果、native `/LOGIN`で新しいlink取得を案内し、session、`/SCRIPTS`、authenticated Bearer success、retry、crashはありませんでした。BFF接続表示はpublic healthです。M08を`PASS_ACTUAL_DEVICE_EXPIRED_PROVIDER_LINK`とし、B1D2A残件はM17の1件です。actual-deviceとrepo/build/live/config evidenceは分離し、M17へ自動進行しません。詳細は[M08 real-provider natural-expiry proof result](./docs/b1d2a-m08-real-provider-natural-expiry-proof-result.md)を参照してください。
+
 Mobile AuthのDebug live buildは、public client設定の`MOBILE_SUPABASE_URL`と`MOBILE_SUPABASE_PUBLISHABLE_KEY`をbuild commandへ一時的に渡す契約です。値を`.env.local`、profile JSON、source、docsへ保存しません。secret/service-role keyとlegacy JWT keyは拒否し、`sb_publishable_`形式だけを許可します。dynamic transaction queryを持つDebug redirectのDashboard許可patternはpath限定の`com.nativeminutes.app.debug://auth/callback**`で、scheme全体を許可しません。
 
 ### iOS Simulator runtime signing boundary

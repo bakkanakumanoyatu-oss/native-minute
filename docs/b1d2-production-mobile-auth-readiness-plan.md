@@ -178,6 +178,14 @@ M08-only V1はmainline/live endpoint/通常Staging appのpreflightをPASSし、H
 
 M08は`PENDING_RATE_LIMIT`のままで、expired-link rejection/recoveryのPASSは主張しない。case別provenanceとsafe timestampは[`b1d2a-m08-real-provider-natural-expiry-proof-result.md`](./b1d2a-m08-real-provider-natural-expiry-proof-result.md)を正とする。B1D2A残件は2件（M08/M17）、updated remaining engineering effortは外部の自然待ちとreview iterationを除き約0.25〜0.5人日で変わらない。rate limitの自然解除後に別runを開始するまで、自動再送やM17へ進まない。
 
+### 2026-08-12 M08 target alignment / natural-expiry closeout
+
+M22 recovery後のinstall済み通常artifactが別Supabase projectを向いた原因は、root Web `.env.local` pairをMobile build-time envへ一時転用したことだった。Mobile sourceの契約は`MOBILE_SUPABASE_URL` / `MOBILE_SUPABASE_PUBLISHABLE_KEY`であり、tracked source/config変更は不要だった。current Dashboardの`native-minute-staging` public client pairだけをtemporary envで渡してStaging artifactをbuildし、exact bundle/Associated Domain/project、`authConfigured=true`、secret/service-role非混入を確認後、iPhone 14 Plusへinstallして`/LOGIN`を確認した。M24/M25にはWeb-created User A resourceのMobile User A positive / User B negativeという同一Auth/RLS境界のactual evidenceがあり、過去caseをinvalidateする証拠はない。
+
+current Email OTP/link expiry `3600`秒を変更せず、Mobile `/LOGIN`からfresh Link Eを1通だけ発行した。Human observerが未開封受信を確認し、safe issuance observation `2026-08-12T17:27:04+09:00`から自然失効後の`18:31+09:00`に1回だけtapした。Native appは`/LOGIN`でfixed new-link recoveryを表示し、session、`/SCRIPTS`、authenticated Bearer success、stale-link retry、crashはなかった。画面のBFF接続表示はpublic health endpointで、Bearer successではない。exact provider/internal reasonはUIに露出しないため`UNKNOWN`のまま推定しない。
+
+M08を`PASS_ACTUAL_DEVICE_EXPIRED_PROVIDER_LINK`とする。provenanceは`ACTUAL_DEVICE + LIVE_STAGING_AUTH + NATURAL_PROVIDER_EXPIRY`で、repo/build/live/config evidenceとは分離する。B1D2AはM17の1件だけを残して`OPEN`、updated remaining engineering effortは自然待ちとreview iterationを除き約0.25人日である。M17へ自動進行しない。
+
 ## 判定ラベル
 
 - **事実（repo）**: 上記HEADのtracked fileまたはローカルtoolchainから確認した内容。
