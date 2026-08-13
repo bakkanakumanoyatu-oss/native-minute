@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createMobileAuthService,
   type MobileAuthController
@@ -9,13 +9,15 @@ import {
 } from "./auth/state-machine";
 import {
   fetchHealth,
-  fetchMobileScripts,
   initialHealthState,
   type HealthConnectionState,
   type MobileScript,
   type ScriptsRequestState
 } from "./lib/api";
 import { mobileEnvironment } from "./lib/environment";
+import { createPracticeApi } from "./practice/api";
+import { PracticeApp } from "./practice/PracticeApp";
+import { isPracticePath } from "./practice/routes";
 
 type ConnectionPanelProps = {
   state: HealthConnectionState;
@@ -275,14 +277,14 @@ export function App({ authController }: AppProps = {}) {
     initialHealthState(typeof navigator === "undefined" ? true : navigator.onLine)
   );
   const [authState, setAuthState] = useState<MobileAuthState>(() => auth.getState());
-  const [scriptsState, setScriptsState] = useState<ScriptsViewState>({ kind: "idle" });
-  const [scriptsOwnerUserId, setScriptsOwnerUserId] = useState<string | null>(null);
+  const [practiceOwnerUserId, setPracticeOwnerUserId] = useState<string | null>(() => {
+    const initialState = auth.getState();
+    return initialState.kind === "authenticated" ? initialState.userId : null;
+  });
   const [email, setEmail] = useState("");
   const [nowSeconds, setNowSeconds] = useState(() => Math.floor(Date.now() / 1000));
   const healthRequestSequence = useRef(0);
-  const scriptsRequestSequence = useRef(0);
-  const loadedUserId = useRef<string | null>(null);
-  const scriptsOwnerUserIdRef = useRef<string | null>(null);
+  const practiceOwnerUserIdRef = useRef<string | null>(practiceOwnerUserId);
 
   const reconnect = useCallback(async () => {
     const sequence = ++healthRequestSequence.current;
@@ -329,20 +331,17 @@ export function App({ authController }: AppProps = {}) {
       setAuthState(nextState);
 
       const nextUserId = nextState.kind === "authenticated" ? nextState.userId : null;
-      const shouldClearOwnedData =
-        (nextUserId !== null &&
-          scriptsOwnerUserIdRef.current !== null &&
-          scriptsOwnerUserIdRef.current !== nextUserId) ||
-        (nextUserId === null &&
-          nextState.kind !== "refreshing" &&
-          scriptsOwnerUserIdRef.current !== null);
-
-      if (shouldClearOwnedData) {
-        scriptsRequestSequence.current += 1;
-        loadedUserId.current = null;
-        scriptsOwnerUserIdRef.current = null;
-        setScriptsOwnerUserId(null);
-        setScriptsState({ kind: "idle" });
+      if (nextUserId && practiceOwnerUserIdRef.current !== nextUserId) {
+        practiceOwnerUserIdRef.current = nextUserId;
+        setPracticeOwnerUserId(nextUserId);
+      } else if (
+        !nextUserId &&
+        nextState.kind !== "refreshing" &&
+        practiceOwnerUserIdRef.current !== null
+      ) {
+        // Remounting the practice shell clears every owner-bound script, Blob and request state.
+        practiceOwnerUserIdRef.current = null;
+        setPracticeOwnerUserId(null);
       }
     });
     void auth.start();
@@ -354,166 +353,62 @@ export function App({ authController }: AppProps = {}) {
   }, [auth]);
 
   useEffect(() => {
+    const normalizeUnauthenticatedHistory = () => {
+      const state = auth.getState();
+      if (
+        state.kind !== "authenticated" &&
+        state.kind !== "refreshing" &&
+        state.kind !== "restoring" &&
+        state.kind !== "exchanging_code" &&
+        window.location.pathname !== "/login"
+      ) {
+        window.history.replaceState(null, "", "/login");
+      }
+    };
+
+    window.addEventListener("popstate", normalizeUnauthenticatedHistory);
+    return () => window.removeEventListener("popstate", normalizeUnauthenticatedHistory);
+  }, [auth]);
+
+  useEffect(() => {
     const timer = window.setInterval(() => {
       setNowSeconds(Math.floor(Date.now() / 1000));
     }, 1_000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const loadScripts = useCallback(
-    async (expectedUserId?: string) => {
-      const initialAuthState = auth.getState();
-      const requestUserId =
-        expectedUserId ??
-        (initialAuthState.kind === "authenticated" ? initialAuthState.userId : null);
-
-      if (!requestUserId) {
-        return;
-      }
-
-      const sequence = ++scriptsRequestSequence.current;
-      const requestIsCurrent = () => {
-        const currentAuthState = auth.getState();
-        return (
-          scriptsRequestSequence.current === sequence &&
-          currentAuthState.kind === "authenticated" &&
-          currentAuthState.userId === requestUserId
-        );
-      };
-
-      scriptsOwnerUserIdRef.current = requestUserId;
-      setScriptsOwnerUserId(requestUserId);
-      setScriptsState({ kind: "loading" });
-      let accessToken = await auth.getAccessToken();
-
-      if (!requestIsCurrent()) {
-        return;
-      }
-
-      if (!accessToken) {
-        const refreshResult = await auth.refresh();
-        if (!requestIsCurrent()) {
-          return;
-        }
-        if (!refreshResult.ok && refreshResult.reasonCode === "auth_refresh_failed") {
-          setScriptsState({ kind: "error", category: "network-error" });
-          return;
-        }
-        if (refreshResult.ok) {
-          accessToken = await auth.getAccessToken();
-        }
-      }
-
-      if (!accessToken) {
-        if (requestIsCurrent()) {
-          await auth.signOut();
-        }
-        return;
-      }
-
-      let result = await fetchMobileScripts(mobileEnvironment.bffBaseUrl, accessToken);
-      accessToken = "";
-
-      if (!requestIsCurrent()) {
-        return;
-      }
-
-      if (result.kind === "success") {
-        setScriptsState(
-          result.scripts.length > 0
-            ? { kind: "ready", scripts: result.scripts }
-            : { kind: "empty" }
-        );
-        return;
-      }
-
-      if (result.kind === "unauthorized") {
-        if (shouldRefreshScriptsRequest(result)) {
-          const refreshResult = await auth.refresh();
-          if (!requestIsCurrent()) {
-            return;
-          }
-          if (!refreshResult.ok && refreshResult.reasonCode === "auth_refresh_failed") {
-            setScriptsState({ kind: "error", category: "network-error" });
-            return;
-          }
-          if (refreshResult.ok) {
-            const refreshedAccessToken = await auth.getAccessToken();
-            if (!requestIsCurrent()) {
-              return;
-            }
-            if (refreshedAccessToken) {
-              result = await fetchMobileScripts(
-                mobileEnvironment.bffBaseUrl,
-                refreshedAccessToken
-              );
-              if (!requestIsCurrent()) {
-                return;
-              }
-              if (result.kind === "success") {
-                setScriptsState(
-                  result.scripts.length > 0
-                    ? { kind: "ready", scripts: result.scripts }
-                    : { kind: "empty" }
-                );
-                return;
-              }
-              if (result.kind !== "unauthorized") {
-                setScriptsState({ kind: "error", category: result.kind });
-                return;
-              }
-            }
-          }
-        }
-        if (requestIsCurrent()) {
-          await auth.signOut();
-        }
-        return;
-      }
-
-      setScriptsState({ kind: "error", category: result.kind });
-    },
-    [auth]
-  );
-
   const authenticatedUserId =
     authState.kind === "authenticated" ? authState.userId : null;
 
   useEffect(() => {
-    let scriptRequest: number | null = null;
-
     if (authState.kind === "authenticated" && authenticatedUserId) {
-      window.history.replaceState(null, "", "/scripts");
-      if (loadedUserId.current !== authenticatedUserId) {
-        loadedUserId.current = authenticatedUserId;
-        scriptRequest = window.setTimeout(() => {
-          void loadScripts(authenticatedUserId);
-        }, 0);
+      if (!isPracticePath(window.location.pathname)) {
+        window.history.replaceState(null, "", "/scripts");
       }
     } else if (authState.kind === "refreshing") {
-      window.history.replaceState(null, "", "/scripts");
+      if (practiceOwnerUserId && !isPracticePath(window.location.pathname)) {
+        window.history.replaceState(null, "", "/scripts");
+      }
     } else if (authState.kind !== "restoring" && authState.kind !== "exchanging_code") {
-      loadedUserId.current = null;
-      scriptsRequestSequence.current += 1;
       window.history.replaceState(null, "", "/login");
     }
-
-    return () => {
-      if (scriptRequest !== null) {
-        window.clearTimeout(scriptRequest);
-      }
-    };
-  }, [authState.kind, authenticatedUserId, loadScripts]);
+  }, [authState.kind, authenticatedUserId, practiceOwnerUserId]);
 
   const cooldownUntil =
     authState.kind === "link_sent" || authState.kind === "awaiting_callback"
       ? authState.cooldownUntil
       : 0;
   const cooldownSeconds = Math.max(0, cooldownUntil - nowSeconds);
-  const visibleScriptsState = selectVisibleScriptsState(
-    scriptsState,
-    scriptsOwnerUserId,
-    authenticatedUserId
+  const practiceApi = useMemo(
+    () => practiceOwnerUserId
+      ? createPracticeApi({
+          auth,
+          bffBaseUrl: mobileEnvironment.bffBaseUrl,
+          ownerUserId: practiceOwnerUserId,
+          onSessionInvalid: () => auth.signOut()
+        })
+      : null,
+    [auth, practiceOwnerUserId]
   );
 
   const submitLogin = useCallback(
@@ -536,11 +431,18 @@ export function App({ authController }: AppProps = {}) {
       <p className="profile-badge">Local bundle · {mobileEnvironment.profile}</p>
 
       {authState.kind === "authenticated" || authState.kind === "refreshing" ? (
-        <ScriptsView
-          state={visibleScriptsState}
-          onRetry={() => void loadScripts(authenticatedUserId ?? undefined)}
-          onLogout={() => void auth.signOut()}
-        />
+        practiceOwnerUserId && practiceApi ? (
+          <PracticeApp
+            key={practiceOwnerUserId}
+            api={practiceApi}
+            isOnline={healthState.kind !== "offline"}
+            onLogout={() => void auth.signOut()}
+          />
+        ) : (
+          <section className="intro-card" aria-live="polite">
+            <p role="status">安全なセッションを確認しています…</p>
+          </section>
+        )
       ) : (
         <LoginView
           authState={authState}

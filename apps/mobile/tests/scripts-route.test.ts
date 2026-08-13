@@ -376,7 +376,7 @@ describe("OPTIONS /api/mobile/scripts", () => {
   });
 
   it.each([
-    [{ "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "authorization" }, 405],
+    [{ "Access-Control-Request-Method": "PUT", "Access-Control-Request-Headers": "authorization" }, 405],
     [{ "Access-Control-Request-Method": "GET", "Access-Control-Request-Headers": "x-unsafe" }, 400],
     [{ "Access-Control-Request-Method": "GET" }, 400]
   ])("rejects an invalid preflight contract", (requestedHeaders, expectedStatus) => {

@@ -312,6 +312,13 @@ export async function getDefaultVoice(client: AppSupabaseClient, userId: string)
   return voices[0] ?? null;
 }
 
+export function didReuseGeneratedScriptAudioCache(input: {
+  insertSucceeded: boolean;
+  finalCacheFound: boolean;
+}) {
+  return !input.insertSucceeded && input.finalCacheFound;
+}
+
 export async function getVoiceSetupState(client: AppSupabaseClient, userId: string) {
   return timeAsync("voice.setupState", async () => {
     const providerStatus = getVoiceProviderStatus();
@@ -900,6 +907,10 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   }
 
   const completedAudio = storedAudio ? await timeAsync("voice.speakScript.ensureCompletedPlaybackPath", () => ensureScriptAudioPlaybackPath(client, storedAudio)) : insertedAudio;
+  const reusedGeneratedCache = didReuseGeneratedScriptAudioCache({
+    insertSucceeded: Boolean(insertedAudio),
+    finalCacheFound: Boolean(storedAudio)
+  });
   const completedContext = {
     ...quotaContext,
     scriptAudioId: completedAudio?.id ?? null
@@ -910,7 +921,7 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
       markQuotaEventSucceeded(quotaEvent, {
         metadata: buildVoiceQuotaMetadata(completedContext, {
           cacheLookupResult: "miss",
-          cached: Boolean(storedAudio),
+          cached: reusedGeneratedCache,
           replayAsset
         }),
         providerRequestId: synthesized.providerRequestId,
@@ -928,7 +939,7 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
 
     return {
       audioUrl: completedAudio?.storage_path ?? replayAsset.storagePath,
-      cached: Boolean(storedAudio),
+      cached: reusedGeneratedCache,
       cacheKey,
       voice: selectedVoice
     };

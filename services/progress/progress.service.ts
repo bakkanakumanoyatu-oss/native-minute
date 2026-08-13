@@ -131,11 +131,28 @@ function getImprovementTrend(latest: ProgressTakeSummary | null, previous: Progr
   return "flat";
 }
 
+export function sortProgressTakeHistory(takes: ProgressTakeSummary[]) {
+  return [...takes].sort((a, b) => {
+    if (a.createdAt !== b.createdAt) {
+      return a.createdAt < b.createdAt ? 1 : -1;
+    }
+
+    return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
+  });
+}
+
 async function getHydratedReviews(client: AppSupabaseClient, userId: string) {
   return timeAsync("progress.hydratedReviews", async () => {
     const [{ data: takes, error: takesError }, { data: weakWords, error: weakWordsError }, { data: coachFeedback, error: coachFeedbackError }] =
       await Promise.all([
-        asMany<TakeRow>(await client.from("takes").select("*").eq("user_id", userId).order("created_at", { ascending: false })),
+        asMany<TakeRow>(
+          await client
+            .from("takes")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("status", "reviewed")
+            .order("created_at", { ascending: false })
+        ),
         client
           .from("weak_words")
           .select("*, takes!inner(user_id)")
@@ -205,6 +222,7 @@ async function getHydratedReviewsForScript(client: AppSupabaseClient, userId: st
         .select("*")
         .eq("user_id", userId)
         .eq("script_id", scriptId)
+        .eq("status", "reviewed")
         .order("created_at", { ascending: false }),
       client
         .from("weak_words")
@@ -275,10 +293,10 @@ async function getHydratedReviewsForScript(client: AppSupabaseClient, userId: st
   });
 }
 
-function toScriptProgressItem(script: ScriptListItem, reviews: HydratedTakeReview[]): ScriptProgressItem {
-  const sortedByCreated = [...reviews].sort((a, b) => (a.take.created_at < b.take.created_at ? 1 : -1));
-  const latest = sortedByCreated[0] ? toProgressTakeSummary(sortedByCreated[0]) : null;
-  const previous = sortedByCreated[1] ? toProgressTakeSummary(sortedByCreated[1]) : null;
+export function buildScriptProgressItem(script: ScriptListItem, reviews: HydratedTakeReview[]): ScriptProgressItem {
+  const takeHistory = sortProgressTakeHistory(reviews.map(toProgressTakeSummary));
+  const latest = takeHistory[0] ?? null;
+  const previous = takeHistory[1] ?? null;
   const best = pickBestTake(reviews);
   const bestSummary = best ? toProgressTakeSummary(best) : null;
 
@@ -295,6 +313,7 @@ function toScriptProgressItem(script: ScriptListItem, reviews: HydratedTakeRevie
     latestTake: latest,
     bestTake: bestSummary,
     previousTake: previous,
+    takeHistory,
     latestVsPrevious: latest && previous ? buildTakeDiff(latest, previous) : null,
     latestVsBest: latest && bestSummary && latest.id !== bestSummary.id ? buildTakeDiff(latest, bestSummary) : null,
     improvementTrend: getImprovementTrend(latest, previous)
@@ -322,7 +341,7 @@ function getScriptTakeComparisonFromReviews(reviews: HydratedTakeReview[], takeI
 }
 
 export async function getScriptProgressSummary(client: AppSupabaseClient, userId: string, script: ScriptListItem): Promise<ScriptProgressItem> {
-  return timeAsync("progress.scriptSummary", async () => toScriptProgressItem(script, await getHydratedReviewsForScript(client, userId, script.id)));
+  return timeAsync("progress.scriptSummary", async () => buildScriptProgressItem(script, await getHydratedReviewsForScript(client, userId, script.id)));
 }
 
 export async function getScriptReviewProgressSummary(client: AppSupabaseClient, userId: string, script: ScriptListItem, takeId: string) {
@@ -338,7 +357,7 @@ export async function getScriptReviewProgressSummary(client: AppSupabaseClient, 
     return {
       review,
       comparison,
-      progressItem: toScriptProgressItem(script, reviews)
+      progressItem: buildScriptProgressItem(script, reviews)
     };
   });
 }
@@ -354,7 +373,7 @@ export async function getProgressOverview(client: AppSupabaseClient, userId: str
       reviewsByScriptId.set(review.take.script_id, list);
     }
 
-    const scriptItems = scripts.map((script) => toScriptProgressItem(script, reviewsByScriptId.get(script.id) ?? []));
+    const scriptItems = scripts.map((script) => buildScriptProgressItem(script, reviewsByScriptId.get(script.id) ?? []));
 
     return {
       scripts: scriptItems,

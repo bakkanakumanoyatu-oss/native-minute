@@ -162,6 +162,7 @@ async function getOwnedTake(client: SupabaseLike, userId: string, scriptId: stri
       .eq("id", takeId)
       .eq("user_id", userId)
       .eq("script_id", scriptId)
+      .eq("status", "reviewed")
       .maybeSingle()
   );
 

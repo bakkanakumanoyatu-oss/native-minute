@@ -6,6 +6,7 @@ import {
   readdirSync,
   statSync
 } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -17,6 +18,7 @@ const STAGING_BFF_ORIGIN = "https://native-minute-staging.vercel.app";
 const STAGING_CALLBACK = STAGING_BFF_ORIGIN + "/mobile/auth/callback";
 const STAGING_ASSOCIATED_DOMAIN = "applinks:native-minute-staging.vercel.app";
 const STAGING_ENTITLEMENTS_PATH = "App/App-Staging.entitlements";
+const GIT_REVISION_PATTERN = /^[0-9a-f]{40}$/;
 const STAGING_APPLICATION_IDENTIFIER =
   "46P9QD3T3Q.com.nativeminutes.app.staging";
 const LOOPBACK_URL_PATTERN = /https?:\/\/(?:localhost|127\.0\.0\.1|\[?::1\]?)(?::\d+)?/i;
@@ -564,6 +566,25 @@ function scanStagingConfigurationContract({
   generatedConfig,
   findings
 }) {
+  let currentRevision = null;
+  let currentTreeDirty = null;
+
+  if (existsSync(resolve(rootDir, ".git"))) {
+    try {
+      currentRevision = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: rootDir,
+        encoding: "utf8"
+      }).trim();
+      currentTreeDirty = execFileSync(
+        "git",
+        ["status", "--porcelain", "--untracked-files=normal"],
+        { cwd: rootDir, encoding: "utf8" }
+      ).trim().length > 0;
+    } catch {
+      currentTreeDirty = true;
+    }
+  }
+
   const sourceMappingValid =
     capacitorProfile?.appId === STAGING_BUNDLE_ID &&
     mobileProfile?.bundleId === STAGING_BUNDLE_ID &&
@@ -592,10 +613,25 @@ function scanStagingConfigurationContract({
       metadata?.bundleId !== STAGING_BUNDLE_ID ||
       metadata?.xcodeConfiguration !== "Staging" ||
       metadata?.capacitorProfile !== "staging" ||
-      metadata?.authCallbackMode !== "universal-link"
+      metadata?.authCallbackMode !== "universal-link" ||
+      metadata?.authConfigured !== true ||
+      !GIT_REVISION_PATTERN.test(metadata?.sourceRevision ?? "") ||
+      metadata?.sourceDirty !== false ||
+      (currentRevision !== null && metadata?.sourceRevision !== currentRevision)
     ) {
       addFinding(findings, "staging_build_metadata_mismatch", path);
     }
+  }
+
+  if (
+    webMetadata?.sourceRevision !== nativeMetadata?.sourceRevision ||
+    webMetadata?.sourceDirty !== nativeMetadata?.sourceDirty
+  ) {
+    addFinding(findings, "staging_build_provenance_mismatch", "mobile-build.json");
+  }
+
+  if (currentTreeDirty === true) {
+    addFinding(findings, "staging_source_tree_dirty", ".git");
   }
 
   if (generatedConfig?.appId !== STAGING_BUNDLE_ID) {

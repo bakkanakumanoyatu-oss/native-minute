@@ -21,6 +21,7 @@ const DEVELOPMENT_TEAM = "ABCDE12345";
 const APP_IDENTIFIER = DEVELOPMENT_TEAM + "." + APP_BUNDLE_ID;
 const STAGING_APPLICATION_IDENTIFIER =
   "46P9QD3T3Q.com.nativeminutes.app.staging";
+const FIXTURE_SOURCE_REVISION = "a".repeat(40);
 
 function writeFixture(rootDir, filePath, contents) {
   const absolutePath = resolve(rootDir, filePath);
@@ -248,7 +249,9 @@ function createFixture(rootDir, profile = "production", options = {}) {
           capacitorProfile: "staging",
           bffOrigin: STAGING_ORIGIN,
           authCallbackMode: "universal-link",
-          authConfigured: true
+          authConfigured: true,
+          sourceRevision: FIXTURE_SOURCE_REVISION,
+          sourceDirty: false
         }
       : {
           profile,
@@ -257,7 +260,10 @@ function createFixture(rootDir, profile = "production", options = {}) {
           authConfigured: true
         };
   writeJsonFixture(rootDir, "apps/mobile/dist/mobile-build.json", {
-    ...metadata
+    ...metadata,
+    authConfigured: options.webAuthConfigured ?? metadata.authConfigured,
+    sourceRevision: options.webSourceRevision ?? metadata.sourceRevision,
+    sourceDirty: options.webSourceDirty ?? metadata.sourceDirty
   });
   writeFixture(rootDir, "apps/mobile/src/App.tsx", "export const appName = \"Native Minutes\";");
   writeJsonFixture(rootDir, "ios/App/App/capacitor.config.json", {
@@ -266,7 +272,10 @@ function createFixture(rootDir, profile = "production", options = {}) {
     webDir: "apps/mobile/dist"
   });
   writeJsonFixture(rootDir, "ios/App/App/public/mobile-build.json", {
-    ...metadata
+    ...metadata,
+    authConfigured: options.nativeAuthConfigured ?? metadata.authConfigured,
+    sourceRevision: options.nativeSourceRevision ?? metadata.sourceRevision,
+    sourceDirty: options.nativeSourceDirty ?? metadata.sourceDirty
   });
   writeInfoPlistFixture(rootDir, options.customScheme ?? null);
   writeFixture(
@@ -334,6 +343,58 @@ try {
       rootDir,
       { profile: "staging" },
       "Expected the Unit D1 staging identity/entitlement/AASA fixture to pass."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", {
+      universalLinks: false,
+      webAuthConfigured: false
+    });
+    assertCategories(
+      rootDir,
+      { profile: "staging" },
+      ["staging_build_metadata_mismatch"],
+      "Expected staging web metadata without configured auth to fail closed."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", {
+      universalLinks: false,
+      nativeAuthConfigured: false
+    });
+    assertCategories(
+      rootDir,
+      { profile: "staging" },
+      ["staging_build_metadata_mismatch"],
+      "Expected staging native metadata without configured auth to fail closed."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", {
+      universalLinks: false,
+      webSourceDirty: true
+    });
+    assertCategories(
+      rootDir,
+      { profile: "staging" },
+      ["staging_build_metadata_mismatch", "staging_build_provenance_mismatch"],
+      "Expected dirty staging build provenance to fail closed."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", {
+      universalLinks: false,
+      nativeSourceRevision: "b".repeat(40)
+    });
+    assertCategories(
+      rootDir,
+      { profile: "staging" },
+      ["staging_build_provenance_mismatch"],
+      "Expected mismatched staging source revisions to fail closed."
     );
   });
 

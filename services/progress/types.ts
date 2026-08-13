@@ -44,6 +44,7 @@ export interface ScriptProgressItem {
   latestTake: ProgressTakeSummary | null;
   bestTake: ProgressTakeSummary | null;
   previousTake: ProgressTakeSummary | null;
+  takeHistory: ProgressTakeSummary[];
   latestVsPrevious: TakeDiffSummary | null;
   latestVsBest: TakeDiffSummary | null;
   improvementTrend: "up" | "down" | "flat" | "insufficient_data";

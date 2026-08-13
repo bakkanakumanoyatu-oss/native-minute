@@ -1,12 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
 import { timeAsync } from "@/lib/performance/timing";
+import { parseMobilePcmWav } from "@/lib/pcm-wav";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import { getScript } from "@/services/scripts/scripts.service";
 import { MAX_RECORDING_BYTES, RECORDINGS_BUCKET, RECORDING_MIME_TYPES } from "./constants";
 
 type StorageUploadInput = {
   scriptId: string;
+  recordingId?: string;
   file: File;
   durationSeconds?: number;
 };
@@ -24,6 +26,7 @@ export type RecordingFileReference = {
   filename: string;
   contentType: string;
   bytes: Buffer;
+  durationSeconds: number | null;
 };
 
 function getStorageFailureMessage(errorMessage: string, operation: "upload" | "download") {
@@ -50,30 +53,32 @@ function getStorageFailureMessage(errorMessage: string, operation: "upload" | "d
     : `録音ファイルを読み込めませんでした。${errorMessage}`;
 }
 
-function getExtension(contentType: string, originalName: string) {
+function getExtensionFromFilename(originalName: string) {
   const fromName = originalName.includes(".") ? originalName.split(".").pop()?.toLowerCase() : "";
 
-  if (fromName) {
-    return fromName;
-  }
+  return fromName ?? "";
+}
 
-  if (contentType.includes("webm")) {
+export function getRecordingStorageExtension(contentType: string) {
+  const normalized = contentType.split(";", 1)[0]?.trim().toLowerCase() ?? "";
+
+  if (normalized === "audio/webm") {
     return "webm";
   }
 
-  if (contentType.includes("wav")) {
+  if (["audio/wav", "audio/wave", "audio/x-wav"].includes(normalized)) {
     return "wav";
   }
 
-  if (contentType.includes("mpeg")) {
+  if (normalized === "audio/mpeg") {
     return "mp3";
   }
 
-  if (contentType.includes("ogg")) {
+  if (normalized === "audio/ogg") {
     return "ogg";
   }
 
-  if (contentType.includes("mp4")) {
+  if (["audio/mp4", "audio/x-m4a"].includes(normalized)) {
     return "m4a";
   }
 
@@ -85,7 +90,7 @@ function inferContentType(file: File) {
     return file.type;
   }
 
-  const extension = getExtension("", file.name);
+  const extension = getExtensionFromFilename(file.name);
 
   if (extension === "webm") {
     return "audio/webm";
@@ -186,17 +191,46 @@ export async function uploadOwnedRecording(
       throw new AppError(400, "対応していない録音形式です。webm / wav / m4a / mp3 / ogg を使用してください。");
     }
 
-    const extension = getExtension(contentType, input.file.name);
-    const objectKey = `${userId}/${input.scriptId}/${randomUUID()}.${extension}`;
-    const bytes = await timeAsync("recording.fileToBuffer", async () => Buffer.from(await input.file.arrayBuffer()));
+    // Object keys are derived only from the validated MIME allowlist. The client filename
+    // is display metadata and must not control the private storage path or extension.
+    const recordingId = input.recordingId?.trim();
+    if (
+      recordingId &&
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(recordingId)
+    ) {
+      throw new AppError(400, "録音ファイルの参照形式が不正です。");
+    }
 
+    const extension = getRecordingStorageExtension(contentType);
+    const objectKey = `${userId}/${input.scriptId}/${recordingId ?? randomUUID()}.${extension}`;
+    const bytes = await timeAsync("recording.fileToBuffer", async () => Buffer.from(await input.file.arrayBuffer()));
+    const recordingBucket = client.storage.from(RECORDINGS_BUCKET);
     const { error } = await timeAsync("recording.storageUpload", () =>
-      client.storage.from(RECORDINGS_BUCKET).upload(objectKey, bytes, {
+      recordingBucket.upload(objectKey, bytes, {
         contentType,
         cacheControl: "3600",
         upsert: false
       })
     );
+
+    if (error && recordingId) {
+      const { data: existing, error: existingError } = await timeAsync(
+        "recording.storageIdempotencyCheck",
+        () => recordingBucket.download(objectKey)
+      );
+
+      if (!existingError && existing) {
+        const existingBytes = Buffer.from(await existing.arrayBuffer());
+        if (existingBytes.equals(bytes)) {
+          return {
+            audioPath: createRecordingAudioPath(objectKey),
+            audioStorageKey: objectKey,
+            durationSeconds: input.durationSeconds ?? null,
+            contentType
+          };
+        }
+      }
+    }
 
     if (error) {
       throw new AppError(500, getStorageFailureMessage(error.message, "upload"));
@@ -247,7 +281,8 @@ export async function loadOwnedRecordingForEvaluation(
       audioStorageKey,
       filename,
       contentType,
-      bytes
+      bytes,
+      durationSeconds: parseMobilePcmWav(new Uint8Array(bytes))?.durationSeconds ?? null
     };
   });
 }

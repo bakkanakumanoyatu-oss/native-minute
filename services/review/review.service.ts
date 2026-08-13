@@ -21,6 +21,32 @@ type PersistReviewRpcClient = {
     args: PersistReviewBundleArgs
   ): Promise<{ data: string | null; error: { message: string } | null }>;
 };
+type PostgrestErrorLike = { message: string; code?: string };
+type ReviewTakeClaimRow = Pick<TakeRow, "script_id" | "audio_path" | "status">;
+type ReviewTakeClaimTable = {
+  insert(values: Database["public"]["Tables"]["takes"]["Insert"]): Promise<{
+    error: PostgrestErrorLike | null;
+  }>;
+  select(columns: string): {
+    eq(column: string, value: string): ReturnType<ReviewTakeClaimTable["select"]>;
+    maybeSingle(): Promise<{
+      data: ReviewTakeClaimRow | null;
+      error: PostgrestErrorLike | null;
+    }>;
+  };
+};
+
+export type ReviewTakeClaimResult =
+  | "claimed"
+  | "processing"
+  | "reviewed"
+  | "conflict";
+
+export type ReviewTakeClaimInput = {
+  takeId: string;
+  scriptId: string;
+  audioPath: string;
+};
 
 function toStoredWeakWord(row: Database["public"]["Tables"]["weak_words"]["Row"]): StoredWeakWord {
   return row;
@@ -128,6 +154,7 @@ export async function createReviewArtifacts(
         audioStorageKey: input.audioStorageKey
       })
     );
+    const durationSeconds = recording?.durationSeconds ?? input.durationSeconds ?? null;
 
     const transcriptionResult = await timeAsync("evaluate.transcription", () =>
       transcription.transcribe({
@@ -149,7 +176,7 @@ export async function createReviewArtifacts(
       evaluator.evaluate({
         scriptText: script.content,
         transcript: transcriptionResult.transcriptText,
-        durationSeconds: input.durationSeconds,
+        durationSeconds: durationSeconds ?? undefined,
         targetSeconds: script.targetSeconds,
         locale: script.locale,
         audioFile: recording
@@ -178,6 +205,7 @@ export async function createReviewArtifacts(
     return {
       takeId,
       audioPath: recording?.audioPath ?? toAudioPath(input, takeId),
+      durationSeconds,
       transcriptText: transcriptionResult.transcriptText,
       evaluation,
       coach
@@ -194,7 +222,7 @@ async function persistReviewBundle(
     p_take_id: review.takeId,
     p_script_id: input.scriptId,
     p_audio_path: review.audioPath,
-    p_duration_seconds: input.durationSeconds ?? null,
+    p_duration_seconds: review.durationSeconds,
     p_status: "reviewed",
     p_score: review.evaluation.score,
     p_total_words: review.evaluation.scriptWordCount,
@@ -273,6 +301,74 @@ export async function createPersistedReview(client: AppSupabaseClient, userId: s
   });
 }
 
+export async function claimReviewTake(
+  client: AppSupabaseClient,
+  userId: string,
+  input: ReviewTakeClaimInput
+): Promise<ReviewTakeClaimResult> {
+  return timeAsync("evaluate.claim", async () => {
+    const takes = client.from("takes") as unknown as ReviewTakeClaimTable;
+    const { error: insertError } = await takes.insert({
+      id: input.takeId,
+      script_id: input.scriptId,
+      user_id: userId,
+      audio_path: input.audioPath,
+      status: "pending"
+    });
+
+    if (!insertError) {
+      return "claimed";
+    }
+
+    if (insertError.code !== "23505") {
+      throw new AppError(500, `take claim の保存に失敗しました。${insertError.message}`);
+    }
+
+    const { data: existing, error: existingError } = await takes
+      .select("script_id, audio_path, status")
+      .eq("id", input.takeId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (existingError) {
+      throw new AppError(500, `take claim の確認に失敗しました。${existingError.message}`);
+    }
+
+    if (
+      !existing ||
+      existing.script_id !== input.scriptId ||
+      existing.audio_path !== input.audioPath
+    ) {
+      return "conflict";
+    }
+
+    if (existing.status === "reviewed") {
+      return "reviewed";
+    }
+
+    return existing.status === "pending" ? "processing" : "conflict";
+  });
+}
+
+export async function releaseReviewTakeClaim(
+  client: AppSupabaseClient,
+  userId: string,
+  input: ReviewTakeClaimInput
+) {
+  const { error } = await client
+    .from("takes")
+    .delete()
+    .eq("id", input.takeId)
+    .eq("user_id", userId)
+    .eq("script_id", input.scriptId)
+    .eq("audio_path", input.audioPath)
+    .eq("status", "pending");
+
+  if (error) {
+    console.warn("Pending review take claim could not be released");
+  }
+}
+
 export async function getStoredReview(client: AppSupabaseClient, userId: string, scriptId: string, takeId: string): Promise<StoredTakeReview | null> {
   return timeAsync("review.storedReview", async () => {
     const { data: take, error } = await client
@@ -281,6 +377,7 @@ export async function getStoredReview(client: AppSupabaseClient, userId: string,
       .eq("id", takeId)
       .eq("user_id", userId)
       .eq("script_id", scriptId)
+      .eq("status", "reviewed")
       .maybeSingle();
 
     if (error) {
@@ -302,6 +399,7 @@ export async function getStoredReviewByTakeId(client: AppSupabaseClient, userId:
       .select("*")
       .eq("id", takeId)
       .eq("user_id", userId)
+      .eq("status", "reviewed")
       .maybeSingle();
 
     if (error) {

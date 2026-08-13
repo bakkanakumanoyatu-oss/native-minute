@@ -51,6 +51,8 @@ export function buildMobileApiHeaders(
   options?: {
     environment?: MobileApiEnvironment;
     preflight?: boolean;
+    allowedMethods?: readonly string[];
+    exposedHeaders?: readonly string[];
   }
 ) {
   const headers = new Headers({
@@ -66,11 +68,15 @@ export function buildMobileApiHeaders(
   }
 
   if (options?.preflight) {
-    headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    const allowedMethods = options.allowedMethods ?? ["GET"];
+    headers.set("Access-Control-Allow-Methods", [...allowedMethods, "OPTIONS"].join(", "));
     headers.set("Access-Control-Allow-Headers", "Authorization, Accept, Content-Type");
     headers.set("Access-Control-Max-Age", "600");
   } else {
-    headers.set("Access-Control-Expose-Headers", "Retry-After, WWW-Authenticate");
+    headers.set(
+      "Access-Control-Expose-Headers",
+      ["Retry-After", "WWW-Authenticate", ...(options?.exposedHeaders ?? [])].join(", ")
+    );
   }
 
   return headers;

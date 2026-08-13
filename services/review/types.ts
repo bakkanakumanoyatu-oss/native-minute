@@ -5,6 +5,7 @@ import type { EvaluateResult } from "@/services/pronunciation";
 export interface ReviewArtifacts {
   takeId: string;
   audioPath: string;
+  durationSeconds: number | null;
   transcriptText: string;
   evaluation: EvaluateResult;
   coach: CoachFeedback;

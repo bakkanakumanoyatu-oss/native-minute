@@ -127,6 +127,7 @@ describe("native mobile auth configuration", () => {
       "ios/App/MobileAuthSessionStore/ios/Sources/MobileAuthSessionStorePlugin/MobileAuthLifecyclePlugin.swift"
     );
     const mobileAuth = readRepositoryFile("apps/mobile/src/auth/mobile-auth.ts");
+    const appLifecycle = readRepositoryFile("apps/mobile/src/lib/app-lifecycle.ts");
 
     expect(debugInfoPlist).toContain("com.nativeminutes.app.debug");
     expect(releaseInfoPlist).not.toContain("CFBundleURLTypes");
@@ -151,7 +152,10 @@ describe("native mobile auth configuration", () => {
     expect(lifecyclePlugin).toContain("ApplicationDelegateProxy.shared.lastURL");
     expect(lifecyclePlugin).toContain('notifyListeners(\n            "appUrlOpen"');
     expect(lifecyclePlugin).toContain("retainUntilConsumed: true");
-    expect(mobileAuth).toContain('NativeMobileAuthLifecycle.addListener("appUrlOpen"');
+    expect(appLifecycle).toContain('registerPlugin<NativeAppLifecyclePlugin>');
+    expect(appLifecycle).toContain('NativeAppLifecycle.addListener("appUrlOpen"');
+    expect(mobileAuth).toContain("addNativeAppUrlOpenListener");
+    expect(mobileAuth).not.toContain("registerPlugin");
     expect(mobileAuth).toContain("void this.handleCallbackUrl(url)");
   });
 

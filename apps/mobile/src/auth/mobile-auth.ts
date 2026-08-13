@@ -1,6 +1,10 @@
-import { registerPlugin, type PluginListenerHandle } from "@capacitor/core";
 import { createClient, type Session } from "@supabase/supabase-js";
 import { mobileEnvironment } from "../lib/environment";
+import {
+  addAppStateChangeListener,
+  addNativeAppUrlOpenListener,
+  getNativeAppLaunchUrl
+} from "../lib/app-lifecycle";
 import {
   buildMobileAuthCallbackTarget,
   CallbackReplayGuard,
@@ -777,32 +781,11 @@ export class MobileAuthService implements MobileAuthController {
   }
 }
 
-interface MobileAuthLifecyclePlugin {
-  getLaunchUrl(): Promise<{ url: string } | undefined>;
-  addListener(
-    eventName: "appUrlOpen",
-    listener: (event: { url: string }) => void
-  ): Promise<PluginListenerHandle>;
-  addListener(
-    eventName: "appStateChange",
-    listener: (event: { isActive: boolean }) => void
-  ): Promise<PluginListenerHandle>;
-}
-
-const NativeMobileAuthLifecycle = registerPlugin<MobileAuthLifecyclePlugin>(
-  "MobileAuthLifecycle"
-);
-
 const capacitorLifecycle: MobileAppLifecycle = {
-  getLaunchUrl: () => NativeMobileAuthLifecycle.getLaunchUrl(),
-  addUrlOpenListener: (listener) =>
-    NativeMobileAuthLifecycle.addListener("appUrlOpen", ({ url }) => {
-      listener(url);
-    }),
+  getLaunchUrl: getNativeAppLaunchUrl,
+  addUrlOpenListener: addNativeAppUrlOpenListener,
   addStateChangeListener: (listener) =>
-    NativeMobileAuthLifecycle.addListener("appStateChange", ({ isActive }) => {
-      listener(isActive);
-    })
+    addAppStateChangeListener(listener)
 };
 
 export function createMobileAuthService() {

@@ -1,158 +1,119 @@
-import type { User } from "@supabase/supabase-js";
-import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { NextRequest } from "next/server";
 import { AppError } from "@/lib/errors";
+import { timeAsync } from "@/lib/performance/timing";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
-import { hasSupabaseConfig } from "@/lib/supabase/config";
-import {
-  createSupabaseMobileRouteClient,
-  parseMobileBearerAuthorization
-} from "@/lib/supabase/mobile-route";
-import { listScripts } from "@/services/scripts/scripts.service";
+import { createScriptSchema, type CreateScriptInput } from "@/schemas/script";
+import { createScript, listScripts } from "@/services/scripts/scripts.service";
 import type { ScriptListItem } from "@/services/scripts/types";
-import { buildMobileApiHeaders, isAllowedMobileApiOrigin, parseMobilePreflightHeaders } from "./api-cors";
 import { mobileApiError, mobileApiOk } from "./api-response";
+import {
+  authenticateMobileRequest,
+  defaultMobileRouteAuthDependencies,
+  handleMobileOptions,
+  handleMobileUnsupportedMethod,
+  mapMobileServiceError,
+  type MobileRouteAuthDependencies
+} from "./route-context";
 
-interface MobileAuthValidationResult {
-  data: { user: Pick<User, "id"> | null };
-  error: unknown;
-}
-
-export interface MobileScriptsRouteDependencies {
-  hasConfig(): boolean;
-  createClient(accessToken: string): AppSupabaseClient;
-  validateUser(client: AppSupabaseClient, accessToken: string): Promise<MobileAuthValidationResult>;
+export interface MobileScriptsRouteDependencies extends MobileRouteAuthDependencies {
   listOwnedScripts(client: AppSupabaseClient, userId: string): Promise<ScriptListItem[]>;
+  createOwnedScript?(
+    client: AppSupabaseClient,
+    userId: string,
+    input: CreateScriptInput
+  ): Promise<ScriptListItem>;
 }
 
 const defaultDependencies: MobileScriptsRouteDependencies = {
-  hasConfig: hasSupabaseConfig,
-  createClient: createSupabaseMobileRouteClient,
-  validateUser: (client, accessToken) => client.auth.getUser(accessToken),
-  listOwnedScripts: listScripts
+  ...defaultMobileRouteAuthDependencies,
+  listOwnedScripts: listScripts,
+  createOwnedScript: createScript
 };
 
-type ErrorShape = {
-  code?: unknown;
-  status?: unknown;
-};
-
-function readSafeErrorShape(error: unknown): ErrorShape {
-  return typeof error === "object" && error !== null ? (error as ErrorShape) : {};
-}
-
-function mapAuthFailure(origin: string, error: unknown) {
-  const { code, status } = readSafeErrorShape(error);
-
-  if (status === 429) {
-    return mobileApiError(origin, 429, "rate_limited");
-  }
-
-  if (status === 0 || (typeof status === "number" && status >= 500) || code === "request_timeout") {
-    return mobileApiError(origin, 503, "auth_unavailable");
-  }
-
-  if (code === "session_expired" || code === "jwt_expired") {
-    return mobileApiError(origin, 401, "session_expired");
-  }
-
-  return mobileApiError(origin, 401, "session_invalid");
-}
+const mobileCreateScriptPayloadSchema = z
+  .object({
+    title: z.string(),
+    content: z.string(),
+    targetSeconds: z.literal(60).optional(),
+    locale: z.literal("en-US").optional()
+  })
+  .strict();
 
 function mapScriptsFailure(origin: string, error: unknown) {
   if (error instanceof AppError && error.status === 403) {
     return mobileApiError(origin, 403, "account_deletion_in_progress");
   }
 
-  if (error instanceof AppError && error.status === 429) {
-    return mobileApiError(origin, 429, "rate_limited");
-  }
-
-  return mobileApiError(origin, 500, "scripts_unavailable");
+  return mapMobileServiceError(origin, error, {
+    unavailable: "scripts_unavailable",
+    conflict: "script_limit_reached"
+  });
 }
 
 export async function handleMobileScriptsGet(
   request: NextRequest,
   dependencies: MobileScriptsRouteDependencies = defaultDependencies
 ) {
-  const origin = request.headers.get("origin");
+  const auth = await authenticateMobileRequest(request, dependencies);
 
-  if (!isAllowedMobileApiOrigin(origin)) {
-    return mobileApiError(origin, 403, "origin_forbidden");
+  if (!auth.ok) {
+    return auth.response;
   }
 
-  const bearer = parseMobileBearerAuthorization(request.headers.get("authorization"));
+  const { origin, client, userId } = auth.context;
 
-  if (!bearer.ok) {
-    return mobileApiError(
-      origin,
-      401,
-      bearer.reason === "missing" ? "auth_required" : "session_invalid"
+  try {
+    const scripts = await timeAsync("mobile.scripts.list", () =>
+      dependencies.listOwnedScripts(client, userId)
     );
-  }
-
-  if (!dependencies.hasConfig()) {
-    return mobileApiError(origin, 503, "auth_unavailable");
-  }
-
-  let client: AppSupabaseClient;
-
-  try {
-    client = dependencies.createClient(bearer.accessToken);
-  } catch {
-    return mobileApiError(origin, 503, "auth_unavailable");
-  }
-
-  let validation: MobileAuthValidationResult;
-
-  try {
-    validation = await dependencies.validateUser(client, bearer.accessToken);
-  } catch {
-    return mobileApiError(origin, 503, "auth_unavailable");
-  }
-
-  if (validation.error || !validation.data.user?.id) {
-    return mapAuthFailure(origin, validation.error);
-  }
-
-  try {
-    const scripts = await dependencies.listOwnedScripts(client, validation.data.user.id);
     return mobileApiOk(origin, { scripts });
   } catch (error) {
     return mapScriptsFailure(origin, error);
   }
 }
 
-export function handleMobileScriptsOptions(request: NextRequest) {
-  const origin = request.headers.get("origin");
+export async function handleMobileScriptsPost(
+  request: NextRequest,
+  dependencies: MobileScriptsRouteDependencies = defaultDependencies
+) {
+  const auth = await authenticateMobileRequest(request, dependencies);
 
-  if (!isAllowedMobileApiOrigin(origin)) {
-    return mobileApiError(origin, 403, "origin_forbidden", { preflight: true });
+  if (!auth.ok) {
+    return auth.response;
   }
 
-  if (request.headers.get("access-control-request-method")?.toUpperCase() !== "GET") {
-    return mobileApiError(origin, 405, "method_not_allowed", { preflight: true });
+  const { origin, client, userId } = auth.context;
+  const payload = await request.json().catch(() => null);
+  const mobilePayload = mobileCreateScriptPayloadSchema.safeParse(payload);
+
+  if (!mobilePayload.success) {
+    return mobileApiError(origin, 400, "request_invalid");
   }
 
-  const requestedHeaders = parseMobilePreflightHeaders(
-    request.headers.get("access-control-request-headers")
-  );
-
-  if (!requestedHeaders.allowed || !requestedHeaders.includesAuthorization) {
-    return mobileApiError(origin, 400, "request_invalid", { preflight: true });
-  }
-
-  return new NextResponse(null, {
-    status: 204,
-    headers: buildMobileApiHeaders(origin, { preflight: true })
+  const parsed = createScriptSchema.safeParse({
+    ...mobilePayload.data,
+    targetSeconds: mobilePayload.data.targetSeconds ?? 60,
+    locale: mobilePayload.data.locale ?? "en-US"
   });
-}
 
-export function handleMobileScriptsUnsupportedMethod(request: NextRequest) {
-  const origin = request.headers.get("origin");
-
-  if (!isAllowedMobileApiOrigin(origin)) {
-    return mobileApiError(origin, 403, "origin_forbidden");
+  if (!parsed.success) {
+    return mobileApiError(origin, 400, "request_invalid");
   }
 
-  return mobileApiError(origin, 405, "method_not_allowed");
+  try {
+    const createOwnedScript = dependencies.createOwnedScript ?? createScript;
+    const script = await timeAsync("mobile.scripts.create", () =>
+      createOwnedScript(client, userId, parsed.data)
+    );
+    return mobileApiOk(origin, { script }, 201);
+  } catch (error) {
+    return mapScriptsFailure(origin, error);
+  }
 }
+
+export function handleMobileScriptsOptions(request: NextRequest) {
+  return handleMobileOptions(request, ["GET", "POST"]);
+}
+
+export const handleMobileScriptsUnsupportedMethod = handleMobileUnsupportedMethod;

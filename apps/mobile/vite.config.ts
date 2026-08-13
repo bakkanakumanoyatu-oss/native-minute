@@ -1,3 +1,5 @@
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import mobileProfiles from "../../config/mobile-profiles.json";
 
@@ -24,6 +26,31 @@ const SUPABASE_PUBLISHABLE_KEY_PATTERN = /^sb_publishable_[A-Za-z0-9_-]{16,}$/;
 const DEBUG_AUTH_CALLBACK_URI = "com.nativeminutes.app.debug://auth/callback";
 const STAGING_AUTH_CALLBACK_URI =
   "https://native-minute-staging.vercel.app/mobile/auth/callback";
+const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
+
+function readSourceProvenance() {
+  try {
+    const sourceRevision = execFileSync("git", ["rev-parse", "HEAD"], {
+      cwd: repositoryRoot,
+      encoding: "utf8"
+    }).trim();
+    const sourceStatus = execFileSync(
+      "git",
+      ["status", "--porcelain", "--untracked-files=normal"],
+      { cwd: repositoryRoot, encoding: "utf8" }
+    ).trim();
+
+    return {
+      sourceRevision,
+      sourceDirty: sourceStatus.length > 0
+    };
+  } catch {
+    return {
+      sourceRevision: "unavailable",
+      sourceDirty: true
+    };
+  }
+}
 
 function validateBffBaseUrl(input: string, profileName: MobileProfile) {
   const url = new URL(input);
@@ -94,6 +121,7 @@ function validateMobileAuthConfig() {
 }
 
 validateMobileAuthConfig();
+const sourceProvenance = readSourceProvenance();
 
 export default defineConfig({
   base: "./",
@@ -133,7 +161,8 @@ export default defineConfig({
             capacitorProfile: mobileProfiles[profile].capacitorProfile,
             bffOrigin: new URL(bffBaseUrl).origin,
             authCallbackMode: mobileProfiles[profile].authCallbackMode,
-            authConfigured: Boolean(supabaseUrl && supabasePublishableKey && authCallbackUri)
+            authConfigured: Boolean(supabaseUrl && supabasePublishableKey && authCallbackUri),
+            ...sourceProvenance
           })
         });
       }
