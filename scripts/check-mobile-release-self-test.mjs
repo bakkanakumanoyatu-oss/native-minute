@@ -22,6 +22,7 @@ const APP_IDENTIFIER = DEVELOPMENT_TEAM + "." + APP_BUNDLE_ID;
 const STAGING_APPLICATION_IDENTIFIER =
   "46P9QD3T3Q.com.nativeminutes.app.staging";
 const FIXTURE_SOURCE_REVISION = "a".repeat(40);
+const FIXTURE_AUTH_TARGET_FINGERPRINT = "c".repeat(64);
 
 function writeFixture(rootDir, filePath, contents) {
   const absolutePath = resolve(rootDir, filePath);
@@ -222,7 +223,9 @@ function createFixture(rootDir, profile = "production", options = {}) {
       capacitorProfile: options.stagingProfile ?? "staging",
       bffBaseUrl: STAGING_ORIGIN,
       authCallbackMode: "universal-link",
-      authCallbackUri: options.stagingCallback ?? STAGING_CALLBACK
+      authCallbackUri: options.stagingCallback ?? STAGING_CALLBACK,
+      authTargetFingerprint:
+        options.stagingAuthTargetFingerprint ?? FIXTURE_AUTH_TARGET_FINGERPRINT
     },
     production: {
       bffBaseUrl: bffOrigin,
@@ -250,6 +253,7 @@ function createFixture(rootDir, profile = "production", options = {}) {
           bffOrigin: STAGING_ORIGIN,
           authCallbackMode: "universal-link",
           authConfigured: true,
+          authTargetFingerprint: FIXTURE_AUTH_TARGET_FINGERPRINT,
           sourceRevision: FIXTURE_SOURCE_REVISION,
           sourceDirty: false
         }
@@ -262,6 +266,8 @@ function createFixture(rootDir, profile = "production", options = {}) {
   writeJsonFixture(rootDir, "apps/mobile/dist/mobile-build.json", {
     ...metadata,
     authConfigured: options.webAuthConfigured ?? metadata.authConfigured,
+    authTargetFingerprint:
+      options.webAuthTargetFingerprint ?? metadata.authTargetFingerprint,
     sourceRevision: options.webSourceRevision ?? metadata.sourceRevision,
     sourceDirty: options.webSourceDirty ?? metadata.sourceDirty
   });
@@ -274,6 +280,8 @@ function createFixture(rootDir, profile = "production", options = {}) {
   writeJsonFixture(rootDir, "ios/App/App/public/mobile-build.json", {
     ...metadata,
     authConfigured: options.nativeAuthConfigured ?? metadata.authConfigured,
+    authTargetFingerprint:
+      options.nativeAuthTargetFingerprint ?? metadata.authTargetFingerprint,
     sourceRevision: options.nativeSourceRevision ?? metadata.sourceRevision,
     sourceDirty: options.nativeSourceDirty ?? metadata.sourceDirty
   });
@@ -395,6 +403,19 @@ try {
       { profile: "staging" },
       ["staging_build_provenance_mismatch"],
       "Expected mismatched staging source revisions to fail closed."
+    );
+  });
+
+  withFixture((rootDir) => {
+    createFixture(rootDir, "staging", {
+      universalLinks: false,
+      nativeAuthTargetFingerprint: "d".repeat(64)
+    });
+    assertCategories(
+      rootDir,
+      { profile: "staging" },
+      ["staging_build_metadata_mismatch"],
+      "Expected an unapproved staging auth target fingerprint to fail closed."
     );
   });
 

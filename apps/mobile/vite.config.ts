@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import mobileProfiles from "../../config/mobile-profiles.json";
@@ -123,6 +124,28 @@ function validateMobileAuthConfig() {
 validateMobileAuthConfig();
 const sourceProvenance = readSourceProvenance();
 
+function getAuthTargetFingerprint() {
+  if (!supabaseUrl || !supabasePublishableKey) {
+    return null;
+  }
+
+  return createHash("sha256")
+    .update(`${supabaseUrl}\0${supabasePublishableKey}`)
+    .digest("hex");
+}
+
+const authTargetFingerprint = getAuthTargetFingerprint();
+const expectedAuthTargetFingerprint = "authTargetFingerprint" in mobileProfiles[profile]
+  ? mobileProfiles[profile].authTargetFingerprint
+  : null;
+
+if (
+  profile === "staging" &&
+  (!expectedAuthTargetFingerprint || authTargetFingerprint !== expectedAuthTargetFingerprint)
+) {
+  throw new Error("Staging mobile auth must match the approved public target fingerprint.");
+}
+
 export default defineConfig({
   base: "./",
   define: {
@@ -162,6 +185,7 @@ export default defineConfig({
             bffOrigin: new URL(bffBaseUrl).origin,
             authCallbackMode: mobileProfiles[profile].authCallbackMode,
             authConfigured: Boolean(supabaseUrl && supabasePublishableKey && authCallbackUri),
+            authTargetFingerprint,
             ...sourceProvenance
           })
         });

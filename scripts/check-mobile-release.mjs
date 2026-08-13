@@ -19,6 +19,7 @@ const STAGING_CALLBACK = STAGING_BFF_ORIGIN + "/mobile/auth/callback";
 const STAGING_ASSOCIATED_DOMAIN = "applinks:native-minute-staging.vercel.app";
 const STAGING_ENTITLEMENTS_PATH = "App/App-Staging.entitlements";
 const GIT_REVISION_PATTERN = /^[0-9a-f]{40}$/;
+const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const STAGING_APPLICATION_IDENTIFIER =
   "46P9QD3T3Q.com.nativeminutes.app.staging";
 const LOOPBACK_URL_PATTERN = /https?:\/\/(?:localhost|127\.0\.0\.1|\[?::1\]?)(?::\d+)?/i;
@@ -615,6 +616,8 @@ function scanStagingConfigurationContract({
       metadata?.capacitorProfile !== "staging" ||
       metadata?.authCallbackMode !== "universal-link" ||
       metadata?.authConfigured !== true ||
+      !SHA256_PATTERN.test(mobileProfile?.authTargetFingerprint ?? "") ||
+      metadata?.authTargetFingerprint !== mobileProfile?.authTargetFingerprint ||
       !GIT_REVISION_PATTERN.test(metadata?.sourceRevision ?? "") ||
       metadata?.sourceDirty !== false ||
       (currentRevision !== null && metadata?.sourceRevision !== currentRevision)

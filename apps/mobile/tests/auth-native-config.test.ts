@@ -56,7 +56,9 @@ describe("native mobile auth configuration", () => {
       capacitorProfile: "staging",
       bffBaseUrl: "https://native-minute-staging.vercel.app",
       authCallbackMode: "universal-link",
-      authCallbackUri: STAGING_CALLBACK_URI
+      authCallbackUri: STAGING_CALLBACK_URI,
+      authTargetFingerprint:
+        "cfdbf57f7a1d3226019079df30e06c61276cb528f31779581fb6ae92592096b3"
     });
     expect(profiles.production).toMatchObject({
       bundleId: PRODUCTION_BUNDLE_ID,
