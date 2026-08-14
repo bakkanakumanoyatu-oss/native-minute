@@ -266,6 +266,8 @@ directな`simctl install` / `simctl launch`は、同checkerをPASSした`.app`�
 6. `/scripts/[id]/review/[takeId]` で保存済み結果を確認する
 7. `/progress` で5本までの練習スロットから成果を見る
 
+Mobile Gate 3のcanonical learning loopは`CLOSED_COMMITTED_PASS`です。source `b93ea20d9e04486bf9f7cbe614f78fb8edf35d67`を固定stagingへ載せ、iPhone 14 Plus / iOS 26.2.1でElevenLabs Listen/cache、16 kHz mono/16-bit WAV録音、OpenAI transcription、Azure pronunciation、persisted Review、3 intentional Takesのcanonical Progress、offline/reconnect、logout/relaunchを確認しました。これはcurrent Mobile UIをfinal product shellとして承認するものではなく、official 100-template library、final script selection、rich Listen/Review/Progress、fresh-user Mobile voice setupなどは後続gateです。pre-remediation silent audioの原因は`UNKNOWN`のままです。詳細は[Gate 3 Mobile main-loop final result](./docs/g3-mobile-main-loop-final-result.md)を参照してください。なお、これはStore-release provider-readiness Gate 3のhistorical `WARN`とは別の実装gateです。
+
 ## 操作画面の方針
 
 主要画面は、説明より操作を先に見せます。Home は Practice / Progress への入口、Practice は5本までの練習スロット選択、Progress は成果確認です。setup/voice は自分の声の登録と再アップロードに絞り、provider/debug 詳細は主導線から外します。listen は単一の hidden audio element で protected replay URL を直接再生し、見えている音声操作は下部固定 audio bar に一本化します。record はマイク録音と評価操作を中心にします。主要ボタンは押下、処理中、disabled が分かる表示に寄せています。

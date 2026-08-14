@@ -6,6 +6,7 @@ This document is docs-only. It does not change auth, DB schema, API contracts, p
 
 ## Current Position
 
+- Parallel Mobile implementation checkpoint: `G3_MOBILE_MAIN_LOOP = CLOSED_COMMITTED_PASS`. Runtime source `b93ea20d9e04486bf9f7cbe614f78fb8edf35d67` was proven on iPhone 14 Plus / iOS 26.2.1 for ElevenLabs Listen/cache, normalized PCM/WAV recording, OpenAI transcription, Azure pronunciation, persisted Review, canonical three-Take Progress, safe offline/reconnect behavior, and logout/relaunch. P0/P1 are 0. This is not approval of the current Mobile shell, official templates, fresh-user Mobile voice onboarding, privacy/deletion surfaces, or B1D2B release readiness, and it does not replace the historical Store-release Gate 3 provider-readiness `WARN` below. See `docs/g3-mobile-main-loop-final-result.md`; Gate 4 is not started.
 - The fixed 1-minute practice main loop is working well in production-style use: Home, `/scripts`, `/scripts/new`, Listen, Record, Review, and Progress have no major known UX blocker.
 - UI/UX improvement is paused as a phase. The product should now move from "make it easier to use" to "make it safe, operable, and reviewable for public release."
 - Recent speed work has improved perceived performance: selected-script summaries, Review loading consolidation, lazy Progress audio players, protected audio feedback, and staged evaluate feedback are in place.
