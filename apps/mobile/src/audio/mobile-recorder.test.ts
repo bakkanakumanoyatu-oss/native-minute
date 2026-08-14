@@ -40,11 +40,43 @@ class FakeMediaRecorder implements MediaRecorderLike {
   }
 }
 
-function createStream() {
-  const stop = vi.fn();
+class FakeAudioTrack {
+  enabled = true;
+  readyState: MediaStreamTrackState = "live";
+  muted = false;
+  readonly stop = vi.fn();
+  private readonly listeners = new Map<string, Set<EventListenerOrEventListenerObject>>();
+
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject) {
+    const listeners = this.listeners.get(type) ?? new Set();
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  removeEventListener(type: string, listener: EventListenerOrEventListenerObject) {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  emit(type: "mute" | "ended") {
+    const event = new Event(type);
+    for (const listener of this.listeners.get(type) ?? []) {
+      if (typeof listener === "function") {
+        listener(event);
+      } else {
+        listener.handleEvent(event);
+      }
+    }
+  }
+}
+
+function createStream(track: FakeAudioTrack | null = new FakeAudioTrack()) {
   return {
-    stream: { getTracks: () => [{ stop }] } as unknown as MediaStream,
-    stop
+    stream: {
+      getTracks: () => track ? [track] : [],
+      getAudioTracks: () => track ? [track] : []
+    } as unknown as MediaStream,
+    track,
+    stop: track?.stop ?? vi.fn()
   };
 }
 
@@ -59,6 +91,70 @@ describe("mobile recording MIME selection", () => {
 });
 
 describe("MobileAudioRecorder", () => {
+  it("rejects a stream without an audio track", async () => {
+    const { stream } = createStream(null);
+    const diagnostics = vi.fn();
+    const recorder = new MobileAudioRecorder({
+      mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(stream) },
+      MediaRecorderClass: FakeMediaRecorder,
+      onCaptureDiagnosticChange: diagnostics
+    });
+
+    await expect(recorder.start()).resolves.toBe(false);
+    expect(recorder.getState()).toEqual({ kind: "error", reason: "capture_unavailable" });
+    expect(diagnostics).toHaveBeenLastCalledWith({
+      audioTrackPresent: false,
+      audioTrackLive: false,
+      audioTrackMuted: false
+    });
+  });
+
+  it.each([
+    ["disabled", { enabled: false, readyState: "live" as const }],
+    ["ended", { enabled: true, readyState: "ended" as const }]
+  ])("rejects an %s audio track", async (_label, settings) => {
+    const track = new FakeAudioTrack();
+    track.enabled = settings.enabled;
+    track.readyState = settings.readyState;
+    const { stream, stop } = createStream(track);
+    const recorder = new MobileAudioRecorder({
+      mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(stream) },
+      MediaRecorderClass: FakeMediaRecorder
+    });
+
+    await expect(recorder.start()).resolves.toBe(false);
+    expect(stop).toHaveBeenCalledOnce();
+    expect(recorder.getState()).toEqual({ kind: "error", reason: "capture_unavailable" });
+  });
+
+  it("fails safely when the audio track becomes muted during capture", async () => {
+    const track = new FakeAudioTrack();
+    const { stream, stop } = createStream(track);
+    const onRecordingReady = vi.fn();
+    const diagnostics = vi.fn();
+    const recorder = new MobileAudioRecorder({
+      mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(stream) },
+      MediaRecorderClass: FakeMediaRecorder,
+      setTimer: () => 1 as unknown as ReturnType<typeof setTimeout>,
+      clearTimer: vi.fn(),
+      onCaptureDiagnosticChange: diagnostics,
+      onRecordingReady
+    });
+
+    await expect(recorder.start()).resolves.toBe(true);
+    track.muted = true;
+    track.emit("mute");
+
+    expect(stop).toHaveBeenCalledOnce();
+    expect(onRecordingReady).not.toHaveBeenCalled();
+    expect(recorder.getState()).toEqual({ kind: "error", reason: "capture_unavailable" });
+    expect(diagnostics).toHaveBeenLastCalledWith({
+      audioTrackPresent: true,
+      audioTrackLive: true,
+      audioTrackMuted: true
+    });
+  });
+
   it("stops tracks and returns one correctly named recording", async () => {
     FakeMediaRecorder.supported = new Set(["audio/mp4"]);
     const { stream, stop } = createStream();

@@ -3,6 +3,7 @@ import {
   AZURE_PCM_BITS_PER_SAMPLE,
   AZURE_PCM_CHANNELS,
   AZURE_PCM_SAMPLE_RATE,
+  analyzePcm16WavSignal,
   encodeMonoPcm16Wav,
   inspectPcmWav,
   isAzureCompatiblePcmWav,
@@ -60,5 +61,36 @@ describe("mobile PCM WAV normalization primitives", () => {
 
     const truncated = encodeMonoPcm16Wav(new Float32Array([0.2]));
     expect(inspectPcmWav(new Uint8Array(truncated, 0, truncated.byteLength - 1))).toBeNull();
+  });
+
+  it("classifies all-zero and near-digital-silence PCM as a hard failure", () => {
+    const allZero = encodeMonoPcm16Wav(new Float32Array(16_000));
+    const nearDigitalSilenceSamples = new Float32Array(16_000);
+    nearDigitalSilenceSamples.fill(1 / 0x8000);
+    const nearDigitalSilence = encodeMonoPcm16Wav(nearDigitalSilenceSamples);
+
+    expect(analyzePcm16WavSignal(allZero)?.classification).toBe("DIGITAL_SILENCE");
+    expect(analyzePcm16WavSignal(nearDigitalSilence)?.classification).toBe("DIGITAL_SILENCE");
+  });
+
+  it("keeps quiet nonzero PCM as a warning instead of rejecting it", () => {
+    const samples = Float32Array.from(
+      { length: 16_000 },
+      (_value, index) => index % 2 === 0 ? 0.002 : -0.002
+    );
+
+    expect(analyzePcm16WavSignal(encodeMonoPcm16Wav(samples))?.classification).toBe("LOW_SIGNAL");
+  });
+
+  it("classifies ordinary speech-like nonzero PCM as signal present", () => {
+    const samples = Float32Array.from(
+      { length: 16_000 },
+      (_value, index) => Math.sin(index / 12) * 0.12
+    );
+    const analysis = analyzePcm16WavSignal(encodeMonoPcm16Wav(samples));
+
+    expect(analysis?.classification).toBe("SIGNAL_PRESENT");
+    expect(analysis?.peakAbsoluteAmplitude).toBeGreaterThan(0.1);
+    expect(analysis?.rmsAmplitude).toBeGreaterThan(0.05);
   });
 });

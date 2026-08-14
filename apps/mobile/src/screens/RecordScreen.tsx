@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  analyzePcm16WavSignal,
   inspectPcmWav,
   isAzureCompatiblePcmWav,
-  normalizeBrowserAudioFileToPcmWav
+  normalizeBrowserAudioFileToPcmWav,
+  type PcmSignalClassification
 } from "../../../../lib/browser-pcm-wav";
 import { getShortRecordingPrompt } from "../../../../lib/recording";
 import {
   MOBILE_RECORDING_MAX_BYTES,
   MOBILE_RECORDING_MAX_SECONDS,
   MobileAudioRecorder,
+  type MobileCaptureDiagnostic,
   type MobileRecordedAudio,
   type MobileRecorderReason,
   type MobileRecorderState
@@ -34,7 +37,25 @@ type PreparedTake = Readonly<{
   durationSeconds: number;
   takeId: string;
   recordingRef: string;
+  signalClassification: Exclude<PcmSignalClassification, "DIGITAL_SILENCE">;
 }>;
+
+const EMPTY_CAPTURE_DIAGNOSTIC: MobileCaptureDiagnostic = {
+  audioTrackPresent: false,
+  audioTrackLive: false,
+  audioTrackMuted: false
+};
+
+export function canSubmitMobileTake(
+  take: { signalClassification: PcmSignalClassification } | null,
+  previewConfirmed: boolean
+) {
+  return Boolean(
+    take &&
+    take.signalClassification !== "DIGITAL_SILENCE" &&
+    previewConfirmed
+  );
+}
 
 export function buildMobileEvaluationInput(
   scriptId: string,
@@ -58,6 +79,7 @@ const RECORDER_ERROR_COPY: Record<MobileRecorderReason, string> = {
   unsupported: "この端末ではマイク録音を開始できません。iOSとアプリを更新して再試行してください。",
   permission_denied: "マイクの使用が許可されていません。iPhoneの設定でNative Minuteのマイクを許可してください。",
   device_unavailable: "マイクを利用できません。ほかの録音アプリを閉じて再試行してください。",
+  capture_unavailable: "マイクの音声を取得できませんでした。マイク設定を確認して録り直してください。",
   empty_recording: "音声を保存できませんでした。マイクに向かって録り直してください。",
   recording_too_large: "録音サイズが大きすぎます。2分以内で録り直してください。",
   recording_failed: "録音を完了できませんでした。少し待ってから録り直してください。"
@@ -106,10 +128,13 @@ export function RecordScreen({
   const [recorderState, setRecorderState] = useState<MobileRecorderState>({ kind: "idle" });
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [normalizing, setNormalizing] = useState(false);
+  const [captureDiagnostic, setCaptureDiagnostic] = useState<MobileCaptureDiagnostic>(EMPTY_CAPTURE_DIAGNOSTIC);
+  const [signalClassification, setSignalClassification] = useState<PcmSignalClassification | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [preparedTake, setPreparedTake] = useState<PreparedTake | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedRecording, setUploadedRecording] = useState<UploadedMobileRecording | null>(null);
+  const [previewConfirmed, setPreviewConfirmed] = useState(false);
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: "idle" });
   const recorder = useRef<MobileAudioRecorder | null>(null);
   const [previewResource] = useState(() => new AudioObjectUrl());
@@ -135,6 +160,8 @@ export function RecordScreen({
     setPreviewUrl(null);
     setPreparedTake(null);
     setUploadedRecording(null);
+    setSignalClassification(null);
+    setPreviewConfirmed(false);
     setSubmitState({ kind: "idle" });
   }, [previewResource, releasePreviewAudio]);
 
@@ -181,8 +208,22 @@ export function RecordScreen({
           throw new Error("invalid_pcm_wav");
         }
         const format = inspectPcmWav(bytes);
-        if (!format) {
+        const signal = analyzePcm16WavSignal(bytes);
+        if (!format || !signal) {
           throw new Error("invalid_pcm_wav");
+        }
+        setSignalClassification(signal.classification);
+        if (signal.classification === "DIGITAL_SILENCE") {
+          releasePreviewAudio();
+          previewResource.clear();
+          preparedTakeRef.current = null;
+          setPreviewUrl(null);
+          setPreparedTake(null);
+          setUploadedRecording(null);
+          setPreviewConfirmed(false);
+          setSubmitState({ kind: "idle" });
+          setLocalError("音声信号を検出できませんでした。マイクを確認して、もう一度録音してください。");
+          return;
         }
         if (normalized.size > MOBILE_RECORDING_MAX_BYTES) {
           setLocalError("録音サイズが大きすぎます。短く録り直してください。");
@@ -200,13 +241,15 @@ export function RecordScreen({
           file: normalized,
           durationSeconds,
           takeId: createStableMobileTakeId(),
-          recordingRef: createStableMobileTakeId()
+          recordingRef: createStableMobileTakeId(),
+          signalClassification: signal.classification
         };
         const url = previewResource.replace(normalized);
         preparedTakeRef.current = nextTake;
         setPreparedTake(nextTake);
         setPreviewUrl(url);
         setUploadedRecording(null);
+        setPreviewConfirmed(false);
         setSubmitState({ kind: "idle" });
       } catch {
         if (mounted && generation === normalizationGeneration.current) {
@@ -222,6 +265,7 @@ export function RecordScreen({
     const nextRecorder = new MobileAudioRecorder({
       maxSeconds: MOBILE_RECORDING_MAX_SECONDS,
       onStateChange: setRecorderState,
+      onCaptureDiagnosticChange: setCaptureDiagnostic,
       onRecordingReady: (recording) => void handleRecordingReady(recording)
     });
     recorder.current = nextRecorder;
@@ -236,8 +280,11 @@ export function RecordScreen({
           setPreparedTake(null);
           preparedTakeRef.current = null;
           setUploadedRecording(null);
+          setSignalClassification(null);
+          setPreviewConfirmed(false);
           setSubmitState({ kind: "idle" });
         }
+        setPreviewConfirmed(false);
         releasePreviewAudio();
         previewResource.clear();
         setPreviewUrl(null);
@@ -320,7 +367,12 @@ export function RecordScreen({
 
   async function submitTake() {
     const take = preparedTake;
-    if (!take || submitState.kind === "uploading" || submitState.kind === "evaluating") {
+    if (
+      !take ||
+      !canSubmitMobileTake(take, previewConfirmed) ||
+      submitState.kind === "uploading" ||
+      submitState.kind === "evaluating"
+    ) {
       return;
     }
     if (!isOnline) {
@@ -412,6 +464,16 @@ export function RecordScreen({
 
       {recorderState.kind === "error" ? <div className="auth-error" role="alert"><p>{RECORDER_ERROR_COPY[recorderState.reason]}</p></div> : null}
       {localError ? <div className="auth-error" role="alert"><p>{localError}</p></div> : null}
+      {captureDiagnostic.audioTrackPresent || recorderState.kind === "error" || signalClassification ? (
+        <div className="recording-warning" role="status">
+          <p>Audio diagnostic</p>
+          <p>audioTrackPresent: {captureDiagnostic.audioTrackPresent ? "yes" : "no"}</p>
+          <p>audioTrackLive: {captureDiagnostic.audioTrackLive ? "yes" : "no"}</p>
+          <p>audioTrackMuted: {captureDiagnostic.audioTrackMuted ? "yes" : "no"}</p>
+          <p>signalClassification: {signalClassification ?? "PENDING"}</p>
+        </div>
+      ) : null}
+      {signalClassification === "LOW_SIGNAL" ? <div className="recording-warning" role="status"><p>音声が小さめです。プレビューで声が聞こえることを確認してください。</p></div> : null}
       {shortPrompt ? <div className="recording-warning" role="status"><p>{shortPrompt}</p></div> : null}
       {submitState.kind === "error" ? <RequestError error={submitState.error} onRetry={() => void submitTake()} retryLabel="同じTakeで再試行" /> : null}
 
@@ -427,6 +489,14 @@ export function RecordScreen({
             }
           }} controls preload="metadata" src={previewUrl} />
           <p>{formatSeconds(preparedTake.durationSeconds)} · {(preparedTake.file.size / 1024).toFixed(0)} KB · mono 16-bit / 16kHz WAV</p>
+          <label>
+            <input
+              type="checkbox"
+              checked={previewConfirmed}
+              onChange={(event) => setPreviewConfirmed(event.currentTarget.checked)}
+            />
+            プレビューで自分の声が聞こえました
+          </label>
         </div>
       ) : null}
 
@@ -443,7 +513,7 @@ export function RecordScreen({
 
       {preparedTake ? (
         <>
-          <button type="button" onClick={() => void submitTake()} disabled={busy || submitting}>
+          <button type="button" onClick={() => void submitTake()} disabled={busy || submitting || !canSubmitMobileTake(preparedTake, previewConfirmed)}>
             {submitState.kind === "uploading" ? "録音を保存中…" : submitState.kind === "evaluating" ? "評価中…" : uploadedRecording ? "評価を再試行" : "このTakeを評価"}
           </button>
           <button type="button" className="text-button full-width-button" onClick={cancelRecording} disabled={submitting}>

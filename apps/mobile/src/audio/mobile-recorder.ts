@@ -5,9 +5,22 @@ export type MobileRecorderReason =
   | "unsupported"
   | "permission_denied"
   | "device_unavailable"
+  | "capture_unavailable"
   | "empty_recording"
   | "recording_too_large"
   | "recording_failed";
+
+export type MobileCaptureDiagnostic = Readonly<{
+  audioTrackPresent: boolean;
+  audioTrackLive: boolean;
+  audioTrackMuted: boolean;
+}>;
+
+const EMPTY_CAPTURE_DIAGNOSTIC: MobileCaptureDiagnostic = {
+  audioTrackPresent: false,
+  audioTrackLive: false,
+  audioTrackMuted: false
+};
 
 export type MobileRecorderState =
   | { kind: "idle" }
@@ -43,6 +56,7 @@ export type MobileRecorderDependencies = Readonly<{
 type MobileRecorderOptions = MobileRecorderDependencies & Readonly<{
   maxSeconds?: number;
   onStateChange?: (state: MobileRecorderState) => void;
+  onCaptureDiagnosticChange?: (diagnostic: MobileCaptureDiagnostic) => void;
   onRecordingReady?: (recording: MobileRecordedAudio) => void;
 }>;
 
@@ -93,10 +107,12 @@ export class MobileAudioRecorder {
   private readonly clearTimer: NonNullable<MobileRecorderDependencies["clearTimer"]>;
   private readonly maxSeconds: number;
   private readonly onStateChange: (state: MobileRecorderState) => void;
+  private readonly onCaptureDiagnosticChange: (diagnostic: MobileCaptureDiagnostic) => void;
   private readonly onRecordingReady: (recording: MobileRecordedAudio) => void;
   private state: MobileRecorderState = { kind: "idle" };
   private recorder: MediaRecorderLike | null = null;
   private stream: MediaStream | null = null;
+  private audioTrack: MediaStreamTrack | null = null;
   private chunks: Blob[] = [];
   private startedAtMs: number | null = null;
   private stopTimer: ReturnType<typeof setTimeout> | null = null;
@@ -112,6 +128,7 @@ export class MobileAudioRecorder {
     this.clearTimer = options.clearTimer ?? ((timer) => clearTimeout(timer));
     this.maxSeconds = Math.max(1, Math.min(MOBILE_RECORDING_MAX_SECONDS, options.maxSeconds ?? MOBILE_RECORDING_MAX_SECONDS));
     this.onStateChange = options.onStateChange ?? (() => undefined);
+    this.onCaptureDiagnosticChange = options.onCaptureDiagnosticChange ?? (() => undefined);
     this.onRecordingReady = options.onRecordingReady ?? (() => undefined);
   }
 
@@ -131,6 +148,7 @@ export class MobileAudioRecorder {
 
     const generation = ++this.generation;
     this.transition({ kind: "requesting-permission" });
+    this.onCaptureDiagnosticChange(EMPTY_CAPTURE_DIAGNOSTIC);
 
     let stream: MediaStream;
 
@@ -154,6 +172,25 @@ export class MobileAudioRecorder {
       return false;
     }
 
+    const audioTrack = stream.getAudioTracks()[0] ?? null;
+    const captureDiagnostic: MobileCaptureDiagnostic = {
+      audioTrackPresent: Boolean(audioTrack),
+      audioTrackLive: audioTrack?.readyState === "live",
+      audioTrackMuted: audioTrack?.muted ?? false
+    };
+    this.onCaptureDiagnosticChange(captureDiagnostic);
+
+    if (
+      !audioTrack ||
+      !audioTrack.enabled ||
+      audioTrack.readyState !== "live" ||
+      audioTrack.muted
+    ) {
+      stream.getTracks().forEach((track) => track.stop());
+      this.transition({ kind: "error", reason: "capture_unavailable" });
+      return false;
+    }
+
     const selectedMimeType = selectMobileRecordingMimeType(this.MediaRecorderClass);
     let recorder: MediaRecorderLike;
 
@@ -168,6 +205,7 @@ export class MobileAudioRecorder {
     }
 
     this.stream = stream;
+    this.audioTrack = audioTrack;
     this.recorder = recorder;
     this.chunks = [];
     this.discardOutput = false;
@@ -185,6 +223,8 @@ export class MobileAudioRecorder {
     recorder.onstop = () => {
       this.handleStopped(recorder);
     };
+    audioTrack.addEventListener("mute", this.handleTrackUnavailable);
+    audioTrack.addEventListener("ended", this.handleTrackUnavailable);
 
     try {
       recorder.start();
@@ -211,6 +251,7 @@ export class MobileAudioRecorder {
     this.transition({ kind: "stopping" });
     try {
       recorder.stop();
+      this.detachTrackListeners();
       this.releaseTracks();
       return true;
     } catch {
@@ -304,6 +345,7 @@ export class MobileAudioRecorder {
       this.stopTimer = null;
     }
 
+    this.detachTrackListeners();
     this.releaseTracks();
     if (this.recorder) {
       this.recorder.ondataavailable = null;
@@ -311,6 +353,7 @@ export class MobileAudioRecorder {
       this.recorder.onstop = null;
     }
     this.stream = null;
+    this.audioTrack = null;
     this.recorder = null;
     this.chunks = [];
     this.startedAtMs = null;
@@ -320,6 +363,35 @@ export class MobileAudioRecorder {
   private releaseTracks() {
     this.stream?.getTracks().forEach((track) => track.stop());
   }
+
+  private detachTrackListeners() {
+    this.audioTrack?.removeEventListener("mute", this.handleTrackUnavailable);
+    this.audioTrack?.removeEventListener("ended", this.handleTrackUnavailable);
+  }
+
+  private readonly handleTrackUnavailable = () => {
+    const track = this.audioTrack;
+    if (!track || !this.stream || this.disposed) {
+      return;
+    }
+
+    this.onCaptureDiagnosticChange({
+      audioTrackPresent: true,
+      audioTrackLive: track.readyState === "live",
+      audioTrackMuted: track.muted
+    });
+    this.discardOutput = true;
+
+    if (this.recorder && this.recorder.state !== "inactive") {
+      try {
+        this.recorder.stop();
+      } catch {
+        // Cleanup below owns the safe failure state.
+      }
+    }
+
+    this.finish({ kind: "error", reason: "capture_unavailable" });
+  };
 
   private transition(nextState: MobileRecorderState) {
     this.state = nextState;

@@ -14,6 +14,26 @@ export type PcmWavFormat = Readonly<{
   dataByteLength: number;
 }>;
 
+export type PcmSignalClassification =
+  | "SIGNAL_PRESENT"
+  | "LOW_SIGNAL"
+  | "DIGITAL_SILENCE";
+
+export type PcmSignalAnalysis = Readonly<{
+  classification: PcmSignalClassification;
+  peakAbsoluteAmplitude: number;
+  rmsAmplitude: number;
+  nearZeroRatio: number;
+}>;
+
+// Gate 3 rejects only samples indistinguishable from digital zero. The wider
+// low-signal band is advisory until real-device calibration is available.
+const DIGITAL_SILENCE_SAMPLE_MAGNITUDE = 4;
+const DIGITAL_SILENCE_MAX_RMS = 2 / 0x8000;
+const DIGITAL_SILENCE_MIN_NEAR_ZERO_RATIO = 0.999;
+const LOW_SIGNAL_MAX_PEAK = 0.01;
+const LOW_SIGNAL_MAX_RMS = 0.001;
+
 function getAudioContextConstructor() {
   return window.AudioContext
     ?? (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
@@ -136,6 +156,34 @@ function readAscii(bytes: Uint8Array, offset: number, length: number) {
   return String.fromCharCode(...bytes.subarray(offset, offset + length));
 }
 
+function findWaveDataChunk(bytes: Uint8Array) {
+  if (bytes.byteLength < 44) {
+    return null;
+  }
+
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let offset = 12;
+
+  while (offset + 8 <= bytes.byteLength) {
+    const chunkId = readAscii(bytes, offset, 4);
+    const chunkSize = view.getUint32(offset + 4, true);
+    const chunkDataOffset = offset + 8;
+    const chunkEnd = chunkDataOffset + chunkSize;
+
+    if (chunkEnd > bytes.byteLength) {
+      return null;
+    }
+
+    if (chunkId === "data") {
+      return { byteOffset: chunkDataOffset, byteLength: chunkSize };
+    }
+
+    offset = chunkEnd + (chunkSize % 2);
+  }
+
+  return null;
+}
+
 export function inspectPcmWav(input: ArrayBuffer | Uint8Array): PcmWavFormat | null {
   const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
 
@@ -218,6 +266,57 @@ export function isAzureCompatiblePcmWav(input: ArrayBuffer | Uint8Array) {
     format.blockAlign === AZURE_PCM_CHANNELS * (AZURE_PCM_BITS_PER_SAMPLE / 8) &&
     format.bitsPerSample === AZURE_PCM_BITS_PER_SAMPLE
   );
+}
+
+export function analyzePcm16WavSignal(
+  input: ArrayBuffer | Uint8Array
+): PcmSignalAnalysis | null {
+  const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+
+  if (!isAzureCompatiblePcmWav(bytes)) {
+    return null;
+  }
+
+  const dataChunk = findWaveDataChunk(bytes);
+  if (!dataChunk || dataChunk.byteLength <= 0 || dataChunk.byteLength % 2 !== 0) {
+    return null;
+  }
+
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const sampleCount = dataChunk.byteLength / 2;
+  let peakSample = 0;
+  let squaredSum = 0;
+  let nearZeroSamples = 0;
+
+  for (let index = 0; index < sampleCount; index += 1) {
+    const sample = view.getInt16(dataChunk.byteOffset + index * 2, true);
+    const magnitude = Math.abs(sample);
+    peakSample = Math.max(peakSample, magnitude);
+    squaredSum += sample * sample;
+    if (magnitude <= DIGITAL_SILENCE_SAMPLE_MAGNITUDE) {
+      nearZeroSamples += 1;
+    }
+  }
+
+  const peakAbsoluteAmplitude = peakSample / 0x8000;
+  const rmsAmplitude = Math.sqrt(squaredSum / sampleCount) / 0x8000;
+  const nearZeroRatio = nearZeroSamples / sampleCount;
+  const classification =
+    peakSample <= DIGITAL_SILENCE_SAMPLE_MAGNITUDE &&
+    rmsAmplitude <= DIGITAL_SILENCE_MAX_RMS &&
+    nearZeroRatio >= DIGITAL_SILENCE_MIN_NEAR_ZERO_RATIO
+      ? "DIGITAL_SILENCE"
+      : peakAbsoluteAmplitude < LOW_SIGNAL_MAX_PEAK ||
+          rmsAmplitude < LOW_SIGNAL_MAX_RMS
+        ? "LOW_SIGNAL"
+        : "SIGNAL_PRESENT";
+
+  return {
+    classification,
+    peakAbsoluteAmplitude,
+    rmsAmplitude,
+    nearZeroRatio
+  };
 }
 
 export function isBrowserPcmWavFile(file: File) {

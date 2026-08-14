@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildMobileEvaluationInput,
+  canSubmitMobileTake,
   createStableMobileTakeId
 } from "./RecordScreen";
 
@@ -17,7 +18,8 @@ describe("record take identity", () => {
       file: new File(["wav"], "take.wav", { type: "audio/wav" }),
       durationSeconds: 42,
       takeId: "take-stable",
-      recordingRef: "upload-stable"
+      recordingRef: "upload-stable",
+      signalClassification: "SIGNAL_PRESENT" as const
     };
     const recording = {
       recordingRef: "recording-owned-ref",
@@ -32,5 +34,17 @@ describe("record take identity", () => {
       takeId: "take-stable",
       recordingRef: "recording-owned-ref"
     });
+  });
+
+  it("blocks upload/evaluation until a non-silent take has an audible preview confirmation", () => {
+    expect(canSubmitMobileTake(null, true)).toBe(false);
+    expect(canSubmitMobileTake({ signalClassification: "DIGITAL_SILENCE" }, true)).toBe(false);
+    expect(canSubmitMobileTake({ signalClassification: "SIGNAL_PRESENT" }, false)).toBe(false);
+    expect(canSubmitMobileTake({ signalClassification: "LOW_SIGNAL" }, false)).toBe(false);
+  });
+
+  it("keeps the existing submission path for a confirmed non-silent take", () => {
+    expect(canSubmitMobileTake({ signalClassification: "SIGNAL_PRESENT" }, true)).toBe(true);
+    expect(canSubmitMobileTake({ signalClassification: "LOW_SIGNAL" }, true)).toBe(true);
   });
 });
