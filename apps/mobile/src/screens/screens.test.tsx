@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { MobileProgress, MobileReview, MobileScript } from "../practice/api";
 import { ProgressContent } from "./ProgressScreen";
 import { ReviewContent } from "./ReviewScreen";
+import { getListenPrepareButtonLabel } from "./ListenScreen";
 import { ScriptsList } from "./ScriptsScreen";
 
 const evaluation = {
@@ -36,6 +37,11 @@ const review: MobileReview = {
 };
 
 describe("mobile practice static screens", () => {
+  it("keeps a backgrounded reference audio visibly cached instead of looking ungenerated", () => {
+    expect(getListenPrepareButtonLabel("idle", true)).toBe("保存済みのお手本を再準備");
+    expect(getListenPrepareButtonLabel("idle", false)).toBe("お手本を準備");
+  });
+
   it("renders script selection actions", () => {
     const script: MobileScript = {
       id: "script-1",

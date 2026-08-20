@@ -8,6 +8,8 @@ function location(pathname: string, search = "") {
 describe("practice routes", () => {
   it.each<PracticeRoute>([
     { name: "scripts" },
+    { name: "voice_setup" },
+    { name: "voice_setup", scriptId: "script-1" },
     { name: "listen", scriptId: "script-1" },
     { name: "record", scriptId: "script-1" },
     { name: "review", scriptId: "script-1", takeId: "take-1" },
@@ -26,6 +28,7 @@ describe("practice routes", () => {
 
   it("recognizes only paths owned by the authenticated practice shell", () => {
     expect(isPracticePath("/scripts/example/listen")).toBe(true);
+    expect(isPracticePath("/setup/voice")).toBe(true);
     expect(isPracticePath("/progress")).toBe(true);
     expect(isPracticePath("/login")).toBe(false);
   });

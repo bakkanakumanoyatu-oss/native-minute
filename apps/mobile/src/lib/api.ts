@@ -20,7 +20,8 @@ export type MobileApiTimingLabel =
   | "request"
   | "audio_download"
   | "upload"
-  | "evaluate_total";
+  | "evaluate_total"
+  | "voice_setup";
 
 export type MobileApiTimingSample = {
   label: MobileApiTimingLabel;
@@ -61,6 +62,11 @@ export type CreateMobileScriptInput = {
 export type MobileListenAudio = {
   audioId: string;
   cached: boolean;
+};
+
+export type MobileVoiceSetup = {
+  status: "ready" | "consent_required" | "sample_required";
+  created: boolean;
 };
 
 export type UploadMobileRecordingInput = {
@@ -221,6 +227,10 @@ export type MobileProgressRequestState =
   | { kind: "success"; progress: MobileProgress }
   | MobileApiFailure;
 
+export type MobileVoiceSetupRequestState =
+  | ({ kind: "success" } & MobileVoiceSetup)
+  | MobileApiFailure;
+
 export const MAX_MOBILE_AUDIO_BYTES = 15 * 1024 * 1024;
 
 const DEFAULT_HEALTH_TIMEOUT_MS = 5_000;
@@ -229,6 +239,7 @@ const DEFAULT_LISTEN_TIMEOUT_MS = 120_000;
 const DEFAULT_AUDIO_TIMEOUT_MS = 30_000;
 const DEFAULT_UPLOAD_TIMEOUT_MS = 45_000;
 const DEFAULT_EVALUATE_TIMEOUT_MS = 120_000;
+const DEFAULT_VOICE_SETUP_TIMEOUT_MS = 120_000;
 const MAX_TIMEOUT_MS = 180_000;
 const MAX_TIMING_SAMPLES = 100;
 
@@ -242,6 +253,7 @@ const MOBILE_API_PATHS = {
     `/api/mobile/script-audio/${encodeURIComponent(audioId)}`,
   recordings: "/api/mobile/recordings",
   evaluate: "/api/mobile/evaluate",
+  voiceSetup: "/api/mobile/voice-setup",
   review: (scriptId: string, takeId: string) =>
     `/api/mobile/scripts/${encodeURIComponent(scriptId)}/reviews/${encodeURIComponent(takeId)}`,
   progress: "/api/mobile/progress"
@@ -477,6 +489,16 @@ function parseListenPayload(value: unknown): MobileListenAudio | null {
   const data = getSuccessData(value);
   return data && isNonEmptyString(data.audioId) && typeof data.cached === "boolean"
     ? { audioId: data.audioId, cached: data.cached }
+    : null;
+}
+
+function parseVoiceSetupPayload(value: unknown): MobileVoiceSetup | null {
+  const data = getSuccessData(value);
+
+  return data &&
+    (data.status === "ready" || data.status === "consent_required" || data.status === "sample_required") &&
+    typeof data.created === "boolean"
+    ? { status: data.status, created: data.created }
     : null;
 }
 
@@ -901,6 +923,94 @@ export async function requestMobileScriptListen(
 
   const listen = parseListenPayload(attempt.body);
   return listen ? { kind: "success", ...listen } : { kind: "invalid-response" };
+}
+
+export async function fetchMobileVoiceSetup(
+  bffBaseUrl: string,
+  accessToken: string,
+  options: MobileApiRequestOptions = {}
+): Promise<MobileVoiceSetupRequestState> {
+  const attempt = await requestJson(
+    bffBaseUrl,
+    MOBILE_API_PATHS.voiceSetup,
+    accessToken,
+    { method: "GET" },
+    options,
+    DEFAULT_REQUEST_TIMEOUT_MS,
+    "voice_setup"
+  );
+
+  if (attempt.kind !== "response") {
+    return mapAttemptFailure(attempt);
+  }
+
+  if (!attempt.response.ok) {
+    return mapFailure(attempt.response, attempt.body);
+  }
+
+  const setup = parseVoiceSetupPayload(attempt.body);
+  return setup ? { kind: "success", ...setup } : { kind: "invalid-response" };
+}
+
+export async function acceptMobileVoiceConsent(
+  bffBaseUrl: string,
+  accessToken: string,
+  options: MobileApiRequestOptions = {}
+): Promise<MobileVoiceSetupRequestState> {
+  const attempt = await requestJson(
+    bffBaseUrl,
+    MOBILE_API_PATHS.voiceSetup,
+    accessToken,
+    { method: "POST", body: JSON.stringify({ accepted: true }) },
+    options,
+    DEFAULT_REQUEST_TIMEOUT_MS,
+    "voice_setup"
+  );
+
+  if (attempt.kind !== "response") {
+    return mapAttemptFailure(attempt);
+  }
+
+  if (!attempt.response.ok) {
+    return mapFailure(attempt.response, attempt.body);
+  }
+
+  const setup = parseVoiceSetupPayload(attempt.body);
+  return setup ? { kind: "success", ...setup } : { kind: "invalid-response" };
+}
+
+export async function createMobileVoiceFromSample(
+  bffBaseUrl: string,
+  accessToken: string,
+  sample: File,
+  options: MobileApiRequestOptions = {}
+): Promise<MobileVoiceSetupRequestState> {
+  if (!isAudioContentType(sample.type) || sample.size === 0 || sample.size > 10 * 1024 * 1024) {
+    return invalidInput("voice_sample_invalid");
+  }
+
+  const formData = new FormData();
+  formData.append("file", sample, sample.name || "voice-sample.audio");
+  const attempt = await requestJson(
+    bffBaseUrl,
+    MOBILE_API_PATHS.voiceSetup,
+    accessToken,
+    { method: "POST", body: formData },
+    options,
+    DEFAULT_VOICE_SETUP_TIMEOUT_MS,
+    "voice_setup"
+  );
+
+  if (attempt.kind !== "response") {
+    return mapAttemptFailure(attempt);
+  }
+
+  if (!attempt.response.ok) {
+    return mapFailure(attempt.response, attempt.body);
+  }
+
+  const setup = parseVoiceSetupPayload(attempt.body);
+  return setup ? { kind: "success", ...setup } : { kind: "invalid-response" };
 }
 
 type AudioResponseBody =

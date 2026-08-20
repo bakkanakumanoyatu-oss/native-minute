@@ -16,6 +16,21 @@ type ListenState =
   | { kind: "ready"; url: string; cached: boolean }
   | { kind: "error"; error: PracticeRequestFailure };
 
+export function getListenPrepareButtonLabel(
+  state: ListenState["kind"],
+  hasPreparedReferenceAudio: boolean
+) {
+  if (state === "loading") {
+    return "お手本を準備中…";
+  }
+
+  if (state === "ready") {
+    return "お手本を再取得";
+  }
+
+  return hasPreparedReferenceAudio ? "保存済みのお手本を再準備" : "お手本を準備";
+}
+
 function releaseAudioElement(element: HTMLAudioElement | null) {
   if (!element) {
     return;
@@ -43,6 +58,7 @@ export function ListenScreen({
 }) {
   const [scriptState, setScriptState] = useState<ScriptState>({ kind: "loading" });
   const [listenState, setListenState] = useState<ListenState>({ kind: "idle" });
+  const [hasPreparedReferenceAudio, setHasPreparedReferenceAudio] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [objectUrl] = useState(() => new AudioObjectUrl());
   const audioElement = useRef<HTMLAudioElement | null>(null);
@@ -168,6 +184,7 @@ export function ListenScreen({
       return;
     }
     operationInFlight.current = false;
+    setHasPreparedReferenceAudio(true);
     setListenState({ kind: "ready", url, cached: requested.cached });
   }
 
@@ -189,7 +206,14 @@ export function ListenScreen({
         </article>
       ) : null}
 
-      {listenState.kind === "error" ? <RequestError error={listenState.error} onRetry={() => void prepareAudio()} /> : null}
+      {listenState.kind === "error" && listenState.error.kind === "conflict" && listenState.error.reasonCode === "voice_setup_required" ? (
+        <div className="auth-notice" role="status">
+          <strong>お手本ボイスの準備が必要です</strong>
+          <p>同意と短い声の録音を完了すると、この台本のお手本を準備できます。</p>
+          <button type="button" onClick={() => onNavigate({ name: "voice_setup", scriptId })}>お手本ボイスを準備する</button>
+        </div>
+      ) : null}
+      {listenState.kind === "error" && !(listenState.error.kind === "conflict" && listenState.error.reasonCode === "voice_setup_required") ? <RequestError error={listenState.error} onRetry={() => void prepareAudio()} /> : null}
       {listenState.kind === "ready" ? (
         <div className="audio-card">
           <p className="eyebrow">Reference audio</p>
@@ -210,7 +234,7 @@ export function ListenScreen({
         onClick={() => void prepareAudio()}
         disabled={listenState.kind === "loading" || visibleScriptState.kind !== "ready"}
       >
-        {listenState.kind === "loading" ? "お手本を準備中…" : listenState.kind === "ready" ? "お手本を再取得" : "お手本を準備"}
+        {getListenPrepareButtonLabel(listenState.kind, hasPreparedReferenceAudio)}
       </button>
       <button type="button" className="secondary-button" disabled={visibleScriptState.kind !== "ready"} onClick={() => onNavigate({ name: "record", scriptId })}>
         録音へ進む

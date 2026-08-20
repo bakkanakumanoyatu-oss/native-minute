@@ -16,6 +16,8 @@ const MOBILE_API_ERROR_COPY: Record<MobileApiReasonCode, { message: string; retr
   script_limit_reached: { message: "台本の保存上限に達しています。", retryable: false },
   listen_unavailable: { message: "お手本音声を準備できませんでした。", retryable: true },
   voice_setup_required: { message: "お手本音声の準備が必要です。", retryable: false },
+  voice_setup_unavailable: { message: "お手本ボイスを準備できませんでした。少し待ってから再試行してください。", retryable: true },
+  voice_sample_invalid: { message: "声の録音を確認して、もう一度録音してください。", retryable: false },
   audio_not_found: { message: "お手本音声が見つかりませんでした。", retryable: false },
   audio_unavailable: { message: "お手本音声を取得できませんでした。", retryable: true },
   recording_invalid: { message: "録音データを確認してください。", retryable: false },

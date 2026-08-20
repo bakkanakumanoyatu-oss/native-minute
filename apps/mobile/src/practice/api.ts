@@ -1,9 +1,12 @@
 import type { MobileAuthController } from "../auth/mobile-auth";
 import type { MobileAuthState } from "../auth/state-machine";
 import {
+  acceptMobileVoiceConsent,
   createMobileScript,
+  createMobileVoiceFromSample,
   downloadMobileScriptAudio,
   evaluateMobileRecording,
+  fetchMobileVoiceSetup,
   fetchMobileProgress,
   fetchMobileReview,
   fetchMobileScript,
@@ -23,6 +26,7 @@ import {
   type MobileReviewRequestState,
   type MobileScript,
   type MobileScriptRequestState,
+  type MobileVoiceSetupRequestState,
   type ScriptsRequestState,
   type UploadMobileRecordingInput,
   type UploadedMobileRecording
@@ -58,6 +62,9 @@ export interface PracticeApi {
   createScript(input: CreateMobileScriptInput): Promise<MobileScriptRequestState>;
   getScript(scriptId: string): Promise<MobileScriptRequestState>;
   requestListen(scriptId: string): Promise<MobileListenRequestState>;
+  getVoiceSetup(): Promise<MobileVoiceSetupRequestState>;
+  acceptVoiceConsent(): Promise<MobileVoiceSetupRequestState>;
+  createVoiceFromSample(sample: File): Promise<MobileVoiceSetupRequestState>;
   downloadAudio(audioId: string): Promise<MobileAudioDownloadState>;
   uploadRecording(input: UploadMobileRecordingInput): Promise<MobileRecordingUploadState>;
   evaluateRecording(input: EvaluateMobileRecordingInput): Promise<MobileReviewRequestState>;
@@ -134,7 +141,9 @@ export function getPracticeErrorCopy(state: PracticeRequestFailure | RequestStat
         ? "同じTakeを評価中です。少し待ってから再試行してください。"
         : "この操作を完了できませんでした。内容を確認して再試行してください。";
     case "invalid-request":
-      return "この操作を完了できませんでした。内容を確認して再試行してください。";
+      return state.reasonCode === "voice_sample_invalid"
+        ? "声の録音を確認して、もう一度録音してください。"
+        : "この操作を完了できませんでした。内容を確認して再試行してください。";
     case "server-error":
     case "invalid-response":
     default:
@@ -254,6 +263,9 @@ export function createPracticeApi({
     createScript: (input) => request((token) => createMobileScript(bffBaseUrl, token, input, { onTiming })),
     getScript: (scriptId) => request((token) => fetchMobileScript(bffBaseUrl, token, scriptId, { onTiming })),
     requestListen,
+    getVoiceSetup: () => request((token) => fetchMobileVoiceSetup(bffBaseUrl, token, { onTiming })),
+    acceptVoiceConsent: () => request((token) => acceptMobileVoiceConsent(bffBaseUrl, token, { onTiming })),
+    createVoiceFromSample: (sample) => request((token) => createMobileVoiceFromSample(bffBaseUrl, token, sample, { onTiming })),
     downloadAudio: (audioId) => request((token) => downloadMobileScriptAudio(bffBaseUrl, token, audioId, { onTiming })),
     uploadRecording: (input) => request((token) => uploadMobileRecording(bffBaseUrl, token, input, { onTiming })),
     evaluateRecording: (input) => request((token) => evaluateMobileRecording(bffBaseUrl, token, input, { onTiming })),

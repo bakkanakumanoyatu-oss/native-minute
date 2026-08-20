@@ -56,6 +56,16 @@ type VoiceQuotaContext = {
   keys: VoiceGenerationQuotaKeys;
 };
 
+export type EnsureDefaultVoiceResult = {
+  voice: VoiceRow;
+  created: boolean;
+};
+
+// This only coalesces concurrent requests handled by the same server runtime. The
+// persisted default-voice recheck before creation also makes a retry after a lost
+// client response reuse the canonical row instead of issuing another provider call.
+const defaultVoiceCreationRequests = new Map<string, Promise<EnsureDefaultVoiceResult>>();
+
 type InsertSingleBuilder<TInsert, TRow> = {
   insert(values: TInsert): {
     select(columns?: string): {
@@ -556,6 +566,48 @@ export async function createUserVoice(client: AppSupabaseClient, userId: string,
     label: input.label,
     sampleAudioPath: resolvedSampleAudio?.audioPath ?? (trimmedSampleAudioPath || null)
   });
+}
+
+export async function createDefaultVoiceIfMissing(
+  client: AppSupabaseClient,
+  userId: string,
+  input: CreateVoiceRequestInput
+): Promise<EnsureDefaultVoiceResult> {
+  const existing = await getDefaultVoice(client, userId);
+
+  if (existing) {
+    return { voice: existing, created: false };
+  }
+
+  const requestKey = `${userId}:${getVoiceProviderName()}`;
+  const inFlight = defaultVoiceCreationRequests.get(requestKey);
+
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const pending = (async () => {
+    const rechecked = await getDefaultVoice(client, userId);
+
+    if (rechecked) {
+      return { voice: rechecked, created: false };
+    }
+
+    return {
+      voice: await createUserVoice(client, userId, input),
+      created: true
+    };
+  })();
+
+  defaultVoiceCreationRequests.set(requestKey, pending);
+
+  try {
+    return await pending;
+  } finally {
+    if (defaultVoiceCreationRequests.get(requestKey) === pending) {
+      defaultVoiceCreationRequests.delete(requestKey);
+    }
+  }
 }
 
 async function getOwnedVoice(client: AppSupabaseClient, userId: string, voiceId: string) {

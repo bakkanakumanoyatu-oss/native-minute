@@ -1,5 +1,6 @@
 export type PracticeRoute =
   | { name: "scripts" }
+  | { name: "voice_setup"; scriptId?: string }
   | { name: "listen"; scriptId: string }
   | { name: "record"; scriptId: string }
   | { name: "review"; scriptId: string; takeId: string }
@@ -25,6 +26,12 @@ export function parsePracticeRoute(location: Pick<Location, "pathname" | "search
 
   if (segments.length === 1 && segments[0] === "scripts") {
     return { name: "scripts" };
+  }
+
+  if (segments.length === 2 && segments[0] === "setup" && segments[1] === "voice") {
+    const requestedScriptId = new URLSearchParams(location.search).get("scriptId") ?? undefined;
+    const scriptId = safeSegment(requestedScriptId);
+    return scriptId ? { name: "voice_setup", scriptId } : { name: "voice_setup" };
   }
 
   if (segments.length === 3 && segments[0] === "scripts") {
@@ -58,6 +65,10 @@ export function practiceRoutePath(route: PracticeRoute) {
   switch (route.name) {
     case "scripts":
       return "/scripts";
+    case "voice_setup":
+      return route.scriptId
+        ? `/setup/voice?scriptId=${encodeURIComponent(route.scriptId)}`
+        : "/setup/voice";
     case "listen":
       return `/scripts/${encodeURIComponent(route.scriptId)}/listen`;
     case "record":
@@ -72,7 +83,7 @@ export function practiceRoutePath(route: PracticeRoute) {
 }
 
 export function isPracticePath(pathname: string) {
-  if (pathname === "/scripts" || pathname === "/progress") {
+  if (pathname === "/scripts" || pathname === "/progress" || pathname === "/setup/voice") {
     return true;
   }
 

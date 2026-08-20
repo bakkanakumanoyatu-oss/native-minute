@@ -22,6 +22,13 @@ describe("practice request state", () => {
     expect(copy).not.toContain("provider");
   });
 
+  it("gives a fresh-user voice sample a Japanese re-record recovery without exposing server detail", () => {
+    const copy = getPracticeErrorCopy({ kind: "invalid-request", reasonCode: "voice_sample_invalid" });
+    expect(copy).toContain("もう一度録音");
+    expect(copy).not.toContain("ElevenLabs");
+    expect(copy).not.toContain("storage://");
+  });
+
   it("keeps the frozen owner valid only during authenticated refresh lifecycle state", () => {
     expect(isPracticeOwnerStateCurrent({ kind: "refreshing" }, "user-a")).toBe(true);
     expect(isPracticeOwnerStateCurrent({ kind: "authenticated", userId: "user-a" }, "user-a")).toBe(true);

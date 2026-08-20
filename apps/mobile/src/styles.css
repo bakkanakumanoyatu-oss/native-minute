@@ -184,6 +184,31 @@ button:disabled {
   margin-bottom: 0;
 }
 
+.voice-setup-step {
+  margin-top: 1rem;
+}
+
+.voice-consent-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin: 1rem 0 0;
+  padding: 0.9rem;
+  border: 1px solid rgba(31, 42, 36, 0.12);
+  border-radius: 0.9rem;
+  color: #33493e;
+  background: rgba(46, 139, 99, 0.05);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.voice-consent-check input {
+  width: 1rem;
+  min-height: 1rem;
+  margin-top: 0.15rem;
+  padding: 0;
+}
+
 .secondary-button {
   color: #204f3b;
   background: transparent;

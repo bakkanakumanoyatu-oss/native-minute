@@ -4,6 +4,7 @@ import { ProgressScreen } from "../screens/ProgressScreen";
 import { RecordScreen } from "../screens/RecordScreen";
 import { ReviewScreen } from "../screens/ReviewScreen";
 import { ScriptsScreen } from "../screens/ScriptsScreen";
+import { VoiceSetupScreen } from "../screens/VoiceSetupScreen";
 import type { PracticeApi } from "./api";
 import { parsePracticeRoute, practiceRoutePath, type PracticeRoute } from "./routes";
 
@@ -76,6 +77,9 @@ export function PracticeApp({
   switch (route.name) {
     case "scripts":
       screen = <ScriptsScreen api={api} isOnline={isOnline} onNavigate={navigate} />;
+      break;
+    case "voice_setup":
+      screen = <VoiceSetupScreen api={api} scriptId={route.scriptId} isOnline={isOnline} onNavigate={navigate} />;
       break;
     case "listen":
       screen = <ListenScreen api={api} scriptId={route.scriptId} isOnline={isOnline} onNavigate={navigate} />;

@@ -12,6 +12,8 @@ export type MobileApiReasonCode =
   | "script_limit_reached"
   | "listen_unavailable"
   | "voice_setup_required"
+  | "voice_setup_unavailable"
+  | "voice_sample_invalid"
   | "audio_not_found"
   | "audio_unavailable"
   | "recording_invalid"
