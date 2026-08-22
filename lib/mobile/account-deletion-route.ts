@@ -85,16 +85,16 @@ export async function handleMobileAccountDeletionRequestPost(
   request: NextRequest,
   dependencies: MobileAccountDeletionRouteDependencies = defaultDependencies
 ) {
-  const payload = await request.json().catch(() => ({}));
-
-  if (!createAccountDeletionRequestSchema.safeParse(payload).success) {
-    return mobileApiError(request.headers.get("origin") ?? "", 400, "request_invalid");
-  }
-
   const auth = await authenticateMobileRequest(request, dependencies);
 
   if (!auth.ok) {
     return auth.response;
+  }
+
+  const payload = await request.json().catch(() => null);
+
+  if (!createAccountDeletionRequestSchema.safeParse(payload).success) {
+    return mobileApiError(auth.context.origin, 400, "request_invalid");
   }
 
   try {

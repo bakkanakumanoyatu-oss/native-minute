@@ -1,6 +1,6 @@
 # G5B Mobile Settings, Legal, and Account Deletion Entry
 
-Status: `IMPLEMENTED_VALIDATED`
+Status: `P1_REMEDIATED_PENDING_FINAL_READ_ONLY_REAUDIT`
 
 Scope: Minimal Mobile Settings, trusted public legal navigation, and Bearer-only account-deletion request/status entry. Gate 5 overall remains open. This work does not start any later Gate 5 unit.
 
@@ -43,21 +43,31 @@ The local-spike Mobile build and iOS Capacitor sync passed and detected both `@c
 - Responses contain only `requestState`, `nextAction`, and the safe `created` result. They exclude request IDs, user IDs, email, service-role information, provider IDs, private paths, inventory, raw errors, and secrets.
 - Existing active-request and race semantics remain canonical: the domain service reuses an active request rather than creating a duplicate.
 
+## Final audit finding and P1 remediation
+
+The prior final read-only audit found a P1 mismatch: the canonical deletion domain permits a new request after `cancelled` or `expired`, but Mobile decoded `expired` as an invalid response and displayed a start CTA only for `not_requested`. The audit history is retained; this remediation does not relabel that audit as a pass.
+
+- Mobile now decodes every G5B-relevant canonical status, including `cancelled` and `expired`, while unknown statuses remain safe `invalid-response` failures.
+- `not_requested`, `cancelled`, and `expired` are a single client-side reapplication set. Mobile preserves the terminal status and presents the appropriate start/reapply CTA; active requests do not receive a duplicate CTA.
+- The Mobile POST now authenticates the Bearer session and derives the user before it reads or validates the request body. An unauthenticated malformed request therefore receives the safe 401 response; an authenticated malformed request keeps the safe validation error.
+- No API field, database migration, domain model, cookie fallback, or deletion execution behavior changed. The canonical `createAccountDeletionRequest(userId)` service remains responsible for terminal-state creation and active-request reuse.
+
 The dedicated Mobile deletion screen reaches discovery, initiation, and safe status only. It distinguishes account deletion from unsupported voice-only deletion and never starts typed confirmation, provider cleanup, Storage cleanup, DB cleanup, Supabase Auth deletion, or an operator runner. Its copy does not claim immediate or completed deletion for a newly-created request.
 
 ## Focused evidence
 
-- Mobile routes round-trip Settings and the dedicated account-deletion entry.
+- Direct domain-service tests prove that `cancelled` and `expired` are excluded from active-request reuse and result in a new canonical `requested` row, while an active request is reused without an insert.
+- Mobile route tests prove terminal status responses, created reapplications, safe 401 precedence for malformed unauthenticated POSTs, and the authenticated validation error.
+- Mobile decoder/component tests prove terminal decoding, unknown-status rejection, reapply CTA availability only for the canonical terminal set, Settings-to-dedicated-deletion navigation, and rendering of the canonical G5A consent responses.
 - Trusted legal navigation tests verify each canonical path, no query/fragment/credentials, and reject an arbitrary URL-like page value.
-- Mobile deletion route tests verify unauthenticated 401, Bearer-derived User A request creation, User B status isolation, safe response redaction, duplicate request reuse, and rejection of a client-supplied user ID.
-- Targeted Mobile tests, Mobile typecheck, Mobile lint, local-spike Mobile build, and Capacitor iOS sync passed during implementation.
+- Remediation-focused tests passed before the final full repository validation. No Staging build, sync, install, deploy, or native Browser smoke was run.
 
 ## G5B audit status
 
 - P0: 0
-- P1: 0
+- P1: 0 at remediation validation; independent final read-only re-audit is pending.
 - P2: 1
-  - The exact Staging native build/sync could not be run from this workspace because the existing Staging guard requires an approved public-target fingerprint that was not provided. This is an external validation limitation, not a fallback, URL, or authentication-contract change.
+  - Exact Staging native Browser/build behavior remains unproven. The existing Staging guard requires an approved public-target fingerprint that was not provided. This is an external validation limitation, not a fallback, URL, or authentication-contract change.
 
 G5A remains unchanged at P0=0, P1=0, P2=2. Gate 4 historical P2 remains outside this scope.
 

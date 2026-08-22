@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type {
   MobileProcessingConsent,
+  MobileProcessingConsentRequestState,
+  MobileVoiceSetupRequestState,
   MobileVoiceSetup
 } from "../lib/api";
 import { openTrustedLegalPage } from "../lib/trusted-legal-navigation";
@@ -40,6 +42,65 @@ function voiceSetupCopy(status: MobileVoiceSetup["status"]) {
   }
 }
 
+type SettingsLoadResult = {
+  pronunciationConsent: MobileProcessingConsentRequestState;
+  voiceCloningConsent: MobileProcessingConsentRequestState;
+  voiceSetup: MobileVoiceSetupRequestState;
+};
+
+export function resolveSettingsState({
+  pronunciationConsent,
+  voiceCloningConsent,
+  voiceSetup
+}: SettingsLoadResult): SettingsState {
+  if (pronunciationConsent.kind !== "success") {
+    return { kind: "error", error: pronunciationConsent };
+  }
+
+  if (voiceCloningConsent.kind !== "success") {
+    return { kind: "error", error: voiceCloningConsent };
+  }
+
+  if (voiceSetup.kind !== "success") {
+    return { kind: "error", error: voiceSetup };
+  }
+
+  return {
+    kind: "ready",
+    pronunciationConsent,
+    voiceCloningConsent,
+    voiceSetup
+  };
+}
+
+export function navigateToAccountDeletion(onNavigate: (route: PracticeRoute) => void) {
+  onNavigate({ name: "account_deletion" });
+}
+
+export function SettingsAccountDataSection({
+  pronunciationConsent,
+  voiceCloningConsent,
+  onNavigate
+}: {
+  pronunciationConsent: MobileProcessingConsent;
+  voiceCloningConsent: MobileProcessingConsent;
+  onNavigate: (route: PracticeRoute) => void;
+}) {
+  return (
+    <section className="settings-section">
+      <p className="eyebrow">Account / Data</p>
+      <h2>同意とアカウント</h2>
+      <dl className="settings-status-list">
+        <div><dt>録音と発音評価</dt><dd>{consentCopy(pronunciationConsent.status)}</dd></div>
+        <div><dt>クローンボイス</dt><dd>{consentCopy(voiceCloningConsent.status)}</dd></div>
+      </dl>
+      <button type="button" onClick={() => navigateToAccountDeletion(onNavigate)}>
+        アカウント削除へ
+      </button>
+    </section>
+  );
+}
+
 export function SettingsScreen({
   api,
   isOnline,
@@ -75,27 +136,7 @@ export function SettingsScreen({
         return;
       }
 
-      if (pronunciationConsent.kind !== "success") {
-        setState({ kind: "error", error: pronunciationConsent });
-        return;
-      }
-
-      if (voiceCloningConsent.kind !== "success") {
-        setState({ kind: "error", error: voiceCloningConsent });
-        return;
-      }
-
-      if (voiceSetup.kind !== "success") {
-        setState({ kind: "error", error: voiceSetup });
-        return;
-      }
-
-      setState({
-        kind: "ready",
-        pronunciationConsent,
-        voiceCloningConsent,
-        voiceSetup
-      });
+      setState(resolveSettingsState({ pronunciationConsent, voiceCloningConsent, voiceSetup }));
     });
 
     return () => {
@@ -138,17 +179,11 @@ export function SettingsScreen({
             </button>
           </section>
 
-          <section className="settings-section">
-            <p className="eyebrow">Account / Data</p>
-            <h2>同意とアカウント</h2>
-            <dl className="settings-status-list">
-              <div><dt>録音と発音評価</dt><dd>{consentCopy(visibleState.pronunciationConsent.status)}</dd></div>
-              <div><dt>クローンボイス</dt><dd>{consentCopy(visibleState.voiceCloningConsent.status)}</dd></div>
-            </dl>
-            <button type="button" onClick={() => onNavigate({ name: "account_deletion" })}>
-              アカウント削除へ
-            </button>
-          </section>
+          <SettingsAccountDataSection
+            pronunciationConsent={visibleState.pronunciationConsent}
+            voiceCloningConsent={visibleState.voiceCloningConsent}
+            onNavigate={onNavigate}
+          />
 
           <section className="settings-section">
             <p className="eyebrow">Legal / Help</p>

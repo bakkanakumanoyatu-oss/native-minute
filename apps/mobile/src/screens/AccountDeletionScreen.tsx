@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import type { MobileAccountDeletionStatus } from "../lib/api";
+import {
+  canStartMobileAccountDeletionRequest,
+  type MobileAccountDeletionStatus
+} from "../lib/api";
 import { openTrustedLegalPage } from "../lib/trusted-legal-navigation";
 import type { PracticeApi, PracticeRequestFailure } from "../practice/api";
 import type { PracticeRoute } from "../practice/routes";
@@ -10,7 +13,7 @@ type DeletionState =
   | { kind: "ready"; deletion: MobileAccountDeletionStatus }
   | { kind: "error"; error: PracticeRequestFailure };
 
-function deletionStatusCopy(deletion: MobileAccountDeletionStatus) {
+export function deletionStatusCopy(deletion: MobileAccountDeletionStatus) {
   switch (deletion.requestState) {
     case "not_requested":
       return "削除リクエストはまだ開始されていません。";
@@ -23,10 +26,50 @@ function deletionStatusCopy(deletion: MobileAccountDeletionStatus) {
     case "completed":
       return "削除リクエストは完了として記録されています。";
     case "cancelled":
-      return "削除リクエストは取り消されています。";
+      return "削除リクエストは取り消されています。必要に応じて、もう一度申し込めます。";
+    case "expired":
+      return "削除リクエストの有効期限が切れています。あらためて申し込めます。";
     default:
       return "削除リクエストはサポート側で確認中です。";
   }
+}
+
+export function deletionRequestActionLabel(
+  deletion: MobileAccountDeletionStatus,
+  isSubmitting: boolean
+) {
+  if (isSubmitting) {
+    return "削除リクエストを開始しています…";
+  }
+
+  switch (deletion.requestState) {
+    case "cancelled":
+      return "もう一度削除を申し込む";
+    case "expired":
+      return "削除をあらためて申し込む";
+    default:
+      return "アカウント削除を開始";
+  }
+}
+
+export function AccountDeletionRequestControls({
+  deletion,
+  isSubmitting,
+  onStart
+}: {
+  deletion: MobileAccountDeletionStatus;
+  isSubmitting: boolean;
+  onStart: () => void;
+}) {
+  if (!canStartMobileAccountDeletionRequest(deletion.requestState)) {
+    return null;
+  }
+
+  return (
+    <button type="button" disabled={isSubmitting} onClick={onStart}>
+      {deletionRequestActionLabel(deletion, isSubmitting)}
+    </button>
+  );
 }
 
 export function AccountDeletionScreen({
@@ -91,8 +134,6 @@ export function AccountDeletionScreen({
   const visibleState: DeletionState = isOnline
     ? state
     : { kind: "error", error: { kind: "offline" } };
-  const canStart = visibleState.kind === "ready" && visibleState.deletion.requestState === "not_requested";
-
   return (
     <section className="intro-card practice-card" aria-live="polite">
       <ScreenHeading
@@ -107,11 +148,11 @@ export function AccountDeletionScreen({
       {visibleState.kind === "ready" ? (
         <div className="settings-stack">
           <div className="auth-notice" role="status">{deletionStatusCopy(visibleState.deletion)}</div>
-          {canStart ? (
-            <button type="button" disabled={isSubmitting} onClick={() => void startDeletionRequest()}>
-              {isSubmitting ? "削除リクエストを開始しています…" : "アカウント削除を開始"}
-            </button>
-          ) : null}
+          <AccountDeletionRequestControls
+            deletion={visibleState.deletion}
+            isSubmitting={isSubmitting}
+            onStart={() => void startDeletionRequest()}
+          />
         </div>
       ) : null}
 

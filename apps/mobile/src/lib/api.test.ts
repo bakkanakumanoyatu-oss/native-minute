@@ -2,11 +2,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   MAX_MOBILE_AUDIO_BYTES,
   createMobileApiTimingCollector,
+  createMobileAccountDeletionRequest,
   createMobileScript,
   downloadMobileScriptAudio,
   evaluateMobileRecording,
   fetchHealth,
   fetchMobileProgress,
+  fetchMobileAccountDeletionStatus,
   fetchMobileReview,
   fetchMobileScript,
   fetchMobileScripts,
@@ -640,6 +642,63 @@ describe("review and progress", () => {
     await expect(
       fetchMobileProgress(BFF_BASE_URL, ACCESS_TOKEN, { fetchImpl })
     ).resolves.toEqual({ kind: "invalid-response" });
+  });
+});
+
+describe("mobile account-deletion requests", () => {
+  it.each([
+    ["cancelled", "none"],
+    ["expired", "none"]
+  ] as const)("accepts the canonical %s terminal state without accepting unknown states", async (requestState, nextAction) => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        ok: true,
+        data: { deletion: { requestState, nextAction } }
+      })
+    );
+
+    await expect(
+      fetchMobileAccountDeletionStatus(BFF_BASE_URL, ACCESS_TOKEN, { fetchImpl })
+    ).resolves.toEqual({ kind: "success", requestState, nextAction });
+    expectBearerRequest(fetchImpl, "/api/mobile/account-deletion/status", "GET");
+  });
+
+  it("keeps an unknown deletion state as a safe invalid response", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        ok: true,
+        data: { deletion: { requestState: "future_unknown_state", nextAction: "none" } }
+      })
+    );
+
+    await expect(
+      fetchMobileAccountDeletionStatus(BFF_BASE_URL, ACCESS_TOKEN, { fetchImpl })
+    ).resolves.toEqual({ kind: "invalid-response" });
+  });
+
+  it("starts a fresh request through the Bearer-only endpoint after a terminal status", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({
+        ok: true,
+        data: {
+          deletion: {
+            requestState: "requested",
+            nextAction: "wait_for_review",
+            created: true
+          }
+        }
+      }, 201)
+    );
+
+    await expect(
+      createMobileAccountDeletionRequest(BFF_BASE_URL, ACCESS_TOKEN, { fetchImpl })
+    ).resolves.toEqual({
+      kind: "success",
+      requestState: "requested",
+      nextAction: "wait_for_review",
+      created: true
+    });
+    expectBearerRequest(fetchImpl, "/api/mobile/account-deletion/request", "POST");
   });
 });
 

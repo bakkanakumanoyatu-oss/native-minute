@@ -1,10 +1,19 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import {
+  AccountDeletionRequestControls,
+  deletionStatusCopy
+} from "./AccountDeletionScreen";
 import type { MobileProgress, MobileReview, MobileScript } from "../practice/api";
 import { ProgressContent } from "./ProgressScreen";
 import { ReviewContent } from "./ReviewScreen";
 import { getListenPrepareButtonLabel } from "./ListenScreen";
 import { ScriptsList } from "./ScriptsScreen";
+import {
+  navigateToAccountDeletion,
+  resolveSettingsState,
+  SettingsAccountDataSection
+} from "./SettingsScreen";
 
 const evaluation = {
   score: 82,
@@ -110,5 +119,74 @@ describe("mobile practice static screens", () => {
     expect(html).toContain("Best");
     expect(html).toContain("Take history");
     expect(html).toContain("82");
+  });
+
+  it.each([
+    ["not_requested", "アカウント削除を開始"],
+    ["cancelled", "もう一度削除を申し込む"],
+    ["expired", "削除をあらためて申し込む"]
+  ] as const)("renders the reapplication CTA for %s", (requestState, expectedLabel) => {
+    const html = renderToStaticMarkup(
+      <AccountDeletionRequestControls
+        deletion={{ requestState, nextAction: requestState === "not_requested" ? "start_request" : "none" }}
+        isSubmitting={false}
+        onStart={() => undefined}
+      />
+    );
+
+    expect(html).toContain(expectedLabel);
+  });
+
+  it("does not render a duplicate start CTA for an active request", () => {
+    const html = renderToStaticMarkup(
+      <AccountDeletionRequestControls
+        deletion={{ requestState: "requested", nextAction: "wait_for_review" }}
+        isSubmitting={false}
+        onStart={() => undefined}
+      />
+    );
+
+    expect(html).toBe("");
+  });
+
+  it("keeps terminal-state copy clear that a new request may be started", () => {
+    expect(deletionStatusCopy({ requestState: "cancelled", nextAction: "none" })).toContain("もう一度");
+    expect(deletionStatusCopy({ requestState: "expired", nextAction: "none" })).toContain("あらためて");
+  });
+
+  it("renders canonical G5A consent responses and navigates to the dedicated deletion route", () => {
+    const settingsState = resolveSettingsState({
+      pronunciationConsent: { kind: "success", status: "accepted" },
+      voiceCloningConsent: { kind: "success", status: "withdrawn" },
+      voiceSetup: { kind: "success", status: "ready", created: false }
+    });
+    const onNavigate = vi.fn();
+
+    expect(settingsState).toMatchObject({
+      kind: "ready",
+      pronunciationConsent: { status: "accepted" },
+      voiceCloningConsent: { status: "withdrawn" }
+    });
+
+    if (settingsState.kind !== "ready") {
+      throw new Error("expected canonical consent API responses to resolve for Settings");
+    }
+
+    const html = renderToStaticMarkup(
+      <SettingsAccountDataSection
+        pronunciationConsent={settingsState.pronunciationConsent}
+        voiceCloningConsent={settingsState.voiceCloningConsent}
+        onNavigate={onNavigate}
+      />
+    );
+
+    expect(html).toContain("録音と発音評価");
+    expect(html).toContain("同意済み");
+    expect(html).toContain("クローンボイス");
+    expect(html).toContain("同意を取り消しました");
+    expect(html).toContain("アカウント削除へ");
+
+    navigateToAccountDeletion(onNavigate);
+    expect(onNavigate).toHaveBeenCalledWith({ name: "account_deletion" });
   });
 });

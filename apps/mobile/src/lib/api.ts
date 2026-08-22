@@ -83,7 +83,20 @@ export type MobileAccountDeletionRequestState =
   | "db_cleanup_failed"
   | "auth_cleanup_failed"
   | "completed"
-  | "cancelled";
+  | "cancelled"
+  | "expired";
+
+export const MOBILE_ACCOUNT_DELETION_REAPPLICATION_STATES = [
+  "not_requested",
+  "cancelled",
+  "expired"
+] as const satisfies readonly MobileAccountDeletionRequestState[];
+
+export function canStartMobileAccountDeletionRequest(
+  requestState: MobileAccountDeletionRequestState
+) {
+  return (MOBILE_ACCOUNT_DELETION_REAPPLICATION_STATES as readonly string[]).includes(requestState);
+}
 
 export type MobileAccountDeletionStatus = {
   requestState: MobileAccountDeletionRequestState;
@@ -556,7 +569,8 @@ function isMobileAccountDeletionRequestState(value: unknown): value is MobileAcc
     "db_cleanup_failed",
     "auth_cleanup_failed",
     "completed",
-    "cancelled"
+    "cancelled",
+    "expired"
   ].includes(value);
 }
 

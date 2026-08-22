@@ -60,15 +60,31 @@ function dependencies(userId: string, overrides: Partial<MobileAccountDeletionRo
 }
 
 describe("mobile account deletion routes", () => {
-  it("rejects a request without a bearer token before any deletion service call", async () => {
+  it("returns safe 401 for a malformed unauthenticated request before any deletion service call", async () => {
     const createAccountDeletionRequest = vi.fn();
     const response = await handleMobileAccountDeletionRequestPost(
-      new NextRequest(`${BASE_URL}/api/mobile/account-deletion/request`, { method: "POST", headers: { Origin: ORIGIN } }),
+      new NextRequest(`${BASE_URL}/api/mobile/account-deletion/request`, {
+        method: "POST",
+        headers: { Origin: ORIGIN },
+        body: "{not-json"
+      }),
       dependencies(USER_A, { createAccountDeletionRequest })
     );
 
     expect(response.status).toBe(401);
     expect((await response.json()).error.reasonCode).toBe("auth_required");
+    expect(createAccountDeletionRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns the existing safe validation error for a malformed authenticated request", async () => {
+    const createAccountDeletionRequest = vi.fn();
+    const response = await handleMobileAccountDeletionRequestPost(
+      mobileRequest("/api/mobile/account-deletion/request", { method: "POST", body: "{not-json" }),
+      dependencies(USER_A, { createAccountDeletionRequest })
+    );
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.reasonCode).toBe("request_invalid");
     expect(createAccountDeletionRequest).not.toHaveBeenCalled();
   });
 
@@ -99,6 +115,47 @@ describe("mobile account deletion routes", () => {
     expect(response.status).toBe(200);
     expect(statusForUser).toHaveBeenCalledWith(expect.anything(), USER_B);
     expect(await response.json()).toEqual({ ok: true, data: { deletion: { requestState: "not_requested", nextAction: "start_request" } } });
+  });
+
+  it.each(["cancelled", "expired"] as const)("returns %s as a valid terminal status", async (status) => {
+    const response = await handleMobileAccountDeletionStatusGet(
+      mobileRequest("/api/mobile/account-deletion/status"),
+      dependencies(USER_A, { getAccountDeletionStatus: async () => deletionRequest(status) })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      ok: true,
+      data: { deletion: { requestState: status, nextAction: "none" } }
+    });
+  });
+
+  it.each(["cancelled", "expired"] as const)("passes a canonical new request through after %s", async (terminalStatus) => {
+    const getAccountDeletionStatus = vi.fn(async () => deletionRequest(terminalStatus));
+    const createAccountDeletionRequest = vi.fn(async () => ({ deletionRequest: deletionRequest("requested"), created: true }));
+    const dependenciesForTerminalState = dependencies(USER_A, {
+      getAccountDeletionStatus,
+      createAccountDeletionRequest
+    });
+    const statusResponse = await handleMobileAccountDeletionStatusGet(
+      mobileRequest("/api/mobile/account-deletion/status"),
+      dependenciesForTerminalState
+    );
+    const requestResponse = await handleMobileAccountDeletionRequestPost(
+      mobileRequest("/api/mobile/account-deletion/request", { method: "POST", body: "{}" }),
+      dependenciesForTerminalState
+    );
+
+    expect(await statusResponse.json()).toEqual({
+      ok: true,
+      data: { deletion: { requestState: terminalStatus, nextAction: "none" } }
+    });
+    expect(requestResponse.status).toBe(201);
+    expect(createAccountDeletionRequest).toHaveBeenCalledWith(USER_A);
+    expect(await requestResponse.json()).toEqual({
+      ok: true,
+      data: { deletion: { requestState: "requested", nextAction: "wait_for_review", created: true } }
+    });
   });
 
   it("reuses an existing request instead of creating a duplicate", async () => {
