@@ -13,7 +13,7 @@
 
 Codex の運用前提は [AGENTS.md](./AGENTS.md) と [docs/current-state.md](./docs/current-state.md) にまとめています。
 
-G5A consent foundation は `P1_REMEDIATED_PENDING_FINAL_READ_ONLY_REAUDIT` です。録音の OpenAI / Azure 処理と ElevenLabs voice cloning を別々の versioned server-canonical consent として実装し、final read-only auditで見つかったauthenticated ownerによるcanonical consent履歴DELETEとclient-authored audit timestampのP1 2件は、external未適用の`0013` migrationを修正してremediateしました。owner RLSは`SELECT / INSERT / UPDATE`に限定し、audit timestampsはDB-author、withdrawn履歴はimmutableです。P2としてWeb `/api/create-voice`の不要内部voice row responseは残っています。copyは `PRODUCT CONSENT COPY / HUMAN-APPROVED INTERIM` であり、final legal approvalは未完了です。詳細は [G5A consent foundation result](./docs/g5a-canonical-recording-and-voice-consent-foundation-result.md) を参照してください。Gate 5全体、削除、retention、0013 external applyは未完了です。
+G5A consent foundation は `STAGING_APPLICATION_PROVEN_PENDING_FINAL_CLOSEOUT` です。録音の OpenAI / Azure 処理と ElevenLabs voice cloning を別々のversioned server-canonical consentとして扱い、`0013`はStagingだけへ通常CLI workflowで適用済みです。実DBでowner RLS、DB-authored timestamps、immutable withdrawal history、re-consent、User A/B isolationを確認し、exact Staging BFFでMobile/Webのcanonical consent application smokeもprovider call 0でPASSしました。P2はWeb `/api/create-voice`の不要内部voice row responseと、repo migration-contract testのtrigger attachment assertion不足です。copyは `PRODUCT CONSENT COPY / HUMAN-APPROVED INTERIM` であり、final legal approvalは未完了です。詳細は [G5A consent foundation result](./docs/g5a-canonical-recording-and-voice-consent-foundation-result.md) を参照してください。Gate 5全体、削除、retention、Production migration/applyは未完了です。
 
 ## workspace guard
 

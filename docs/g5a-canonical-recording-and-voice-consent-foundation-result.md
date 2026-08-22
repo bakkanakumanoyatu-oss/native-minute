@@ -1,8 +1,8 @@
 # G5A Canonical Recording and Voice Consent Foundation
 
-Status: `P1_REMEDIATED_PENDING_FINAL_READ_ONLY_REAUDIT`
+Status: `STAGING_APPLICATION_PROVEN_PENDING_FINAL_CLOSEOUT`
 
-Scope: G5A consent foundation P1 remediation only. Gate 5 as a whole is not closed, and this work does not start Gate 5B.
+Scope: G5A consent foundation P1 remediation plus the Staging-only `0013` database and application proof. Gate 5 as a whole is not closed, and this work does not start Gate 5B.
 
 Consent copy status: `PRODUCT CONSENT COPY / HUMAN-APPROVED INTERIM`. Final legal approval for the Privacy Policy and Terms remains outside G5A.
 
@@ -51,7 +51,7 @@ The final read-only audit found two P1 findings in the original repository-only 
 - The prior owner-scoped `FOR ALL` policy also permitted authenticated owners to physically delete their canonical consent history.
 - The prior defaults and service writes allowed client-supplied audit timestamps to become canonical values.
 
-`0013` is documented as not applied to an external Supabase environment, so this remediation safely corrects that still-pending migration rather than adding a follow-up migration. It remains `HOLD_PENDING_FINAL_REAUDIT`; no Staging or Production migration was applied.
+At remediation time, `0013` had not been applied to an external Supabase environment, so the correction safely changed the pending migration rather than adding a follow-up migration. That historical state is superseded by the Staging-only proof below; Production was not changed.
 
 The corrected migration now:
 
@@ -77,7 +77,17 @@ The current data model already represents withdrawal followed by re-consent as a
 
 The existing Mobile main-loop route tests continue to cover owned recording, evaluation persistence, review, progress, and fresh-user voice setup.
 
-`apps/mobile/tests/processing-consent-migration-contract.test.ts` directly inspects the pending migration's RLS policies and trigger contract: owner isolation, no authenticated `DELETE`, no broad `FOR ALL` policy, DB-authored acceptance/withdrawal timestamps, immutable canonical fields, and the fixed current contracts. The repository has no local Postgres/Supabase runtime or existing DB-test harness, so this is a focused repository-level migration contract test, not a claim of external database execution.
+`apps/mobile/tests/processing-consent-migration-contract.test.ts` directly inspects the migration's RLS policies and trigger contract: owner isolation, no authenticated `DELETE`, no broad `FOR ALL` policy, DB-authored acceptance/withdrawal timestamps, immutable canonical fields, and the fixed current contracts. The repository has no local Postgres/Supabase runtime or existing DB-test harness, so this remains focused repository-level coverage rather than a replacement for the external proof below.
+
+## Staging database and application proof
+
+On 2026-08-22 JST, the clean source `b04288dbe3aa4d32b1b616ebb2021de18862ba7d` was used for a Staging-only proof. The normal Supabase CLI migration history showed `0001` through `0012` matched and `0013` as the only pending migration; one ordinary `db push` applied `0013`. No SQL Editor, reset, migration repair, Production project, or provider operation was used.
+
+- Staging catalog verification passed: `processing_consents` has the expected columns, RLS is enabled, the three owner `SELECT` / `INSERT` / `UPDATE` policies exist, no `DELETE` or `FOR ALL` policy exists, `validate_processing_consent` is attached, its function exists, and both expected indexes exist.
+- Disposable authenticated Staging fixtures proved DB-authored insert/withdrawal timestamps despite spoof attempts, owner DELETE denial, User A/B read and mutation isolation, withdrawal immutability, retained history, and re-consent as a new current row. The same accept/withdraw/current semantics passed for `voice_cloning`. Fixture consent history was retained; no service-role cleanup was performed.
+- The earlier fixed Staging BFF generation exposed `/api/mobile/scripts` but not the G5A consent routes. The clean local HEAD above was directly deployed only to the existing `native-minute-staging` Vercel project, and its fixed Staging alias resolved to the Ready artifact. The artifact route manifest contains the Mobile and Web consent routes plus Mobile evaluation. Vercel deployment metadata did not expose a Git revision, so source provenance is the clean, exact local HEAD at direct deploy time rather than a claimed remote metadata SHA.
+- No-credential route probes reached JSON auth boundaries. A fresh disposable fixture then proved Mobile pronunciation missing -> accept -> withdraw -> re-consent, with missing/withdrawn evaluation stopped before provider work and accepted state advancing past the consent gate to safe recording validation. Its canonical contract and DB-authored timestamps matched. Existing fixture takes were retained across withdrawal.
+- Mobile `voice_cloning` missing -> accept -> withdraw -> re-consent/current lookup passed without a clone request. Authenticated Web pronunciation status, withdrawal, and re-consent read and changed the same canonical history as Mobile. Consent response payloads contained only safe status data. OpenAI, Azure, and ElevenLabs calls were all zero for this proof.
 
 ## Validation
 
@@ -93,13 +103,15 @@ Passed on 2026-08-22:
 - `npm run check:mobile-release:self-test`
 - `git diff --check`
 
-The repository has no migration apply or schema-validation command for an external Supabase project. The migration was statically reviewed and the generated Database types are covered by root typecheck; applying it to an external database is intentionally not part of this task.
+External Staging proof additionally passed the normal migration history/dry-run/apply sequence, read-only catalog verification, authenticated DB smoke, fixed-alias route manifest check, and authenticated Mobile/Web application smoke. Source was not changed in those executions.
 
-## G5A audit status after remediation validation
+## G5A audit status after Staging application proof
 
 - P0: 0
 - P1: 0
-- P2: 1 — the Web `/api/create-voice` response still includes unnecessary internal voice-row information such as `provider_voice_id` and `sample_audio_path`. This remains deliberately out of scope for the P1 remediation.
+- P2: 2
+  - the Web `/api/create-voice` response still includes unnecessary internal voice-row information such as `provider_voice_id` and `sample_audio_path`;
+  - the repository migration-contract test does not itself assert trigger attachment, although the actual Staging catalog proof did.
 
 ## Deliberately not implemented
 
@@ -113,5 +125,5 @@ The repository has no migration apply or schema-validation command for an extern
 
 - Final legal approval remains required for the interim product consent copy, Privacy Policy, and Terms.
 - No provider retention assertion is made here.
-- The migration is repository-ready but has not been applied to an external Supabase project by this task.
-- An independent final read-only re-audit is still required before the status can advance or migration `0013` can be applied externally.
+- Production migration/apply has not occurred and remains out of scope.
+- A final closeout review remains required; Gate 5 and Gate 5B do not advance automatically.
