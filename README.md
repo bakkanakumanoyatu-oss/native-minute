@@ -13,7 +13,7 @@
 
 Codex の運用前提は [AGENTS.md](./AGENTS.md) と [docs/current-state.md](./docs/current-state.md) にまとめています。
 
-G5A consent foundation は `IMPLEMENTED_VALIDATED` です。録音の OpenAI / Azure 処理と ElevenLabs voice cloning を別々の versioned server-canonical consent として実装しました。既存 voice consent 履歴は変更せず、旧同意は新しい voice 作成時に再同意が必要です。copyは `PRODUCT CONSENT COPY / HUMAN-APPROVED INTERIM` であり、final legal approvalは未完了です。詳細は [G5A consent foundation result](./docs/g5a-canonical-recording-and-voice-consent-foundation-result.md) を参照してください。Gate 5全体、削除、retention は未完了です。
+G5A consent foundation は `P1_REMEDIATED_PENDING_FINAL_READ_ONLY_REAUDIT` です。録音の OpenAI / Azure 処理と ElevenLabs voice cloning を別々の versioned server-canonical consent として実装し、final read-only auditで見つかったauthenticated ownerによるcanonical consent履歴DELETEとclient-authored audit timestampのP1 2件は、external未適用の`0013` migrationを修正してremediateしました。owner RLSは`SELECT / INSERT / UPDATE`に限定し、audit timestampsはDB-author、withdrawn履歴はimmutableです。P2としてWeb `/api/create-voice`の不要内部voice row responseは残っています。copyは `PRODUCT CONSENT COPY / HUMAN-APPROVED INTERIM` であり、final legal approvalは未完了です。詳細は [G5A consent foundation result](./docs/g5a-canonical-recording-and-voice-consent-foundation-result.md) を参照してください。Gate 5全体、削除、retention、0013 external applyは未完了です。
 
 ## workspace guard
 

@@ -1,8 +1,8 @@
 # G5A Canonical Recording and Voice Consent Foundation
 
-Status: `IMPLEMENTED_VALIDATED`
+Status: `P1_REMEDIATED_PENDING_FINAL_READ_ONLY_REAUDIT`
 
-Scope: G5A consent foundation only. Gate 5 as a whole is not closed.
+Scope: G5A consent foundation P1 remediation only. Gate 5 as a whole is not closed, and this work does not start Gate 5B.
 
 Consent copy status: `PRODUCT CONSENT COPY / HUMAN-APPROVED INTERIM`. Final legal approval for the Privacy Policy and Terms remains outside G5A.
 
@@ -44,6 +44,25 @@ Both current versions are `2026-08-22.v1`. An accepted row from another version 
 - Added `processing_consents` Database types.
 - No existing rows, columns, buckets, provider resources, or account-deletion state were removed or rewritten.
 
+## P1 remediation history
+
+The final read-only audit found two P1 findings in the original repository-only `0013` definition. That audit result remains part of the record; it is not overwritten by this remediation.
+
+- The prior owner-scoped `FOR ALL` policy also permitted authenticated owners to physically delete their canonical consent history.
+- The prior defaults and service writes allowed client-supplied audit timestamps to become canonical values.
+
+`0013` is documented as not applied to an external Supabase environment, so this remediation safely corrects that still-pending migration rather than adding a follow-up migration. It remains `HOLD_PENDING_FINAL_REAUDIT`; no Staging or Production migration was applied.
+
+The corrected migration now:
+
+- grants authenticated owners separate `SELECT`, `INSERT`, and `UPDATE` policies scoped to `auth.uid() = user_id`, with no `DELETE` or broad `FOR ALL` policy;
+- makes the consent trigger author `accepted_at`, `created_at`, and `updated_at` on insert, regardless of an insert payload;
+- permits only the active-to-withdrawn transition, authoring `withdrawn_at` and `updated_at` in the database while keeping acceptance and creation timestamps immutable;
+- keeps a withdrawn row immutable, so an authenticated client cannot restore or erase its history; and
+- stops the application consent service from sending acceptance or withdrawal timestamps at all.
+
+The current data model already represents withdrawal followed by re-consent as a new accepted row. No history redesign or event-sourcing work was required.
+
 ## Targeted proof
 
 `apps/mobile/tests/processing-consent-route.test.ts` proves:
@@ -57,6 +76,8 @@ Both current versions are `2026-08-22.v1`. An accepted row from another version 
 - consent response payloads contain no provider or Storage identifiers.
 
 The existing Mobile main-loop route tests continue to cover owned recording, evaluation persistence, review, progress, and fresh-user voice setup.
+
+`apps/mobile/tests/processing-consent-migration-contract.test.ts` directly inspects the pending migration's RLS policies and trigger contract: owner isolation, no authenticated `DELETE`, no broad `FOR ALL` policy, DB-authored acceptance/withdrawal timestamps, immutable canonical fields, and the fixed current contracts. The repository has no local Postgres/Supabase runtime or existing DB-test harness, so this is a focused repository-level migration contract test, not a claim of external database execution.
 
 ## Validation
 
@@ -74,11 +95,11 @@ Passed on 2026-08-22:
 
 The repository has no migration apply or schema-validation command for an external Supabase project. The migration was statically reviewed and the generated Database types are covered by root typecheck; applying it to an external database is intentionally not part of this task.
 
-## G5A candidate issues
+## G5A audit status after remediation validation
 
 - P0: 0
 - P1: 0
-- P2: 0
+- P2: 1 — the Web `/api/create-voice` response still includes unnecessary internal voice-row information such as `provider_voice_id` and `sample_audio_path`. This remains deliberately out of scope for the P1 remediation.
 
 ## Deliberately not implemented
 
@@ -93,3 +114,4 @@ The repository has no migration apply or schema-validation command for an extern
 - Final legal approval remains required for the interim product consent copy, Privacy Policy, and Terms.
 - No provider retention assertion is made here.
 - The migration is repository-ready but has not been applied to an external Supabase project by this task.
+- An independent final read-only re-audit is still required before the status can advance or migration `0013` can be applied externally.

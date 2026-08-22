@@ -131,8 +131,7 @@ export async function getProcessingConsentStatus(
 export async function acceptCurrentProcessingConsent(
   client: AppSupabaseClient,
   userId: string,
-  type: ProcessingConsentType,
-  acceptedAt = new Date().toISOString()
+  type: ProcessingConsentType
 ) {
   const existing = await getCurrentProcessingConsent(client, userId, type);
 
@@ -156,8 +155,7 @@ export async function acceptCurrentProcessingConsent(
         purpose_version: contract.purposeVersion,
         provider_set: contract.providerSet,
         data_categories: contract.dataCategories,
-        status: "active",
-        accepted_at: acceptedAt
+        status: "active"
       })
       .select("*")
       .single()
@@ -176,7 +174,6 @@ export async function withdrawCurrentProcessingConsent(
   type: ProcessingConsentType
 ) {
   const contract = getContract(type);
-  const withdrawnAt = new Date().toISOString();
   const table = client.from("processing_consents") as unknown as {
     update(values: Database["public"]["Tables"]["processing_consents"]["Update"]): {
       eq(column: string, value: string): {
@@ -196,7 +193,7 @@ export async function withdrawCurrentProcessingConsent(
   };
   const { error } = asMany<ProcessingConsentRow>(
     await table
-      .update({ status: "withdrawn", withdrawn_at: withdrawnAt })
+      .update({ status: "withdrawn" })
       .eq("user_id", userId)
       .eq("consent_type", type)
       .eq("consent_version", contract.consentVersion)

@@ -57,13 +57,23 @@ begin
       or new.accepted_at <> old.accepted_at
       or new.created_at <> old.created_at
       or old.status = 'withdrawn'
-      or new.status <> 'withdrawn'
-      or new.withdrawn_at is null then
+      or old.status <> 'active'
+      or new.status <> 'withdrawn' then
       raise exception 'processing consent records are append-only except for withdrawal';
     end if;
 
+    -- Audit timestamps are database-authored. A client-provided withdrawal
+    -- timestamp is deliberately ignored, while accepted/created timestamps
+    -- remain immutable through the checks above.
+    new.withdrawn_at := now();
+    new.updated_at := now();
     return new;
   end if;
+
+  -- Never accept client-supplied audit timestamps as the canonical record.
+  new.accepted_at := now();
+  new.created_at := now();
+  new.updated_at := now();
 
   if new.status <> 'active' or new.withdrawn_at is not null then
     raise exception 'new processing consent must be active';
@@ -106,17 +116,25 @@ create index if not exists processing_consents_current_lookup_idx
   on public.processing_consents (user_id, consent_type, consent_version, status, accepted_at desc);
 
 drop trigger if exists set_updated_at_processing_consents on public.processing_consents;
-create trigger set_updated_at_processing_consents
-  before update on public.processing_consents
-  for each row
-  execute function public.set_updated_at();
 
 alter table public.processing_consents enable row level security;
 
 drop policy if exists "processing_consents_crud_own" on public.processing_consents;
-create policy "processing_consents_crud_own"
+create policy "processing_consents_select_own"
   on public.processing_consents
-  for all
+  for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+create policy "processing_consents_insert_own"
+  on public.processing_consents
+  for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+create policy "processing_consents_withdraw_own"
+  on public.processing_consents
+  for update
   to authenticated
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);

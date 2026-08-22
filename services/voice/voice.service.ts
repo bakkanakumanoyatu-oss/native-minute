@@ -437,7 +437,7 @@ export async function createVoiceConsent(client: AppSupabaseClient, userId: stri
 
   // Legacy voice_consents keeps provider-specific workflow history. The separate
   // record below is the versioned product consent used by new clone creation.
-  await acceptCurrentProcessingConsent(client, userId, "voice_cloning", providerConsent.consentedAt);
+  await acceptCurrentProcessingConsent(client, userId, "voice_cloning");
 
   return data;
 }
