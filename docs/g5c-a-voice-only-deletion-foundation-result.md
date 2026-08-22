@@ -1,8 +1,14 @@
 # G5C-A Voice-only Deletion Foundation
 
-Status: `IMPLEMENTED_REPOSITORY_VALIDATED`
+Status: `REMEDIATION_IMPLEMENTED_PENDING_INDEPENDENT_REAUDIT`
 
 Scope: `HDC_G5C_VOICE_ONLY_DELETION_SEMANTICS_V1` の G5C-A に限定した、非破壊の inventory / snapshot / dry-run / verifier foundation。Gate 5 全体および G5C-B 以降は開始しない。
+
+## G5C-A P1 remediation (repository only)
+
+- `HDC_G5C_VOICE_BINDING_SERVER_OWNED_PROVENANCE_V1` を適用した。migration `0014_g5c_voice_binding_server_owned.sql` は authenticated の `voices` INSERT / UPDATE / DELETE policy を削除し、既存の owner SELECT は維持する。Staging / Production には未適用で、actual RLS proof は独立再監査で必要。
+- 正規 voice 作成は request client で authenticated user を再解決し、provider `createVoice` が返した `providerVoiceId` だけを service-role server client で `voices` binding として保存する。default binding の切替も同じ server-only writer を使う。
+- Storage walker は深さ4を維持する。更に下位の visible branch は `truncated` として `manual_required` candidate にし、safe dry-run の `storageListingTruncatedCount` に表す。listing error は従来どおり `unavailable` / manual review で、深い object を削除 target と推測しない。
 
 ## Implemented boundary
 
@@ -15,7 +21,7 @@ Scope: `HDC_G5C_VOICE_ONLY_DELETION_SEMANTICS_V1` の G5C-A に限定した、�
 ## Safety rules fixed
 
 - `recordings`、practice recordings、takes、transcripts、scores、weak words、coach feedback、scripts、latest / best / progress、`script_saved_best_takes`、profile、account / auth session は target snapshot に入れない。
-- `voice_id IS NULL`、unknown voice attribution、provider mismatch、invalid / empty asset reference、Storage-only object、Storage listing failure は推測削除せず `manual_required` candidate とする。
+- `voice_id IS NULL`、unknown voice attribution、provider mismatch、invalid / empty asset reference、Storage-only object、Storage listing failure / truncation は推測削除せず `manual_required` candidate とする。
 - canonical `processing_consents` は snapshot で state を読むだけで、physical delete しない。将来の execution は current `voice_cloning` consent を withdraw する必要があるが、G5C-A は consent mutation を行わない。
 - `voice_consents` workflow row 自体は target に含めず、今回 scrub / delete しない。そこから安全に読める app-owned consent-recording reference だけを storage target にできる。
 - account-deletion engine、provider delete interface、ElevenLabs mutation、Storage delete、DB binding delete、consent withdrawal は使用していない。
@@ -34,6 +40,8 @@ G5C-A は actual execution、retry、crash recovery を開始しないため、s
 - unknown / legacy / Storage-only object は manual-required であり target へ昇格しない。
 - safe dry-run payload に provider ID、Storage path/key、user ID が含まれない。
 - G5C-A service は account-deletion engine を import / invoke しない。
+
+`apps/mobile/tests/voice-binding-server-owned-provenance.test.ts` は、migration の authenticated voice mutation policy 不在、owner read 維持、server-side re-authentication、provider-returned ID のみの binding 保存、mismatched owner の provider/write 前拒否を固定する。Repository contract test であり、actual Staging RLS proof の代替ではない。
 
 ## Deliberately not implemented
 

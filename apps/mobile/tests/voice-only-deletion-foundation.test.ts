@@ -23,6 +23,7 @@ type TestRow = Record<string, unknown>;
 type Fixture = {
   tables: Record<string, TestRow[]>;
   storage: Record<string, string[]>;
+  storageFailures?: Partial<Record<string, true>>;
   calls: Array<{ table: string; kind: "eq" | "in"; column: string; value: unknown }>;
   storagePrefixes: Array<{ bucket: string; prefix: string }>;
 };
@@ -186,7 +187,8 @@ function fixture(): Fixture {
         `${USER_A}/legacy-script-orphan.wav`,
         `${USER_B}/${SCRIPT_B}/${VOICE_B}/target-b.wav`
       ]
-    }
+    },
+    storageFailures: {}
   };
 }
 
@@ -235,6 +237,11 @@ function createClient(data: Fixture) {
         return {
           async list(prefix: string) {
             data.storagePrefixes.push({ bucket, prefix });
+
+            if (data.storageFailures?.[bucket]) {
+              return { data: null, error: { message: "storage list failed" } };
+            }
+
             const descendants = (data.storage[bucket] ?? []).filter((key) => key.startsWith(`${prefix}/`));
             const directEntries = new Map<string, { name: string; id: string | null }>();
             for (const descendant of descendants) {
@@ -300,6 +307,52 @@ describe("G5C-A voice-only deletion foundation", () => {
     expect(snapshot.targets.scriptAudios).toHaveLength(1);
     expect(snapshot.targets.storageObjects).toHaveLength(3);
     expect(snapshot.operation.status).toBe("manual_required");
+  });
+
+  it("keeps the bounded walker but flags a visible deeper branch for manual review", async () => {
+    const data = fixture();
+    const deepStorageOnlyKey = `${USER_A}/level-1/level-2/level-3/level-4/level-5/deep-orphan.m4a`;
+    data.storage["voice-samples"].push(deepStorageOnlyKey);
+
+    const snapshot = await collectVoiceOnlyDeletionSnapshot(createClient(data), USER_A);
+    const dryRun = createVoiceOnlyDeletionDryRun(snapshot);
+
+    expect(snapshot.storageListings).toContainEqual(expect.objectContaining({
+      bucket: "voice-samples",
+      status: "truncated"
+    }));
+    expect(snapshot.manualCandidates).toContainEqual({
+      reason: "storage_listing_truncated",
+      source: "storage"
+    });
+    expect(JSON.stringify(snapshot)).not.toContain(deepStorageOnlyKey);
+    expect(dryRun.review).toMatchObject({
+      manualRequiredCandidateCount: expect.any(Number),
+      storageListingTruncatedCount: 1
+    });
+    expect(dryRun.review.manualRequiredCandidateCount).toBeGreaterThan(0);
+    expect(JSON.stringify(dryRun)).not.toContain(USER_A);
+    expect(JSON.stringify(dryRun)).not.toContain(deepStorageOnlyKey);
+  });
+
+  it("marks a failed owner-only Storage listing for manual review instead of treating it as empty", async () => {
+    const data = fixture();
+    data.storageFailures = { "voice-consents": true };
+
+    const snapshot = await collectVoiceOnlyDeletionSnapshot(createClient(data), USER_A);
+    const dryRun = createVoiceOnlyDeletionDryRun(snapshot);
+
+    expect(snapshot.storageListings).toContainEqual(expect.objectContaining({
+      bucket: "voice-consents",
+      status: "unavailable",
+      objectKeys: []
+    }));
+    expect(snapshot.manualCandidates).toContainEqual({
+      reason: "storage_listing_unavailable",
+      source: "storage"
+    });
+    expect(dryRun.review.storageListingUnavailableCount).toBe(1);
+    expect(dryRun.review.manualRequiredCandidateCount).toBeGreaterThan(0);
   });
 
   it("returns a safe non-destructive response and explicitly preserves learning history", async () => {

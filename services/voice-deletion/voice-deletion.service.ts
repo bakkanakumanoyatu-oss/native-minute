@@ -62,7 +62,8 @@ export type VoiceOnlyDeletionManualCandidateReason =
   | "script_audio_voice_attribution_unknown"
   | "script_audio_provider_attribution_unknown"
   | "storage_object_unattributed"
-  | "storage_listing_unavailable";
+  | "storage_listing_unavailable"
+  | "storage_listing_truncated";
 
 type VoiceOnlyDeletionManualCandidate = {
   reason: VoiceOnlyDeletionManualCandidateReason;
@@ -98,7 +99,7 @@ type VoiceOnlyDeletionCanonicalConsent = {
 
 type StorageListing = {
   bucket: "voice-samples" | "voice-consents" | "script-audios";
-  status: "available" | "unavailable";
+  status: "available" | "truncated" | "unavailable";
   objectKeys: string[];
 };
 
@@ -164,6 +165,7 @@ export type VoiceOnlyDeletionDryRun = {
     manualRequiredCandidateCount: number;
     unknownOrLegacyCandidateCount: number;
     storageListingUnavailableCount: number;
+    storageListingTruncatedCount: number;
   };
   postDeleteVerifier: {
     ready: true;
@@ -260,9 +262,11 @@ async function listOwnedStorageObjects(
   userId: string
 ): Promise<StorageListing> {
   const objectKeys = new Set<string>();
+  let truncated = false;
 
   async function walk(prefix: string, depth: number): Promise<void> {
     if (depth > MAX_STORAGE_LIST_DEPTH) {
+      truncated = true;
       return;
     }
 
@@ -281,6 +285,13 @@ async function listOwnedStorageObjects(
         if (entry.id) {
           objectKeys.add(key);
         } else {
+          // Preserve the bounded walk, but never treat a visible descendant past
+          // the bound as a complete inventory. Its contents remain review-only.
+          if (depth >= MAX_STORAGE_LIST_DEPTH) {
+            truncated = true;
+            continue;
+          }
+
           await walk(key, depth + 1);
         }
       }
@@ -294,7 +305,7 @@ async function listOwnedStorageObjects(
   try {
     // The authenticated client can enumerate only the caller's RLS-visible prefix.
     await walk(userId, 0);
-    return { bucket, status: "available", objectKeys: [...objectKeys].sort() };
+    return { bucket, status: truncated ? "truncated" : "available", objectKeys: [...objectKeys].sort() };
   } catch {
     return { bucket, status: "unavailable", objectKeys: [] };
   }
@@ -524,6 +535,10 @@ export async function collectVoiceOnlyDeletionSnapshot(
       continue;
     }
 
+    if (listing.status === "truncated") {
+      manualCandidates.push({ reason: "storage_listing_truncated", source: "storage" });
+    }
+
     for (const objectKey of listing.objectKeys) {
       if (!targetedStorageKeys.has(`${listing.bucket}:${objectKey}`)) {
         manualCandidates.push({ reason: "storage_object_unattributed", source: "storage" });
@@ -608,6 +623,9 @@ export function createVoiceOnlyDeletionDryRun(snapshot: VoiceOnlyDeletionSnapsho
       unknownOrLegacyCandidateCount,
       storageListingUnavailableCount: snapshot.manualCandidates.filter(
         (candidate) => candidate.reason === "storage_listing_unavailable"
+      ).length,
+      storageListingTruncatedCount: snapshot.manualCandidates.filter(
+        (candidate) => candidate.reason === "storage_listing_truncated"
       ).length
     },
     postDeleteVerifier: {

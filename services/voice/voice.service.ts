@@ -1,8 +1,11 @@
 import { AppError } from "@/lib/errors";
 import { timeAsync } from "@/lib/performance/timing";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { requireCurrentUser } from "@/lib/supabase/auth";
 import { DEFAULT_VOICE_STYLE_PRESET } from "@/lib/voice-style";
 import { buildScriptAudioPlaybackPath } from "@/lib/voice-playback-path";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
+import { getSupabaseServiceRoleKey } from "@/lib/supabase/config";
 import type { Database } from "@/types/database";
 import type { Json } from "@/types/database";
 import type { CreateVoiceRequestInput, SpeakScriptRequestInput, VoiceConsentRequestInput } from "@/schemas/voice";
@@ -94,6 +97,8 @@ type VoicesUpdateBuilder = {
   neq(column: "id", value: string): Promise<{ error: PostgrestErrorLike | null }>;
 };
 
+type VoiceBindingWriteClient = Pick<AppSupabaseClient, "from">;
+
 function asMaybeSingle<TRow>(value: unknown) {
   return value as { data: TRow | null; error: PostgrestErrorLike | null };
 }
@@ -104,6 +109,24 @@ function asMany<TRow>(value: unknown) {
 
 function mapVoiceError(operation: string, error: PostgrestErrorLike) {
   return new AppError(500, `${operation}に失敗しました。${error.message}`);
+}
+
+async function assertAuthenticatedVoiceMutationUser(client: AppSupabaseClient, userId: string) {
+  const user = await requireCurrentUser(client);
+
+  if (user.id !== userId) {
+    throw new AppError(403, "voice binding の所有者確認に失敗しました。");
+  }
+}
+
+function createServerOwnedVoiceBindingWriter(): VoiceBindingWriteClient {
+  if (!getSupabaseServiceRoleKey().trim()) {
+    throw new AppError(503, "voice binding の保存に必要なサーバー設定が未完了です。");
+  }
+
+  // `voices` has no authenticated mutation policies. This server-only client is
+  // intentionally created only after the request client re-resolves the owner.
+  return createSupabaseAdminClient() as unknown as VoiceBindingWriteClient;
 }
 
 function getVoiceQuotaFailureCode(failureStage: QuotaEventFailureStage) {
@@ -460,7 +483,6 @@ async function getOwnedConsent(client: AppSupabaseClient, userId: string, consen
 }
 
 async function saveVoiceRecord(
-  client: AppSupabaseClient,
   userId: string,
   consent: VoiceConsentRow,
   providerVoiceId: string,
@@ -469,7 +491,8 @@ async function saveVoiceRecord(
     sampleAudioPath: string | null;
   }
 ) {
-  const voices = client.from("voices") as unknown as InsertSingleBuilder<
+  const writer = createServerOwnedVoiceBindingWriter();
+  const voices = writer.from("voices") as unknown as InsertSingleBuilder<
     Database["public"]["Tables"]["voices"]["Insert"],
     VoiceRow
   >;
@@ -491,7 +514,7 @@ async function saveVoiceRecord(
     throw mapVoiceError("voice の保存", error);
   }
 
-  const voicesTable = client.from("voices") as unknown as {
+  const voicesTable = writer.from("voices") as unknown as {
     update(values: Database["public"]["Tables"]["voices"]["Update"]): VoicesUpdateBuilder;
   };
 
@@ -509,6 +532,10 @@ async function saveVoiceRecord(
 }
 
 export async function createUserVoice(client: AppSupabaseClient, userId: string, input: CreateVoiceRequestInput) {
+  // Every voice write starts by re-resolving the authenticated server request.
+  // The supplied userId is an ownership scope, never an authority by itself.
+  await assertAuthenticatedVoiceMutationUser(client, userId);
+
   const providerStatus = getVoiceProviderStatus();
 
   if (!providerStatus.supported) {
@@ -577,7 +604,7 @@ export async function createUserVoice(client: AppSupabaseClient, userId: string,
     sampleAudioPath: trimmedSampleAudioPath || undefined
   });
 
-  return saveVoiceRecord(client, userId, consent, created.providerVoiceId, {
+  return saveVoiceRecord(userId, consent, created.providerVoiceId, {
     label: input.label,
     sampleAudioPath: resolvedSampleAudio?.audioPath ?? (trimmedSampleAudioPath || null)
   });
