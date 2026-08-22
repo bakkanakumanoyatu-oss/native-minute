@@ -736,24 +736,6 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
     const providerStatus = getVoiceProviderStatus();
     const voiceStylePreset = input.voiceStylePreset ?? DEFAULT_VOICE_STYLE_PRESET;
 
-    if (!providerStatus.supported) {
-      await recordSkippedVoiceQuotaEvent(
-        createVoiceQuotaContext({
-          userId,
-          scriptId: input.scriptId,
-          voiceId: input.voiceId ?? null,
-          provider: providerStatus.provider,
-          providerModel: null,
-          locale: null,
-          voiceStylePreset,
-          cacheKey: null
-        }),
-        "provider_config"
-      );
-
-      throw new AppError(503, providerStatus.message ?? `VOICE_PROVIDER=${providerStatus.provider} は current repo では利用できません。`);
-    }
-
     const [script, selectedVoice] = await timeAsync("voice.speakScript.ownershipLoad", () =>
       Promise.all([
         getScript(client, userId, input.scriptId),
@@ -866,6 +848,16 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
       cacheKey,
       voice: selectedVoice
     };
+  }
+
+  // A persisted, owned cache entry remains playable when the provider is
+  // temporarily unavailable. Authorization, provider binding, and cache
+  // identity were resolved before this branch, so no unowned asset can be
+  // returned.
+  if (!providerStatus.supported) {
+    await recordSkippedVoiceQuotaEvent(quotaContext, "provider_config");
+
+    throw new AppError(503, providerStatus.message ?? `VOICE_PROVIDER=${providerStatus.provider} は current repo では利用できません。`);
   }
 
   const provider = createConfiguredVoiceProvider();

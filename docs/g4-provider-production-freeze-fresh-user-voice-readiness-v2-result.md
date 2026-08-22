@@ -2,15 +2,15 @@
 
 ## Status
 
-`G4_PROVIDER_PRODUCTION_FREEZE_AND_FRESH_USER_VOICE_READINESS_V2 = CLOSED_COMMITTED_PASS`
+`G4_PROVIDER_PRODUCTION_FREEZE = REMEDIATED_PENDING_FINAL_READ_ONLY_AUDIT`
 
 - Implementation checkpoint: `b6663a7b21a190779fd3d9facfd6c5efc8abaeeb`
 - Actual-device proof mode: `G4_CHECKPOINT_ARTIFACT_AND_ACTUAL_DEVICE_PROOF_V1`
 - Actual-device proof date: `2026-08-22` (`Asia/Tokyo`)
 - Device: iPhone 14 Plus / iOS 26.2.1
-- `P0 = 0`, `P1 = 0`
+- `P0 = 0`, `P1 = 0 at remediation validation`, `P2 = 2`
 
-This closes Gate 4 only. It does not start Gate 5, approve provider deletion, or claim production identity / TestFlight readiness.
+The historical closeout below remains intact. A subsequent final read-only audit found and reopened one Mobile cache-recovery P1; its remediation is validated but must receive an independent final read-only audit before Gate 4 can be closed again. This does not start Gate 5, approve provider deletion, or claim production identity / TestFlight readiness.
 
 ## Preflight and Gate 3 reconciliation
 
@@ -43,7 +43,7 @@ This closes Gate 4 only. It does not start Gate 5, approve provider deletion, or
 | First reference synthesis | PASS | First post-ready request returned the cache-miss UI and one successful Listen POST. |
 | Cache replay | PASS | Second identical request returned the persisted-audio reuse UI and audible replay. |
 | Background return | PASS | Foreground state showed `保存済みのお手本を再準備`, not an ungenerated state. |
-| Provider unavailable | `NOT_RUN_SAFE_LIMITATION` on device | Shared Staging kill switch was not mutated; existing automated cache-first/safe-error/mock-guard evidence was explicitly reused for the DoD decision. |
+| Provider unavailable | `REMEDIATED_PENDING_FINAL_READ_ONLY_AUDIT` | Shared Staging kill switch was not mutated. The prior closeout's Mobile cache-first inference was invalidated, then remediated with a focused Mobile route proof for cache hit and safe cache miss behavior. |
 | OpenAI transcription / Azure evaluation | PASS | One new normal Take on device; broader Gate 3 semantics reused. |
 | Production mock guard | PASS | Exact artifact/release guard plus frozen strict-production provider-role evidence. |
 | Safe observability | PASS | Fixed route/status/request counts and cache outcome were available without content, IDs, paths, or credentials. Detailed timing labels remain opt-in. |
@@ -95,7 +95,7 @@ Actual-device fault injection is `NOT_RUN_SAFE_LIMITATION`.
 - Mutating and redeploying the shared fixed Staging runtime would affect unrelated Staging activity and was not required to prove the successful exact-artifact mainline.
 - No provider credential was damaged, no ElevenLabs voice was deleted, no production project was changed, and no mock fallback was enabled.
 
-Gate 4 DoD item 6 is satisfied by `REUSE_EXISTING_AUTOMATED_EVIDENCE` from this exact frozen implementation lineage, not by pretending an actual-device outage ran:
+The historical closeout treated Gate 4 DoD item 6 as satisfied by `REUSE_EXISTING_AUTOMATED_EVIDENCE` from this exact frozen implementation lineage, not by pretending an actual-device outage ran:
 
 - the existing provider-unavailable recovery test shows fixed recovery without a cached audio;
 - the existing cached-audio/provider-unavailable test keeps protected playback available and removes generation;
@@ -103,7 +103,21 @@ Gate 4 DoD item 6 is satisfied by `REUSE_EXISTING_AUTOMATED_EVIDENCE` from this 
 - strict production guards fail closed for mock voice, transcription, pronunciation, and script-generation providers;
 - cache-first service behavior and safe Japanese recovery were not changed after those checks.
 
-This explicit automated evidence evaluation is sufficient for the conditional DoD because no safe user-isolated Staging fault mechanism exists. It is not actual-device provider-failure evidence.
+That evidence is not actual-device provider-failure evidence. The final read-only audit subsequently found that the Mobile POST path checked provider availability before its owned cache lookup, so the historical cache-first conclusion did not cover the Mobile background recovery path.
+
+## Reopened P1 cache-recovery remediation
+
+`G4_PROVIDER_PRODUCTION_FREEZE = REOPENED_P1_CACHE_RECOVERY` was recorded after the final read-only audit found one P1: an owned cached reference audio could not be reused by Mobile when the current voice provider was unavailable.
+
+- `speakScript` now resolves the owned script, the owned current-provider voice, provider binding, canonical cache key, and owned cached audio before it rejects provider availability.
+- Focused Mobile route proof: authenticated owner + owned script + owned current-provider voice + cached reference audio + unavailable provider returns `200` with only `{ audioId, cached: true }`; cache-hit quota recording occurs, provider construction/synthesis is `0`, and no mock fallback or provider detail is returned.
+- Focused Mobile route proof: the same authenticated owned request on cache miss returns the existing safe `503 listen_unavailable`; provider construction/synthesis and mock fallback remain `0`, and the private provider detail is absent from the response.
+- Focused ownership regression proof: missing/foreign script, unowned explicit voice, and wrong provider binding do not execute a cache lookup.
+- The existing actual-device cache miss -> persisted audio -> background return -> cache-hit playback evidence remains valid for the normal provider-available path. No shared Staging kill switch, credential, provider voice, or external resource was changed.
+- Cost/usage observability remains `PASS_WITH_LIMITATION`; this remediation adds no quota, pricing, dashboard, or usage-policy behavior.
+- Remediation validation passed: `npm run check:workspace`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run mobile:test` (253 tests), `npm run mobile:lint`, `npm run mobile:typecheck`, and `npm run check:mobile-release:self-test`.
+
+The focused remediation validation has `P0 = 0`, `P1 = 0`, and `P2 = 2`. It is not a new closeout decision: the next required action is an independent final read-only audit.
 
 ## Normal evaluation regression
 
@@ -139,16 +153,22 @@ This isolates the observed failure to the Yahoo Mail link-opening context rather
 ## Severity and remaining unknowns
 
 - `P0 = 0`
-- `P1 = 0`
-- `P2-1`: cross-instance clone idempotency would require a durable database/RPC contract and remains outside this migration-free Gate 4. Canonical rechecks and in-runtime coalescing cover normal retry/double tap.
-- `P2-2`: Yahoo Mail opened two fresh links in browser fallback while Apple Mail and direct probes opened the app. The Yahoo client-internal reason remains unknown.
+- `P1 = 0 at remediation validation`
+- `P2-1`: Yahoo Mail opened two fresh links in browser fallback while Apple Mail and direct probes opened the app. The Yahoo client-internal reason remains unknown.
+- `P2-2`: cross-instance clone idempotency would require a durable database/RPC contract and remains outside this migration-free Gate 4. Canonical rechecks and in-runtime coalescing cover normal retry/double tap.
 - A direct administrative numeric query of the fresh account's initial voice/consent rows was not performed; canonical authenticated readiness states are the functional evidence.
 - Provider-unavailable actual-device behavior remains `NOT_RUN_SAFE_LIMITATION`; the DoD decision uses the explicit automated evidence above.
 - Detailed provider timing was disabled in the exact Staging runtime; safe cache outcome and request counts were still observed.
 - ElevenLabs provider-resource deletion and account deletion remain Gate 5 Human-authorized work. No destructive proof was run.
 
-## Final decision
+## Historical closeout decision
 
 `G4_PROVIDER_PRODUCTION_FREEZE = CLOSED_COMMITTED_PASS`
 
-The successful exact-artifact mainline, conditional provider-failure evidence decision, P0/P1 status, and documentation are reconciled. Do not proceed to Gate 5 automatically.
+This was the historical closeout decision at commit `7b24e41af8b55eac5bc96058aff8ed3c920cc86b`; it was reopened by the later final read-only audit's Mobile cache-recovery P1.
+
+## Current remediation decision
+
+`G4_PROVIDER_PRODUCTION_FREEZE = REMEDIATED_PENDING_FINAL_READ_ONLY_AUDIT`
+
+The P1 remediation validation is complete with `P0 = 0`, `P1 = 0`, and `P2 = 2`. Gate 5 must not start automatically; an independent final read-only audit is the next action.
