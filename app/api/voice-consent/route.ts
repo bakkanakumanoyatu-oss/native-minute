@@ -23,8 +23,10 @@ export async function POST(request: NextRequest) {
       return jsonError(parsed.error.issues[0]?.message ?? "同意内容を確認してください。", 400);
     }
 
-    const consent = await createVoiceConsent(supabase, user.id, parsed.data);
-    return supabase.applyToResponse(jsonOk({ consent }));
+    await createVoiceConsent(supabase, user.id, parsed.data);
+    // The persisted provider consent can contain a provider ID and app-owned
+    // recording reference. The browser only needs to know that state changed.
+    return supabase.applyToResponse(jsonOk({ created: true }));
   } catch (error) {
     return supabase.applyToResponse(jsonError(getErrorMessage(error, "同意の記録に失敗しました。"), getErrorStatus(error, 500)));
   }

@@ -66,7 +66,8 @@ function authDependencies() {
   return {
     hasConfig: () => true,
     createClient: () => client,
-    validateUser: async () => ({ data: { user: { id: USER_ID } }, error: null })
+    validateUser: async () => ({ data: { user: { id: USER_ID } }, error: null }),
+    assertPronunciationConsent: async () => undefined
   };
 }
 

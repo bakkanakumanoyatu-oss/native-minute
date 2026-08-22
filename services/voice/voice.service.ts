@@ -15,6 +15,11 @@ import {
 } from "@/services/storage";
 import { getScript } from "@/services/scripts/scripts.service";
 import {
+  acceptCurrentProcessingConsent,
+  assertCurrentProcessingConsent,
+  getCurrentProcessingConsent
+} from "@/services/consent";
+import {
   buildVoiceGenerationAttemptMetadata,
   buildVoiceGenerationQuotaKeys,
   markQuotaEventFailed,
@@ -332,8 +337,9 @@ export function didReuseGeneratedScriptAudioCache(input: {
 export async function getVoiceSetupState(client: AppSupabaseClient, userId: string) {
   return timeAsync("voice.setupState", async () => {
     const providerStatus = getVoiceProviderStatus();
-    const [consent, voices] = await Promise.all([
+    const [consent, currentVoiceCloningConsent, voices] = await Promise.all([
       getLatestConsent(client, userId, providerStatus.provider),
+      getCurrentProcessingConsent(client, userId, "voice_cloning"),
       listVoices(client, userId, providerStatus.provider)
     ]);
 
@@ -345,6 +351,7 @@ export async function getVoiceSetupState(client: AppSupabaseClient, userId: stri
       providerRequirements: providerStatus.requirements,
       providerDiagnostics: providerStatus.diagnostics,
       consent,
+      voiceConsentCurrent: Boolean(currentVoiceCloningConsent),
       voices,
       defaultVoice: voices[0] ?? null
     };
@@ -428,6 +435,10 @@ export async function createVoiceConsent(client: AppSupabaseClient, userId: stri
     throw mapVoiceError("同意記録の保存", error);
   }
 
+  // Legacy voice_consents keeps provider-specific workflow history. The separate
+  // record below is the versioned product consent used by new clone creation.
+  await acceptCurrentProcessingConsent(client, userId, "voice_cloning", providerConsent.consentedAt);
+
   return data;
 }
 
@@ -503,6 +514,10 @@ export async function createUserVoice(client: AppSupabaseClient, userId: string,
   if (!providerStatus.supported) {
     throw new AppError(503, providerStatus.message ?? `VOICE_PROVIDER=${providerStatus.provider} は current repo では利用できません。`);
   }
+
+  // Do this before resolving sample data or calling the provider. A legacy
+  // provider consent alone is intentionally insufficient after G5A.
+  await assertCurrentProcessingConsent(client, userId, "voice_cloning");
 
   const consent = await getOwnedConsent(client, userId, input.consentId);
 

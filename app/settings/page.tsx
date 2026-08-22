@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AccountDeletionPanel } from "@/components/account/account-deletion-panel";
+import { PronunciationConsentPanel } from "@/components/account/pronunciation-consent-panel";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { StateActionSection, StateStepSection } from "@/components/guidance/state-sections";
 import { buildLoginHref } from "@/lib/navigation";
 import { getAuthState } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAccountDeletionStatus } from "@/services/account-deletion";
+import { getProcessingConsentStatus } from "@/services/consent";
 
 export default async function SettingsPage() {
   const authState = await getAuthState();
@@ -33,7 +35,10 @@ export default async function SettingsPage() {
   }
 
   const supabase = createSupabaseServerClient();
-  const deletionRequest = await getAccountDeletionStatus(supabase, authState.user.id);
+  const [deletionRequest, pronunciationConsent] = await Promise.all([
+    getAccountDeletionStatus(supabase, authState.user.id),
+    getProcessingConsentStatus(supabase, authState.user.id, "pronunciation_processing")
+  ]);
 
   return (
     <section className="space-y-6">
@@ -87,6 +92,7 @@ export default async function SettingsPage() {
       </section>
 
       <AccountDeletionPanel initialDeletionRequest={deletionRequest} />
+      <PronunciationConsentPanel initialStatus={pronunciationConsent.status} />
     </section>
   );
 }

@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getScriptProgressSummary, type ScriptProgressItem } from "@/services/progress";
 import { getPronunciationProviderStatus } from "@/services/pronunciation";
+import { getProcessingConsentStatus } from "@/services/consent";
 import { getScript } from "@/services/scripts/scripts.service";
 import { getTranscriptionProviderStatus } from "@/services/transcription";
 import { RecordAndEvaluatePanel } from "@/components/record/record-and-evaluate-panel";
@@ -38,6 +39,7 @@ export default async function RecordPage({ params }: PageParams) {
   const script = await timeAsync("record.page.script", () => getScript(supabase, user.id, id));
   const transcriptionStatus = getTranscriptionProviderStatus();
   const pronunciationStatus = getPronunciationProviderStatus();
+  const pronunciationConsent = await getProcessingConsentStatus(supabase, user.id, "pronunciation_processing");
   const progressItem = script ? await timeAsync("record.page.progressSummary", () => getScriptProgressSummary(supabase, user.id, script)) : null;
   const latestReviewHref = progressItem?.latestTake ? getScriptReviewPath(id, progressItem.latestTake.id) : null;
   const practiceChunks = createPracticeChunks(script?.content ?? "");
@@ -111,6 +113,7 @@ export default async function RecordPage({ params }: PageParams) {
               scriptId={script.id}
               targetSeconds={script.targetSeconds}
               listenHref={listenHref}
+              pronunciationConsentStatus={pronunciationConsent.status}
               transcriptionProvider={transcriptionStatus.provider}
               transcriptionSupported={transcriptionStatus.supported}
               transcriptionMessage={transcriptionStatus.message}

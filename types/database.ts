@@ -152,6 +152,54 @@ export interface Database {
         };
         Relationships: [];
       };
+      processing_consents: {
+        Row: {
+          id: string;
+          user_id: string;
+          consent_type: "pronunciation_processing" | "voice_cloning";
+          consent_version: string;
+          purpose_id: string;
+          purpose_version: string;
+          provider_set: string[];
+          data_categories: string[];
+          status: "active" | "withdrawn";
+          accepted_at: string;
+          withdrawn_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          consent_type: "pronunciation_processing" | "voice_cloning";
+          consent_version: string;
+          purpose_id: string;
+          purpose_version: string;
+          provider_set: string[];
+          data_categories: string[];
+          status?: "active" | "withdrawn";
+          accepted_at?: string;
+          withdrawn_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          consent_type?: "pronunciation_processing" | "voice_cloning";
+          consent_version?: string;
+          purpose_id?: string;
+          purpose_version?: string;
+          provider_set?: string[];
+          data_categories?: string[];
+          status?: "active" | "withdrawn";
+          accepted_at?: string;
+          withdrawn_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       voice_consents: {
         Row: {
           id: string;

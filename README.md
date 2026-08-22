@@ -13,6 +13,8 @@
 
 Codex の運用前提は [AGENTS.md](./AGENTS.md) と [docs/current-state.md](./docs/current-state.md) にまとめています。
 
+G5A consent foundation は `IMPLEMENTED_VALIDATED` です。録音の OpenAI / Azure 処理と ElevenLabs voice cloning を別々の versioned server-canonical consent として実装しました。既存 voice consent 履歴は変更せず、旧同意は新しい voice 作成時に再同意が必要です。copyは `PRODUCT CONSENT COPY / HUMAN-APPROVED INTERIM` であり、final legal approvalは未完了です。詳細は [G5A consent foundation result](./docs/g5a-canonical-recording-and-voice-consent-foundation-result.md) を参照してください。Gate 5全体、削除、retention は未完了です。
+
 ## workspace guard
 
 この repo の正しい作業場所は `/Users/karasawatakahiro/Developer/native-minute` です。`/Users/karasawatakahiro/Desktop/native-minute` や隔離済み Desktop checkout は編集・参照しません。作業前と検証前に `npm run check:workspace` を実行すると、cwd / git root / Desktop 側 checkout の存在を検査して、混線時は non-zero で停止します。

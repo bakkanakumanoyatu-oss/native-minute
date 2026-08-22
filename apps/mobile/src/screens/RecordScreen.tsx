@@ -32,6 +32,11 @@ type ScriptState =
   | { kind: "ready"; script: MobileScript }
   | { kind: "error"; error: PracticeRequestFailure };
 
+type PronunciationConsentState =
+  | { kind: "loading" }
+  | { kind: "ready"; status: "accepted" | "required" | "withdrawn" }
+  | { kind: "error"; error: PracticeRequestFailure };
+
 type PreparedTake = Readonly<{
   file: File;
   durationSeconds: number;
@@ -125,6 +130,7 @@ export function RecordScreen({
 }) {
   const [scriptState, setScriptState] = useState<ScriptState>({ kind: "loading" });
   const [scriptReloadKey, setScriptReloadKey] = useState(0);
+  const [pronunciationConsentState, setPronunciationConsentState] = useState<PronunciationConsentState>({ kind: "loading" });
   const [recorderState, setRecorderState] = useState<MobileRecorderState>({ kind: "idle" });
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [normalizing, setNormalizing] = useState(false);
@@ -188,6 +194,44 @@ export function RecordScreen({
       active = false;
     };
   }, [api, isOnline, scriptId, scriptReloadKey]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!isOnline) {
+      void Promise.resolve().then(() => {
+        if (active) {
+          setPronunciationConsentState({ kind: "error", error: { kind: "offline" } });
+        }
+      });
+      return () => {
+        active = false;
+      };
+    }
+
+    void Promise.resolve().then(() => {
+      if (!active) {
+        return;
+      }
+
+      setPronunciationConsentState({ kind: "loading" });
+      return api.getPronunciationConsent().then((result) => {
+        if (!active) {
+          return;
+        }
+
+        setPronunciationConsentState(
+          result.kind === "success"
+            ? { kind: "ready", status: result.status }
+            : { kind: "error", error: result }
+        );
+      });
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [api, isOnline]);
 
   useEffect(() => {
     let mounted = true;
@@ -347,7 +391,7 @@ export function RecordScreen({
   }, [recorderState]);
 
   async function startRecording() {
-    if (scriptState.kind !== "ready") {
+    if (scriptState.kind !== "ready" || pronunciationConsentState.kind !== "ready" || pronunciationConsentState.status !== "accepted") {
       return;
     }
     clearPreparedTake();
@@ -371,7 +415,9 @@ export function RecordScreen({
       !take ||
       !canSubmitMobileTake(take, previewConfirmed) ||
       submitState.kind === "uploading" ||
-      submitState.kind === "evaluating"
+      submitState.kind === "evaluating" ||
+      pronunciationConsentState.kind !== "ready" ||
+      pronunciationConsentState.status !== "accepted"
     ) {
       return;
     }
@@ -429,6 +475,20 @@ export function RecordScreen({
     setSubmitState({ kind: "error", error: evaluation });
   }
 
+  async function acceptPronunciationConsent() {
+    if (!isOnline || pronunciationConsentState.kind === "loading") {
+      return;
+    }
+
+    setPronunciationConsentState({ kind: "loading" });
+    const result = await api.acceptPronunciationConsent();
+    setPronunciationConsentState(
+      result.kind === "success"
+        ? { kind: "ready", status: result.status }
+        : { kind: "error", error: result }
+    );
+  }
+
   const busy = recorderState.kind === "requesting-permission" || recorderState.kind === "recording" || recorderState.kind === "stopping" || normalizing;
   const submitting = submitState.kind === "uploading" || submitState.kind === "evaluating";
   const shortPrompt = scriptState.kind === "ready" && preparedTake
@@ -437,6 +497,7 @@ export function RecordScreen({
   const visibleScriptState: ScriptState = isOnline
     ? scriptState
     : { kind: "error", error: { kind: "offline" } };
+  const pronunciationConsentAccepted = pronunciationConsentState.kind === "ready" && pronunciationConsentState.status === "accepted";
 
   return (
     <section className="intro-card practice-card" aria-live="polite">
@@ -455,6 +516,27 @@ export function RecordScreen({
         </article>
       ) : null}
 
+      {pronunciationConsentState.kind === "loading" ? <LoadingState label="録音と発音評価への同意を確認しています…" /> : null}
+      {pronunciationConsentState.kind === "error" ? <RequestError error={pronunciationConsentState.error} onRetry={() => {
+        setPronunciationConsentState({ kind: "loading" });
+        void api.getPronunciationConsent().then((result) => {
+          setPronunciationConsentState(result.kind === "success" ? { kind: "ready", status: result.status } : { kind: "error", error: result });
+        });
+      }} /> : null}
+      {pronunciationConsentState.kind === "ready" && pronunciationConsentState.status !== "accepted" ? (
+        <div className="voice-setup-step" data-testid="mobile-pronunciation-consent">
+          <p>録音した音声を、文字起こし、発音評価、日本語フィードバック生成のために処理します。</p>
+          <p className="scope-note">録音した音声は、文字起こしと発音評価のため OpenAI と Azure で処理されます。</p>
+          {pronunciationConsentState.status === "withdrawn" ? <p className="scope-note">同意は撤回済みです。録音と新しい評価を再開するには、もう一度同意してください。</p> : null}
+          <div className="button-row">
+            <button type="button" onClick={() => void acceptPronunciationConsent()}>同意して録音へ進む</button>
+            <button type="button" className="secondary-button" onClick={() => onNavigate({ name: "listen", scriptId })}>同意しない</button>
+          </div>
+        </div>
+      ) : null}
+
+      {pronunciationConsentAccepted ? (
+        <>
       <div className={recorderState.kind === "recording" ? "recording-console is-recording" : "recording-console"}>
         <div className="recording-indicator" aria-hidden="true" />
         <span>{recorderState.kind === "recording" ? "Recording" : normalizing ? "Preparing" : "Ready"}</span>
@@ -519,6 +601,8 @@ export function RecordScreen({
           <button type="button" className="text-button full-width-button" onClick={cancelRecording} disabled={submitting}>
             このTakeを削除
           </button>
+        </>
+      ) : null}
         </>
       ) : null}
     </section>

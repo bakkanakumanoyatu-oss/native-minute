@@ -14,6 +14,8 @@ export type MobileApiReasonCode =
   | "voice_setup_required"
   | "voice_setup_unavailable"
   | "voice_sample_invalid"
+  | "consent_unavailable"
+  | "pronunciation_consent_required"
   | "audio_not_found"
   | "audio_unavailable"
   | "recording_invalid"

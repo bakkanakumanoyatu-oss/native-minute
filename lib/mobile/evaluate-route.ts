@@ -16,6 +16,7 @@ import {
 import { getScript } from "@/services/scripts/scripts.service";
 import type { ScriptListItem } from "@/services/scripts/types";
 import { createRecordingAudioPath } from "@/services/storage";
+import { assertCurrentProcessingConsent } from "@/services/consent";
 import { mobileApiError, mobileApiOk } from "./api-response";
 import { toMobileReviewDto } from "./dto";
 import {
@@ -39,6 +40,7 @@ const mobileEvaluatePayloadSchema = z
 type PersistedReviewResult = Awaited<ReturnType<typeof createPersistedReview>>;
 
 export interface MobileEvaluateRouteDependencies extends MobileRouteAuthDependencies {
+  assertPronunciationConsent(client: AppSupabaseClient, userId: string): Promise<unknown>;
   getStoredReview(
     client: AppSupabaseClient,
     userId: string,
@@ -69,6 +71,8 @@ export interface MobileEvaluateRouteDependencies extends MobileRouteAuthDependen
 
 const defaultDependencies: MobileEvaluateRouteDependencies = {
   ...defaultMobileRouteAuthDependencies,
+  assertPronunciationConsent: (client, userId) =>
+    assertCurrentProcessingConsent(client, userId, "pronunciation_processing"),
   getStoredReview,
   getOwnedScript: getScript,
   createPersistedReview,
@@ -122,6 +126,10 @@ export async function handleMobileEvaluatePost(
       return mobileApiError(origin, 404, "script_not_found");
     }
 
+    await timeAsync("mobile.evaluate.consent", () =>
+      dependencies.assertPronunciationConsent(client, userId)
+    );
+
     const claimInput: ReviewTakeClaimInput = {
       takeId: mobilePayload.data.takeId,
       scriptId: parsed.data.scriptId,
@@ -167,7 +175,8 @@ export async function handleMobileEvaluatePost(
     return mapMobileServiceError(origin, error, {
       unavailable: "evaluation_unavailable",
       notFound: "recording_invalid",
-      invalid: "recording_invalid"
+      invalid: "recording_invalid",
+      conflict: "pronunciation_consent_required"
     });
   }
 }

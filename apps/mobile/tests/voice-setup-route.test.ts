@@ -16,6 +16,7 @@ const USER_ID = "11111111-1111-4111-8111-111111111111";
 type SetupSnapshot = {
   providerSupported: boolean;
   consent: { id: string } | null;
+  voiceConsentCurrent: boolean;
   defaultVoice: { id: string } | null;
 };
 
@@ -60,6 +61,7 @@ describe("mobile fresh-user voice setup BFF", () => {
       dependencies(() => ({
         providerSupported: true,
         consent: { id: "private-consent-id" },
+        voiceConsentCurrent: true,
         defaultVoice: { id: "private-voice-id" }
       }))
     );
@@ -76,7 +78,7 @@ describe("mobile fresh-user voice setup BFF", () => {
       new NextRequest(`${BASE_URL}/api/mobile/voice-setup`, {
         headers: { Origin: ORIGIN, Cookie: "web-session=must-not-be-used" }
       }),
-      dependencies(() => ({ providerSupported: true, consent: null, defaultVoice: null }), { getVoiceSetupState })
+      dependencies(() => ({ providerSupported: true, consent: null, voiceConsentCurrent: false, defaultVoice: null }), { getVoiceSetupState })
     );
 
     expect(response.status).toBe(401);
@@ -85,9 +87,9 @@ describe("mobile fresh-user voice setup BFF", () => {
   });
 
   it("persists consent once and moves a fresh user to the sample step without exposing its identifier", async () => {
-    let snapshot: SetupSnapshot = { providerSupported: true, consent: null, defaultVoice: null };
+    let snapshot: SetupSnapshot = { providerSupported: true, consent: null, voiceConsentCurrent: false, defaultVoice: null };
     const createVoiceConsent = vi.fn(async () => {
-      snapshot = { ...snapshot, consent: { id: "private-consent-id" } };
+      snapshot = { ...snapshot, consent: { id: "private-consent-id" }, voiceConsentCurrent: true };
     });
     const response = await handleMobileVoiceSetupPost(
       mobileRequest("/api/mobile/voice-setup", {
@@ -109,6 +111,7 @@ describe("mobile fresh-user voice setup BFF", () => {
     let snapshot: SetupSnapshot = {
       providerSupported: true,
       consent: { id: "private-consent-id" },
+      voiceConsentCurrent: true,
       defaultVoice: null
     };
     const uploadOwnedVoiceSample = vi.fn(async () => ({
@@ -156,6 +159,7 @@ describe("mobile fresh-user voice setup BFF", () => {
         () => ({
           providerSupported: true,
           consent: { id: "private-consent-id" },
+          voiceConsentCurrent: true,
           defaultVoice: { id: "private-voice-id" }
         }),
         { uploadOwnedVoiceSample, createDefaultVoiceIfMissing }

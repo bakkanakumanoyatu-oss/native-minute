@@ -35,10 +35,10 @@ const NOTICE_COPY: Record<ConsentNoticeKind, NoticeCopy> = {
   voice: {
     eyebrow: "Voice setup notice",
     title: "voice sample と同意録音の扱い",
-    summary: "voice setup では、通常のお手本ボイス作成のために voice sample や同意録音を扱う場合があります。",
+    summary: "音声サンプルは、クローンボイス作成のため ElevenLabs で処理されます。通常のお手本ボイス作成のために voice sample や同意録音を扱います。",
     bullets: [
       "client から provider へ直接送らず、app-owned Storage に保存してから server-side route 経由で処理します。",
-      "ElevenLabs normal voice / model audio に使う可能性があります。",
+      "ElevenLabs で個人用のお手本ボイスを作成するために使います。",
       "通常録音の同意とは別に扱い、保存済みベスト録音を自動的に音声素材として使うことはありません。"
     ]
   },

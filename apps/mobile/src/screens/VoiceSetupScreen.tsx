@@ -241,7 +241,7 @@ export function VoiceSetupScreen({
       <ScreenHeading
         eyebrow="Voice setup"
         title="お手本ボイスを準備"
-        detail="同意したうえで自分の短い声を録音すると、このアカウントだけのお手本ボイスを作れます。"
+        detail="同意したうえで自分の短い声を録音すると、このアカウントだけのお手本ボイスを作れます。音声サンプルは ElevenLabs で処理されます。"
       />
 
       {setupState.kind === "loading" ? <LoadingState label="voice の準備状況を確認しています…" /> : null}
@@ -263,7 +263,7 @@ export function VoiceSetupScreen({
               onChange={(event) => setAccepted(event.target.checked)}
               disabled={actionState.kind === "saving_consent"}
             />
-            <span>自分の声をお手本ボイス作成に使うことに同意します。保存済みの練習録音を自動利用することはありません。</span>
+            <span>自分自身の声による個人用のお手本音声を生成するため、音声サンプルを使ってクローンボイスを作成することに同意します。音声サンプルは ElevenLabs で処理されます。保存済みの練習録音を自動利用することはありません。</span>
           </label>
           <button type="button" disabled={!accepted || actionState.kind === "saving_consent"} onClick={() => void saveConsent()}>
             {actionState.kind === "saving_consent" ? "同意を保存中…" : "同意して次へ"}

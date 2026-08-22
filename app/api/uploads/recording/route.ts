@@ -5,6 +5,7 @@ import { jsonError, jsonOk } from "@/lib/http";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { uploadRecordingSchema } from "@/schemas/upload";
+import { assertCurrentProcessingConsent } from "@/services/consent";
 import { uploadOwnedRecording } from "@/services/storage";
 
 export async function POST(request: Request) {
@@ -15,6 +16,7 @@ export async function POST(request: Request) {
   try {
     const supabase = createSupabaseRouteClient();
     const user = await requireCurrentUser(supabase);
+    await assertCurrentProcessingConsent(supabase, user.id, "pronunciation_processing");
     assertCostGuardEnabled("storage_uploads");
     const formData = await request.formData();
     const file = formData.get("file");

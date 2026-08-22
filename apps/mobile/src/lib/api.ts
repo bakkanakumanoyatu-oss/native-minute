@@ -69,6 +69,10 @@ export type MobileVoiceSetup = {
   created: boolean;
 };
 
+export type MobileProcessingConsent = {
+  status: "accepted" | "required" | "withdrawn";
+};
+
 export type UploadMobileRecordingInput = {
   scriptId: string;
   recordingRef: string;
@@ -231,6 +235,10 @@ export type MobileVoiceSetupRequestState =
   | ({ kind: "success" } & MobileVoiceSetup)
   | MobileApiFailure;
 
+export type MobileProcessingConsentRequestState =
+  | ({ kind: "success" } & MobileProcessingConsent)
+  | MobileApiFailure;
+
 export const MAX_MOBILE_AUDIO_BYTES = 15 * 1024 * 1024;
 
 const DEFAULT_HEALTH_TIMEOUT_MS = 5_000;
@@ -253,6 +261,8 @@ const MOBILE_API_PATHS = {
     `/api/mobile/script-audio/${encodeURIComponent(audioId)}`,
   recordings: "/api/mobile/recordings",
   evaluate: "/api/mobile/evaluate",
+  consent: (consentType: "pronunciation_processing" | "voice_cloning") =>
+    `/api/mobile/consents/${consentType}`,
   voiceSetup: "/api/mobile/voice-setup",
   review: (scriptId: string, takeId: string) =>
     `/api/mobile/scripts/${encodeURIComponent(scriptId)}/reviews/${encodeURIComponent(takeId)}`,
@@ -499,6 +509,15 @@ function parseVoiceSetupPayload(value: unknown): MobileVoiceSetup | null {
     (data.status === "ready" || data.status === "consent_required" || data.status === "sample_required") &&
     typeof data.created === "boolean"
     ? { status: data.status, created: data.created }
+    : null;
+}
+
+function parseProcessingConsentPayload(value: unknown): MobileProcessingConsent | null {
+  const data = getSuccessData(value);
+  const consent = data && isObject(data.consent) ? data.consent : null;
+
+  return consent && (consent.status === "accepted" || consent.status === "required" || consent.status === "withdrawn")
+    ? { status: consent.status }
     : null;
 }
 
@@ -977,6 +996,58 @@ export async function acceptMobileVoiceConsent(
 
   const setup = parseVoiceSetupPayload(attempt.body);
   return setup ? { kind: "success", ...setup } : { kind: "invalid-response" };
+}
+
+export async function fetchMobilePronunciationConsent(
+  bffBaseUrl: string,
+  accessToken: string,
+  options: MobileApiRequestOptions = {}
+): Promise<MobileProcessingConsentRequestState> {
+  const attempt = await requestJson(
+    bffBaseUrl,
+    MOBILE_API_PATHS.consent("pronunciation_processing"),
+    accessToken,
+    { method: "GET" },
+    options,
+    DEFAULT_REQUEST_TIMEOUT_MS
+  );
+
+  if (attempt.kind !== "response") {
+    return mapAttemptFailure(attempt);
+  }
+
+  if (!attempt.response.ok) {
+    return mapFailure(attempt.response, attempt.body);
+  }
+
+  const consent = parseProcessingConsentPayload(attempt.body);
+  return consent ? { kind: "success", ...consent } : { kind: "invalid-response" };
+}
+
+export async function acceptMobilePronunciationConsent(
+  bffBaseUrl: string,
+  accessToken: string,
+  options: MobileApiRequestOptions = {}
+): Promise<MobileProcessingConsentRequestState> {
+  const attempt = await requestJson(
+    bffBaseUrl,
+    MOBILE_API_PATHS.consent("pronunciation_processing"),
+    accessToken,
+    { method: "POST", body: JSON.stringify({ accepted: true }) },
+    options,
+    DEFAULT_REQUEST_TIMEOUT_MS
+  );
+
+  if (attempt.kind !== "response") {
+    return mapAttemptFailure(attempt);
+  }
+
+  if (!attempt.response.ok) {
+    return mapFailure(attempt.response, attempt.body);
+  }
+
+  const consent = parseProcessingConsentPayload(attempt.body);
+  return consent ? { kind: "success", ...consent } : { kind: "invalid-response" };
 }
 
 export async function createMobileVoiceFromSample(

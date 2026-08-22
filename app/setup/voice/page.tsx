@@ -14,13 +14,14 @@ function getVoiceSetupRecoverySummary(input: {
   providerSupported: boolean;
   providerStatusMessage: string | null;
   hasConsent: boolean;
+  hasCurrentConsent: boolean;
   hasDefaultVoice: boolean;
 }) {
   if (!input.providerSupported) {
     return input.providerStatusMessage ?? "お手本ボイスを作る準備が不足しています。";
   }
 
-  if (!input.hasConsent) {
+  if (!input.hasConsent || !input.hasCurrentConsent) {
     return "まず自分の声を使う準備をします。そのあと、お手本ボイス用の声を作れます。";
   }
 
@@ -110,6 +111,7 @@ export default async function VoiceSetupPage({
     providerSupported: state.providerSupported,
     providerStatusMessage: state.providerMessage,
     hasConsent: Boolean(state.consent),
+    hasCurrentConsent: state.voiceConsentCurrent,
     hasDefaultVoice: Boolean(state.defaultVoice)
   });
   const consentRecordingInfo = state.consent ? getConsentRecordingInfo(state.consent.metadata) : null;
@@ -131,7 +133,7 @@ export default async function VoiceSetupPage({
         <dl className="mt-4 space-y-3 text-sm leading-6 text-ink-700">
           <div>
             <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">同意</dt>
-            <dd>{state.consent ? "完了" : "未完了"}</dd>
+            <dd>{state.voiceConsentCurrent ? "完了" : state.consent ? "再同意が必要" : "未完了"}</dd>
           </div>
           <div>
             <dt className="text-xs uppercase tracking-[0.18em] text-ink-500">自分の声</dt>
@@ -178,7 +180,7 @@ export default async function VoiceSetupPage({
             <Link href="/" className="rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-ink-800">ホームへ</Link>
           </div>
         </div>
-      ) : !state.consent ? (
+      ) : (!state.consent || !state.voiceConsentCurrent) && !state.defaultVoice ? (
         <section data-testid="voice-consent-section" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-ink-900">1. 自分の声を使う準備</h2>
           <p className="mt-2 text-sm leading-6 text-ink-600">お手本ボイスを作るための同意を保存します。必要な場合は、この場で同意音声を録音できます。</p>
@@ -188,7 +190,7 @@ export default async function VoiceSetupPage({
         </section>
       ) : null}
 
-      {state.providerSupported && state.consent && !state.defaultVoice ? (
+      {state.providerSupported && state.consent && state.voiceConsentCurrent && !state.defaultVoice ? (
         <section data-testid="voice-create-section" className="rounded-[2rem] border border-[var(--line)] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-ink-900">2. お手本ボイス用の声を作る</h2>
           <p className="mt-2 text-sm leading-6 text-ink-600">この場で自分の声を録音し、聞く画面で使う声を作ります。録音済みファイルも補助として使えます。</p>
@@ -205,7 +207,11 @@ export default async function VoiceSetupPage({
           <p className="mt-2 text-sm leading-6 text-ink-600">
             まず今の声で進むか、録り方を変えて作り直すかを選べます。古い声はここでは削除せず、新しく作った声が次のお手本に使われます。
           </p>
-          {state.consent ? (
+          {!state.voiceConsentCurrent ? (
+            <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+              現在のお手本ボイスはそのまま使えます。新しく作り直す場合は、先に最新の ElevenLabs 用同意を保存してください。
+            </p>
+          ) : state.consent ? (
             <div className="mt-5">
               <VoiceRerecordChoices
                 nextPath={voiceReadyNextPath}

@@ -25,6 +25,7 @@ const mobileVoiceConsentSchema = z.object({
 type MobileVoiceSetupSnapshot = {
   providerSupported: boolean;
   consent: { id: string } | null;
+  voiceConsentCurrent: boolean;
   defaultVoice: { id: string } | null;
 };
 
@@ -75,7 +76,7 @@ function getStatus(state: MobileVoiceSetupSnapshot): MobileVoiceSetupStatus {
     return "ready";
   }
 
-  return state.consent ? "sample_required" : "consent_required";
+  return state.consent && state.voiceConsentCurrent ? "sample_required" : "consent_required";
 }
 
 function toSafeResponse(state: MobileVoiceSetupSnapshot, created = false) {
@@ -144,7 +145,7 @@ async function handleConsentPost(
       return unavailable(context.origin);
     }
 
-    if (!current.consent && !current.defaultVoice) {
+    if ((!current.consent || !current.voiceConsentCurrent) && !current.defaultVoice) {
       await timeAsync("mobile.voiceSetup.consent", () =>
         dependencies.createVoiceConsent(context.client, context.userId, parsed.data)
       );
@@ -189,7 +190,7 @@ async function handleSamplePost(
       return mobileApiOk(context.origin, toSafeResponse(current));
     }
 
-    if (!current.consent) {
+    if (!current.consent || !current.voiceConsentCurrent) {
       return mobileApiError(context.origin, 409, "voice_setup_required");
     }
 

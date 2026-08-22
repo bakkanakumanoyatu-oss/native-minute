@@ -8,6 +8,7 @@ import { createMockCoachFeedback, type CoachInput } from "@/services/coach";
 import type { EvaluateRequestInput } from "@/schemas/evaluate";
 import { createPronunciationEvaluator, type EvaluateResult } from "@/services/pronunciation";
 import { getScript } from "@/services/scripts/scripts.service";
+import { assertCurrentProcessingConsent } from "@/services/consent";
 import { createTranscriptionProvider } from "@/services/transcription";
 import { createRecordingAudioPath, loadOwnedRecordingForEvaluation } from "@/services/storage";
 import type { HydratedTakeReview, ReviewArtifacts, StoredTakeReview, StoredWeakWord } from "./types";
@@ -140,6 +141,9 @@ export async function createReviewArtifacts(
 ): Promise<ReviewArtifacts> {
   return timeAsync("evaluate.artifacts", async () => {
     const takeId = input.takeId ?? randomUUID();
+    // This is the provider-processing boundary for every Web and Mobile
+    // evaluation path. Upload has a separate earlier guard.
+    await assertCurrentProcessingConsent(client, userId, "pronunciation_processing");
     const transcription = createTranscriptionProvider();
     const evaluator = createPronunciationEvaluator();
     const script = await timeAsync("evaluate.script", () => getScript(client, userId, input.scriptId));

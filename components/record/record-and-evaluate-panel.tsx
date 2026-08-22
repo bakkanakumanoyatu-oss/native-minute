@@ -63,6 +63,7 @@ type RecordAndEvaluatePanelProps = {
   scriptId: string;
   targetSeconds: number;
   listenHref?: string;
+  pronunciationConsentStatus: "accepted" | "required" | "withdrawn";
   transcriptionProvider: string;
   transcriptionSupported: boolean;
   transcriptionMessage: string | null;
@@ -196,6 +197,7 @@ export function RecordAndEvaluatePanel({
   scriptId,
   targetSeconds,
   listenHref,
+  pronunciationConsentStatus: initialPronunciationConsentStatus,
   transcriptionProvider,
   transcriptionSupported,
   pronunciationProvider,
@@ -225,6 +227,8 @@ export function RecordAndEvaluatePanel({
   const [messageStatus, setMessageStatus] = useState<number | null>(null);
   const [messageKind, setMessageKind] = useState<MessageKind>("info");
   const [evaluateWaitStageIndex, setEvaluateWaitStageIndex] = useState(0);
+  const [pronunciationConsentStatus, setPronunciationConsentStatus] = useState(initialPronunciationConsentStatus);
+  const [isSavingPronunciationConsent, setIsSavingPronunciationConsent] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -297,6 +301,10 @@ export function RecordAndEvaluatePanel({
   }
 
   async function handleStartRecording() {
+    if (pronunciationConsentStatus !== "accepted") {
+      return;
+    }
+
     clearMessage();
     setIsStartingRecording(true);
 
@@ -370,6 +378,11 @@ export function RecordAndEvaluatePanel({
   }
 
   async function handleSubmit() {
+    if (pronunciationConsentStatus !== "accepted") {
+      setErrorMessage("録音の文字起こしと発音評価を行うには、現在の同意が必要です。", "evaluate", 409);
+      return;
+    }
+
     if (isMeasuringDuration) {
       setInfoMessage("音声の長さを確認中です。自動判定が終わるまで少し待つか、必要なら秒数欄を確認してから再試行してください。");
       return;
@@ -471,6 +484,37 @@ export function RecordAndEvaluatePanel({
       setIsPreparingUploadFile(false);
       setIsUploading(false);
       setIsEvaluating(false);
+    }
+  }
+
+  async function acceptPronunciationConsent() {
+    setIsSavingPronunciationConsent(true);
+
+    try {
+      const response = await fetch("/api/consents/pronunciation_processing", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accepted: true })
+      });
+      const payload = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        message?: string;
+        data?: { consent?: { status?: string } };
+      } | null;
+      const status = payload?.data?.consent?.status;
+
+      if (!response.ok || !payload?.ok || status !== "accepted") {
+        setErrorMessage(payload?.message ?? "同意を保存できませんでした。", "record", response.status);
+        return;
+      }
+
+      setPronunciationConsentStatus("accepted");
+      clearMessage();
+    } catch {
+      setErrorMessage("通信に失敗しました。少し待ってから同意を保存してください。", "record");
+    } finally {
+      setIsSavingPronunciationConsent(false);
     }
   }
 
@@ -663,6 +707,40 @@ export function RecordAndEvaluatePanel({
               : [])
           ]
       : [];
+
+  if (pronunciationConsentStatus !== "accepted") {
+    return (
+      <div className="space-y-6">
+        <ConsentNotice kind="record" />
+        <section data-testid="pronunciation-consent-gate" className="rounded-3xl border border-[var(--line-inset)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-studio-soft)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-strong)]">Recording consent</p>
+          <h2 className="mt-2 text-xl font-semibold text-ink-900">録音と発音評価への同意</h2>
+          <p className="mt-3 text-sm leading-6 text-ink-700">録音した英語音声を、文字起こし、発音評価、日本語フィードバック生成のために処理します。</p>
+          <p className="mt-3 rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-notice)] p-4 text-sm leading-6 text-ink-800">録音した音声は、文字起こしと発音評価のため OpenAI と Azure で処理されます。</p>
+          {pronunciationConsentStatus === "withdrawn" ? <p className="mt-3 text-sm leading-6 text-amber-800">同意は撤回済みです。新しい録音と評価を再開するには、もう一度同意してください。保存済みの結果はそのまま確認できます。</p> : null}
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              data-testid="pronunciation-consent-accept"
+              type="button"
+              onClick={() => void acceptPronunciationConsent()}
+              disabled={isSavingPronunciationConsent}
+              className="inline-flex items-center justify-center rounded-2xl bg-[var(--record-accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--record-accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSavingPronunciationConsent ? "同意を保存中..." : "同意して録音へ進む"}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push(listenHref ?? "/scripts")}
+              disabled={isSavingPronunciationConsent}
+              className="inline-flex items-center justify-center rounded-2xl border border-[var(--line-subtle)] bg-[var(--surface-inset)] px-4 py-3 text-sm font-semibold text-ink-800 transition hover:bg-[var(--surface-inset-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              同意しない
+            </button>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

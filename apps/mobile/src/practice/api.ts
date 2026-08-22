@@ -1,12 +1,14 @@
 import type { MobileAuthController } from "../auth/mobile-auth";
 import type { MobileAuthState } from "../auth/state-machine";
 import {
+  acceptMobilePronunciationConsent,
   acceptMobileVoiceConsent,
   createMobileScript,
   createMobileVoiceFromSample,
   downloadMobileScriptAudio,
   evaluateMobileRecording,
   fetchMobileVoiceSetup,
+  fetchMobilePronunciationConsent,
   fetchMobileProgress,
   fetchMobileReview,
   fetchMobileScript,
@@ -21,6 +23,7 @@ import {
   type MobileListenRequestState,
   type MobileProgress,
   type MobileProgressRequestState,
+  type MobileProcessingConsentRequestState,
   type MobileRecordingUploadState,
   type MobileReview,
   type MobileReviewRequestState,
@@ -63,6 +66,8 @@ export interface PracticeApi {
   getScript(scriptId: string): Promise<MobileScriptRequestState>;
   requestListen(scriptId: string): Promise<MobileListenRequestState>;
   getVoiceSetup(): Promise<MobileVoiceSetupRequestState>;
+  getPronunciationConsent(): Promise<MobileProcessingConsentRequestState>;
+  acceptPronunciationConsent(): Promise<MobileProcessingConsentRequestState>;
   acceptVoiceConsent(): Promise<MobileVoiceSetupRequestState>;
   createVoiceFromSample(sample: File): Promise<MobileVoiceSetupRequestState>;
   downloadAudio(audioId: string): Promise<MobileAudioDownloadState>;
@@ -263,6 +268,8 @@ export function createPracticeApi({
     createScript: (input) => request((token) => createMobileScript(bffBaseUrl, token, input, { onTiming })),
     getScript: (scriptId) => request((token) => fetchMobileScript(bffBaseUrl, token, scriptId, { onTiming })),
     requestListen,
+    getPronunciationConsent: () => request((token) => fetchMobilePronunciationConsent(bffBaseUrl, token, { onTiming })),
+    acceptPronunciationConsent: () => request((token) => acceptMobilePronunciationConsent(bffBaseUrl, token, { onTiming })),
     getVoiceSetup: () => request((token) => fetchMobileVoiceSetup(bffBaseUrl, token, { onTiming })),
     acceptVoiceConsent: () => request((token) => acceptMobileVoiceConsent(bffBaseUrl, token, { onTiming })),
     createVoiceFromSample: (sample) => request((token) => createMobileVoiceFromSample(bffBaseUrl, token, sample, { onTiming })),

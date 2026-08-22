@@ -4,6 +4,7 @@ import { assertCostGuardEnabled } from "@/lib/cost-guard";
 import { timeAsync } from "@/lib/performance/timing";
 import { parseMobilePcmWav } from "@/lib/pcm-wav";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
+import { assertCurrentProcessingConsent } from "@/services/consent";
 import { MAX_RECORDING_BYTES } from "@/services/storage/constants";
 import {
   uploadOwnedRecording,
@@ -29,6 +30,7 @@ const MOBILE_DURATION_TOLERANCE_SECONDS = 2;
 export { parseMobilePcmWav } from "@/lib/pcm-wav";
 
 export interface MobileRecordingsRouteDependencies extends MobileRouteAuthDependencies {
+  assertPronunciationConsent(client: AppSupabaseClient, userId: string): Promise<unknown>;
   assertUploadEnabled(): void;
   uploadOwnedRecording(
     client: AppSupabaseClient,
@@ -44,6 +46,8 @@ export interface MobileRecordingsRouteDependencies extends MobileRouteAuthDepend
 
 const defaultDependencies: MobileRecordingsRouteDependencies = {
   ...defaultMobileRouteAuthDependencies,
+  assertPronunciationConsent: (client, userId) =>
+    assertCurrentProcessingConsent(client, userId, "pronunciation_processing"),
   assertUploadEnabled: () => assertCostGuardEnabled("storage_uploads"),
   uploadOwnedRecording
 };
@@ -146,6 +150,9 @@ export async function handleMobileRecordingsPost(
   }
 
   try {
+    await timeAsync("mobile.recording.consent", () =>
+      dependencies.assertPronunciationConsent(client, userId)
+    );
     dependencies.assertUploadEnabled();
     const uploaded = await timeAsync("mobile.recording.upload", () =>
       dependencies.uploadOwnedRecording(client, userId, {
@@ -183,7 +190,8 @@ export async function handleMobileRecordingsPost(
     return mapMobileServiceError(origin, error, {
       unavailable: "recording_unavailable",
       notFound: "script_not_found",
-      invalid: "recording_invalid"
+      invalid: "recording_invalid",
+      conflict: "pronunciation_consent_required"
     });
   }
 }
