@@ -1,6 +1,6 @@
 # G5B Mobile Settings, Legal, and Account Deletion Entry
 
-Status: `STAGING_NATIVE_PROVEN_PENDING_FINAL_CLOSEOUT`
+Status: `CLOSED_COMMITTED_PASS`
 
 Scope: Minimal Mobile Settings, trusted public legal navigation, and Bearer-only account-deletion request/status entry. Gate 5 overall remains open. This work does not start any later Gate 5 unit.
 
@@ -61,6 +61,18 @@ The dedicated Mobile deletion screen reaches discovery, initiation, and safe sta
 - Mobile decoder/component tests prove terminal decoding, unknown-status rejection, reapply CTA availability only for the canonical terminal set, Settings-to-dedicated-deletion navigation, and rendering of the canonical G5A consent responses.
 - Trusted legal navigation tests verify each canonical path, no query/fragment/credentials, and reject an arbitrary URL-like page value.
 - Remediation-focused tests passed before the final full repository validation. No Staging build, sync, install, deploy, or native Browser smoke was run.
+- The canonical domain-service focused test directly executes the active-request insert race: initial User A lookup is empty, the only insert returns PostgreSQL/Supabase-style `23505`, and the recovery lookup returns the competing User A active request. The result reuses that canonical row with `created: false`; it performs no second insert and does not expose the raw database error. The adapter fixture also contains a User B active request, which is excluded by the two `user_id = User A` lookups. A non-`23505` (`23514`) insert failure keeps the existing safe `AppError` path and does not run recovery lookup.
+
+## Final closeout: active-request insert race
+
+The final audit's remaining non-blocking P2 was the lack of a focused test that directly exercised the existing `23505` recovery branch in `createAccountDeletionRequest(userId)`. The implementation itself was not changed.
+
+- `apps/mobile/tests/account-deletion-domain.test.ts` now controls only the Supabase admin boundary and directly calls the canonical service.
+- It proves initial no-active-request lookup -> one insert -> `23505` -> actual second active-request lookup -> canonical User A request reused with `created: false`.
+- The service does not retry the insert, create a second request, or leak the raw `23505` to the caller. A fixture User B request is not eligible for reuse because both lookups are scoped to User A.
+- The negative control proves `23514` retains the pre-existing mapped safe failure behavior and does not enter the `23505` recovery path.
+- Read-only review confirms the service's active statuses exactly match migration `0012_phase_rr_account_deletion_requests.sql` partial unique index `account_deletion_requests_user_active_unique_idx`: `requested`, `confirmed`, `processing`, `provider_cleanup_failed`, `storage_cleanup_failed`, `db_cleanup_failed`, and `auth_cleanup_failed`.
+- No production source, migration, Staging/Production deployment, native artifact, or destructive account-deletion action changed for this closeout.
 
 ## Exact Staging BFF alignment and native proof
 
@@ -81,7 +93,7 @@ Privacy, Terms, and Support Browser open/close evidence from the same exact arti
 - P1: 0
 - P2: 0
 
-`G5B_STAGING_NATIVE_BROWSER_SMOKE = PASS`. `G5B_MOBILE_SETTINGS_LEGAL_DELETION_ENTRY` remains `STAGING_NATIVE_PROVEN_PENDING_FINAL_CLOSEOUT`; Gate 5 overall remains `OPEN`.
+`G5B_STAGING_NATIVE_BROWSER_SMOKE = PASS`. `G5B_MOBILE_SETTINGS_LEGAL_DELETION_ENTRY = CLOSED_COMMITTED_PASS`; Gate 5 overall remains `OPEN`.
 
 G5A remains unchanged at P0=0, P1=0, P2=2. Gate 4 historical P2 remains outside this scope.
 

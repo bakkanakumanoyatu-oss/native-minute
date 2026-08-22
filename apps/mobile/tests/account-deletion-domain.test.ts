@@ -79,6 +79,64 @@ function arrangeDomainClient(latestRequest: AccountDeletionRow | null) {
   return { activeQuery, insert };
 }
 
+function arrangeInsertRaceClient(insertError: { code: string; message: string }) {
+  const racedRequest = {
+    ...accountDeletionRow("requested"),
+    id: "44444444-4444-4444-8444-444444444444"
+  };
+  const foreignRequest = {
+    ...accountDeletionRow("requested"),
+    id: "55555555-5555-4555-8555-555555555555",
+    user_id: "22222222-2222-4222-822222222222"
+  };
+  const insert = vi.fn(() => ({
+    select: vi.fn(() => ({
+      single: vi.fn(async () => ({ data: null, error: insertError }))
+    }))
+  }));
+  const activeQuery = {
+    eq: vi.fn(),
+    in: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn(),
+    maybeSingle: vi.fn()
+  };
+  let queriedUserId: string | null = null;
+  let requestedStatuses: AccountDeletionRequestStatus[] = [];
+  let lookupCount = 0;
+
+  activeQuery.eq.mockImplementation((column: string, value: string) => {
+    if (column === "user_id") {
+      queriedUserId = value;
+    }
+
+    return activeQuery;
+  });
+  activeQuery.in.mockImplementation((_column: string, statuses: AccountDeletionRequestStatus[]) => {
+    requestedStatuses = statuses;
+    return activeQuery;
+  });
+  activeQuery.order.mockReturnValue(activeQuery);
+  activeQuery.limit.mockReturnValue(activeQuery);
+  activeQuery.maybeSingle.mockImplementation(async () => {
+    const rows = lookupCount++ === 0 ? [foreignRequest] : [foreignRequest, racedRequest];
+    const canonicalRequest = rows.find(
+      (row) => row.user_id === queriedUserId && requestedStatuses.includes(row.status)
+    ) ?? null;
+
+    return { data: canonicalRequest, error: null };
+  });
+  const admin = {
+    from: vi.fn(() => ({
+      select: vi.fn(() => activeQuery),
+      insert
+    }))
+  };
+
+  vi.mocked(createSupabaseAdminClient).mockReturnValue(admin as never);
+  return { activeQuery, insert, racedRequest };
+}
+
 describe("canonical account-deletion request semantics", () => {
   beforeEach(() => {
     vi.mocked(createSupabaseAdminClient).mockReset();
@@ -113,5 +171,43 @@ describe("canonical account-deletion request semantics", () => {
       created: false,
       deletionRequest: { status: "requested" }
     });
+  });
+
+  it("re-fetches and reuses User A's canonical active request after an insert 23505 race", async () => {
+    const { activeQuery, insert, racedRequest } = arrangeInsertRaceClient({
+      code: "23505",
+      message: "duplicate key value violates unique constraint"
+    });
+
+    const result = await createAccountDeletionRequest(USER_A);
+
+    expect(activeQuery.maybeSingle).toHaveBeenCalledTimes(2);
+    expect(activeQuery.eq).toHaveBeenNthCalledWith(1, "user_id", USER_A);
+    expect(activeQuery.eq).toHaveBeenNthCalledWith(2, "user_id", USER_A);
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      created: false,
+      deletionRequest: {
+        id: racedRequest.id,
+        status: racedRequest.status,
+        requestedAt: racedRequest.requested_at
+      }
+    });
+  });
+
+  it("preserves the safe failure behavior for a non-23505 insert error", async () => {
+    const { activeQuery, insert } = arrangeInsertRaceClient({
+      code: "23514",
+      message: "check constraint violation"
+    });
+
+    await expect(createAccountDeletionRequest(USER_A)).rejects.toMatchObject({
+      name: "AppError",
+      status: 500,
+      message: "削除リクエストの作成に失敗しました。"
+    });
+
+    expect(activeQuery.maybeSingle).toHaveBeenCalledTimes(1);
+    expect(insert).toHaveBeenCalledTimes(1);
   });
 });
