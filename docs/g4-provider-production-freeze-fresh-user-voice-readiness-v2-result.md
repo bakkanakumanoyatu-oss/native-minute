@@ -2,15 +2,15 @@
 
 ## Status
 
-`G4_PROVIDER_PRODUCTION_FREEZE = REMEDIATED_PENDING_FINAL_READ_ONLY_AUDIT`
+`G4_PROVIDER_PRODUCTION_FREEZE = CLOSED_COMMITTED_PASS`
 
 - Implementation checkpoint: `b6663a7b21a190779fd3d9facfd6c5efc8abaeeb`
 - Actual-device proof mode: `G4_CHECKPOINT_ARTIFACT_AND_ACTUAL_DEVICE_PROOF_V1`
 - Actual-device proof date: `2026-08-22` (`Asia/Tokyo`)
 - Device: iPhone 14 Plus / iOS 26.2.1
-- `P0 = 0`, `P1 = 0 at remediation validation`, `P2 = 2`
+- `P0 = 0`, `P1 = 0`, `P2 = 2`
 
-The historical closeout below remains intact. A subsequent final read-only audit found and reopened one Mobile cache-recovery P1; its remediation is validated but must receive an independent final read-only audit before Gate 4 can be closed again. This does not start Gate 5, approve provider deletion, or claim production identity / TestFlight readiness.
+The historical closeout below remains intact. A subsequent final read-only audit found and reopened one Mobile cache-recovery P1; remediation `3e073eb1f60233dcc458651b52e745573ae051c6` passed the independent final re-audit and Human Decision accepted `FINAL_REAUDIT_PASS`. This closes Gate 4 only. It does not start Gate 5, approve provider deletion, or claim production identity / TestFlight readiness.
 
 ## Preflight and Gate 3 reconciliation
 
@@ -43,7 +43,7 @@ The historical closeout below remains intact. A subsequent final read-only audit
 | First reference synthesis | PASS | First post-ready request returned the cache-miss UI and one successful Listen POST. |
 | Cache replay | PASS | Second identical request returned the persisted-audio reuse UI and audible replay. |
 | Background return | PASS | Foreground state showed `保存済みのお手本を再準備`, not an ungenerated state. |
-| Provider unavailable | `REMEDIATED_PENDING_FINAL_READ_ONLY_AUDIT` | Shared Staging kill switch was not mutated. The prior closeout's Mobile cache-first inference was invalidated, then remediated with a focused Mobile route proof for cache hit and safe cache miss behavior. |
+| Provider unavailable | PASS | Shared Staging kill switch was not mutated. The prior closeout's Mobile cache-first inference was invalidated, then remediated with focused Mobile route proof and accepted by the final re-audit. |
 | OpenAI transcription / Azure evaluation | PASS | One new normal Take on device; broader Gate 3 semantics reused. |
 | Production mock guard | PASS | Exact artifact/release guard plus frozen strict-production provider-role evidence. |
 | Safe observability | PASS | Fixed route/status/request counts and cache outcome were available without content, IDs, paths, or credentials. Detailed timing labels remain opt-in. |
@@ -117,7 +117,7 @@ That evidence is not actual-device provider-failure evidence. The final read-onl
 - Cost/usage observability remains `PASS_WITH_LIMITATION`; this remediation adds no quota, pricing, dashboard, or usage-policy behavior.
 - Remediation validation passed: `npm run check:workspace`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run mobile:test` (253 tests), `npm run mobile:lint`, `npm run mobile:typecheck`, and `npm run check:mobile-release:self-test`.
 
-The focused remediation validation has `P0 = 0`, `P1 = 0`, and `P2 = 2`. It is not a new closeout decision: the next required action is an independent final read-only audit.
+The focused remediation validation had `P0 = 0`, `P1 = 0`, and `P2 = 2`. The independent final re-audit found no new P0/P1 counterevidence and was Human-accepted as `FINAL_REAUDIT_PASS`.
 
 ## Normal evaluation regression
 
@@ -153,7 +153,7 @@ This isolates the observed failure to the Yahoo Mail link-opening context rather
 ## Severity and remaining unknowns
 
 - `P0 = 0`
-- `P1 = 0 at remediation validation`
+- `P1 = 0`
 - `P2-1`: Yahoo Mail opened two fresh links in browser fallback while Apple Mail and direct probes opened the app. The Yahoo client-internal reason remains unknown.
 - `P2-2`: cross-instance clone idempotency would require a durable database/RPC contract and remains outside this migration-free Gate 4. Canonical rechecks and in-runtime coalescing cover normal retry/double tap.
 - A direct administrative numeric query of the fresh account's initial voice/consent rows was not performed; canonical authenticated readiness states are the functional evidence.
@@ -167,8 +167,8 @@ This isolates the observed failure to the Yahoo Mail link-opening context rather
 
 This was the historical closeout decision at commit `7b24e41af8b55eac5bc96058aff8ed3c920cc86b`; it was reopened by the later final read-only audit's Mobile cache-recovery P1.
 
-## Current remediation decision
+## Final Human closeout decision
 
-`G4_PROVIDER_PRODUCTION_FREEZE = REMEDIATED_PENDING_FINAL_READ_ONLY_AUDIT`
+`G4_PROVIDER_PRODUCTION_FREEZE = CLOSED_COMMITTED_PASS`
 
-The P1 remediation validation is complete with `P0 = 0`, `P1 = 0`, and `P2 = 2`. Gate 5 must not start automatically; an independent final read-only audit is the next action.
+The independent final read-only re-audit accepted remediation `3e073eb1f60233dcc458651b52e745573ae051c6` as `FINAL_REAUDIT_PASS`, and Human Decision accepted the result. Gate 4 closes with `P0 = 0`, `P1 = 0`, and `P2 = 2`. Gate 5 does not start automatically.
