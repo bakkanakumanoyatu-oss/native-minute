@@ -1,8 +1,8 @@
 # G5A Canonical Recording and Voice Consent Foundation
 
-Status: `STAGING_APPLICATION_PROVEN_PENDING_FINAL_CLOSEOUT`
+Status: `CLOSED_COMMITTED_PASS`
 
-Scope: G5A consent foundation P1 remediation plus the Staging-only `0013` database and application proof. Gate 5 as a whole is not closed, and this work does not start Gate 5B.
+Scope: G5A consent foundation implementation, P1 remediation, Staging-only `0013` database/application proof, and final read-only closeout. Gate 5 as a whole remains open, and this work does not start Gate 5B.
 
 Consent copy status: `PRODUCT CONSENT COPY / HUMAN-APPROVED INTERIM`. Final legal approval for the Privacy Policy and Terms remains outside G5A.
 
@@ -105,13 +105,26 @@ Passed on 2026-08-22:
 
 External Staging proof additionally passed the normal migration history/dry-run/apply sequence, read-only catalog verification, authenticated DB smoke, fixed-alias route manifest check, and authenticated Mobile/Web application smoke. Source was not changed in those executions.
 
-## G5A audit status after Staging application proof
+## Final closeout
+
+The final read-only audit was accepted as `FINAL_CLOSEOUT_AUDIT_PASS`. G5A is therefore closed as `G5A_CONSENT_FOUNDATION = CLOSED_COMMITTED_PASS`; `G5A_STAGING_MIGRATION_0013 = APPLIED_VERIFIED_PASS`. Gate 5 overall remains `OPEN`.
+
+- Implementation: `1d360205cfb6e12f6b5c16fabb1c1021505cb838`.
+- P1 remediation: `b04288dbe3aa4d32b1b616ebb2021de18862ba7d`.
+- Staging DB real PostgreSQL proof: `PASS`.
+- Exact Staging BFF/application proof: `PASS`.
+- Evidence commit: `7ba9cf2f42dd77f3159587743226a85b7d6d9b3e`.
+- Final read-only audit: `FINAL_CLOSEOUT_AUDIT_PASS`.
+
+G5A closes the following consent-foundation scope: pronunciation-processing consent; voice-cloning consent; versioning; purpose/provider/data categories; DB-authored audit timestamps; withdrawal/re-consent history; User A/B isolation; Web/Mobile canonical parity; provider-processing fail-closed behavior; and Staging DB/application proof.
+
+## G5A audit status
 
 - P0: 0
 - P1: 0
 - P2: 2
   - the Web `/api/create-voice` response still includes unnecessary internal voice-row information such as `provider_voice_id` and `sample_audio_path`;
-  - the repository migration-contract test does not itself assert trigger attachment, although the actual Staging catalog proof did.
+  - the repository migration-contract test does not itself assert trigger attachment; the actual Staging PostgreSQL catalog proof did verify the attachment.
 
 ## Deliberately not implemented
 
@@ -121,9 +134,15 @@ External Staging proof additionally passed the normal migration history/dry-run/
 - Final legal copy or Store privacy submissions.
 - Mobile Settings navigation.
 
-## Remaining human-required / unknown
+## Remaining Gate 5 boundary
 
-- Final legal approval remains required for the interim product consent copy, Privacy Policy, and Terms.
-- No provider retention assertion is made here.
-- Production migration/apply has not occurred and remains out of scope.
-- A final closeout review remains required; Gate 5 and Gate 5B do not advance automatically.
+- Mobile Settings / Privacy / Terms / Support / deletion navigation.
+- Final legal approval for the interim product consent copy, Privacy Policy, and Terms.
+- Provider retention confirmation.
+- Voice-only withdrawal / deletion.
+- Account deletion operational path.
+- Partial-failure / retry / idempotency.
+- Destructive disposable-account proof.
+- Reviewer closeout.
+
+Production migration/apply remains out of scope. Gate 5 and Gate 5B do not advance automatically.
