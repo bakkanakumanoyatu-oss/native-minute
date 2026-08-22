@@ -1,5 +1,7 @@
 export type PracticeRoute =
   | { name: "scripts" }
+  | { name: "settings" }
+  | { name: "account_deletion" }
   | { name: "voice_setup"; scriptId?: string }
   | { name: "listen"; scriptId: string }
   | { name: "record"; scriptId: string }
@@ -26,6 +28,14 @@ export function parsePracticeRoute(location: Pick<Location, "pathname" | "search
 
   if (segments.length === 1 && segments[0] === "scripts") {
     return { name: "scripts" };
+  }
+
+  if (segments.length === 1 && segments[0] === "settings") {
+    return { name: "settings" };
+  }
+
+  if (segments.length === 2 && segments[0] === "settings" && segments[1] === "account-deletion") {
+    return { name: "account_deletion" };
   }
 
   if (segments.length === 2 && segments[0] === "setup" && segments[1] === "voice") {
@@ -65,6 +75,10 @@ export function practiceRoutePath(route: PracticeRoute) {
   switch (route.name) {
     case "scripts":
       return "/scripts";
+    case "settings":
+      return "/settings";
+    case "account_deletion":
+      return "/settings/account-deletion";
     case "voice_setup":
       return route.scriptId
         ? `/setup/voice?scriptId=${encodeURIComponent(route.scriptId)}`
@@ -83,7 +97,7 @@ export function practiceRoutePath(route: PracticeRoute) {
 }
 
 export function isPracticePath(pathname: string) {
-  if (pathname === "/scripts" || pathname === "/progress" || pathname === "/setup/voice") {
+  if (pathname === "/scripts" || pathname === "/progress" || pathname === "/setup/voice" || pathname === "/settings" || pathname === "/settings/account-deletion") {
     return true;
   }
 

@@ -3,12 +3,15 @@ import type { MobileAuthState } from "../auth/state-machine";
 import {
   acceptMobilePronunciationConsent,
   acceptMobileVoiceConsent,
+  createMobileAccountDeletionRequest,
   createMobileScript,
   createMobileVoiceFromSample,
   downloadMobileScriptAudio,
   evaluateMobileRecording,
   fetchMobileVoiceSetup,
   fetchMobilePronunciationConsent,
+  fetchMobileProcessingConsent,
+  fetchMobileAccountDeletionStatus,
   fetchMobileProgress,
   fetchMobileReview,
   fetchMobileScript,
@@ -18,6 +21,7 @@ import {
   type CreateMobileScriptInput,
   type EvaluateMobileRecordingInput,
   type MobileAudioDownloadState,
+  type MobileAccountDeletionRequestStateResult,
   type MobileApiTimingCallback,
   type MobileApiTimingLabel,
   type MobileListenRequestState,
@@ -67,6 +71,9 @@ export interface PracticeApi {
   requestListen(scriptId: string): Promise<MobileListenRequestState>;
   getVoiceSetup(): Promise<MobileVoiceSetupRequestState>;
   getPronunciationConsent(): Promise<MobileProcessingConsentRequestState>;
+  getVoiceCloningConsent(): Promise<MobileProcessingConsentRequestState>;
+  getAccountDeletionStatus(): Promise<MobileAccountDeletionRequestStateResult>;
+  createAccountDeletionRequest(): Promise<MobileAccountDeletionRequestStateResult>;
   acceptPronunciationConsent(): Promise<MobileProcessingConsentRequestState>;
   acceptVoiceConsent(): Promise<MobileVoiceSetupRequestState>;
   createVoiceFromSample(sample: File): Promise<MobileVoiceSetupRequestState>;
@@ -269,6 +276,9 @@ export function createPracticeApi({
     getScript: (scriptId) => request((token) => fetchMobileScript(bffBaseUrl, token, scriptId, { onTiming })),
     requestListen,
     getPronunciationConsent: () => request((token) => fetchMobilePronunciationConsent(bffBaseUrl, token, { onTiming })),
+    getVoiceCloningConsent: () => request((token) => fetchMobileProcessingConsent(bffBaseUrl, token, "voice_cloning", { onTiming })),
+    getAccountDeletionStatus: () => request((token) => fetchMobileAccountDeletionStatus(bffBaseUrl, token, { onTiming })),
+    createAccountDeletionRequest: () => request((token) => createMobileAccountDeletionRequest(bffBaseUrl, token, { onTiming })),
     acceptPronunciationConsent: () => request((token) => acceptMobilePronunciationConsent(bffBaseUrl, token, { onTiming })),
     getVoiceSetup: () => request((token) => fetchMobileVoiceSetup(bffBaseUrl, token, { onTiming })),
     acceptVoiceConsent: () => request((token) => acceptMobileVoiceConsent(bffBaseUrl, token, { onTiming })),

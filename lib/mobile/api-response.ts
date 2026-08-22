@@ -31,6 +31,7 @@ const MOBILE_API_ERROR_COPY: Record<MobileApiReasonCode, { message: string; retr
   evaluation_unavailable: { message: "評価を完了できませんでした。", retryable: true },
   progress_unavailable: { message: "進捗を取得できませんでした。", retryable: true },
   account_deletion_in_progress: { message: "アカウント処理中のため台本を表示できません。", retryable: false },
+  account_deletion_unavailable: { message: "削除リクエストの状況を確認できませんでした。少し待ってから再試行してください。", retryable: true },
   mobile_auth_disabled: { message: "モバイル認証は現在利用できません。", retryable: true }
 };
 

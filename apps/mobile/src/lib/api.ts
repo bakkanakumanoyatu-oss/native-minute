@@ -73,6 +73,24 @@ export type MobileProcessingConsent = {
   status: "accepted" | "required" | "withdrawn";
 };
 
+export type MobileAccountDeletionRequestState =
+  | "not_requested"
+  | "requested"
+  | "confirmed"
+  | "processing"
+  | "provider_cleanup_failed"
+  | "storage_cleanup_failed"
+  | "db_cleanup_failed"
+  | "auth_cleanup_failed"
+  | "completed"
+  | "cancelled";
+
+export type MobileAccountDeletionStatus = {
+  requestState: MobileAccountDeletionRequestState;
+  nextAction: "start_request" | "wait_for_review" | "contact_support" | "none";
+  created?: boolean;
+};
+
 export type UploadMobileRecordingInput = {
   scriptId: string;
   recordingRef: string;
@@ -239,6 +257,10 @@ export type MobileProcessingConsentRequestState =
   | ({ kind: "success" } & MobileProcessingConsent)
   | MobileApiFailure;
 
+export type MobileAccountDeletionRequestStateResult =
+  | ({ kind: "success" } & MobileAccountDeletionStatus)
+  | MobileApiFailure;
+
 export const MAX_MOBILE_AUDIO_BYTES = 15 * 1024 * 1024;
 
 const DEFAULT_HEALTH_TIMEOUT_MS = 5_000;
@@ -263,6 +285,8 @@ const MOBILE_API_PATHS = {
   evaluate: "/api/mobile/evaluate",
   consent: (consentType: "pronunciation_processing" | "voice_cloning") =>
     `/api/mobile/consents/${consentType}`,
+  accountDeletionStatus: "/api/mobile/account-deletion/status",
+  accountDeletionRequest: "/api/mobile/account-deletion/request",
   voiceSetup: "/api/mobile/voice-setup",
   review: (scriptId: string, takeId: string) =>
     `/api/mobile/scripts/${encodeURIComponent(scriptId)}/reviews/${encodeURIComponent(takeId)}`,
@@ -519,6 +543,44 @@ function parseProcessingConsentPayload(value: unknown): MobileProcessingConsent 
   return consent && (consent.status === "accepted" || consent.status === "required" || consent.status === "withdrawn")
     ? { status: consent.status }
     : null;
+}
+
+function isMobileAccountDeletionRequestState(value: unknown): value is MobileAccountDeletionRequestState {
+  return typeof value === "string" && [
+    "not_requested",
+    "requested",
+    "confirmed",
+    "processing",
+    "provider_cleanup_failed",
+    "storage_cleanup_failed",
+    "db_cleanup_failed",
+    "auth_cleanup_failed",
+    "completed",
+    "cancelled"
+  ].includes(value);
+}
+
+function parseAccountDeletionPayload(value: unknown): MobileAccountDeletionStatus | null {
+  const data = getSuccessData(value);
+  const deletion = data && isObject(data.deletion) ? data.deletion : null;
+
+  if (!deletion || !isMobileAccountDeletionRequestState(deletion.requestState)) {
+    return null;
+  }
+
+  if (!["start_request", "wait_for_review", "contact_support", "none"].includes(String(deletion.nextAction))) {
+    return null;
+  }
+
+  if (deletion.created !== undefined && typeof deletion.created !== "boolean") {
+    return null;
+  }
+
+  return {
+    requestState: deletion.requestState,
+    nextAction: deletion.nextAction as MobileAccountDeletionStatus["nextAction"],
+    ...(typeof deletion.created === "boolean" ? { created: deletion.created } : {})
+  };
 }
 
 function parseRecordingPayload(value: unknown): UploadedMobileRecording | null {
@@ -1022,6 +1084,85 @@ export async function fetchMobilePronunciationConsent(
 
   const consent = parseProcessingConsentPayload(attempt.body);
   return consent ? { kind: "success", ...consent } : { kind: "invalid-response" };
+}
+
+export async function fetchMobileProcessingConsent(
+  bffBaseUrl: string,
+  accessToken: string,
+  consentType: "pronunciation_processing" | "voice_cloning",
+  options: MobileApiRequestOptions = {}
+): Promise<MobileProcessingConsentRequestState> {
+  const attempt = await requestJson(
+    bffBaseUrl,
+    MOBILE_API_PATHS.consent(consentType),
+    accessToken,
+    { method: "GET" },
+    options,
+    DEFAULT_REQUEST_TIMEOUT_MS
+  );
+
+  if (attempt.kind !== "response") {
+    return mapAttemptFailure(attempt);
+  }
+
+  if (!attempt.response.ok) {
+    return mapFailure(attempt.response, attempt.body);
+  }
+
+  const consent = parseProcessingConsentPayload(attempt.body);
+  return consent ? { kind: "success", ...consent } : { kind: "invalid-response" };
+}
+
+export async function fetchMobileAccountDeletionStatus(
+  bffBaseUrl: string,
+  accessToken: string,
+  options: MobileApiRequestOptions = {}
+): Promise<MobileAccountDeletionRequestStateResult> {
+  const attempt = await requestJson(
+    bffBaseUrl,
+    MOBILE_API_PATHS.accountDeletionStatus,
+    accessToken,
+    { method: "GET" },
+    options,
+    DEFAULT_REQUEST_TIMEOUT_MS
+  );
+
+  if (attempt.kind !== "response") {
+    return mapAttemptFailure(attempt);
+  }
+
+  if (!attempt.response.ok) {
+    return mapFailure(attempt.response, attempt.body);
+  }
+
+  const deletion = parseAccountDeletionPayload(attempt.body);
+  return deletion ? { kind: "success", ...deletion } : { kind: "invalid-response" };
+}
+
+export async function createMobileAccountDeletionRequest(
+  bffBaseUrl: string,
+  accessToken: string,
+  options: MobileApiRequestOptions = {}
+): Promise<MobileAccountDeletionRequestStateResult> {
+  const attempt = await requestJson(
+    bffBaseUrl,
+    MOBILE_API_PATHS.accountDeletionRequest,
+    accessToken,
+    { method: "POST", body: JSON.stringify({}) },
+    options,
+    DEFAULT_REQUEST_TIMEOUT_MS
+  );
+
+  if (attempt.kind !== "response") {
+    return mapAttemptFailure(attempt);
+  }
+
+  if (!attempt.response.ok) {
+    return mapFailure(attempt.response, attempt.body);
+  }
+
+  const deletion = parseAccountDeletionPayload(attempt.body);
+  return deletion ? { kind: "success", ...deletion } : { kind: "invalid-response" };
 }
 
 export async function acceptMobilePronunciationConsent(

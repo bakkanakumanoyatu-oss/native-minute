@@ -8,6 +8,8 @@ function location(pathname: string, search = "") {
 describe("practice routes", () => {
   it.each<PracticeRoute>([
     { name: "scripts" },
+    { name: "settings" },
+    { name: "account_deletion" },
     { name: "voice_setup" },
     { name: "voice_setup", scriptId: "script-1" },
     { name: "listen", scriptId: "script-1" },
@@ -30,6 +32,8 @@ describe("practice routes", () => {
     expect(isPracticePath("/scripts/example/listen")).toBe(true);
     expect(isPracticePath("/setup/voice")).toBe(true);
     expect(isPracticePath("/progress")).toBe(true);
+    expect(isPracticePath("/settings")).toBe(true);
+    expect(isPracticePath("/settings/account-deletion")).toBe(true);
     expect(isPracticePath("/login")).toBe(false);
   });
 });

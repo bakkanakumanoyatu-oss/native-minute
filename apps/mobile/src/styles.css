@@ -278,12 +278,70 @@ button:disabled {
 
 .practice-nav {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
   gap: 0.45rem;
   padding: 0.45rem;
   border: 1px solid rgba(31, 42, 36, 0.1);
   border-radius: 1rem;
   background: rgba(255, 253, 248, 0.8);
+}
+
+.settings-stack {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.settings-section {
+  border: 1px solid rgba(31, 42, 36, 0.1);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: #fff;
+}
+
+.settings-section h2 {
+  margin: 0.3rem 0 0;
+  font-size: 1.05rem;
+}
+
+.settings-section > p:not(.eyebrow) {
+  margin: 0.55rem 0 0;
+  color: #52665b;
+  line-height: 1.55;
+}
+
+.settings-status-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.9rem 0 0;
+}
+
+.settings-status-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid rgba(31, 42, 36, 0.08);
+  padding-top: 0.55rem;
+  color: #52665b;
+  font-size: 0.85rem;
+}
+
+.settings-status-list dd {
+  margin: 0;
+  color: #204f3b;
+  font-weight: 700;
+  text-align: right;
+}
+
+.settings-link-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.settings-link-actions button {
+  padding-inline: 0.4rem;
+  font-size: 0.78rem;
 }
 
 .practice-nav button {

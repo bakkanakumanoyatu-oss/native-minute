@@ -27,6 +27,7 @@ export type MobileApiReasonCode =
   | "evaluation_unavailable"
   | "progress_unavailable"
   | "account_deletion_in_progress"
+  | "account_deletion_unavailable"
   | "mobile_auth_disabled";
 
 export interface MobileApiErrorBody {
