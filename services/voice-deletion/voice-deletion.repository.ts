@@ -32,6 +32,51 @@ export type VoiceDeletionLeaseClaim = {
   leaseSeconds: number;
 };
 
+export type ProviderVoiceDeleteAttempt = Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken"> & {
+  targetId: string;
+  expectedDeleteAttemptCount: number;
+};
+
+export type ProviderVoiceDeleteResult = ProviderVoiceDeleteAttempt & {
+  result:
+    | "deleted"
+    | "not_found"
+    | "credential_missing"
+    | "invalid_provider_reference"
+    | "auth_failed"
+    | "permission_denied"
+    | "rate_limited"
+    | "provider_unavailable"
+    | "timeout"
+    | "network_error"
+    | "provider_rejected"
+    | "protocol_error";
+  retryDelaySeconds: number;
+};
+
+export type ProviderVoiceReconciliationAttempt = Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken"> & {
+  targetId: string;
+  expectedVerificationAttemptCount: number;
+};
+
+export type ProviderVoiceReconciliationResult = ProviderVoiceReconciliationAttempt & {
+  result:
+    | "present"
+    | "verified_absent"
+    | "credential_missing"
+    | "invalid_provider_reference"
+    | "auth_failed"
+    | "permission_denied"
+    | "rate_limited"
+    | "provider_unavailable"
+    | "timeout"
+    | "network_error"
+    | "provider_rejected"
+    | "protocol_error";
+  ownerSignal: "true" | "false" | "unknown" | null;
+  retryDelaySeconds: number;
+};
+
 export type VoiceDeletionRepository = {
   createOrGetActiveOperation(userId: string): Promise<{ operation: VoiceDeletionOperationRow; created: boolean }>;
   getActiveOperation(userId: string): Promise<VoiceDeletionOperationRow | null>;
@@ -49,6 +94,10 @@ export type VoiceDeletionRepository = {
   listOperationTargets(operationId: string, userId: string): Promise<VoiceDeletionTargetRow[]>;
   claimExpiredOrAvailableLease(input: VoiceDeletionLeaseClaim): Promise<VoiceDeletionOperationRow | null>;
   releaseLease(input: Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken">): Promise<boolean>;
+  beginProviderVoiceDeleteAttempt(input: ProviderVoiceDeleteAttempt): Promise<VoiceDeletionTargetRow | null>;
+  recordProviderVoiceDeleteResult(input: ProviderVoiceDeleteResult): Promise<VoiceDeletionTargetRow | null>;
+  beginProviderVoiceReconciliationAttempt(input: ProviderVoiceReconciliationAttempt): Promise<VoiceDeletionTargetRow | null>;
+  recordProviderVoiceReconciliationResult(input: ProviderVoiceReconciliationResult): Promise<VoiceDeletionTargetRow | null>;
   finalizeOperation(operationId: string, userId: string, leaseToken: string): Promise<VoiceDeletionOperationRow>;
 };
 
@@ -78,6 +127,17 @@ function isCreateOrGetOperationResult(value: unknown): value is CreateOrGetOpera
 }
 
 function isOperationRow(value: unknown): value is VoiceDeletionOperationRow {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    "id" in value &&
+    typeof value.id === "string" &&
+    value.id.length > 0
+  );
+}
+
+function isTargetRow(value: unknown): value is VoiceDeletionTargetRow {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -187,6 +247,7 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
         .eq("operation_id", operationId)
         .eq("user_id", userId)
         .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
     );
 
     if (result.error) {
@@ -229,6 +290,83 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     return isOperationRow(result.data) && result.data.id === input.operationId;
   }
 
+  async function beginProviderVoiceDeleteAttempt(input: ProviderVoiceDeleteAttempt) {
+    const result = asMaybeSingle<VoiceDeletionTargetRow>(
+      await client.rpc("begin_provider_voice_delete_attempt", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_target_id: input.targetId,
+        p_lease_token: input.leaseToken,
+        p_expected_delete_attempt_count: input.expectedDeleteAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("provider voice delete attempt の開始", result.error);
+    }
+
+    return isTargetRow(result.data) ? result.data : null;
+  }
+
+  async function recordProviderVoiceDeleteResult(input: ProviderVoiceDeleteResult) {
+    const result = asMaybeSingle<VoiceDeletionTargetRow>(
+      await client.rpc("record_provider_voice_delete_result", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_target_id: input.targetId,
+        p_lease_token: input.leaseToken,
+        p_expected_delete_attempt_count: input.expectedDeleteAttemptCount,
+        p_result: input.result,
+        p_retry_delay_seconds: input.retryDelaySeconds
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("provider voice delete result の記録", result.error);
+    }
+
+    return isTargetRow(result.data) ? result.data : null;
+  }
+
+  async function beginProviderVoiceReconciliationAttempt(input: ProviderVoiceReconciliationAttempt) {
+    const result = asMaybeSingle<VoiceDeletionTargetRow>(
+      await client.rpc("begin_provider_voice_reconciliation_attempt", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_target_id: input.targetId,
+        p_lease_token: input.leaseToken,
+        p_expected_verification_attempt_count: input.expectedVerificationAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("provider voice reconciliation attempt の開始", result.error);
+    }
+
+    return isTargetRow(result.data) ? result.data : null;
+  }
+
+  async function recordProviderVoiceReconciliationResult(input: ProviderVoiceReconciliationResult) {
+    const result = asMaybeSingle<VoiceDeletionTargetRow>(
+      await client.rpc("record_provider_voice_reconciliation_result", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_target_id: input.targetId,
+        p_lease_token: input.leaseToken,
+        p_expected_verification_attempt_count: input.expectedVerificationAttemptCount,
+        p_result: input.result,
+        p_owner_signal: input.ownerSignal,
+        p_retry_delay_seconds: input.retryDelaySeconds
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("provider voice reconciliation result の記録", result.error);
+    }
+
+    return isTargetRow(result.data) ? result.data : null;
+  }
+
   async function finalizeOperation(operationId: string, userId: string, leaseToken: string) {
     const result = asSingle<VoiceDeletionOperationRow>(
       await client.rpc("finalize_voice_deletion_operation", {
@@ -256,6 +394,10 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     listOperationTargets,
     claimExpiredOrAvailableLease,
     releaseLease,
+    beginProviderVoiceDeleteAttempt,
+    recordProviderVoiceDeleteResult,
+    beginProviderVoiceReconciliationAttempt,
+    recordProviderVoiceReconciliationResult,
     // Completion deliberately has no generic status-update helper: the focused RPC
     // atomically proves target verification, scrubs locators, and closes the lease.
     finalizeOperation
