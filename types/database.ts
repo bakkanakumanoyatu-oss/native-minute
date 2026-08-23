@@ -902,6 +902,13 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
       };
+      finalize_voice_deletion_operation: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -49,6 +49,7 @@ export type VoiceDeletionRepository = {
   listOperationTargets(operationId: string, userId: string): Promise<VoiceDeletionTargetRow[]>;
   claimExpiredOrAvailableLease(input: VoiceDeletionLeaseClaim): Promise<VoiceDeletionOperationRow | null>;
   releaseLease(input: Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken">): Promise<boolean>;
+  finalizeOperation(operationId: string, userId: string): Promise<VoiceDeletionOperationRow>;
 };
 
 function asSingle<TRow>(value: unknown) {
@@ -210,6 +211,21 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     return result.data !== null;
   }
 
+  async function finalizeOperation(operationId: string, userId: string) {
+    const result = asSingle<VoiceDeletionOperationRow>(
+      await client.rpc("finalize_voice_deletion_operation", {
+        p_operation_id: operationId,
+        p_user_id: userId
+      })
+    );
+
+    if (result.error || !result.data) {
+      throw mapRepositoryError("voice deletion operation の安全な完了", result.error ?? { message: "operation row was not returned" });
+    }
+
+    return result.data;
+  }
+
   return {
     createOrGetActiveOperation,
     getActiveOperation,
@@ -220,6 +236,9 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     sealSnapshot,
     listOperationTargets,
     claimExpiredOrAvailableLease,
-    releaseLease
+    releaseLease,
+    // Completion deliberately has no generic status-update helper: the focused RPC
+    // atomically proves target verification, scrubs locators, and closes the lease.
+    finalizeOperation
   };
 }
