@@ -95,6 +95,28 @@ describe("G5C-B1 durable voice deletion focused RPC boundary", () => {
     expect(maybeSingle).toHaveBeenCalledTimes(1);
   });
 
+  it.each([
+    ["missing operation_id", { created: true }],
+    ["an empty operation_id", { operation_id: "", created: true }],
+    ["a non-string operation_id", { operation_id: 1, created: true }],
+    ["missing created", { operation_id: "operation-a" }],
+    ["a null created", { operation_id: "operation-a", created: null }],
+    ["a non-boolean created", { operation_id: "operation-a", created: "true" }],
+    ["a malformed object", {}]
+  ])("fails closed when the single RPC row has %s", async (_label, data) => {
+    const single = vi.fn().mockResolvedValue({ data, error: null });
+    const rpc = vi.fn().mockReturnValue({ single });
+    const from = vi.fn();
+    const repository = createVoiceDeletionRepository({ rpc, from } as never);
+
+    await expect(repository.createOrGetActiveOperation("user-a")).rejects.toMatchObject({
+      status: 500,
+      message: "voice deletion operation の作成に失敗しました。"
+    });
+    expect(single).toHaveBeenCalledTimes(1);
+    expect(from).not.toHaveBeenCalled();
+  });
+
   it.each(["zero rows", "multiple rows"])("fails closed when the single-row RPC transform reports %s", async () => {
     const single = vi.fn().mockResolvedValue({
       data: null,

@@ -64,6 +64,19 @@ function asMaybeSingle<TRow>(value: unknown) {
   return value as { data: TRow | null; error: PostgrestErrorLike | null };
 }
 
+function isCreateOrGetOperationResult(value: unknown): value is CreateOrGetOperationResult {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    "operation_id" in value &&
+    typeof value.operation_id === "string" &&
+    value.operation_id.length > 0 &&
+    "created" in value &&
+    typeof value.created === "boolean"
+  );
+}
+
 function mapRepositoryError(operation: string, error: PostgrestErrorLike) {
   return new AppError(500, `${operation}に失敗しました。`);
 }
@@ -126,7 +139,7 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
       await client.rpc("create_or_get_voice_deletion_operation", { p_user_id: userId }).single()
     );
 
-    if (result.error || !result.data) {
+    if (result.error || !isCreateOrGetOperationResult(result.data)) {
       throw mapRepositoryError("voice deletion operation の作成", result.error ?? { message: "operation row was not returned" });
     }
 
