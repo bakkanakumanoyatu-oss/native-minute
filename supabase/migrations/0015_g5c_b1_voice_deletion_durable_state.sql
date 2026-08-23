@@ -154,7 +154,25 @@ create table if not exists public.voice_deletion_targets (
   constraint voice_deletion_targets_verified_absent_check check (
     status <> 'verified_absent'
     or (
-      (reconciliation_status = 'verified_absent' or verification_status = 'verified_absent')
+      (
+        (
+          target_kind = 'provider_voice'
+          and reconciliation_status = 'verified_absent'
+          and verification_status = 'not_applicable'
+        )
+        or (
+          target_kind in (
+            'voice_sample',
+            'voice_consent_recording',
+            'script_audio_storage',
+            'script_audio',
+            'saved_model_audio',
+            'voice_binding'
+          )
+          and verification_status = 'verified_absent'
+          and reconciliation_status = 'not_applicable'
+        )
+      )
       and verified_absent_at is not null
     )
   ),
@@ -233,8 +251,8 @@ alter table public.voice_deletion_targets enable row level security;
 
 revoke all privileges on table public.voice_deletion_operations from public, anon, authenticated, service_role;
 revoke all privileges on table public.voice_deletion_targets from public, anon, authenticated, service_role;
-grant select, insert, update, delete on table public.voice_deletion_operations to service_role;
-grant select, insert, update, delete on table public.voice_deletion_targets to service_role;
+grant select on table public.voice_deletion_operations to service_role;
+grant select on table public.voice_deletion_targets to service_role;
 
 create or replace function public.enforce_voice_deletion_operation_transition()
 returns trigger
@@ -336,7 +354,7 @@ begin
 end;
 $$;
 
-create or replace function public.enforce_voice_deletion_target_locator_transition()
+create or replace function public.enforce_voice_deletion_target_immutability()
 returns trigger
 language plpgsql
 security invoker
@@ -344,49 +362,58 @@ set search_path = public
 as $$
 declare
   v_locator_changed boolean;
-  v_finalization_operation_id text;
 begin
+  if new.operation_id is distinct from old.operation_id
+    or new.user_id is distinct from old.user_id
+    or new.target_kind is distinct from old.target_kind then
+    raise exception using
+      errcode = 'check_violation',
+      message = 'voice deletion target ownership and kind are immutable';
+  end if;
+
   v_locator_changed := new.source_row_id is distinct from old.source_row_id
     or new.provider_name is distinct from old.provider_name
     or new.provider_resource_id is distinct from old.provider_resource_id
     or new.storage_bucket is distinct from old.storage_bucket
     or new.storage_object_key is distinct from old.storage_object_key
     or new.target_fingerprint is distinct from old.target_fingerprint;
-  v_finalization_operation_id := current_setting('app.g5c_voice_deletion_finalizing_operation_id', true);
 
   if old.locator_scrubbed_at is not null then
-    if v_locator_changed or new.locator_scrubbed_at is distinct from old.locator_scrubbed_at then
+    if v_locator_changed
+      or new.locator_scrubbed_at is distinct from old.locator_scrubbed_at
+      or new.status is distinct from old.status
+      or new.delete_outcome is distinct from old.delete_outcome
+      or new.reconciliation_status is distinct from old.reconciliation_status
+      or new.verification_status is distinct from old.verification_status
+      or new.delete_attempt_count is distinct from old.delete_attempt_count
+      or new.verification_attempt_count is distinct from old.verification_attempt_count
+      or new.last_failure_category is distinct from old.last_failure_category
+      or new.last_attempted_at is distinct from old.last_attempted_at
+      or new.delete_succeeded_at is distinct from old.delete_succeeded_at
+      or new.verified_absent_at is distinct from old.verified_absent_at
+      or new.manual_required_at is distinct from old.manual_required_at then
       raise exception using
         errcode = 'check_violation',
-        message = 'scrubbed voice deletion target locators are immutable';
+        message = 'completed voice deletion targets are immutable';
     end if;
 
     return new;
   end if;
 
-  if not v_locator_changed and new.locator_scrubbed_at is null then
-    return new;
-  end if;
-
-  if new.status <> 'verified_absent'
-    or new.source_row_id is not null
-    or new.provider_name is not null
-    or new.provider_resource_id is not null
-    or new.storage_bucket is not null
-    or new.storage_object_key is not null
-    or new.target_fingerprint is not null
-    or new.locator_scrubbed_at is null
-    or v_finalization_operation_id is distinct from old.operation_id::text
-    or not exists (
-      select 1
-      from public.voice_deletion_operations
-      where id = old.operation_id
-        and user_id = old.user_id
-        and post_delete_verification_status = 'succeeded'
+  if v_locator_changed
+    and (
+      new.status <> 'verified_absent'
+      or new.source_row_id is not null
+      or new.provider_name is not null
+      or new.provider_resource_id is not null
+      or new.storage_bucket is not null
+      or new.storage_object_key is not null
+      or new.target_fingerprint is not null
+      or new.locator_scrubbed_at is null
     ) then
     raise exception using
       errcode = 'check_violation',
-      message = 'voice deletion target locators can only be scrubbed by safe finalization';
+      message = 'voice deletion target locators can only transition to a scrubbed state';
   end if;
 
   return new;
@@ -400,10 +427,66 @@ create trigger enforce_voice_deletion_operation_transition
   execute function public.enforce_voice_deletion_operation_transition();
 
 drop trigger if exists enforce_voice_deletion_target_locator_transition on public.voice_deletion_targets;
-create trigger enforce_voice_deletion_target_locator_transition
+drop trigger if exists enforce_voice_deletion_target_immutability on public.voice_deletion_targets;
+create trigger enforce_voice_deletion_target_immutability
   before update on public.voice_deletion_targets
   for each row
-  execute function public.enforce_voice_deletion_target_locator_transition();
+  execute function public.enforce_voice_deletion_target_immutability();
+
+create or replace function public.create_or_get_voice_deletion_operation(
+  p_user_id uuid
+)
+returns table(operation_id uuid, created boolean)
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_operation_id uuid;
+begin
+  if p_user_id is null then
+    raise exception 'voice deletion operation user is required';
+  end if;
+
+  select id
+  into v_operation_id
+  from public.voice_deletion_operations
+  where user_id = p_user_id
+    and status in ('pending', 'processing', 'partial_failure', 'manual_required')
+  order by requested_at desc
+  limit 1;
+
+  if found then
+    return query select v_operation_id, false;
+    return;
+  end if;
+
+  begin
+    insert into public.voice_deletion_operations (user_id)
+    values (p_user_id)
+    returning id into v_operation_id;
+
+    return query select v_operation_id, true;
+    return;
+  exception
+    when unique_violation then
+      select id
+      into v_operation_id
+      from public.voice_deletion_operations
+      where user_id = p_user_id
+        and status in ('pending', 'processing', 'partial_failure', 'manual_required')
+      order by requested_at desc
+      limit 1;
+
+      if not found then
+        raise;
+      end if;
+
+      return query select v_operation_id, false;
+      return;
+  end;
+end;
+$$;
 
 create or replace function public.seal_voice_deletion_snapshot(
   p_operation_id uuid,
@@ -412,8 +495,8 @@ create or replace function public.seal_voice_deletion_snapshot(
 )
 returns public.voice_deletion_operations
 language plpgsql
-security invoker
-set search_path = public
+security definer
+set search_path = pg_catalog, public
 as $$
 declare
   v_operation public.voice_deletion_operations;
@@ -433,7 +516,8 @@ begin
     raise exception 'voice deletion operation not found or access denied';
   end if;
 
-  if v_operation.snapshot_status <> 'pending' then
+  if v_operation.snapshot_status <> 'pending'
+    or v_operation.destructive_started_at is not null then
     raise exception 'voice deletion snapshot is already sealed or not runnable';
   end if;
 
@@ -481,8 +565,8 @@ create or replace function public.claim_voice_deletion_operation_lease(
 )
 returns public.voice_deletion_operations
 language plpgsql
-security invoker
-set search_path = public
+security definer
+set search_path = pg_catalog, public
 as $$
 declare
   v_operation public.voice_deletion_operations;
@@ -507,18 +591,53 @@ begin
 end;
 $$;
 
-create or replace function public.finalize_voice_deletion_operation(
+create or replace function public.release_voice_deletion_operation_lease(
   p_operation_id uuid,
-  p_user_id uuid
+  p_user_id uuid,
+  p_lease_token uuid
 )
 returns public.voice_deletion_operations
 language plpgsql
-security invoker
-set search_path = public
+security definer
+set search_path = pg_catalog, public
 as $$
 declare
   v_operation public.voice_deletion_operations;
 begin
+  if p_lease_token is null then
+    raise exception 'voice deletion lease token is required';
+  end if;
+
+  update public.voice_deletion_operations
+  set lease_token = null,
+      lease_expires_at = null
+  where id = p_operation_id
+    and user_id = p_user_id
+    and lease_token = p_lease_token
+  returning * into v_operation;
+
+  return v_operation;
+end;
+$$;
+
+create or replace function public.finalize_voice_deletion_operation(
+  p_operation_id uuid,
+  p_user_id uuid,
+  p_lease_token uuid
+)
+returns public.voice_deletion_operations
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_operation public.voice_deletion_operations;
+  v_completed_at timestamptz;
+begin
+  if p_lease_token is null then
+    raise exception 'voice deletion finalization requires a lease token';
+  end if;
+
   select *
   into v_operation
   from public.voice_deletion_operations
@@ -530,11 +649,13 @@ begin
     raise exception 'voice deletion operation not found or access denied';
   end if;
 
-  if v_operation.status = 'completed' then
-    raise exception 'voice deletion operation is already completed';
-  end if;
-
-  if v_operation.snapshot_status <> 'succeeded'
+  if v_operation.status <> 'processing'
+    or v_operation.current_stage <> 'post_delete_verification'
+    or v_operation.lease_token is null
+    or v_operation.lease_token <> p_lease_token
+    or v_operation.lease_expires_at is null
+    or v_operation.lease_expires_at <= now()
+    or v_operation.snapshot_status <> 'succeeded'
     or v_operation.consent_withdrawal_status not in ('succeeded', 'not_needed')
     or v_operation.post_delete_verification_status <> 'succeeded' then
     raise exception 'voice deletion operation is not ready for completion';
@@ -545,12 +666,35 @@ begin
     from public.voice_deletion_targets
     where operation_id = p_operation_id
       and user_id = p_user_id
-      and status <> 'verified_absent'
+      and (
+        status <> 'verified_absent'
+        or (
+          target_kind = 'provider_voice'
+          and (
+            reconciliation_status <> 'verified_absent'
+            or verification_status <> 'not_applicable'
+          )
+        )
+        or (
+          target_kind in (
+            'voice_sample',
+            'voice_consent_recording',
+            'script_audio_storage',
+            'script_audio',
+            'saved_model_audio',
+            'voice_binding'
+          )
+          and (
+            verification_status <> 'verified_absent'
+            or reconciliation_status <> 'not_applicable'
+          )
+        )
+      )
   ) then
     raise exception 'voice deletion operation has unresolved targets';
   end if;
 
-  perform set_config('app.g5c_voice_deletion_finalizing_operation_id', p_operation_id::text, true);
+  v_completed_at := now();
 
   update public.voice_deletion_targets
   set source_row_id = null,
@@ -559,7 +703,7 @@ begin
       storage_bucket = null,
       storage_object_key = null,
       target_fingerprint = null,
-      locator_scrubbed_at = now()
+      locator_scrubbed_at = v_completed_at
   where operation_id = p_operation_id
     and user_id = p_user_id
     and locator_scrubbed_at is null;
@@ -570,24 +714,26 @@ begin
       consent_snapshot_id = null,
       lease_token = null,
       lease_expires_at = null,
-      completed_at = now(),
-      sensitive_snapshot_scrubbed_at = now(),
-      audit_expires_at = now() + interval '90 days'
+      completed_at = v_completed_at,
+      sensitive_snapshot_scrubbed_at = v_completed_at,
+      audit_expires_at = v_completed_at + interval '90 days'
   where id = p_operation_id
     and user_id = p_user_id
   returning * into v_operation;
-
-  perform set_config('app.g5c_voice_deletion_finalizing_operation_id', '', true);
 
   return v_operation;
 end;
 $$;
 
-revoke all on function public.seal_voice_deletion_snapshot(uuid, uuid, jsonb) from public, anon, authenticated;
-revoke all on function public.claim_voice_deletion_operation_lease(uuid, uuid, uuid, integer) from public, anon, authenticated;
-revoke all on function public.finalize_voice_deletion_operation(uuid, uuid) from public, anon, authenticated;
+revoke all on function public.create_or_get_voice_deletion_operation(uuid) from public, anon, authenticated, service_role;
+revoke all on function public.seal_voice_deletion_snapshot(uuid, uuid, jsonb) from public, anon, authenticated, service_role;
+revoke all on function public.claim_voice_deletion_operation_lease(uuid, uuid, uuid, integer) from public, anon, authenticated, service_role;
+revoke all on function public.release_voice_deletion_operation_lease(uuid, uuid, uuid) from public, anon, authenticated, service_role;
+revoke all on function public.finalize_voice_deletion_operation(uuid, uuid, uuid) from public, anon, authenticated, service_role;
 revoke all on function public.enforce_voice_deletion_operation_transition() from public, anon, authenticated;
-revoke all on function public.enforce_voice_deletion_target_locator_transition() from public, anon, authenticated;
+revoke all on function public.enforce_voice_deletion_target_immutability() from public, anon, authenticated;
+grant execute on function public.create_or_get_voice_deletion_operation(uuid) to service_role;
 grant execute on function public.seal_voice_deletion_snapshot(uuid, uuid, jsonb) to service_role;
 grant execute on function public.claim_voice_deletion_operation_lease(uuid, uuid, uuid, integer) to service_role;
-grant execute on function public.finalize_voice_deletion_operation(uuid, uuid) to service_role;
+grant execute on function public.release_voice_deletion_operation_lease(uuid, uuid, uuid) to service_role;
+grant execute on function public.finalize_voice_deletion_operation(uuid, uuid, uuid) to service_role;

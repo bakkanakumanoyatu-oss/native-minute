@@ -9,9 +9,9 @@ import type {
 
 type VoiceDeletionOperationRow = Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
 type VoiceDeletionTargetRow = Database["public"]["Tables"]["voice_deletion_targets"]["Row"];
-type VoiceDeletionOperationInsert = Database["public"]["Tables"]["voice_deletion_operations"]["Insert"];
 type ServiceRoleClient = ReturnType<typeof createSupabaseAdminClient>;
 type PostgrestErrorLike = { message: string; code?: string };
+type CreateOrGetOperationResult = { operation_id: string; created: boolean };
 
 const ACTIVE_OPERATION_STATUSES = ["pending", "processing", "partial_failure", "manual_required"] as const;
 
@@ -49,7 +49,7 @@ export type VoiceDeletionRepository = {
   listOperationTargets(operationId: string, userId: string): Promise<VoiceDeletionTargetRow[]>;
   claimExpiredOrAvailableLease(input: VoiceDeletionLeaseClaim): Promise<VoiceDeletionOperationRow | null>;
   releaseLease(input: Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken">): Promise<boolean>;
-  finalizeOperation(operationId: string, userId: string): Promise<VoiceDeletionOperationRow>;
+  finalizeOperation(operationId: string, userId: string, leaseToken: string): Promise<VoiceDeletionOperationRow>;
 };
 
 function asSingle<TRow>(value: unknown) {
@@ -122,24 +122,21 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
   }
 
   async function createOrGetActiveOperation(userId: string) {
-    const values: VoiceDeletionOperationInsert = { user_id: userId };
-    const result = asSingle<VoiceDeletionOperationRow>(
-      await client.from("voice_deletion_operations").insert(values).select("*").single()
+    const result = asSingle<CreateOrGetOperationResult>(
+      await client.rpc("create_or_get_voice_deletion_operation", { p_user_id: userId })
     );
 
-    if (!result.error && result.data) {
-      return { operation: result.data, created: true };
+    if (result.error || !result.data) {
+      throw mapRepositoryError("voice deletion operation の作成", result.error ?? { message: "operation row was not returned" });
     }
 
-    if (result.error?.code === "23505") {
-      const existing = await getActiveOperation(userId);
+    const operation = await getOperationForUser(result.data.operation_id, userId);
 
-      if (existing) {
-        return { operation: existing, created: false };
-      }
+    if (!operation) {
+      throw mapRepositoryError("voice deletion operation の取得", { message: "operation row was not returned" });
     }
 
-    throw mapRepositoryError("voice deletion operation の作成", result.error ?? { message: "operation row was not returned" });
+    return { operation, created: result.data.created };
   }
 
   async function sealSnapshot(operationId: string, userId: string, targets: VoiceDeletionSnapshotTarget[]) {
@@ -194,14 +191,11 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
 
   async function releaseLease(input: Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken">) {
     const result = asMaybeSingle<VoiceDeletionOperationRow>(
-      await client
-        .from("voice_deletion_operations")
-        .update({ lease_token: null, lease_expires_at: null })
-        .eq("id", input.operationId)
-        .eq("user_id", input.userId)
-        .eq("lease_token", input.leaseToken)
-        .select("*")
-        .maybeSingle()
+      await client.rpc("release_voice_deletion_operation_lease", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_lease_token: input.leaseToken
+      })
     );
 
     if (result.error) {
@@ -211,11 +205,12 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     return result.data !== null;
   }
 
-  async function finalizeOperation(operationId: string, userId: string) {
+  async function finalizeOperation(operationId: string, userId: string, leaseToken: string) {
     const result = asSingle<VoiceDeletionOperationRow>(
       await client.rpc("finalize_voice_deletion_operation", {
         p_operation_id: operationId,
-        p_user_id: userId
+        p_user_id: userId,
+        p_lease_token: leaseToken
       })
     );
 

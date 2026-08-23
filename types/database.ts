@@ -885,6 +885,15 @@ export interface Database {
         };
         Returns: string;
       };
+      create_or_get_voice_deletion_operation: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: {
+          operation_id: string;
+          created: boolean;
+        };
+      };
       seal_voice_deletion_snapshot: {
         Args: {
           p_operation_id: string;
@@ -902,10 +911,19 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
       };
+      release_voice_deletion_operation_lease: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
       finalize_voice_deletion_operation: {
         Args: {
           p_operation_id: string;
           p_user_id: string;
+          p_lease_token: string;
         };
         Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
       };
