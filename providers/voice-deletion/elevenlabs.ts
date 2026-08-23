@@ -16,6 +16,7 @@ const SAFE_PROVIDER_RESOURCE_ID = /^[A-Za-z0-9_-]+$/;
 
 type FetchImplementation = typeof fetch;
 type OfficialErrorDetail = { type: string; code: string };
+type BoundedJsonResponse = { status: number; payload: unknown };
 
 export type ElevenLabsVoiceDeletionAdapterOptions = {
   env?: NodeJS.ProcessEnv;
@@ -45,9 +46,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-async function parseOfficialErrorDetail(response: Response): Promise<OfficialErrorDetail | null> {
-  const payload = await response.json().catch(() => null);
-
+function parseOfficialErrorDetail(payload: unknown): OfficialErrorDetail | null {
   if (!isRecord(payload) || !isRecord(payload.detail)) {
     return null;
   }
@@ -55,11 +54,11 @@ async function parseOfficialErrorDetail(response: Response): Promise<OfficialErr
   const type = payload.detail.type;
   const code = payload.detail.code;
 
-  if (typeof type !== "string" || !type.trim() || typeof code !== "string" || !code.trim()) {
+  if (typeof type !== "string" || typeof code !== "string") {
     return null;
   }
 
-  return { type: type.trim(), code: code.trim() };
+  return { type, code };
 }
 
 function classifyErrorResponse(input: {
@@ -67,12 +66,8 @@ function classifyErrorResponse(input: {
   detail: OfficialErrorDetail | null;
   allowVerifiedAbsence: boolean;
 }): VoiceDeletionProviderFailureKind | "verified_absent" {
-  if (!input.detail) {
-    return "protocol_error";
-  }
-
   if (input.status === 404) {
-    if (input.detail.type !== "not_found" || input.detail.code !== "voice_not_found") {
+    if (input.detail?.type !== "not_found" || input.detail?.code !== "voice_not_found") {
       return "protocol_error";
     }
 
@@ -108,26 +103,41 @@ async function fetchWithTimeout(input: {
   method: "DELETE" | "GET";
   apiKey: string;
   timeoutMs: number;
-}): Promise<{ response: Response | null; failure: "timeout" | "network_error" | null }> {
+}): Promise<{ response: BoundedJsonResponse | null; failure: "timeout" | "network_error" | null }> {
   const controller = new AbortController();
   let timedOut = false;
-  const timeout = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, input.timeoutMs);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+      reject(new Error("elevenlabs_request_timeout"));
+    }, input.timeoutMs);
+  });
 
   try {
-    const response = await input.fetchImpl(input.url, {
-      method: input.method,
-      headers: { "xi-api-key": input.apiKey },
-      signal: controller.signal
-    });
+    const response = await Promise.race([
+      input.fetchImpl(input.url, {
+        method: input.method,
+        headers: { "xi-api-key": input.apiKey },
+        signal: controller.signal
+      }),
+      deadline
+    ]);
+    const payload = await Promise.race([
+      Promise.resolve()
+        .then(() => response.json())
+        .catch(() => null),
+      deadline
+    ]);
 
-    return { response, failure: timedOut ? "timeout" : null };
+    return { response: { status: response.status, payload }, failure: timedOut ? "timeout" : null };
   } catch {
     return { response: null, failure: timedOut ? "timeout" : "network_error" };
   } finally {
-    clearTimeout(timeout);
+    if (timeout !== undefined) {
+      clearTimeout(timeout);
+    }
   }
 }
 
@@ -182,7 +192,7 @@ export class ElevenLabsVoiceDeletionProviderAdapter implements VoiceDeletionProv
         return { kind: "network_error" };
       }
 
-      const detail = await parseOfficialErrorDetail(request.response);
+      const detail = parseOfficialErrorDetail(request.response.payload);
       const classification = classifyErrorResponse({
         status: request.response.status,
         detail,
@@ -192,7 +202,7 @@ export class ElevenLabsVoiceDeletionProviderAdapter implements VoiceDeletionProv
       return { kind: classification === "verified_absent" ? "protocol_error" : classification };
     }
 
-    const payload = await request.response.json().catch(() => null);
+    const payload = request.response.payload;
     return isRecord(payload) && payload.status === "ok" ? { kind: "deleted" } : { kind: "protocol_error" };
   }
 
@@ -219,7 +229,7 @@ export class ElevenLabsVoiceDeletionProviderAdapter implements VoiceDeletionProv
     }
 
     if (request.response.status === 200) {
-      const payload = await request.response.json().catch(() => null);
+      const payload = request.response.payload;
       if (!isRecord(payload) || payload.voice_id !== setup.providerResourceId) {
         return { kind: "protocol_error" };
       }
@@ -237,7 +247,7 @@ export class ElevenLabsVoiceDeletionProviderAdapter implements VoiceDeletionProv
         : { kind: "protocol_error" };
     }
 
-    const detail = await parseOfficialErrorDetail(request.response);
+    const detail = parseOfficialErrorDetail(request.response.payload);
     const classification = classifyErrorResponse({
       status: request.response.status,
       detail,

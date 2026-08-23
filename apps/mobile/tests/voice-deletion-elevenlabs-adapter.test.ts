@@ -26,6 +26,13 @@ function createAdapter(response: Response | Promise<Response>, options: { timeou
   };
 }
 
+function stalledJsonResponse(status = 200) {
+  return {
+    status,
+    json: () => new Promise<never>(() => {})
+  } as unknown as Response;
+}
+
 describe("G5C-B2a ElevenLabs voice deletion adapter", () => {
   it("sends exactly one DELETE with server-only credentials and accepts only 200 status ok", async () => {
     const { adapter, fetchImpl } = createAdapter(jsonResponse(200, { status: "ok" }));
@@ -64,14 +71,34 @@ describe("G5C-B2a ElevenLabs voice deletion adapter", () => {
     await expect(adapter.deleteVoice({ providerResourceId: VOICE_ID })).resolves.toEqual({ kind });
   });
 
-  it("rejects malformed official error bodies as protocol failures without exposing raw data", async () => {
-    const { adapter } = createAdapter(jsonResponse(401, { detail: { type: "unauthorized" } }));
+  it.each([
+    [401, "auth_failed"],
+    [403, "permission_denied"],
+    [429, "rate_limited"],
+    [500, "provider_unavailable"],
+    [503, "provider_unavailable"],
+    [422, "provider_rejected"],
+    [418, "provider_rejected"]
+  ])("uses DELETE HTTP %i as the authority when the error body is malformed", async (status, kind) => {
+    const { adapter } = createAdapter(new Response("not json", { status }));
     const result = await adapter.deleteVoice({ providerResourceId: VOICE_ID });
 
-    expect(result).toEqual({ kind: "protocol_error" });
-    expect(JSON.stringify(result)).not.toContain("provider-private");
+    expect(result).toEqual({ kind });
     expect(JSON.stringify(result)).not.toContain("test-only-key");
     expect(JSON.stringify(result)).not.toContain(VOICE_ID);
+  });
+
+  it.each([
+    [401, "auth_failed"],
+    [403, "permission_denied"],
+    [429, "rate_limited"],
+    [500, "provider_unavailable"],
+    [503, "provider_unavailable"],
+    [422, "provider_rejected"],
+    [418, "provider_rejected"]
+  ])("uses GET HTTP %i as the authority when the error body is empty", async (status, kind) => {
+    const { adapter } = createAdapter(new Response(null, { status }));
+    await expect(adapter.reconcileVoiceAbsence({ providerResourceId: VOICE_ID })).resolves.toEqual({ kind });
   });
 
   it("does not call the provider for a missing credential or malformed provider resource ID", async () => {
@@ -98,6 +125,11 @@ describe("G5C-B2a ElevenLabs voice deletion adapter", () => {
 
     await expect(timeoutAdapter.deleteVoice({ providerResourceId: VOICE_ID })).resolves.toEqual({ kind: "timeout" });
     await expect(networkAdapter.deleteVoice({ providerResourceId: VOICE_ID })).resolves.toEqual({ kind: "network_error" });
+  });
+
+  it("times out DELETE when the response body stalls", async () => {
+    const { adapter } = createAdapter(stalledJsonResponse(), { timeoutMs: 1 });
+    await expect(adapter.deleteVoice({ providerResourceId: VOICE_ID })).resolves.toEqual({ kind: "timeout" });
   });
 
   it.each([
@@ -131,6 +163,8 @@ describe("G5C-B2a ElevenLabs voice deletion adapter", () => {
   it.each([
     [404, officialError("not_found", "voice_not_found"), "verified_absent"],
     [404, officialError("not_found", "other_not_found"), "protocol_error"],
+    [404, officialError(" not_found", "voice_not_found"), "protocol_error"],
+    [404, officialError("not_found", " voice_not_found "), "protocol_error"],
     [404, { detail: "not found" }, "protocol_error"],
     [401, officialError("unauthorized", "invalid_api_key"), "auth_failed"],
     [403, officialError("forbidden", "forbidden"), "permission_denied"],
@@ -140,6 +174,19 @@ describe("G5C-B2a ElevenLabs voice deletion adapter", () => {
   ])("normalizes GET HTTP %i without overclaiming absence", async (status, payload, kind) => {
     const { adapter } = createAdapter(jsonResponse(status, payload));
     await expect(adapter.reconcileVoiceAbsence({ providerResourceId: VOICE_ID })).resolves.toEqual({ kind });
+  });
+
+  it.each([
+    [officialError(" not_found", "voice_not_found")],
+    [officialError("not_found", " voice_not_found ")]
+  ])("does not grant DELETE absence authority to whitespace-wrapped tokens", async (payload) => {
+    const { adapter } = createAdapter(jsonResponse(404, payload));
+    await expect(adapter.deleteVoice({ providerResourceId: VOICE_ID })).resolves.toEqual({ kind: "protocol_error" });
+  });
+
+  it("times out GET when the response body stalls", async () => {
+    const { adapter } = createAdapter(stalledJsonResponse(), { timeoutMs: 1 });
+    await expect(adapter.reconcileVoiceAbsence({ providerResourceId: VOICE_ID })).resolves.toEqual({ kind: "timeout" });
   });
 
   it("does not turn either operation into orchestration", async () => {
