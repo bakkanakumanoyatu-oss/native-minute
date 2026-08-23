@@ -46,6 +46,56 @@ export type AccountDeletionFailureStage =
   | "auth_cleanup"
   | "notification";
 export type AccountDeletionCleanupStatus = "pending" | "not_needed" | "succeeded" | "failed" | "manual_required";
+export type VoiceDeletionOperationStatus =
+  | "pending"
+  | "processing"
+  | "partial_failure"
+  | "manual_required"
+  | "completed"
+  | "failed";
+export type VoiceDeletionStage =
+  | "snapshot"
+  | "consent_withdrawal"
+  | "provider_cleanup"
+  | "storage_cleanup"
+  | "database_cleanup"
+  | "post_delete_verification";
+export type VoiceDeletionStageStatus =
+  | "pending"
+  | "processing"
+  | "succeeded"
+  | "not_needed"
+  | "failed"
+  | "manual_required";
+export type VoiceDeletionTargetKind =
+  | "provider_voice"
+  | "voice_sample"
+  | "voice_consent_recording"
+  | "script_audio_storage"
+  | "script_audio"
+  | "saved_model_audio"
+  | "voice_binding";
+export type VoiceDeletionTargetStatus =
+  | "pending"
+  | "delete_requested"
+  | "deleted"
+  | "verified_absent"
+  | "manual_required";
+export type VoiceDeletionTargetDeleteOutcome =
+  | "not_attempted"
+  | "succeeded"
+  | "not_found"
+  | "timed_out"
+  | "unavailable"
+  | "rejected"
+  | "not_needed";
+export type VoiceDeletionTargetVerificationStatus =
+  | "not_applicable"
+  | "pending"
+  | "verified_absent"
+  | "present"
+  | "unavailable"
+  | "manual_required";
 
 export interface Database {
   public: {
@@ -123,6 +173,192 @@ export interface Database {
           expires_at?: string | null;
           last_attempted_at?: string | null;
           metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      voice_deletion_operations: {
+        Row: {
+          id: string;
+          user_id: string;
+          status: VoiceDeletionOperationStatus;
+          current_stage: VoiceDeletionStage | null;
+          snapshot_version: string;
+          snapshot_status: VoiceDeletionStageStatus;
+          consent_snapshot_id: string | null;
+          consent_snapshot_state: string;
+          consent_withdrawal_status: VoiceDeletionStageStatus;
+          post_delete_verification_status: VoiceDeletionStageStatus;
+          runner_attempt_count: number;
+          snapshot_attempt_count: number;
+          consent_attempt_count: number;
+          verification_attempt_count: number;
+          last_failure_stage: VoiceDeletionStage | null;
+          last_failure_category: string | null;
+          next_retry_at: string | null;
+          manual_reason_category: string | null;
+          manual_required_at: string | null;
+          lease_token: string | null;
+          lease_expires_at: string | null;
+          requested_at: string;
+          snapshot_at: string | null;
+          processing_started_at: string | null;
+          destructive_started_at: string | null;
+          last_attempted_at: string | null;
+          completed_at: string | null;
+          failed_at: string | null;
+          sensitive_snapshot_scrubbed_at: string | null;
+          audit_expires_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          status?: VoiceDeletionOperationStatus;
+          current_stage?: VoiceDeletionStage | null;
+          snapshot_version?: string;
+          snapshot_status?: VoiceDeletionStageStatus;
+          consent_snapshot_id?: string | null;
+          consent_snapshot_state?: string;
+          consent_withdrawal_status?: VoiceDeletionStageStatus;
+          post_delete_verification_status?: VoiceDeletionStageStatus;
+          runner_attempt_count?: number;
+          snapshot_attempt_count?: number;
+          consent_attempt_count?: number;
+          verification_attempt_count?: number;
+          last_failure_stage?: VoiceDeletionStage | null;
+          last_failure_category?: string | null;
+          next_retry_at?: string | null;
+          manual_reason_category?: string | null;
+          manual_required_at?: string | null;
+          lease_token?: string | null;
+          lease_expires_at?: string | null;
+          requested_at?: string;
+          snapshot_at?: string | null;
+          processing_started_at?: string | null;
+          destructive_started_at?: string | null;
+          last_attempted_at?: string | null;
+          completed_at?: string | null;
+          failed_at?: string | null;
+          sensitive_snapshot_scrubbed_at?: string | null;
+          audit_expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          status?: VoiceDeletionOperationStatus;
+          current_stage?: VoiceDeletionStage | null;
+          snapshot_version?: string;
+          snapshot_status?: VoiceDeletionStageStatus;
+          consent_snapshot_id?: string | null;
+          consent_snapshot_state?: string;
+          consent_withdrawal_status?: VoiceDeletionStageStatus;
+          post_delete_verification_status?: VoiceDeletionStageStatus;
+          runner_attempt_count?: number;
+          snapshot_attempt_count?: number;
+          consent_attempt_count?: number;
+          verification_attempt_count?: number;
+          last_failure_stage?: VoiceDeletionStage | null;
+          last_failure_category?: string | null;
+          next_retry_at?: string | null;
+          manual_reason_category?: string | null;
+          manual_required_at?: string | null;
+          lease_token?: string | null;
+          lease_expires_at?: string | null;
+          requested_at?: string;
+          snapshot_at?: string | null;
+          processing_started_at?: string | null;
+          destructive_started_at?: string | null;
+          last_attempted_at?: string | null;
+          completed_at?: string | null;
+          failed_at?: string | null;
+          sensitive_snapshot_scrubbed_at?: string | null;
+          audit_expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      voice_deletion_targets: {
+        Row: {
+          id: string;
+          operation_id: string;
+          user_id: string;
+          target_kind: VoiceDeletionTargetKind;
+          source_row_id: string | null;
+          provider_name: string | null;
+          provider_resource_id: string | null;
+          storage_bucket: string | null;
+          storage_object_key: string | null;
+          target_fingerprint: string | null;
+          status: VoiceDeletionTargetStatus;
+          delete_outcome: VoiceDeletionTargetDeleteOutcome;
+          reconciliation_status: VoiceDeletionTargetVerificationStatus;
+          verification_status: VoiceDeletionTargetVerificationStatus;
+          delete_attempt_count: number;
+          verification_attempt_count: number;
+          last_failure_category: string | null;
+          last_attempted_at: string | null;
+          delete_succeeded_at: string | null;
+          verified_absent_at: string | null;
+          manual_required_at: string | null;
+          locator_scrubbed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          operation_id: string;
+          user_id: string;
+          target_kind: VoiceDeletionTargetKind;
+          source_row_id?: string | null;
+          provider_name?: string | null;
+          provider_resource_id?: string | null;
+          storage_bucket?: string | null;
+          storage_object_key?: string | null;
+          target_fingerprint?: string | null;
+          status?: VoiceDeletionTargetStatus;
+          delete_outcome?: VoiceDeletionTargetDeleteOutcome;
+          reconciliation_status?: VoiceDeletionTargetVerificationStatus;
+          verification_status?: VoiceDeletionTargetVerificationStatus;
+          delete_attempt_count?: number;
+          verification_attempt_count?: number;
+          last_failure_category?: string | null;
+          last_attempted_at?: string | null;
+          delete_succeeded_at?: string | null;
+          verified_absent_at?: string | null;
+          manual_required_at?: string | null;
+          locator_scrubbed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          operation_id?: string;
+          user_id?: string;
+          target_kind?: VoiceDeletionTargetKind;
+          source_row_id?: string | null;
+          provider_name?: string | null;
+          provider_resource_id?: string | null;
+          storage_bucket?: string | null;
+          storage_object_key?: string | null;
+          target_fingerprint?: string | null;
+          status?: VoiceDeletionTargetStatus;
+          delete_outcome?: VoiceDeletionTargetDeleteOutcome;
+          reconciliation_status?: VoiceDeletionTargetVerificationStatus;
+          verification_status?: VoiceDeletionTargetVerificationStatus;
+          delete_attempt_count?: number;
+          verification_attempt_count?: number;
+          last_failure_category?: string | null;
+          last_attempted_at?: string | null;
+          delete_succeeded_at?: string | null;
+          verified_absent_at?: string | null;
+          manual_required_at?: string | null;
+          locator_scrubbed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -648,6 +884,23 @@ export interface Database {
           p_weak_words?: Json;
         };
         Returns: string;
+      };
+      seal_voice_deletion_snapshot: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_targets: Json;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
+      claim_voice_deletion_operation_lease: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_lease_seconds: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
       };
     };
     Enums: Record<string, never>;
