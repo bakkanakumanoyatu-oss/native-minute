@@ -14,6 +14,7 @@ type Operation = {
   snapshot_status: "succeeded";
   consent_withdrawal_status: "succeeded";
   next_retry_at: string | null;
+  last_failure_category: string | null;
 };
 
 type Target = {
@@ -28,6 +29,8 @@ type Target = {
   verification_status: "pending" | "not_applicable" | "present" | "unavailable" | "manual_required";
   delete_attempt_count: number;
   verification_attempt_count: number;
+  delete_outcome: "not_attempted" | "succeeded" | "rejected" | "unavailable";
+  last_failure_category: string | null;
 };
 
 function createFixture(options: { staleDeleteRecord?: boolean } = {}) {
@@ -38,7 +41,8 @@ function createFixture(options: { staleDeleteRecord?: boolean } = {}) {
     current_stage: "provider_cleanup",
     snapshot_status: "succeeded",
     consent_withdrawal_status: "succeeded",
-    next_retry_at: null
+    next_retry_at: null,
+    last_failure_category: null
   };
   const target: Target = {
     id: "target-a",
@@ -51,7 +55,9 @@ function createFixture(options: { staleDeleteRecord?: boolean } = {}) {
     reconciliation_status: "not_applicable",
     verification_status: "pending",
     delete_attempt_count: 0,
-    verification_attempt_count: 0
+    verification_attempt_count: 0,
+    delete_outcome: "not_attempted",
+    last_failure_category: null
   };
 
   const repository = {
@@ -76,13 +82,23 @@ function createFixture(options: { staleDeleteRecord?: boolean } = {}) {
       }
       if (input.result === "deleted") {
         target.status = "deleted";
+        target.delete_outcome = "succeeded";
         target.reconciliation_status = "pending";
         target.verification_status = "not_applicable";
-      } else if (["auth_failed", "permission_denied", "credential_missing", "invalid_provider_reference", "provider_rejected"].includes(input.result)) {
+      } else if (input.result === "provider_rejected") {
+        target.status = "delete_requested";
+        target.delete_outcome = "rejected";
+        target.reconciliation_status = "pending";
+        target.verification_status = "pending";
+        target.last_failure_category = "provider_rejected";
+        operation.status = "processing";
+        operation.last_failure_category = "provider_rejected";
+      } else if (["auth_failed", "permission_denied", "credential_missing", "invalid_provider_reference"].includes(input.result)) {
         target.status = "manual_required";
         target.reconciliation_status = "manual_required";
       } else {
         target.status = "delete_requested";
+        target.delete_outcome = "unavailable";
         target.reconciliation_status = "pending";
         operation.status = "partial_failure";
         operation.next_retry_at = "2026-08-23T00:00:10.000Z";
@@ -107,16 +123,24 @@ function createFixture(options: { staleDeleteRecord?: boolean } = {}) {
         target.status = "verified_absent";
         target.reconciliation_status = "verified_absent";
         target.verification_status = "not_applicable";
+        target.last_failure_category = null;
+      } else if (input.result === "present" && target.last_failure_category === "provider_rejected") {
+        target.status = "manual_required";
+        target.reconciliation_status = "manual_required";
+        target.verification_status = "manual_required";
+        operation.status = "manual_required";
       } else if (input.result === "present" && input.ownerSignal !== "false") {
         target.status = "delete_requested";
         target.reconciliation_status = "present";
         target.verification_status = "present";
+        target.last_failure_category = null;
       } else if (input.result === "present" || ["auth_failed", "permission_denied", "provider_rejected"].includes(input.result)) {
         target.status = "manual_required";
         target.reconciliation_status = "manual_required";
       } else {
         target.reconciliation_status = "unavailable";
         target.verification_status = "unavailable";
+        target.last_failure_category = target.last_failure_category === "provider_rejected" ? "provider_rejected" : input.result;
         operation.status = "partial_failure";
         operation.next_retry_at = "2026-08-23T00:00:10.000Z";
       }
@@ -217,6 +241,123 @@ describe("G5C-B2b lease-aware provider voice runner", () => {
     });
     expect(adapter.deleteVoice).toHaveBeenCalledTimes(1);
     expect(adapter.reconcileVoiceAbsence).not.toHaveBeenCalled();
+  });
+
+  it("records provider_rejected for GET-first reconciliation without chaining a GET", async () => {
+    const { repository, operation, target } = createFixture();
+    const adapter = createAdapter();
+    adapter.deleteVoice.mockResolvedValue({ kind: "provider_rejected" });
+
+    await expect(runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter))).resolves.toEqual({
+      kind: "progressed"
+    });
+
+    expect(target).toMatchObject({
+      status: "delete_requested",
+      delete_outcome: "rejected",
+      reconciliation_status: "pending",
+      last_failure_category: "provider_rejected"
+    });
+    expect(operation).toMatchObject({ status: "processing", last_failure_category: "provider_rejected" });
+    expect(adapter.deleteVoice).toHaveBeenCalledTimes(1);
+    expect(adapter.reconcileVoiceAbsence).not.toHaveBeenCalled();
+  });
+
+  it("uses GET first after provider_rejected and accepts strict verified absence", async () => {
+    const { repository, target } = createFixture();
+    const adapter = createAdapter();
+    adapter.deleteVoice.mockResolvedValue({ kind: "provider_rejected" });
+    adapter.reconcileVoiceAbsence.mockResolvedValue({ kind: "verified_absent" });
+
+    await runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter));
+    await expect(runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter))).resolves.toEqual({
+      kind: "provider_stage_complete"
+    });
+
+    expect(target.status).toBe("verified_absent");
+    expect(adapter.deleteVoice).toHaveBeenCalledTimes(1);
+    expect(adapter.reconcileVoiceAbsence).toHaveBeenCalledTimes(1);
+  });
+
+  it("moves provider_rejected plus GET present to manual_required without another DELETE", async () => {
+    const { repository, operation, target } = createFixture();
+    const adapter = createAdapter();
+    adapter.deleteVoice.mockResolvedValue({ kind: "provider_rejected" });
+    adapter.reconcileVoiceAbsence.mockResolvedValue({ kind: "present", ownerSignal: "true" });
+
+    await runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter));
+    await expect(runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter))).resolves.toEqual({
+      kind: "manual_required"
+    });
+
+    expect(target).toMatchObject({ status: "manual_required", reconciliation_status: "manual_required", last_failure_category: "provider_rejected" });
+    expect(operation).toMatchObject({ status: "manual_required", last_failure_category: "provider_rejected" });
+    expect(adapter.deleteVoice).toHaveBeenCalledTimes(1);
+    expect(adapter.reconcileVoiceAbsence).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the ownerSignal=false manual boundary after provider_rejected", async () => {
+    const { repository, operation, target } = createFixture();
+    const adapter = createAdapter();
+    adapter.deleteVoice.mockResolvedValue({ kind: "provider_rejected" });
+    adapter.reconcileVoiceAbsence.mockResolvedValue({ kind: "present", ownerSignal: "false" });
+
+    await runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter));
+    await expect(runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter))).resolves.toEqual({
+      kind: "manual_required"
+    });
+
+    expect(target).toMatchObject({ status: "manual_required", last_failure_category: "provider_rejected" });
+    expect(operation).toMatchObject({ status: "manual_required", last_failure_category: "provider_rejected" });
+    expect(adapter.deleteVoice).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries GET, not DELETE, after a transient reconciliation following provider_rejected", async () => {
+    const { repository, target } = createFixture();
+    const adapter = createAdapter();
+    adapter.deleteVoice.mockResolvedValue({ kind: "provider_rejected" });
+    adapter.reconcileVoiceAbsence.mockResolvedValue({ kind: "timeout" });
+
+    await runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter));
+    await expect(runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter))).resolves.toEqual({
+      kind: "retry_later"
+    });
+
+    expect(target).toMatchObject({ reconciliation_status: "unavailable", last_failure_category: "provider_rejected" });
+    expect(adapter.deleteVoice).toHaveBeenCalledTimes(1);
+    expect(adapter.reconcileVoiceAbsence).toHaveBeenCalledTimes(1);
+  });
+
+  it("moves a nonretryable reconciliation error to manual_required after provider_rejected", async () => {
+    const { repository, target } = createFixture();
+    const adapter = createAdapter();
+    adapter.deleteVoice.mockResolvedValue({ kind: "provider_rejected" });
+    adapter.reconcileVoiceAbsence.mockResolvedValue({ kind: "permission_denied" });
+
+    await runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter));
+    await expect(runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter))).resolves.toEqual({
+      kind: "manual_required"
+    });
+
+    expect(target.status).toBe("manual_required");
+    expect(adapter.deleteVoice).toHaveBeenCalledTimes(1);
+    expect(adapter.reconcileVoiceAbsence).toHaveBeenCalledTimes(1);
+  });
+
+  it("restarts with GET after provider_rejected was durably recorded before a crash", async () => {
+    const { repository, target } = createFixture();
+    const adapter = createAdapter();
+    adapter.deleteVoice.mockResolvedValue({ kind: "provider_rejected" });
+    adapter.reconcileVoiceAbsence.mockResolvedValue({ kind: "verified_absent" });
+
+    await runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter));
+    expect(target.last_failure_category).toBe("provider_rejected");
+
+    await expect(runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter))).resolves.toEqual({
+      kind: "provider_stage_complete"
+    });
+    expect(adapter.deleteVoice).toHaveBeenCalledTimes(1);
+    expect(adapter.reconcileVoiceAbsence).toHaveBeenCalledTimes(1);
   });
 
   it("stops automatic work when reconciliation reports an unowned provider voice", async () => {

@@ -138,7 +138,7 @@ begin
     raise exception 'invalid provider voice delete result';
   end if;
 
-  v_is_manual := p_result in ('credential_missing', 'invalid_provider_reference', 'auth_failed', 'permission_denied', 'provider_rejected');
+  v_is_manual := p_result in ('credential_missing', 'invalid_provider_reference', 'auth_failed', 'permission_denied');
   v_is_transient := p_result in ('rate_limited', 'provider_unavailable', 'timeout', 'network_error', 'protocol_error');
 
   if (v_is_transient and p_retry_delay_seconds < 1) or (not v_is_transient and p_retry_delay_seconds <> 0) then
@@ -199,6 +199,24 @@ begin
 
     update public.voice_deletion_operations
     set status = 'processing', last_failure_stage = null, last_failure_category = null, next_retry_at = null
+    where id = p_operation_id and user_id = p_user_id;
+  elsif p_result = 'provider_rejected' then
+    -- A rejected DELETE is ambiguous: the next invocation must reconcile the
+    -- exact provider resource before any manual decision or another DELETE.
+    update public.voice_deletion_targets
+    set status = 'delete_requested',
+        delete_outcome = 'rejected',
+        reconciliation_status = 'pending',
+        verification_status = 'pending',
+        last_failure_category = 'provider_rejected'
+    where id = p_target_id
+    returning * into v_target;
+
+    update public.voice_deletion_operations
+    set status = 'processing',
+        last_failure_stage = 'provider_cleanup',
+        last_failure_category = 'provider_rejected',
+        next_retry_at = null
     where id = p_operation_id and user_id = p_user_id;
   elsif v_is_manual then
     update public.voice_deletion_targets
@@ -429,6 +447,26 @@ begin
     update public.voice_deletion_operations
     set status = 'processing', last_failure_stage = null, last_failure_category = null, next_retry_at = null
     where id = p_operation_id and user_id = p_user_id;
+  elsif p_result = 'present' and v_target.last_failure_category = 'provider_rejected' then
+    -- A provider-rejected DELETE followed by a confirmed present resource must
+    -- not become a new automatic DELETE candidate.
+    update public.voice_deletion_targets
+    set status = 'manual_required',
+        reconciliation_status = 'manual_required',
+        verification_status = 'manual_required',
+        last_failure_category = 'provider_rejected',
+        manual_required_at = coalesce(manual_required_at, now())
+    where id = p_target_id
+    returning * into v_target;
+
+    update public.voice_deletion_operations
+    set status = 'manual_required',
+        last_failure_stage = 'provider_cleanup',
+        last_failure_category = 'provider_rejected',
+        next_retry_at = null,
+        manual_reason_category = 'provider_rejected',
+        manual_required_at = coalesce(manual_required_at, now())
+    where id = p_operation_id and user_id = p_user_id;
   elsif p_result = 'present' and p_owner_signal <> 'false' then
     update public.voice_deletion_targets
     set status = 'delete_requested',
@@ -463,7 +501,12 @@ begin
     update public.voice_deletion_targets
     set reconciliation_status = 'unavailable',
         verification_status = 'unavailable',
-        last_failure_category = p_result
+        -- Retain the rejected-DELETE marker so a later successful GET cannot
+        -- re-enable automatic DELETE after a transient reconciliation failure.
+        last_failure_category = case
+          when v_target.last_failure_category = 'provider_rejected' then 'provider_rejected'
+          else p_result
+        end
     where id = p_target_id
     returning * into v_target;
 
