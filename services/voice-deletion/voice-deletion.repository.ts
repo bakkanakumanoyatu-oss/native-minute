@@ -123,7 +123,7 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
 
   async function createOrGetActiveOperation(userId: string) {
     const result = asSingle<CreateOrGetOperationResult>(
-      await client.rpc("create_or_get_voice_deletion_operation", { p_user_id: userId })
+      await client.rpc("create_or_get_voice_deletion_operation", { p_user_id: userId }).single()
     );
 
     if (result.error || !result.data) {

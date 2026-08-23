@@ -65,7 +65,51 @@ describe("G5C-B1 durable voice deletion focused RPC boundary", () => {
     expect(sql).toContain("when unique_violation then");
     expect(sql).toContain("return query select v_operation_id, false;");
     expect(repository).toContain('await client.rpc("create_or_get_voice_deletion_operation", { p_user_id: userId })');
+    expect(repository).toContain('client.rpc("create_or_get_voice_deletion_operation", { p_user_id: userId }).single()');
     expect(repository).not.toContain('.from("voice_deletion_operations").insert');
+  });
+
+  it.each([
+    { created: true, label: "a new operation" },
+    { created: false, label: "the existing active operation" }
+  ])("requires exactly one RPC row and maps %s", async ({ created }) => {
+    const operation = { id: "operation-a", user_id: "user-a", status: "pending" };
+    const single = vi.fn().mockResolvedValue({
+      data: { operation_id: operation.id, created },
+      error: null
+    });
+    const rpc = vi.fn().mockReturnValue({ single });
+    const maybeSingle = vi.fn().mockResolvedValue({ data: operation, error: null });
+    const from = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({ maybeSingle })
+        })
+      })
+    });
+    const repository = createVoiceDeletionRepository({ rpc, from } as never);
+
+    await expect(repository.createOrGetActiveOperation("user-a")).resolves.toEqual({ operation, created });
+    expect(rpc).toHaveBeenCalledWith("create_or_get_voice_deletion_operation", { p_user_id: "user-a" });
+    expect(single).toHaveBeenCalledTimes(1);
+    expect(maybeSingle).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["zero rows", "multiple rows"])("fails closed when the single-row RPC transform reports %s", async () => {
+    const single = vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: "JSON object requested, multiple (or no) rows returned", code: "PGRST116" }
+    });
+    const rpc = vi.fn().mockReturnValue({ single });
+    const from = vi.fn();
+    const repository = createVoiceDeletionRepository({ rpc, from } as never);
+
+    await expect(repository.createOrGetActiveOperation("user-a")).rejects.toMatchObject({
+      status: 500,
+      message: "voice deletion operation の作成に失敗しました。"
+    });
+    expect(single).toHaveBeenCalledTimes(1);
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("seals a snapshot atomically only before destructive work and cannot add targets after sealing", () => {

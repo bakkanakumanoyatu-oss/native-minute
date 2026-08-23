@@ -889,10 +889,10 @@ export interface Database {
         Args: {
           p_user_id: string;
         };
-        Returns: {
+        Returns: Array<{
           operation_id: string;
           created: boolean;
-        };
+        }>;
       };
       seal_voice_deletion_snapshot: {
         Args: {

@@ -1,8 +1,10 @@
 # G5C-B1 Durable State / Repository Foundation
 
-Status: `REMEDIATION_V2_IMPLEMENTED_PENDING_FINAL_INDEPENDENT_REAUDIT`
+Status: `CARDINALITY_REMEDIATION_IMPLEMENTED_PENDING_FINAL_CONFIRMATION`
 
 Scope is limited to migration `0015_g5c_b1_voice_deletion_durable_state.sql`, aligned TypeScript DB types, and a server-only repository for voice-only deletion operations and targets.
+
+The `create_or_get_voice_deletion_operation` `RETURNS TABLE` contract remains unchanged. Its generated Database type now models the PostgREST result as an array, while the repository explicitly applies `.single()` and fails closed if the RPC does not yield exactly one row. Migration 0015 remains unapplied.
 
 - The two new tables are RLS-enabled with no authenticated client policies. Explicit table ACLs revoke every privilege from `PUBLIC`, `anon`, `authenticated`, and `service_role`; `service_role` receives `SELECT` only. All current mutation paths are fixed-signature `SECURITY DEFINER` RPCs with explicit service-role-only `EXECUTE` grants.
 - Snapshot targets and the `snapshot_status=succeeded` transition are one database transaction. Creation, snapshot sealing, lease claim/release, and finalization are focused RPCs; the repository has no direct operation/target insert, update, or delete path.
