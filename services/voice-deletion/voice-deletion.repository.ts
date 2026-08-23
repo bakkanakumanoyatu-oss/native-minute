@@ -77,6 +77,17 @@ function isCreateOrGetOperationResult(value: unknown): value is CreateOrGetOpera
   );
 }
 
+function isOperationRow(value: unknown): value is VoiceDeletionOperationRow {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    "id" in value &&
+    typeof value.id === "string" &&
+    value.id.length > 0
+  );
+}
+
 function mapRepositoryError(operation: string, error: PostgrestErrorLike) {
   return new AppError(500, `${operation}に失敗しました。`);
 }
@@ -114,7 +125,7 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
       throw mapRepositoryError("進行中の voice deletion operation の取得", result.error);
     }
 
-    return result.data;
+    return isOperationRow(result.data) ? result.data : null;
   }
 
   async function getOperationForUser(operationId: string, userId: string) {
@@ -131,7 +142,7 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
       throw mapRepositoryError("voice deletion operation の取得", result.error);
     }
 
-    return result.data;
+    return isOperationRow(result.data) ? result.data : null;
   }
 
   async function createOrGetActiveOperation(userId: string) {
@@ -199,7 +210,7 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
       throw mapRepositoryError("voice deletion operation lease の取得", result.error);
     }
 
-    return result.data;
+    return isOperationRow(result.data) ? result.data : null;
   }
 
   async function releaseLease(input: Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken">) {
@@ -215,7 +226,7 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
       throw mapRepositoryError("voice deletion operation lease の解放", result.error);
     }
 
-    return result.data !== null;
+    return isOperationRow(result.data) && result.data.id === input.operationId;
   }
 
   async function finalizeOperation(operationId: string, userId: string, leaseToken: string) {

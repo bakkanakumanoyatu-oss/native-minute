@@ -134,6 +134,33 @@ describe("G5C-B1 durable voice deletion focused RPC boundary", () => {
     expect(from).not.toHaveBeenCalled();
   });
 
+  it("treats a zero-row composite RPC result as an unacquired or unreleased lease", async () => {
+    const emptyComposite = { id: null, lease_token: null, lease_expires_at: null };
+    const single = vi.fn().mockResolvedValue({ data: emptyComposite, error: null });
+    const maybeSingle = vi.fn().mockResolvedValue({ data: emptyComposite, error: null });
+    const rpc = vi.fn((name: string) =>
+      name === "claim_voice_deletion_operation_lease" ? { single } : { maybeSingle }
+    );
+    const repository = createVoiceDeletionRepository({ rpc } as never);
+
+    await expect(
+      repository.claimExpiredOrAvailableLease({
+        operationId: "operation-a",
+        userId: "user-a",
+        leaseToken: "lease-a",
+        leaseSeconds: 60
+      })
+    ).resolves.toBeNull();
+    await expect(
+      repository.releaseLease({ operationId: "operation-a", userId: "user-a", leaseToken: "lease-a" })
+    ).resolves.toBe(false);
+    expect(rpc).toHaveBeenCalledWith("release_voice_deletion_operation_lease", {
+      p_operation_id: "operation-a",
+      p_user_id: "user-a",
+      p_lease_token: "lease-a"
+    });
+  });
+
   it("seals a snapshot atomically only before destructive work and cannot add targets after sealing", () => {
     const sql = compact(readFileSync(migrationPath, "utf8"));
 
