@@ -7,7 +7,7 @@ import { runVoiceDeletionStorageStep } from "@/services/voice-deletion/voice-del
 import type { VoiceDeletionRepository } from "@/services/voice-deletion/voice-deletion.repository";
 
 type FixtureOptions = {
-  targetKind?: "voice_sample" | "voice_consent_recording" | "script_audio_storage";
+  targetKind?: string;
   stage?: "provider_cleanup" | "storage_cleanup";
   deleteAttempts?: number;
   verificationAttempts?: number;
@@ -120,7 +120,7 @@ function createFixture(options: FixtureOptions = {}) {
         target.verification_status = "pending";
         operation.status = "processing";
         operation.next_retry_at = null;
-      } else if (["auth_failed", "permission_denied"].includes(input.result)) {
+      } else if (["auth_failed", "permission_denied", "rejected", "protocol_error"].includes(input.result)) {
         target.status = "manual_required";
         target.verification_status = "manual_required";
         operation.status = "manual_required";
@@ -241,6 +241,29 @@ describe("G5C-B3 one-object Storage runner", () => {
       kind: "storage_stage_complete"
     });
     expect(target.status).toBe("verified_absent");
+  });
+
+  it("maps an adapter rejection to manual_required, never verified_absent", async () => {
+    const { repository, storageAdapter, target } = createFixture();
+    storageAdapter.deleteObject.mockResolvedValue({ kind: "rejected" });
+
+    await expect(runVoiceDeletionStorageStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, storageAdapter))).resolves.toEqual({
+      kind: "manual_required"
+    });
+    expect(storageAdapter.deleteObject).toHaveBeenCalledTimes(1);
+    expect(storageAdapter.verifyObjectAbsence).not.toHaveBeenCalled();
+    expect(target).toMatchObject({ status: "manual_required", verification_status: "manual_required" });
+  });
+
+  it("does not start an automatic recordings delete", async () => {
+    const { repository, storageAdapter, target } = createFixture({ targetKind: "recordings" });
+
+    await expect(runVoiceDeletionStorageStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, storageAdapter))).resolves.toEqual({
+      kind: "storage_stage_complete"
+    });
+    expect(storageAdapter.deleteObject).not.toHaveBeenCalled();
+    expect(storageAdapter.verifyObjectAbsence).not.toHaveBeenCalled();
+    expect(target).toMatchObject({ target_kind: "recordings", status: "pending", verification_status: "pending" });
   });
 
   it("uses verification present to enable a later delete retry without chaining calls", async () => {

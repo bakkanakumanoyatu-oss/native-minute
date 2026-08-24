@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: vi.fn() }));
 
-import { createVoiceDeletionStorageAdapter } from "@/services/voice-deletion/voice-deletion-storage-adapter";
+import {
+  createVoiceDeletionStorageAdapter,
+  type VoiceDeletionStorageAdapter
+} from "@/services/voice-deletion/voice-deletion-storage-adapter";
 
 function createClient(options: { removeError?: unknown; listData?: unknown; listError?: unknown } = {}) {
   const remove = vi.fn().mockResolvedValue({ data: [], error: options.removeError ?? null });
@@ -13,6 +16,11 @@ function createClient(options: { removeError?: unknown; listData?: unknown; list
   });
   const from = vi.fn(() => ({ remove, list }));
   return { client: { storage: { from } }, from, remove, list };
+}
+
+function runtimeInput(input: unknown) {
+  // Deliberately bypass the compile-time union to exercise the adapter boundary.
+  return input as Parameters<VoiceDeletionStorageAdapter["deleteObject"]>[0];
 }
 
 describe("G5C-B3 exact Storage adapter", () => {
@@ -26,20 +34,105 @@ describe("G5C-B3 exact Storage adapter", () => {
 
     await expect(adapter.deleteObject({ targetKind, objectKey })).resolves.toEqual({ kind: "request_succeeded" });
     expect(from).toHaveBeenCalledWith(bucket);
+    expect(from).toHaveBeenCalledTimes(1);
     expect(remove).toHaveBeenCalledWith([objectKey]);
+    expect(remove).toHaveBeenCalledTimes(1);
     expect(remove.mock.calls[0]?.[0]).toHaveLength(1);
   });
 
-  it("rejects malformed locators without selecting a bucket or sending a request", async () => {
+  it.each([
+    ["voice_sample", "voice-samples", "user-a/consent-a/sample.webm"],
+    ["voice_consent_recording", "voice-consents", "user-a/consent.webm"],
+    ["script_audio_storage", "script-audios", "user-a/script-a/voice-a/cache.mp3"]
+  ] as const)("maps %s only to %s when verifying exactly one key", async (targetKind, bucket, objectKey) => {
+    const { client, from, remove, list } = createClient();
+    const adapter = createVoiceDeletionStorageAdapter(client as never);
+
+    await expect(adapter.verifyObjectAbsence({ targetKind, objectKey })).resolves.toEqual({ kind: "absent" });
+    expect(from).toHaveBeenCalledWith(bucket);
+    expect(from).toHaveBeenCalledTimes(1);
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it("rejects recordings before delete selects a bucket or sends a request", async () => {
     const { client, from, remove } = createClient();
     const adapter = createVoiceDeletionStorageAdapter(client as never);
 
-    await expect(adapter.deleteObject({ targetKind: "voice_sample", objectKey: "../recordings/a.webm" })).resolves.toEqual({
-      kind: "rejected"
-    });
+    await expect(
+      adapter.deleteObject(runtimeInput({ targetKind: "recordings", objectKey: "user-a/take-a/recording.webm" }))
+    ).resolves.toEqual({ kind: "rejected" });
     expect(from).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalled();
   });
+
+  it("rejects recordings before verification selects a bucket or lists", async () => {
+    const { client, from, list } = createClient();
+    const adapter = createVoiceDeletionStorageAdapter(client as never);
+
+    await expect(
+      adapter.verifyObjectAbsence(runtimeInput({ targetKind: "recordings", objectKey: "user-a/take-a/recording.webm" }))
+    ).resolves.toEqual({ kind: "rejected" });
+    expect(from).not.toHaveBeenCalled();
+    expect(list).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "provider_voice",
+    "script_audio",
+    "voice_binding",
+    "arbitrary-runtime-kind",
+    "",
+    null,
+    undefined
+  ])("rejects invalid runtime target kind %p without an external Storage call", async (targetKind) => {
+    const deleteClient = createClient();
+    const deleteAdapter = createVoiceDeletionStorageAdapter(deleteClient.client as never);
+    await expect(
+      deleteAdapter.deleteObject(runtimeInput({ targetKind, objectKey: "user-a/consent-a/sample.webm" }))
+    ).resolves.toEqual({ kind: "rejected" });
+    expect(deleteClient.from).not.toHaveBeenCalled();
+    expect(deleteClient.remove).not.toHaveBeenCalled();
+
+    const verificationClient = createClient();
+    const verificationAdapter = createVoiceDeletionStorageAdapter(verificationClient.client as never);
+    await expect(
+      verificationAdapter.verifyObjectAbsence(runtimeInput({ targetKind, objectKey: "user-a/consent-a/sample.webm" }))
+    ).resolves.toEqual({ kind: "rejected" });
+    expect(verificationClient.from).not.toHaveBeenCalled();
+    expect(verificationClient.list).not.toHaveBeenCalled();
+  });
+
+  it.each([null, undefined, [], {}, { targetKind: "voice_sample" }])(
+    "rejects malformed runtime input %p before any Storage call",
+    async (input) => {
+      const deleteClient = createClient();
+      const deleteAdapter = createVoiceDeletionStorageAdapter(deleteClient.client as never);
+      await expect(deleteAdapter.deleteObject(runtimeInput(input))).resolves.toEqual({ kind: "rejected" });
+      expect(deleteClient.from).not.toHaveBeenCalled();
+      expect(deleteClient.remove).not.toHaveBeenCalled();
+
+      const verificationClient = createClient();
+      const verificationAdapter = createVoiceDeletionStorageAdapter(verificationClient.client as never);
+      await expect(verificationAdapter.verifyObjectAbsence(runtimeInput(input))).resolves.toEqual({ kind: "rejected" });
+      expect(verificationClient.from).not.toHaveBeenCalled();
+      expect(verificationClient.list).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(["voice_sample", "voice_consent_recording", "script_audio_storage"] as const)(
+    "rejects malformed locators for approved %s without selecting a bucket or sending a request",
+    async (targetKind) => {
+      const { client, from, remove, list } = createClient();
+      const adapter = createVoiceDeletionStorageAdapter(client as never);
+
+      await expect(adapter.deleteObject({ targetKind, objectKey: "../recordings/a.webm" })).resolves.toEqual({ kind: "rejected" });
+      await expect(adapter.verifyObjectAbsence({ targetKind, objectKey: "../recordings/a.webm" })).resolves.toEqual({ kind: "rejected" });
+      expect(from).not.toHaveBeenCalled();
+      expect(remove).not.toHaveBeenCalled();
+      expect(list).not.toHaveBeenCalled();
+    }
+  );
 
   it("normalizes errors without exposing raw Storage responses", async () => {
     const { client } = createClient({ removeError: { message: "permission denied: private implementation detail", statusCode: 403 } });

@@ -67,6 +67,10 @@ function resolveBucket(targetKind: StorageObjectTargetKind) {
   return STORAGE_BUCKET_BY_TARGET_KIND[targetKind];
 }
 
+function isStorageObjectTargetKind(value: unknown): value is StorageObjectTargetKind {
+  return typeof value === "string" && Object.prototype.hasOwnProperty.call(STORAGE_BUCKET_BY_TARGET_KIND, value);
+}
+
 function isExactObjectKey(value: string) {
   const trimmed = value.trim();
   return (
@@ -76,6 +80,22 @@ function isExactObjectKey(value: string) {
     !trimmed.endsWith("/") &&
     trimmed.split("/").every((part) => part.length > 0 && part !== "." && part !== "..")
   );
+}
+
+function parseStorageObjectInput(input: unknown): { targetKind: StorageObjectTargetKind; objectKey: string } | null {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    return null;
+  }
+
+  try {
+    const { targetKind, objectKey } = input as { targetKind?: unknown; objectKey?: unknown };
+    if (!isStorageObjectTargetKind(targetKind) || typeof objectKey !== "string" || !isExactObjectKey(objectKey)) {
+      return null;
+    }
+    return { targetKind, objectKey };
+  } catch {
+    return null;
+  }
 }
 
 function normalizeStorageError(error: StorageErrorLike | null | undefined): Exclude<StorageObjectDeleteResult["kind"], "request_succeeded"> {
@@ -127,31 +147,30 @@ function parentAndBasename(objectKey: string) {
 export function createVoiceDeletionStorageAdapter(
   client: StorageClient = createSupabaseAdminClient() as unknown as StorageClient
 ): VoiceDeletionStorageAdapter {
-  async function deleteObject(input: { targetKind: StorageObjectTargetKind; objectKey: string }): Promise<StorageObjectDeleteResult> {
-    if (!isExactObjectKey(input.objectKey)) {
+  async function deleteObject(input: unknown): Promise<StorageObjectDeleteResult> {
+    const target = parseStorageObjectInput(input);
+    if (!target) {
       return { kind: "rejected" };
     }
 
     try {
-      const { error } = await client.storage.from(resolveBucket(input.targetKind)).remove([input.objectKey]);
+      const { error } = await client.storage.from(resolveBucket(target.targetKind)).remove([target.objectKey]);
       return error ? { kind: normalizeStorageError(error) } : { kind: "request_succeeded" };
     } catch (error) {
       return { kind: normalizeStorageError(error as StorageErrorLike) };
     }
   }
 
-  async function verifyObjectAbsence(input: {
-    targetKind: StorageObjectTargetKind;
-    objectKey: string;
-  }): Promise<StorageObjectVerificationResult> {
-    if (!isExactObjectKey(input.objectKey)) {
+  async function verifyObjectAbsence(input: unknown): Promise<StorageObjectVerificationResult> {
+    const target = parseStorageObjectInput(input);
+    if (!target) {
       return { kind: "rejected" };
     }
 
-    const { parent, basename } = parentAndBasename(input.objectKey);
+    const { parent, basename } = parentAndBasename(target.objectKey);
     try {
       const { data, error } = await client.storage
-        .from(resolveBucket(input.targetKind))
+        .from(resolveBucket(target.targetKind))
         .list(parent, { limit: LIST_PAGE_SIZE, offset: 0, search: basename });
       if (error) {
         return { kind: toVerificationFailure(normalizeStorageError(error)) };
@@ -160,7 +179,7 @@ export function createVoiceDeletionStorageAdapter(
         return { kind: "protocol_error" };
       }
 
-      const exactMatches = data.filter((entry) => `${parent ? `${parent}/` : ""}${entry.name}` === input.objectKey);
+      const exactMatches = data.filter((entry) => `${parent ? `${parent}/` : ""}${entry.name}` === target.objectKey);
       if (exactMatches.length === 1) {
         return { kind: "present" };
       }
