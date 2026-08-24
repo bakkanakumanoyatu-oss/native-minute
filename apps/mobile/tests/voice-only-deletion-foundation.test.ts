@@ -1,8 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
 import {
   collectVoiceOnlyDeletionSnapshot,
+  createVoiceOnlyDeletionDurableSnapshotTargets,
   createVoiceOnlyDeletionDryRun,
   verifyVoiceOnlyDeletionSnapshot,
   VOICE_ONLY_DELETION_RETAINED_CATEGORIES
@@ -273,9 +276,9 @@ describe("G5C-A voice-only deletion foundation", () => {
     ]);
     expect(snapshot.targets.storageObjects).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ bucket: "voice-samples", source: "voice_sample" }),
-        expect.objectContaining({ bucket: "voice-consents", source: "consent_recording" }),
-        expect.objectContaining({ bucket: "script-audios", source: "script_audio" })
+        expect.objectContaining({ bucket: "voice-samples", source: "voice_sample", sourceRowId: VOICE_A }),
+        expect.objectContaining({ bucket: "voice-consents", source: "consent_recording", sourceRowId: CONSENT_A }),
+        expect.objectContaining({ bucket: "script-audios", source: "script_audio", sourceRowId: SCRIPT_AUDIO_A })
       ])
     );
     expect(JSON.stringify(snapshot)).not.toContain(VOICE_B);
@@ -307,6 +310,54 @@ describe("G5C-A voice-only deletion foundation", () => {
     expect(snapshot.targets.scriptAudios).toHaveLength(1);
     expect(snapshot.targets.storageObjects).toHaveLength(3);
     expect(snapshot.operation.status).toBe("manual_required");
+  });
+
+  it("keeps historical unreferenced consent recordings out of automatic Storage targets", async () => {
+    const data = fixture();
+    const historicalConsent = "99999999-9999-4999-8999-999999999999";
+    data.tables.voice_consents.push({
+      id: historicalConsent,
+      user_id: USER_A,
+      provider: "elevenlabs",
+      consented_at: "2026-08-20T00:00:00.000Z",
+      metadata: { recording: { audioPath: `storage://voice-consents/${USER_A}/historical.m4a` } },
+      created_at: "2026-08-20T00:00:00.000Z"
+    });
+    data.storage["voice-consents"].push(`${USER_A}/historical.m4a`);
+
+    const snapshot = await collectVoiceOnlyDeletionSnapshot(createClient(data), USER_A);
+    expect(snapshot.targets.storageObjects).not.toContainEqual(
+      expect.objectContaining({ bucket: "voice-consents", objectKey: `${USER_A}/historical.m4a` })
+    );
+    expect(snapshot.manualCandidates).toContainEqual({ reason: "storage_object_unattributed", source: "storage" });
+  });
+
+  it("retains one exact Storage target for duplicate all-target locators while preserving source-row attribution", async () => {
+    const data = fixture();
+    const duplicateVoice = "abababab-abab-4bab-8bab-abababababab";
+    data.tables.voices.push({
+      id: duplicateVoice,
+      user_id: USER_A,
+      provider: "elevenlabs",
+      provider_voice_id: "provider-voice-duplicate-private",
+      consent_id: CONSENT_A,
+      label: "duplicate path",
+      sample_audio_path: `storage://voice-samples/${USER_A}/${CONSENT_A}/sample-a.m4a`,
+      is_default: false,
+      created_at: "2026-08-22T00:00:00.000Z"
+    });
+
+    const snapshot = await collectVoiceOnlyDeletionSnapshot(createClient(data), USER_A);
+    const durable = createVoiceOnlyDeletionDurableSnapshotTargets(snapshot);
+    const sampleTargets = durable.filter((target) => target.targetKind === "voice_sample");
+    expect(sampleTargets).toHaveLength(1);
+    expect(sampleTargets[0]).toMatchObject({
+      storageBucket: "voice-samples",
+      storageObjectKey: `${USER_A}/${CONSENT_A}/sample-a.m4a`,
+      sourceRowId: expect.any(String)
+    });
+    expect(durable.filter((target) => target.targetKind === "provider_voice")).toHaveLength(2);
+    expect(durable).not.toEqual(expect.arrayContaining([expect.objectContaining({ storageBucket: "recordings" })]));
   });
 
   it("keeps the bounded walker but flags a visible deeper branch for manual review", async () => {

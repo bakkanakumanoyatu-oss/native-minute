@@ -972,6 +972,59 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["voice_deletion_targets"]["Row"];
       };
+      enter_voice_deletion_storage_cleanup_stage: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
+      begin_storage_object_delete_attempt: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_target_id: string;
+          p_lease_token: string;
+          p_expected_delete_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_targets"]["Row"];
+      };
+      record_storage_object_delete_result: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_target_id: string;
+          p_lease_token: string;
+          p_expected_delete_attempt_count: number;
+          p_result: string;
+          p_retry_delay_seconds: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_targets"]["Row"];
+      };
+      begin_storage_object_verification_attempt: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_target_id: string;
+          p_lease_token: string;
+          p_expected_verification_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_targets"]["Row"];
+      };
+      record_storage_object_verification_result: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_target_id: string;
+          p_lease_token: string;
+          p_expected_verification_attempt_count: number;
+          p_result: string;
+          p_retry_delay_seconds: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_targets"]["Row"];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

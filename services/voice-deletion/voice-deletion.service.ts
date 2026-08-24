@@ -49,6 +49,7 @@ export type VoiceOnlyDeletionStorageTarget = {
   bucket: "voice-samples" | "voice-consents" | "script-audios";
   objectKey: string;
   source: "voice_sample" | "consent_recording" | "script_audio";
+  sourceRowId: string;
   status: VoiceOnlyDeletionTargetStatus;
 };
 
@@ -173,6 +174,28 @@ export type VoiceOnlyDeletionDryRun = {
     canonicalConsentWithdrawalExpectedInFutureExecution: true;
   };
   notes: string[];
+};
+
+/**
+ * Internal durable snapshot payload. Storage objects retain one representative
+ * source row per physical object; the B3 transition RPC re-resolves all shared
+ * references immediately before any destructive intent is persisted.
+ */
+export type VoiceOnlyDeletionDurableSnapshotTarget = {
+  targetKind:
+    | "provider_voice"
+    | "voice_sample"
+    | "voice_consent_recording"
+    | "script_audio_storage"
+    | "script_audio"
+    | "saved_model_audio"
+    | "voice_binding";
+  targetFingerprint: string;
+  sourceRowId?: string | null;
+  providerName?: string | null;
+  providerResourceId?: string | null;
+  storageBucket?: string | null;
+  storageObjectKey?: string | null;
 };
 
 export type VoiceOnlyPostDeleteVerification = {
@@ -462,6 +485,7 @@ export async function collectVoiceOnlyDeletionSnapshot(
       bucket: VOICE_SAMPLES_BUCKET,
       objectKey,
       source: "voice_sample",
+      sourceRowId: voice.id,
       status: "pending"
     });
   }
@@ -478,10 +502,17 @@ export async function collectVoiceOnlyDeletionSnapshot(
       continue;
     }
 
+    // Historical consent rows that are no longer tied to a target voice remain
+    // retained history. Their recording is never promoted to an automatic target.
+    if (!voices.some((voice) => voice.consent_id === consent.id)) {
+      continue;
+    }
+
     storageObjects.push({
       bucket: VOICE_CONSENTS_BUCKET,
       objectKey,
       source: "consent_recording",
+      sourceRowId: consent.id,
       status: "pending"
     });
   }
@@ -521,6 +552,7 @@ export async function collectVoiceOnlyDeletionSnapshot(
       bucket: SCRIPT_AUDIO_STORAGE_BUCKET,
       objectKey: storedAsset.storageObjectKey,
       source: "script_audio",
+      sourceRowId: audio.id,
       status: "pending"
     });
   }
@@ -587,6 +619,72 @@ export async function collectVoiceOnlyDeletionSnapshot(
     manualCandidates,
     storageListings
   };
+}
+
+/**
+ * Converts the sealed, server-derived inventory into the existing B1 durable target
+ * shape. It does not persist anything, invoke a runner, or decide shared-reference
+ * safety; B3 deliberately re-resolves that authority in SQL immediately before
+ * requesting an external Storage delete.
+ */
+export function createVoiceOnlyDeletionDurableSnapshotTargets(
+  snapshot: VoiceOnlyDeletionSnapshot
+): VoiceOnlyDeletionDurableSnapshotTarget[] {
+  const targets: VoiceOnlyDeletionDurableSnapshotTarget[] = [];
+
+  for (const voice of snapshot.targets.voices) {
+    if (voice.providerVoiceId) {
+      targets.push({
+        targetKind: "provider_voice",
+        targetFingerprint: stableFingerprint({ kind: "provider_voice", sourceRowId: voice.appVoiceId }),
+        sourceRowId: voice.appVoiceId,
+        providerName: VOICE_ONLY_PROVIDER,
+        providerResourceId: voice.providerVoiceId
+      });
+    }
+
+    if (voice.isDefault) {
+      targets.push({
+        targetKind: "voice_binding",
+        targetFingerprint: stableFingerprint({ kind: "voice_binding", sourceRowId: voice.appVoiceId }),
+        sourceRowId: voice.appVoiceId
+      });
+    }
+  }
+
+  for (const storage of snapshot.targets.storageObjects) {
+    const targetKind =
+      storage.source === "voice_sample"
+        ? "voice_sample"
+        : storage.source === "consent_recording"
+          ? "voice_consent_recording"
+          : "script_audio_storage";
+    targets.push({
+      targetKind,
+      targetFingerprint: stableFingerprint({ kind: targetKind, bucket: storage.bucket, objectKey: storage.objectKey }),
+      sourceRowId: storage.sourceRowId,
+      storageBucket: storage.bucket,
+      storageObjectKey: storage.objectKey
+    });
+  }
+
+  for (const audio of snapshot.targets.scriptAudios) {
+    targets.push({
+      targetKind: "script_audio",
+      targetFingerprint: stableFingerprint({ kind: "script_audio", sourceRowId: audio.scriptAudioId }),
+      sourceRowId: audio.scriptAudioId
+    });
+  }
+
+  for (const saved of snapshot.targets.savedModelAudios) {
+    targets.push({
+      targetKind: "saved_model_audio",
+      targetFingerprint: stableFingerprint({ kind: "saved_model_audio", sourceRowId: saved.savedModelAudioId }),
+      sourceRowId: saved.savedModelAudioId
+    });
+  }
+
+  return targets.sort((left, right) => left.targetFingerprint.localeCompare(right.targetFingerprint));
 }
 
 /** Converts the internal snapshot into the only browser/mobile-safe G5C-A response. */

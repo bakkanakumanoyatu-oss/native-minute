@@ -77,6 +77,54 @@ export type ProviderVoiceReconciliationResult = ProviderVoiceReconciliationAttem
   retryDelaySeconds: number;
 };
 
+export type StorageObjectTargetKind = Extract<
+  VoiceDeletionTargetKind,
+  "voice_sample" | "voice_consent_recording" | "script_audio_storage"
+>;
+
+export type StorageCleanupStageEntry = Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken"> & {
+  expectedRunnerAttemptCount: number;
+};
+
+export type StorageObjectDeleteAttempt = Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken"> & {
+  targetId: string;
+  expectedDeleteAttemptCount: number;
+};
+
+export type StorageObjectDeleteResult = StorageObjectDeleteAttempt & {
+  result:
+    | "request_succeeded"
+    | "timed_out"
+    | "rate_limited"
+    | "unavailable"
+    | "network_error"
+    | "auth_failed"
+    | "permission_denied"
+    | "rejected"
+    | "protocol_error";
+  retryDelaySeconds: number;
+};
+
+export type StorageObjectVerificationAttempt = Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken"> & {
+  targetId: string;
+  expectedVerificationAttemptCount: number;
+};
+
+export type StorageObjectVerificationResult = StorageObjectVerificationAttempt & {
+  result:
+    | "absent"
+    | "present"
+    | "timed_out"
+    | "rate_limited"
+    | "unavailable"
+    | "network_error"
+    | "auth_failed"
+    | "permission_denied"
+    | "rejected"
+    | "protocol_error";
+  retryDelaySeconds: number;
+};
+
 export type VoiceDeletionRepository = {
   createOrGetActiveOperation(userId: string): Promise<{ operation: VoiceDeletionOperationRow; created: boolean }>;
   getActiveOperation(userId: string): Promise<VoiceDeletionOperationRow | null>;
@@ -98,6 +146,11 @@ export type VoiceDeletionRepository = {
   recordProviderVoiceDeleteResult(input: ProviderVoiceDeleteResult): Promise<VoiceDeletionTargetRow | null>;
   beginProviderVoiceReconciliationAttempt(input: ProviderVoiceReconciliationAttempt): Promise<VoiceDeletionTargetRow | null>;
   recordProviderVoiceReconciliationResult(input: ProviderVoiceReconciliationResult): Promise<VoiceDeletionTargetRow | null>;
+  enterStorageCleanupStage(input: StorageCleanupStageEntry): Promise<VoiceDeletionOperationRow | null>;
+  beginStorageObjectDeleteAttempt(input: StorageObjectDeleteAttempt): Promise<VoiceDeletionTargetRow | null>;
+  recordStorageObjectDeleteResult(input: StorageObjectDeleteResult): Promise<VoiceDeletionTargetRow | null>;
+  beginStorageObjectVerificationAttempt(input: StorageObjectVerificationAttempt): Promise<VoiceDeletionTargetRow | null>;
+  recordStorageObjectVerificationResult(input: StorageObjectVerificationResult): Promise<VoiceDeletionTargetRow | null>;
   finalizeOperation(operationId: string, userId: string, leaseToken: string): Promise<VoiceDeletionOperationRow>;
 };
 
@@ -367,6 +420,99 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     return isTargetRow(result.data) ? result.data : null;
   }
 
+  async function enterStorageCleanupStage(input: StorageCleanupStageEntry) {
+    const result = asMaybeSingle<VoiceDeletionOperationRow>(
+      await client.rpc("enter_voice_deletion_storage_cleanup_stage", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_lease_token: input.leaseToken,
+        p_expected_runner_attempt_count: input.expectedRunnerAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("storage cleanup stage への進行", result.error);
+    }
+
+    return isOperationRow(result.data) ? result.data : null;
+  }
+
+  async function beginStorageObjectDeleteAttempt(input: StorageObjectDeleteAttempt) {
+    const result = asMaybeSingle<VoiceDeletionTargetRow>(
+      await client.rpc("begin_storage_object_delete_attempt", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_target_id: input.targetId,
+        p_lease_token: input.leaseToken,
+        p_expected_delete_attempt_count: input.expectedDeleteAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("storage object delete attempt の開始", result.error);
+    }
+
+    return isTargetRow(result.data) ? result.data : null;
+  }
+
+  async function recordStorageObjectDeleteResult(input: StorageObjectDeleteResult) {
+    const result = asMaybeSingle<VoiceDeletionTargetRow>(
+      await client.rpc("record_storage_object_delete_result", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_target_id: input.targetId,
+        p_lease_token: input.leaseToken,
+        p_expected_delete_attempt_count: input.expectedDeleteAttemptCount,
+        p_result: input.result,
+        p_retry_delay_seconds: input.retryDelaySeconds
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("storage object delete result の記録", result.error);
+    }
+
+    return isTargetRow(result.data) ? result.data : null;
+  }
+
+  async function beginStorageObjectVerificationAttempt(input: StorageObjectVerificationAttempt) {
+    const result = asMaybeSingle<VoiceDeletionTargetRow>(
+      await client.rpc("begin_storage_object_verification_attempt", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_target_id: input.targetId,
+        p_lease_token: input.leaseToken,
+        p_expected_verification_attempt_count: input.expectedVerificationAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("storage object verification attempt の開始", result.error);
+    }
+
+    return isTargetRow(result.data) ? result.data : null;
+  }
+
+  async function recordStorageObjectVerificationResult(input: StorageObjectVerificationResult) {
+    const result = asMaybeSingle<VoiceDeletionTargetRow>(
+      await client.rpc("record_storage_object_verification_result", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_target_id: input.targetId,
+        p_lease_token: input.leaseToken,
+        p_expected_verification_attempt_count: input.expectedVerificationAttemptCount,
+        p_result: input.result,
+        p_retry_delay_seconds: input.retryDelaySeconds
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("storage object verification result の記録", result.error);
+    }
+
+    return isTargetRow(result.data) ? result.data : null;
+  }
+
   async function finalizeOperation(operationId: string, userId: string, leaseToken: string) {
     const result = asSingle<VoiceDeletionOperationRow>(
       await client.rpc("finalize_voice_deletion_operation", {
@@ -398,6 +544,11 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     recordProviderVoiceDeleteResult,
     beginProviderVoiceReconciliationAttempt,
     recordProviderVoiceReconciliationResult,
+    enterStorageCleanupStage,
+    beginStorageObjectDeleteAttempt,
+    recordStorageObjectDeleteResult,
+    beginStorageObjectVerificationAttempt,
+    recordStorageObjectVerificationResult,
     // Completion deliberately has no generic status-update helper: the focused RPC
     // atomically proves target verification, scrubs locators, and closes the lease.
     finalizeOperation
