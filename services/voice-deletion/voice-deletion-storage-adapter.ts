@@ -24,6 +24,7 @@ type StorageClient = {
 export type StorageObjectDeleteResult = {
   kind:
     | "request_succeeded"
+    | "invalid_target"
     | "timed_out"
     | "rate_limited"
     | "unavailable"
@@ -38,6 +39,7 @@ export type StorageObjectVerificationResult = {
   kind:
     | "absent"
     | "present"
+    | "invalid_target"
     | "timed_out"
     | "rate_limited"
     | "unavailable"
@@ -49,11 +51,10 @@ export type StorageObjectVerificationResult = {
 };
 
 export type VoiceDeletionStorageAdapter = {
-  deleteObject(input: { targetKind: StorageObjectTargetKind; objectKey: string }): Promise<StorageObjectDeleteResult>;
-  verifyObjectAbsence(input: {
-    targetKind: StorageObjectTargetKind;
-    objectKey: string;
-  }): Promise<StorageObjectVerificationResult>;
+  // This is a runtime boundary: callers may have deserialized or otherwise malformed
+  // data, so the adapter owns validation before it selects a bucket or calls Storage.
+  deleteObject(input: unknown): Promise<StorageObjectDeleteResult>;
+  verifyObjectAbsence(input: unknown): Promise<StorageObjectVerificationResult>;
 };
 
 const STORAGE_BUCKET_BY_TARGET_KIND: Record<StorageObjectTargetKind, "voice-samples" | "voice-consents" | "script-audios"> = {
@@ -98,7 +99,9 @@ function parseStorageObjectInput(input: unknown): { targetKind: StorageObjectTar
   }
 }
 
-function normalizeStorageError(error: StorageErrorLike | null | undefined): Exclude<StorageObjectDeleteResult["kind"], "request_succeeded"> {
+type ExternalStorageFailure = Exclude<StorageObjectDeleteResult["kind"], "request_succeeded" | "invalid_target">;
+
+function normalizeStorageError(error: StorageErrorLike | null | undefined): ExternalStorageFailure {
   const status = typeof error?.statusCode === "number" ? error.statusCode : error?.status;
   const message = `${error?.name ?? ""} ${error?.message ?? ""}`.toLowerCase();
 
@@ -126,9 +129,9 @@ function normalizeStorageError(error: StorageErrorLike | null | undefined): Excl
   return "protocol_error";
 }
 
-function toVerificationFailure(kind: Exclude<StorageObjectDeleteResult["kind"], "request_succeeded">): Exclude<
+function toVerificationFailure(kind: ExternalStorageFailure): Exclude<
   StorageObjectVerificationResult["kind"],
-  "absent" | "present"
+  "absent" | "present" | "invalid_target"
 > {
   return kind;
 }
@@ -150,7 +153,7 @@ export function createVoiceDeletionStorageAdapter(
   async function deleteObject(input: unknown): Promise<StorageObjectDeleteResult> {
     const target = parseStorageObjectInput(input);
     if (!target) {
-      return { kind: "rejected" };
+      return { kind: "invalid_target" };
     }
 
     try {
@@ -164,7 +167,7 @@ export function createVoiceDeletionStorageAdapter(
   async function verifyObjectAbsence(input: unknown): Promise<StorageObjectVerificationResult> {
     const target = parseStorageObjectInput(input);
     if (!target) {
-      return { kind: "rejected" };
+      return { kind: "invalid_target" };
     }
 
     const { parent, basename } = parentAndBasename(target.objectKey);

@@ -19,6 +19,7 @@ const RETRY_BASE_SECONDS = 5;
 const RETRY_CAP_SECONDS = 300;
 
 const STORAGE_TARGET_KINDS = ["voice_sample", "voice_consent_recording", "script_audio_storage"] as const;
+const NON_STORAGE_TARGET_KINDS = ["provider_voice", "script_audio", "saved_model_audio", "voice_binding"] as const;
 
 type StorageStepInput = {
   operationId: string;
@@ -49,6 +50,10 @@ function isStorageTargetKind(value: string): value is StorageObjectTargetKind {
   return (STORAGE_TARGET_KINDS as readonly string[]).includes(value);
 }
 
+function isStorageCleanupTarget(value: string) {
+  return !(NON_STORAGE_TARGET_KINDS as readonly string[]).includes(value);
+}
+
 function isFuture(value: string | null, now: Date) {
   return value !== null && Number.isFinite(Date.parse(value)) && Date.parse(value) > now.getTime();
 }
@@ -75,9 +80,10 @@ function isStorageStageComplete(
     reconciliation_status: string;
   }>
 ) {
-  const storageTargets = targets.filter((target) => isStorageTargetKind(target.target_kind));
+  const storageTargets = targets.filter((target) => isStorageCleanupTarget(target.target_kind));
   return storageTargets.every(
     (target) =>
+      isStorageTargetKind(target.target_kind) &&
       target.status === "verified_absent" &&
       target.delete_attempt_count >= 1 &&
       target.verification_status === "verified_absent" &&
@@ -187,7 +193,9 @@ export async function runVoiceDeletionStorageStep(
     }
 
     const targets = await dependencies.repository.listOperationTargets(input.operationId, input.userId);
-    const storageTargets = targets.filter((target) => isStorageTargetKind(target.target_kind));
+    // Known B4/non-Storage targets are intentionally excluded. Any other runtime
+    // target is kept here so the adapter can fail it closed and persist the result.
+    const storageTargets = targets.filter((target) => isStorageCleanupTarget(target.target_kind));
     if (storageTargets.some((target) => target.status === "manual_required")) {
       return { kind: "manual_required" };
     }
@@ -199,7 +207,7 @@ export async function runVoiceDeletionStorageStep(
     }
 
     const target = storageTargets.find((candidate) => candidate.status !== "verified_absent" && candidate.status !== "manual_required");
-    if (!target || !isStorageTargetKind(target.target_kind) || !target.storage_object_key) {
+    if (!target) {
       return { kind: "not_runnable" };
     }
 
@@ -276,10 +284,6 @@ export async function runVoiceDeletionStorageStep(
     if (begun.status === "manual_required") {
       return { kind: "manual_required" };
     }
-    if (!isStorageTargetKind(begun.target_kind) || !begun.storage_object_key) {
-      return { kind: "stale_result" };
-    }
-
     let deletion: StorageAdapterDeleteResult;
     try {
       deletion = await dependencies.storageAdapter.deleteObject({

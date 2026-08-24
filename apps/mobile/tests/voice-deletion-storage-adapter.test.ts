@@ -18,11 +18,6 @@ function createClient(options: { removeError?: unknown; listData?: unknown; list
   return { client: { storage: { from } }, from, remove, list };
 }
 
-function runtimeInput(input: unknown) {
-  // Deliberately bypass the compile-time union to exercise the adapter boundary.
-  return input as Parameters<VoiceDeletionStorageAdapter["deleteObject"]>[0];
-}
-
 describe("G5C-B3 exact Storage adapter", () => {
   it.each([
     ["voice_sample", "voice-samples", "user-a/consent-a/sample.webm"],
@@ -60,8 +55,8 @@ describe("G5C-B3 exact Storage adapter", () => {
     const adapter = createVoiceDeletionStorageAdapter(client as never);
 
     await expect(
-      adapter.deleteObject(runtimeInput({ targetKind: "recordings", objectKey: "user-a/take-a/recording.webm" }))
-    ).resolves.toEqual({ kind: "rejected" });
+      adapter.deleteObject({ targetKind: "recordings", objectKey: "user-a/take-a/recording.webm" })
+    ).resolves.toEqual({ kind: "invalid_target" });
     expect(from).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalled();
   });
@@ -71,8 +66,8 @@ describe("G5C-B3 exact Storage adapter", () => {
     const adapter = createVoiceDeletionStorageAdapter(client as never);
 
     await expect(
-      adapter.verifyObjectAbsence(runtimeInput({ targetKind: "recordings", objectKey: "user-a/take-a/recording.webm" }))
-    ).resolves.toEqual({ kind: "rejected" });
+      adapter.verifyObjectAbsence({ targetKind: "recordings", objectKey: "user-a/take-a/recording.webm" })
+    ).resolves.toEqual({ kind: "invalid_target" });
     expect(from).not.toHaveBeenCalled();
     expect(list).not.toHaveBeenCalled();
   });
@@ -89,16 +84,16 @@ describe("G5C-B3 exact Storage adapter", () => {
     const deleteClient = createClient();
     const deleteAdapter = createVoiceDeletionStorageAdapter(deleteClient.client as never);
     await expect(
-      deleteAdapter.deleteObject(runtimeInput({ targetKind, objectKey: "user-a/consent-a/sample.webm" }))
-    ).resolves.toEqual({ kind: "rejected" });
+      deleteAdapter.deleteObject({ targetKind, objectKey: "user-a/consent-a/sample.webm" })
+    ).resolves.toEqual({ kind: "invalid_target" });
     expect(deleteClient.from).not.toHaveBeenCalled();
     expect(deleteClient.remove).not.toHaveBeenCalled();
 
     const verificationClient = createClient();
     const verificationAdapter = createVoiceDeletionStorageAdapter(verificationClient.client as never);
     await expect(
-      verificationAdapter.verifyObjectAbsence(runtimeInput({ targetKind, objectKey: "user-a/consent-a/sample.webm" }))
-    ).resolves.toEqual({ kind: "rejected" });
+      verificationAdapter.verifyObjectAbsence({ targetKind, objectKey: "user-a/consent-a/sample.webm" })
+    ).resolves.toEqual({ kind: "invalid_target" });
     expect(verificationClient.from).not.toHaveBeenCalled();
     expect(verificationClient.list).not.toHaveBeenCalled();
   });
@@ -108,13 +103,13 @@ describe("G5C-B3 exact Storage adapter", () => {
     async (input) => {
       const deleteClient = createClient();
       const deleteAdapter = createVoiceDeletionStorageAdapter(deleteClient.client as never);
-      await expect(deleteAdapter.deleteObject(runtimeInput(input))).resolves.toEqual({ kind: "rejected" });
+      await expect(deleteAdapter.deleteObject(input)).resolves.toEqual({ kind: "invalid_target" });
       expect(deleteClient.from).not.toHaveBeenCalled();
       expect(deleteClient.remove).not.toHaveBeenCalled();
 
       const verificationClient = createClient();
       const verificationAdapter = createVoiceDeletionStorageAdapter(verificationClient.client as never);
-      await expect(verificationAdapter.verifyObjectAbsence(runtimeInput(input))).resolves.toEqual({ kind: "rejected" });
+      await expect(verificationAdapter.verifyObjectAbsence(input)).resolves.toEqual({ kind: "invalid_target" });
       expect(verificationClient.from).not.toHaveBeenCalled();
       expect(verificationClient.list).not.toHaveBeenCalled();
     }
@@ -126,8 +121,8 @@ describe("G5C-B3 exact Storage adapter", () => {
       const { client, from, remove, list } = createClient();
       const adapter = createVoiceDeletionStorageAdapter(client as never);
 
-      await expect(adapter.deleteObject({ targetKind, objectKey: "../recordings/a.webm" })).resolves.toEqual({ kind: "rejected" });
-      await expect(adapter.verifyObjectAbsence({ targetKind, objectKey: "../recordings/a.webm" })).resolves.toEqual({ kind: "rejected" });
+      await expect(adapter.deleteObject({ targetKind, objectKey: "../recordings/a.webm" })).resolves.toEqual({ kind: "invalid_target" });
+      await expect(adapter.verifyObjectAbsence({ targetKind, objectKey: "../recordings/a.webm" })).resolves.toEqual({ kind: "invalid_target" });
       expect(from).not.toHaveBeenCalled();
       expect(remove).not.toHaveBeenCalled();
       expect(list).not.toHaveBeenCalled();
@@ -141,6 +136,24 @@ describe("G5C-B3 exact Storage adapter", () => {
     await expect(adapter.deleteObject({ targetKind: "voice_sample", objectKey: "user-a/consent-a/sample.webm" })).resolves.toEqual({
       kind: "permission_denied"
     });
+  });
+
+  it("keeps a valid external Storage rejection distinct from local invalid_target", async () => {
+    const removeClient = createClient({ removeError: { message: "bad request", statusCode: 400 } });
+    const removeAdapter = createVoiceDeletionStorageAdapter(removeClient.client as never);
+    await expect(
+      removeAdapter.deleteObject({ targetKind: "voice_sample", objectKey: "user-a/consent-a/sample.webm" })
+    ).resolves.toEqual({ kind: "rejected" });
+    expect(removeClient.from).toHaveBeenCalledTimes(1);
+    expect(removeClient.remove).toHaveBeenCalledTimes(1);
+
+    const listClient = createClient({ listError: { message: "bad request", statusCode: 400 } });
+    const listAdapter = createVoiceDeletionStorageAdapter(listClient.client as never);
+    await expect(
+      listAdapter.verifyObjectAbsence({ targetKind: "voice_sample", objectKey: "user-a/consent-a/sample.webm" })
+    ).resolves.toEqual({ kind: "rejected" });
+    expect(listClient.from).toHaveBeenCalledTimes(1);
+    expect(listClient.list).toHaveBeenCalledTimes(1);
   });
 
   it("uses parent-prefix plus basename search and only exact equality for absence", async () => {

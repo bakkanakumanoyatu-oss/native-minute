@@ -49,7 +49,11 @@ function createFixture(options: FixtureOptions = {}) {
         ? "voice-samples"
         : targetKind === "voice_consent_recording"
           ? "voice-consents"
-          : "script-audios",
+          : targetKind === "script_audio_storage"
+            ? "script-audios"
+            : targetKind === "recordings"
+              ? "recordings"
+              : "invalid-runtime-bucket",
     storage_object_key: objectKey,
     source_row_id: "source-a",
     status: options.targetStatus ?? "pending",
@@ -120,10 +124,13 @@ function createFixture(options: FixtureOptions = {}) {
         target.verification_status = "pending";
         operation.status = "processing";
         operation.next_retry_at = null;
-      } else if (["auth_failed", "permission_denied", "rejected", "protocol_error"].includes(input.result)) {
+      } else if (["auth_failed", "permission_denied", "invalid_target"].includes(input.result)) {
         target.status = "manual_required";
         target.verification_status = "manual_required";
+        target.last_failure_category = input.result;
         operation.status = "manual_required";
+        operation.last_failure_category = input.result;
+        operation.next_retry_at = null;
       } else {
         target.status = "delete_requested";
         target.verification_status = "pending";
@@ -131,6 +138,9 @@ function createFixture(options: FixtureOptions = {}) {
         if (["timed_out", "rate_limited", "unavailable", "network_error", "protocol_error"].includes(input.result)) {
           operation.status = "partial_failure";
           operation.next_retry_at = "2026-08-24T00:00:05.000Z";
+        } else {
+          operation.status = "processing";
+          operation.next_retry_at = null;
         }
       }
       return target;
@@ -171,7 +181,10 @@ function createFixture(options: FixtureOptions = {}) {
       } else {
         target.status = "manual_required";
         target.verification_status = "manual_required";
+        target.last_failure_category = input.result;
         operation.status = "manual_required";
+        operation.last_failure_category = input.result;
+        operation.next_retry_at = null;
       }
       return target;
     })
@@ -243,27 +256,58 @@ describe("G5C-B3 one-object Storage runner", () => {
     expect(target.status).toBe("verified_absent");
   });
 
-  it("maps an adapter rejection to manual_required, never verified_absent", async () => {
+  it("keeps a valid external rejection verification-first rather than manual_required", async () => {
     const { repository, storageAdapter, target } = createFixture();
     storageAdapter.deleteObject.mockResolvedValue({ kind: "rejected" });
+    storageAdapter.verifyObjectAbsence.mockResolvedValue({ kind: "present" });
+
+    await expect(runVoiceDeletionStorageStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, storageAdapter))).resolves.toEqual({
+      kind: "progressed"
+    });
+    expect(storageAdapter.deleteObject).toHaveBeenCalledTimes(1);
+    expect(storageAdapter.verifyObjectAbsence).not.toHaveBeenCalled();
+    expect(target).toMatchObject({ status: "delete_requested", verification_status: "pending", last_failure_category: "rejected" });
+
+    await expect(runVoiceDeletionStorageStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, storageAdapter))).resolves.toEqual({
+      kind: "progressed"
+    });
+    expect(storageAdapter.verifyObjectAbsence).toHaveBeenCalledTimes(1);
+    expect(target).toMatchObject({ status: "delete_requested", verification_status: "present" });
+  });
+
+  it("persists a recordings runtime target as manual_required without storage_stage_complete", async () => {
+    const { repository, storageAdapter, target } = createFixture({ targetKind: "recordings" });
+    storageAdapter.deleteObject.mockResolvedValue({ kind: "invalid_target" });
 
     await expect(runVoiceDeletionStorageStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, storageAdapter))).resolves.toEqual({
       kind: "manual_required"
     });
     expect(storageAdapter.deleteObject).toHaveBeenCalledTimes(1);
     expect(storageAdapter.verifyObjectAbsence).not.toHaveBeenCalled();
-    expect(target).toMatchObject({ status: "manual_required", verification_status: "manual_required" });
+    expect(target).toMatchObject({
+      target_kind: "recordings",
+      status: "manual_required",
+      verification_status: "manual_required",
+      last_failure_category: "invalid_target"
+    });
   });
 
-  it("does not start an automatic recordings delete", async () => {
-    const { repository, storageAdapter, target } = createFixture({ targetKind: "recordings" });
+  it("persists an invalid verification result as manual_required without a retry", async () => {
+    const { repository, storageAdapter, operation, target } = createFixture({
+      targetKind: "recordings",
+      targetStatus: "delete_requested",
+      verificationStatus: "pending",
+      deleteAttempts: 1
+    });
+    storageAdapter.verifyObjectAbsence.mockResolvedValue({ kind: "invalid_target" });
 
     await expect(runVoiceDeletionStorageStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, storageAdapter))).resolves.toEqual({
-      kind: "storage_stage_complete"
+      kind: "manual_required"
     });
     expect(storageAdapter.deleteObject).not.toHaveBeenCalled();
-    expect(storageAdapter.verifyObjectAbsence).not.toHaveBeenCalled();
-    expect(target).toMatchObject({ target_kind: "recordings", status: "pending", verification_status: "pending" });
+    expect(storageAdapter.verifyObjectAbsence).toHaveBeenCalledTimes(1);
+    expect(operation).toMatchObject({ status: "manual_required", next_retry_at: null, last_failure_category: "invalid_target" });
+    expect(target).toMatchObject({ status: "manual_required", verification_status: "manual_required", last_failure_category: "invalid_target" });
   });
 
   it("uses verification present to enable a later delete retry without chaining calls", async () => {

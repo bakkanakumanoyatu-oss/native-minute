@@ -94,6 +94,7 @@ export type StorageObjectDeleteAttempt = Pick<VoiceDeletionLeaseClaim, "operatio
 export type StorageObjectDeleteResult = StorageObjectDeleteAttempt & {
   result:
     | "request_succeeded"
+    | "invalid_target"
     | "timed_out"
     | "rate_limited"
     | "unavailable"
@@ -114,6 +115,7 @@ export type StorageObjectVerificationResult = StorageObjectVerificationAttempt &
   result:
     | "absent"
     | "present"
+    | "invalid_target"
     | "timed_out"
     | "rate_limited"
     | "unavailable"
