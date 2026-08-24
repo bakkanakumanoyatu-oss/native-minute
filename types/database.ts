@@ -96,6 +96,8 @@ export type VoiceDeletionTargetVerificationStatus =
   | "present"
   | "unavailable"
   | "manual_required";
+export type VoiceAssetWriteIntentKind = "voice_create" | "script_audio_create";
+export type VoiceAssetWriteIntentStatus = "reserved" | "completed" | "cancelled" | "manual_required";
 
 export interface Database {
   public: {
@@ -284,6 +286,40 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
+      };
+      voice_asset_write_intents: {
+        Row: {
+          id: string;
+          user_id: string;
+          kind: VoiceAssetWriteIntentKind;
+          status: VoiceAssetWriteIntentStatus;
+          lease_token: string | null;
+          lease_expires_at: string | null;
+          script_id: string | null;
+          voice_id: string | null;
+          cache_key: string | null;
+          storage_bucket: string | null;
+          storage_object_key: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          kind: VoiceAssetWriteIntentKind;
+          status?: VoiceAssetWriteIntentStatus;
+          lease_token?: string | null;
+          lease_expires_at?: string | null;
+          script_id?: string | null;
+          voice_id?: string | null;
+          cache_key?: string | null;
+          storage_bucket?: string | null;
+          storage_object_key?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["voice_asset_write_intents"]["Insert"]>;
         Relationships: [];
       };
       voice_deletion_targets: {
@@ -904,6 +940,53 @@ export interface Database {
           p_targets: Json;
         };
         Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
+      reserve_voice_asset_write_intent: {
+        Args: {
+          p_user_id: string;
+          p_kind: VoiceAssetWriteIntentKind;
+          p_lease_token: string;
+          p_lease_seconds: number;
+          p_script_id?: string | null;
+          p_voice_id?: string | null;
+          p_cache_key?: string | null;
+          p_storage_bucket?: string | null;
+          p_storage_object_key?: string | null;
+        };
+        Returns: Database["public"]["Tables"]["voice_asset_write_intents"]["Row"];
+      };
+      cancel_voice_asset_write_intent: {
+        Args: {
+          p_intent_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_known_no_side_effect: boolean;
+        };
+        Returns: Database["public"]["Tables"]["voice_asset_write_intents"]["Row"];
+      };
+      finalize_voice_create_write_intent: {
+        Args: {
+          p_intent_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_consent_id: string;
+          p_provider_voice_id: string;
+          p_label: string;
+          p_sample_audio_path?: string | null;
+        };
+        Returns: Database["public"]["Tables"]["voices"]["Row"];
+      };
+      finalize_script_audio_write_intent: {
+        Args: {
+          p_intent_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_provider: string;
+          p_storage_path: string;
+          p_stored_asset: Json;
+          p_duration_seconds?: number | null;
+        };
+        Returns: Database["public"]["Tables"]["script_audios"]["Row"];
       };
       claim_voice_deletion_operation_lease: {
         Args: {

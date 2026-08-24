@@ -227,6 +227,7 @@ export async function stageScriptAudioForReplay(input: {
   voiceId: string;
   cacheKey: string;
   synthesized: SynthesizeResult;
+  reservedStorageObjectKey?: string;
 }): Promise<ScriptAudioReplayAsset> {
   return timeAsync("voice.replay.stage", async () => {
     // Fixed boundary for real providers:
@@ -259,13 +260,14 @@ export async function stageScriptAudioForReplay(input: {
     //
     // duration, waveform, provider latency, or provider model/version are not required to replay the cached audio.
     const resolved = resolveSynthesizeReplayInput(input.synthesized);
-    const objectKey = buildScriptAudioStorageObjectKey({
-      userId: input.userId,
-      scriptId: input.scriptId,
-      voiceId: input.voiceId,
-      cacheKey: input.cacheKey,
-      contentType: resolved.contentType
-    });
+    const objectKey = input.reservedStorageObjectKey ??
+      buildScriptAudioStorageObjectKey({
+        userId: input.userId,
+        scriptId: input.scriptId,
+        voiceId: input.voiceId,
+        cacheKey: input.cacheKey,
+        contentType: resolved.contentType
+      });
 
     const { error } = await timeAsync("voice.replay.storageUpload", () =>
       input.client.storage.from(SCRIPT_AUDIO_STORAGE_BUCKET).upload(objectKey, resolved.bytes, {

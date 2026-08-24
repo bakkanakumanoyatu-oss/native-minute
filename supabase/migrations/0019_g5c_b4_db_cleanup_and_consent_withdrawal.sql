@@ -13,6 +13,303 @@ alter table public.voice_deletion_operations
     array_position(consent_snapshot_ids, null) is null
   );
 
+-- A B4-only durable boundary for the two external writers that can expand the
+-- voice-deletion target universe. It is intentionally not a generic job table.
+create table if not exists public.voice_asset_write_intents (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  kind text not null,
+  status text not null default 'reserved',
+  lease_token uuid,
+  lease_expires_at timestamptz,
+  script_id uuid,
+  voice_id uuid,
+  cache_key text,
+  storage_bucket text,
+  storage_object_key text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint voice_asset_write_intents_kind_check check (
+    kind in ('voice_create', 'script_audio_create')
+  ),
+  constraint voice_asset_write_intents_status_check check (
+    status in ('reserved', 'completed', 'cancelled', 'manual_required')
+  ),
+  constraint voice_asset_write_intents_lease_check check (
+    (status = 'reserved' and lease_token is not null and lease_expires_at is not null)
+    or (status <> 'reserved' and lease_token is null and lease_expires_at is null)
+  ),
+  constraint voice_asset_write_intents_shape_check check (
+    (kind = 'voice_create'
+      and script_id is null and voice_id is null and cache_key is null
+      and storage_bucket is null and storage_object_key is null)
+    or
+    (kind = 'script_audio_create'
+      and script_id is not null and voice_id is not null and nullif(cache_key, '') is not null
+      and (
+        (status in ('reserved', 'manual_required')
+          and storage_bucket = 'script-audios' and nullif(storage_object_key, '') is not null)
+        or
+        (status in ('completed', 'cancelled')
+          and storage_bucket is null and storage_object_key is null)
+      ))
+  )
+);
+
+create unique index if not exists voice_asset_write_intents_user_unresolved_unique_idx
+  on public.voice_asset_write_intents (user_id)
+  where status in ('reserved', 'manual_required');
+
+create index if not exists voice_asset_write_intents_lease_expires_at_idx
+  on public.voice_asset_write_intents (lease_expires_at)
+  where status = 'reserved';
+
+drop trigger if exists set_voice_asset_write_intents_updated_at on public.voice_asset_write_intents;
+create trigger set_voice_asset_write_intents_updated_at
+  before update on public.voice_asset_write_intents
+  for each row execute function public.set_updated_at();
+
+alter table public.voice_asset_write_intents enable row level security;
+revoke all privileges on table public.voice_asset_write_intents from public, anon, authenticated, service_role;
+
+-- Every writer reservation and deletion seal for a user must call this exact
+-- helper. The lock key is transaction-scoped and derived only from canonical user_id.
+create or replace function public.g5c_b4_lock_voice_asset_user(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+begin
+  if p_user_id is null then
+    raise exception using errcode = 'invalid_parameter_value', message = 'voice asset user is required';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('g5c-b4-voice-assets:' || p_user_id::text, 0));
+end;
+$$;
+
+create or replace function public.reserve_voice_asset_write_intent(
+  p_user_id uuid,
+  p_kind text,
+  p_lease_token uuid,
+  p_lease_seconds integer,
+  p_script_id uuid default null,
+  p_voice_id uuid default null,
+  p_cache_key text default null,
+  p_storage_bucket text default null,
+  p_storage_object_key text default null
+)
+returns public.voice_asset_write_intents
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_intent public.voice_asset_write_intents;
+  v_script_user_id uuid;
+  v_voice_user_id uuid;
+  v_voice_provider text;
+begin
+  if p_user_id is null or p_kind not in ('voice_create', 'script_audio_create')
+    or p_lease_token is null or p_lease_seconds < 1 or p_lease_seconds > 900 then
+    raise exception using errcode = 'invalid_parameter_value', message = 'invalid voice asset writer reservation';
+  end if;
+
+  perform public.g5c_b4_lock_voice_asset_user(p_user_id);
+
+  if exists (
+    select 1 from public.voice_deletion_operations
+    where user_id = p_user_id and status in ('pending', 'processing', 'partial_failure', 'manual_required')
+  ) then
+    raise exception using errcode = 'object_in_use', message = 'voice_deletion_active';
+  end if;
+
+  if exists (
+    select 1 from public.voice_asset_write_intents
+    where user_id = p_user_id and status in ('reserved', 'manual_required')
+  ) then
+    raise exception using errcode = 'object_in_use', message = 'voice_asset_writer_in_progress';
+  end if;
+
+  if p_kind = 'voice_create' then
+    if p_script_id is not null or p_voice_id is not null or p_cache_key is not null
+      or p_storage_bucket is not null or p_storage_object_key is not null then
+      raise exception using errcode = 'invalid_parameter_value', message = 'invalid voice create reservation shape';
+    end if;
+  else
+    select user_id into v_script_user_id from public.scripts where id = p_script_id;
+    select user_id, provider into v_voice_user_id, v_voice_provider from public.voices where id = p_voice_id;
+
+    if v_script_user_id is distinct from p_user_id or v_voice_user_id is distinct from p_user_id
+      or nullif(p_cache_key, '') is null or p_storage_bucket <> 'script-audios'
+      or nullif(p_storage_object_key, '') is null
+      or p_storage_object_key not like p_user_id::text || '/' || p_script_id::text || '/' || p_voice_id::text || '/%'
+      or exists (
+        select 1 from public.script_audios
+        where script_id = p_script_id and voice_id = p_voice_id and cache_key = p_cache_key
+      ) then
+      raise exception using errcode = 'invalid_parameter_value', message = 'invalid script audio writer reservation';
+    end if;
+  end if;
+
+  insert into public.voice_asset_write_intents (
+    user_id, kind, lease_token, lease_expires_at,
+    script_id, voice_id, cache_key, storage_bucket, storage_object_key
+  ) values (
+    p_user_id, p_kind, p_lease_token, now() + make_interval(secs => p_lease_seconds),
+    p_script_id, p_voice_id, p_cache_key, p_storage_bucket, p_storage_object_key
+  ) returning * into v_intent;
+
+  return v_intent;
+end;
+$$;
+
+create or replace function public.cancel_voice_asset_write_intent(
+  p_intent_id uuid,
+  p_user_id uuid,
+  p_lease_token uuid,
+  p_known_no_side_effect boolean
+)
+returns public.voice_asset_write_intents
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_intent public.voice_asset_write_intents;
+begin
+  if p_known_no_side_effect is distinct from true then
+    raise exception using errcode = 'invalid_parameter_value', message = 'writer cancellation requires known no side effect';
+  end if;
+
+  perform public.g5c_b4_lock_voice_asset_user(p_user_id);
+
+  update public.voice_asset_write_intents
+  set status = 'cancelled', lease_token = null, lease_expires_at = null,
+      storage_bucket = null, storage_object_key = null
+  where id = p_intent_id and user_id = p_user_id and status = 'reserved'
+    and lease_token = p_lease_token
+  returning * into v_intent;
+
+  return v_intent;
+end;
+$$;
+
+create or replace function public.finalize_voice_create_write_intent(
+  p_intent_id uuid,
+  p_user_id uuid,
+  p_lease_token uuid,
+  p_consent_id uuid,
+  p_provider_voice_id text,
+  p_label text,
+  p_sample_audio_path text default null
+)
+returns public.voices
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_intent public.voice_asset_write_intents;
+  v_consent public.voice_consents;
+  v_voice public.voices;
+begin
+  perform public.g5c_b4_lock_voice_asset_user(p_user_id);
+
+  select * into v_intent from public.voice_asset_write_intents
+  where id = p_intent_id and user_id = p_user_id for update;
+  select * into v_consent from public.voice_consents
+  where id = p_consent_id and user_id = p_user_id;
+
+  if v_intent.id is null or v_intent.kind <> 'voice_create' or v_intent.status <> 'reserved'
+    or v_intent.lease_token is distinct from p_lease_token or v_intent.lease_expires_at <= now()
+    or v_consent.id is null or nullif(p_provider_voice_id, '') is null or nullif(p_label, '') is null
+    or not exists (
+      select 1 from public.processing_consents as processing_consent
+      where processing_consent.user_id = p_user_id
+        and processing_consent.consent_type = 'voice_cloning'
+        and processing_consent.consent_version = '2026-08-22.v1'
+        and processing_consent.purpose_id = 'voice_cloning'
+        and processing_consent.purpose_version = 'v1'
+        and processing_consent.provider_set = array['elevenlabs']::text[]
+        and processing_consent.data_categories = array['voice_sample', 'consent_recording', 'cloned_voice', 'reference_audio']::text[]
+        and processing_consent.status = 'active'
+    ) then
+    raise exception using errcode = 'check_violation', message = 'voice create writer finalization rejected';
+  end if;
+
+  insert into public.voices (
+    user_id, provider, consent_id, provider_voice_id, label, sample_audio_path, is_default
+  ) values (
+    p_user_id, v_consent.provider, p_consent_id, p_provider_voice_id, p_label, p_sample_audio_path, true
+  ) returning * into v_voice;
+
+  update public.voices set is_default = false
+  where user_id = p_user_id and id <> v_voice.id and is_default = true;
+
+  update public.voice_asset_write_intents
+  set status = 'completed', lease_token = null, lease_expires_at = null
+  where id = p_intent_id;
+
+  return v_voice;
+end;
+$$;
+
+create or replace function public.finalize_script_audio_write_intent(
+  p_intent_id uuid,
+  p_user_id uuid,
+  p_lease_token uuid,
+  p_provider text,
+  p_storage_path text,
+  p_stored_asset jsonb,
+  p_duration_seconds numeric default null
+)
+returns public.script_audios
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_intent public.voice_asset_write_intents;
+  v_script_user_id uuid;
+  v_voice_user_id uuid;
+  v_voice_provider text;
+  v_audio public.script_audios;
+begin
+  perform public.g5c_b4_lock_voice_asset_user(p_user_id);
+
+  select * into v_intent from public.voice_asset_write_intents
+  where id = p_intent_id and user_id = p_user_id for update;
+  select user_id into v_script_user_id from public.scripts where id = v_intent.script_id;
+  select user_id, provider into v_voice_user_id, v_voice_provider from public.voices where id = v_intent.voice_id;
+
+  if v_intent.id is null or v_intent.kind <> 'script_audio_create' or v_intent.status <> 'reserved'
+    or v_intent.lease_token is distinct from p_lease_token or v_intent.lease_expires_at <= now()
+    or v_script_user_id is distinct from p_user_id or v_voice_user_id is distinct from p_user_id
+    or p_provider is distinct from v_voice_provider or nullif(p_storage_path, '') is null
+    or jsonb_typeof(p_stored_asset) <> 'object'
+    or p_stored_asset ->> 'storageBucket' is distinct from v_intent.storage_bucket
+    or p_stored_asset ->> 'storageObjectKey' is distinct from v_intent.storage_object_key then
+    raise exception using errcode = 'check_violation', message = 'script audio writer finalization rejected';
+  end if;
+
+  insert into public.script_audios (
+    script_id, voice_id, provider, cache_key, storage_path, stored_asset, duration_seconds
+  ) values (
+    v_intent.script_id, v_intent.voice_id, p_provider, v_intent.cache_key,
+    p_storage_path, p_stored_asset, p_duration_seconds
+  ) returning * into v_audio;
+
+  update public.voice_asset_write_intents
+  set status = 'completed', lease_token = null, lease_expires_at = null,
+      storage_bucket = null, storage_object_key = null
+  where id = p_intent_id;
+
+  return v_audio;
+end;
+$$;
+
 -- The existing completion RPC deliberately remains outside B4. This focused guard
 -- prevents a future completion from retaining a sealed consent-ID snapshot, while
 -- keeping B4 itself from scrubbing it early.
@@ -121,8 +418,9 @@ security definer
 set search_path = pg_catalog, public
 as $$
 begin
-  if new.provider = 'elevenlabs'
-    and public.g5c_b4_voice_deletion_writer_fence_active(new.user_id) then
+  if (new.provider = 'elevenlabs' and public.g5c_b4_voice_deletion_writer_fence_active(new.user_id))
+    or (tg_op = 'UPDATE' and old.provider = 'elevenlabs'
+      and public.g5c_b4_voice_deletion_writer_fence_active(old.user_id)) then
     raise exception using
       errcode = 'check_violation',
       message = 'voice deletion writer fence is active';
@@ -139,8 +437,9 @@ security definer
 set search_path = pg_catalog, public
 as $$
 begin
-  if new.provider = 'elevenlabs'
-    and public.g5c_b4_voice_deletion_writer_fence_active(new.user_id) then
+  if (new.provider = 'elevenlabs' and public.g5c_b4_voice_deletion_writer_fence_active(new.user_id))
+    or (tg_op = 'UPDATE' and old.provider = 'elevenlabs'
+      and public.g5c_b4_voice_deletion_writer_fence_active(old.user_id)) then
     raise exception using
       errcode = 'check_violation',
       message = 'voice deletion writer fence is active';
@@ -157,19 +456,39 @@ security definer
 set search_path = pg_catalog, public
 as $$
 declare
-  v_user_id uuid;
-  v_voice_provider text;
+  v_new_script_user_id uuid;
+  v_new_voice_user_id uuid;
+  v_new_voice_provider text;
+  v_old_script_user_id uuid;
+  v_old_voice_user_id uuid;
+  v_old_voice_provider text;
 begin
-  select script.user_id, voice.provider
-  into v_user_id, v_voice_provider
+  select script.user_id, voice.user_id, voice.provider
+  into v_new_script_user_id, v_new_voice_user_id, v_new_voice_provider
   from public.scripts as script
   left join public.voices as voice on voice.id = new.voice_id
   where script.id = new.script_id;
 
-  if not found
-    or (new.voice_id is not null and v_voice_provider is null)
-    or (new.voice_id is not null and v_voice_provider = 'elevenlabs'
-      and public.g5c_b4_voice_deletion_writer_fence_active(v_user_id)) then
+  if not found or new.voice_id is null or v_new_voice_user_id is distinct from v_new_script_user_id
+    or v_new_voice_provider is distinct from new.provider then
+    raise exception using
+      errcode = 'check_violation',
+      message = 'script audio ownership or provider relation is invalid';
+  end if;
+
+  if tg_op = 'UPDATE' then
+    select script.user_id, voice.user_id, voice.provider
+    into v_old_script_user_id, v_old_voice_user_id, v_old_voice_provider
+    from public.scripts as script
+    left join public.voices as voice on voice.id = old.voice_id
+    where script.id = old.script_id;
+  end if;
+
+  if (v_new_voice_provider = 'elevenlabs'
+      and public.g5c_b4_voice_deletion_writer_fence_active(v_new_script_user_id))
+    or (tg_op = 'UPDATE' and v_old_voice_provider = 'elevenlabs'
+      and (public.g5c_b4_voice_deletion_writer_fence_active(v_old_script_user_id)
+        or public.g5c_b4_voice_deletion_writer_fence_active(v_old_voice_user_id))) then
     raise exception using
       errcode = 'check_violation',
       message = 'voice deletion writer fence is active';
@@ -186,22 +505,42 @@ security definer
 set search_path = pg_catalog, public
 as $$
 declare
-  v_script_owner uuid;
-  v_audio_script_id uuid;
-  v_voice_provider text;
+  v_new_script_owner uuid;
+  v_new_audio_script_id uuid;
+  v_new_voice_provider text;
+  v_old_script_owner uuid;
+  v_old_audio_script_id uuid;
+  v_old_voice_provider text;
 begin
   select script.user_id, audio.script_id, voice.provider
-  into v_script_owner, v_audio_script_id, v_voice_provider
+  into v_new_script_owner, v_new_audio_script_id, v_new_voice_provider
   from public.script_audios as audio
   join public.scripts as script on script.id = audio.script_id
   left join public.voices as voice on voice.id = audio.voice_id
   where audio.id = new.script_audio_id;
 
   if not found
-    or v_script_owner <> new.user_id
-    or v_audio_script_id <> new.script_id
-    or (v_voice_provider = 'elevenlabs'
-      and public.g5c_b4_voice_deletion_writer_fence_active(new.user_id)) then
+    or v_new_script_owner is distinct from new.user_id
+    or v_new_audio_script_id is distinct from new.script_id then
+    raise exception using
+      errcode = 'check_violation',
+      message = 'saved model audio ownership relation is invalid';
+  end if;
+
+  if tg_op = 'UPDATE' then
+    select script.user_id, audio.script_id, voice.provider
+    into v_old_script_owner, v_old_audio_script_id, v_old_voice_provider
+    from public.script_audios as audio
+    join public.scripts as script on script.id = audio.script_id
+    left join public.voices as voice on voice.id = audio.voice_id
+    where audio.id = old.script_audio_id;
+  end if;
+
+  if (v_new_voice_provider = 'elevenlabs'
+      and public.g5c_b4_voice_deletion_writer_fence_active(new.user_id))
+    or (tg_op = 'UPDATE' and v_old_voice_provider = 'elevenlabs'
+      and (public.g5c_b4_voice_deletion_writer_fence_active(old.user_id)
+        or public.g5c_b4_voice_deletion_writer_fence_active(v_old_script_owner))) then
     raise exception using
       errcode = 'check_violation',
       message = 'voice deletion writer fence is active';
@@ -218,17 +557,19 @@ security definer
 set search_path = pg_catalog, public
 as $$
 declare
-  v_owner_id uuid;
+  v_row_id uuid;
 begin
-  v_owner_id := case when tg_op = 'DELETE' then old.user_id else new.user_id end;
+  v_row_id := case when tg_op = 'DELETE' then old.id else new.id end;
 
-  if public.g5c_b4_voice_deletion_writer_fence_active(v_owner_id)
-    and exists (
+  if ((tg_op = 'DELETE' and public.g5c_b4_voice_deletion_writer_fence_active(old.user_id))
+      or (tg_op = 'UPDATE' and (
+        public.g5c_b4_voice_deletion_writer_fence_active(old.user_id)
+        or public.g5c_b4_voice_deletion_writer_fence_active(new.user_id)
+      ))) and exists (
       select 1
       from public.script_audios as audio
       join public.voices as voice on voice.id = audio.voice_id
-      where audio.script_id = case when tg_op = 'DELETE' then old.id else new.id end
-        and voice.user_id = v_owner_id
+      where audio.script_id = v_row_id
         and voice.provider = 'elevenlabs'
     ) then
     raise exception using
@@ -305,6 +646,139 @@ create policy "voice_consents_insert_own"
   to authenticated
   with check (auth.uid() = user_id);
 
+-- Replace the canonical B1 target seal from this forward migration so target
+-- collection and writer reservation serialize on the same user-scoped lock.
+create or replace function public.seal_voice_deletion_snapshot(
+  p_operation_id uuid,
+  p_user_id uuid,
+  p_targets jsonb
+)
+returns public.voice_deletion_operations
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_operation public.voice_deletion_operations;
+begin
+  if jsonb_typeof(p_targets) <> 'array' then
+    raise exception 'voice deletion snapshot targets must be an array';
+  end if;
+
+  perform public.g5c_b4_lock_voice_asset_user(p_user_id);
+
+  select * into v_operation
+  from public.voice_deletion_operations
+  where id = p_operation_id and user_id = p_user_id
+  for update;
+
+  if not found then
+    raise exception 'voice deletion operation not found or access denied';
+  end if;
+
+  if v_operation.snapshot_status <> 'pending' or v_operation.destructive_started_at is not null then
+    raise exception 'voice deletion snapshot is already sealed or not runnable';
+  end if;
+
+  update public.voice_asset_write_intents
+  set status = 'manual_required', lease_token = null, lease_expires_at = null
+  where user_id = p_user_id and status = 'reserved' and lease_expires_at <= now();
+
+  if exists (
+    select 1 from public.voice_asset_write_intents
+    where user_id = p_user_id and status = 'manual_required'
+  ) then
+    update public.voice_deletion_operations
+    set status = 'manual_required', current_stage = 'snapshot', snapshot_status = 'manual_required',
+        last_failure_stage = 'snapshot', last_failure_category = 'writer_intent_manual_required',
+        manual_reason_category = 'writer_intent_manual_required', manual_required_at = now(),
+        next_retry_at = null, last_attempted_at = now()
+    where id = p_operation_id and user_id = p_user_id
+    returning * into v_operation;
+    return v_operation;
+  end if;
+
+  if exists (
+    select 1 from public.voice_asset_write_intents
+    where user_id = p_user_id and status = 'reserved'
+  ) then
+    raise exception using errcode = 'object_in_use', message = 'writer_in_progress';
+  end if;
+
+  -- The inventory payload was collected before this transaction. Re-resolve every
+  -- writer-expandable DB row under the same lock so a completed writer cannot make
+  -- a stale payload authoritative.
+  if exists (
+    select 1 from public.voices as voice
+    where voice.user_id = p_user_id and voice.provider = 'elevenlabs'
+      and (
+        (select count(*) from jsonb_array_elements(p_targets) as target(value)
+          where target.value ->> 'target_kind' = 'voice_binding'
+            and target.value ->> 'source_row_id' = voice.id::text) <> 1
+        or
+        (select count(*) from jsonb_array_elements(p_targets) as target(value)
+          where target.value ->> 'target_kind' = 'provider_voice'
+            and target.value ->> 'source_row_id' = voice.id::text
+            and target.value ->> 'provider_name' = 'elevenlabs'
+            and target.value ->> 'provider_resource_id' = voice.provider_voice_id) <> 1
+      )
+  ) or exists (
+    select 1
+    from public.script_audios as audio
+    join public.scripts as script on script.id = audio.script_id
+    join public.voices as voice on voice.id = audio.voice_id
+    where script.user_id = p_user_id and voice.user_id = p_user_id and voice.provider = 'elevenlabs'
+      and (
+        (select count(*) from jsonb_array_elements(p_targets) as target(value)
+          where target.value ->> 'target_kind' = 'script_audio'
+            and target.value ->> 'source_row_id' = audio.id::text) <> 1
+        or
+        not exists (
+          select 1 from jsonb_array_elements(p_targets) as target(value)
+          where target.value ->> 'target_kind' = 'script_audio_storage'
+            and target.value ->> 'storage_bucket' = audio.stored_asset ->> 'storageBucket'
+            and target.value ->> 'storage_object_key' = audio.stored_asset ->> 'storageObjectKey'
+        )
+      )
+  ) or exists (
+    select 1
+    from public.script_saved_model_audios as saved
+    join public.script_audios as audio on audio.id = saved.script_audio_id
+    join public.scripts as script on script.id = audio.script_id
+    join public.voices as voice on voice.id = audio.voice_id
+    where saved.user_id = p_user_id and script.user_id = p_user_id
+      and voice.user_id = p_user_id and voice.provider = 'elevenlabs'
+      and (select count(*) from jsonb_array_elements(p_targets) as target(value)
+        where target.value ->> 'target_kind' = 'saved_model_audio'
+          and target.value ->> 'source_row_id' = saved.id::text) <> 1
+  ) then
+    raise exception using errcode = 'serialization_failure', message = 'voice_asset_snapshot_stale';
+  end if;
+
+  insert into public.voice_deletion_targets (
+    operation_id, user_id, target_kind, source_row_id, provider_name,
+    provider_resource_id, storage_bucket, storage_object_key, target_fingerprint
+  )
+  select
+    p_operation_id, p_user_id, target.value ->> 'target_kind',
+    nullif(target.value ->> 'source_row_id', '')::uuid,
+    nullif(target.value ->> 'provider_name', ''),
+    nullif(target.value ->> 'provider_resource_id', ''),
+    nullif(target.value ->> 'storage_bucket', ''),
+    nullif(target.value ->> 'storage_object_key', ''),
+    nullif(target.value ->> 'target_fingerprint', '')
+  from jsonb_array_elements(p_targets) as target(value);
+
+  update public.voice_deletion_operations
+  set snapshot_status = 'succeeded', snapshot_at = now(),
+      snapshot_attempt_count = snapshot_attempt_count + 1, last_attempted_at = now()
+  where id = p_operation_id and user_id = p_user_id
+  returning * into v_operation;
+
+  return v_operation;
+end;
+$$;
+
 create or replace function public.seal_voice_deletion_consent_snapshot(
   p_operation_id uuid,
   p_user_id uuid,
@@ -322,6 +796,8 @@ declare
   v_target_voice_count integer := 0;
   v_latest_consent_id uuid;
 begin
+  perform public.g5c_b4_lock_voice_asset_user(p_user_id);
+
   select * into v_operation
   from public.voice_deletion_operations
   where id = p_operation_id and user_id = p_user_id
@@ -339,6 +815,32 @@ begin
     or v_operation.lease_expires_at <= now()
     or v_operation.runner_attempt_count <> p_expected_runner_attempt_count then
     return null;
+  end if;
+
+  update public.voice_asset_write_intents
+  set status = 'manual_required', lease_token = null, lease_expires_at = null
+  where user_id = p_user_id and status = 'reserved' and lease_expires_at <= now();
+
+  if exists (
+    select 1 from public.voice_asset_write_intents
+    where user_id = p_user_id and status = 'manual_required'
+  ) then
+    update public.voice_deletion_operations
+    set status = 'manual_required', current_stage = 'consent_withdrawal',
+        consent_snapshot_state = 'manual_required', consent_withdrawal_status = 'manual_required',
+        last_failure_stage = 'consent_withdrawal', last_failure_category = 'writer_intent_manual_required',
+        manual_reason_category = 'writer_intent_manual_required', manual_required_at = now(),
+        next_retry_at = null, last_attempted_at = now()
+    where id = p_operation_id and user_id = p_user_id
+    returning * into v_operation;
+    return v_operation;
+  end if;
+
+  if exists (
+    select 1 from public.voice_asset_write_intents
+    where user_id = p_user_id and status = 'reserved'
+  ) then
+    raise exception using errcode = 'object_in_use', message = 'writer_in_progress';
   end if;
 
   lock table public.processing_consents, public.voices, public.scripts, public.script_audios, public.script_saved_model_audios in share row exclusive mode;
@@ -679,6 +1181,68 @@ begin
     select 1
     from public.voice_deletion_targets as target
     left join public.script_saved_model_audios as saved on saved.id = target.source_row_id
+    where target.operation_id = p_operation_id and target.user_id = p_user_id
+      and target.target_kind = 'saved_model_audio' and target.status <> 'verified_absent'
+      and saved.id is null
+  ) then
+    v_manual_reason := 'pending_saved_model_audio_source_missing';
+  elsif exists (
+    select 1
+    from public.voice_deletion_targets as target
+    left join public.script_audios as audio on audio.id = target.source_row_id
+    where target.operation_id = p_operation_id and target.user_id = p_user_id
+      and target.target_kind = 'script_audio' and target.status <> 'verified_absent'
+      and audio.id is null
+  ) then
+    v_manual_reason := 'pending_script_audio_source_missing';
+  elsif exists (
+    select 1
+    from public.voice_deletion_targets as target
+    left join public.voices as voice on voice.id = target.source_row_id
+    where target.operation_id = p_operation_id and target.user_id = p_user_id
+      and target.target_kind = 'voice_binding' and target.status <> 'verified_absent'
+      and voice.id is null
+  ) then
+    v_manual_reason := 'pending_voice_binding_source_missing';
+  elsif exists (
+    select 1
+    from public.voice_deletion_targets as binding_target
+    join public.script_audios as dependent_audio on dependent_audio.voice_id = binding_target.source_row_id
+    left join public.scripts as dependent_script on dependent_script.id = dependent_audio.script_id
+    where binding_target.operation_id = p_operation_id and binding_target.user_id = p_user_id
+      and binding_target.target_kind = 'voice_binding'
+      and (
+        dependent_script.user_id is distinct from p_user_id
+        or not exists (
+          select 1 from public.voice_deletion_targets as audio_target
+          where audio_target.operation_id = p_operation_id and audio_target.user_id = p_user_id
+            and audio_target.target_kind = 'script_audio'
+            and audio_target.source_row_id = dependent_audio.id
+        )
+      )
+  ) then
+    v_manual_reason := 'voice_binding_cross_user_or_unsealed_dependent';
+  elsif exists (
+    select 1
+    from public.voice_deletion_targets as audio_target
+    join public.script_saved_model_audios as dependent_saved on dependent_saved.script_audio_id = audio_target.source_row_id
+    where audio_target.operation_id = p_operation_id and audio_target.user_id = p_user_id
+      and audio_target.target_kind = 'script_audio'
+      and (
+        dependent_saved.user_id is distinct from p_user_id
+        or not exists (
+          select 1 from public.voice_deletion_targets as saved_target
+          where saved_target.operation_id = p_operation_id and saved_target.user_id = p_user_id
+            and saved_target.target_kind = 'saved_model_audio'
+            and saved_target.source_row_id = dependent_saved.id
+        )
+      )
+  ) then
+    v_manual_reason := 'script_audio_cross_user_or_unsealed_dependent';
+  elsif exists (
+    select 1
+    from public.voice_deletion_targets as target
+    left join public.script_saved_model_audios as saved on saved.id = target.source_row_id
     left join public.script_audios as audio on audio.id = saved.script_audio_id
     left join public.scripts as script on script.id = audio.script_id
     where target.operation_id = p_operation_id and target.user_id = p_user_id
@@ -772,8 +1336,7 @@ begin
   end if;
 
   delete from public.script_saved_model_audios as saved
-  where saved.user_id = p_user_id
-    and saved.id in (
+  where saved.id in (
       select target.source_row_id from public.voice_deletion_targets as target
       where target.operation_id = p_operation_id and target.user_id = p_user_id
         and target.target_kind = 'saved_model_audio'
@@ -836,6 +1399,11 @@ $$;
 
 revoke all on function public.g5c_b4_is_current_voice_cloning_consent(uuid, uuid) from public, anon, authenticated, service_role;
 revoke all on function public.g5c_b4_voice_deletion_writer_fence_active(uuid) from public, anon, authenticated, service_role;
+revoke all on function public.g5c_b4_lock_voice_asset_user(uuid) from public, anon, authenticated, service_role;
+revoke all on function public.reserve_voice_asset_write_intent(uuid, text, uuid, integer, uuid, uuid, text, text, text) from public, anon, authenticated, service_role;
+revoke all on function public.cancel_voice_asset_write_intent(uuid, uuid, uuid, boolean) from public, anon, authenticated, service_role;
+revoke all on function public.finalize_voice_create_write_intent(uuid, uuid, uuid, uuid, text, text, text) from public, anon, authenticated, service_role;
+revoke all on function public.finalize_script_audio_write_intent(uuid, uuid, uuid, text, text, jsonb, numeric) from public, anon, authenticated, service_role;
 revoke all on function public.enforce_g5c_b4_consent_snapshot_immutability() from public, anon, authenticated, service_role;
 revoke all on function public.enforce_g5c_b4_processing_consent_writer_fence() from public, anon, authenticated, service_role;
 revoke all on function public.enforce_g5c_b4_voice_consent_writer_fence() from public, anon, authenticated, service_role;
@@ -847,6 +1415,10 @@ revoke all on function public.seal_voice_deletion_consent_snapshot(uuid, uuid, u
 revoke all on function public.withdraw_voice_deletion_current_consents(uuid, uuid, uuid, integer) from public, anon, authenticated, service_role;
 revoke all on function public.enter_voice_deletion_database_cleanup_stage(uuid, uuid, uuid, integer) from public, anon, authenticated, service_role;
 revoke all on function public.cleanup_voice_deletion_database_targets(uuid, uuid, uuid, integer) from public, anon, authenticated, service_role;
+grant execute on function public.reserve_voice_asset_write_intent(uuid, text, uuid, integer, uuid, uuid, text, text, text) to service_role;
+grant execute on function public.cancel_voice_asset_write_intent(uuid, uuid, uuid, boolean) to service_role;
+grant execute on function public.finalize_voice_create_write_intent(uuid, uuid, uuid, uuid, text, text, text) to service_role;
+grant execute on function public.finalize_script_audio_write_intent(uuid, uuid, uuid, text, text, jsonb, numeric) to service_role;
 grant execute on function public.seal_voice_deletion_consent_snapshot(uuid, uuid, uuid, integer) to service_role;
 grant execute on function public.withdraw_voice_deletion_current_consents(uuid, uuid, uuid, integer) to service_role;
 grant execute on function public.enter_voice_deletion_database_cleanup_stage(uuid, uuid, uuid, integer) to service_role;

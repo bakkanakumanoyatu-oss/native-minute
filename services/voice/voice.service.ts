@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
 import { timeAsync } from "@/lib/performance/timing";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -39,12 +40,14 @@ import {
   type VoiceGenerationQuotaKeys
 } from "@/services/quota";
 import { buildScriptAudioCacheKey } from "./cache";
+import { createVoiceAssetWriteIntentRepository } from "./voice-asset-write-intent.repository";
 import {
   decodeStoredAssetMetadata,
   encodeStoredAssetMetadata,
   stageScriptAudioForReplay,
   type ScriptAudioReplayAsset
 } from "./replay.service";
+import { SCRIPT_AUDIO_STORAGE_BUCKET, buildScriptAudioStorageObjectKey } from "./replay-storage";
 
 type VoiceConsentRow = Database["public"]["Tables"]["voice_consents"]["Row"];
 type VoiceRow = Database["public"]["Tables"]["voices"]["Row"];
@@ -92,12 +95,6 @@ type UpdateSingleBuilder<TUpdate, TRow> = {
   };
 };
 
-type VoicesUpdateBuilder = {
-  eq(column: "user_id" | "is_default", value: string | boolean): VoicesUpdateBuilder;
-  neq(column: "id", value: string): Promise<{ error: PostgrestErrorLike | null }>;
-};
-
-type VoiceBindingWriteClient = Pick<AppSupabaseClient, "from">;
 type ScriptAudioWriteClient = Pick<AppSupabaseClient, "from">;
 
 function asMaybeSingle<TRow>(value: unknown) {
@@ -122,16 +119,6 @@ async function assertAuthenticatedVoiceMutationUser(client: AppSupabaseClient, u
   if (user.id !== userId) {
     throw new AppError(403, "voice binding の所有者確認に失敗しました。");
   }
-}
-
-function createServerOwnedVoiceBindingWriter(): VoiceBindingWriteClient {
-  if (!getSupabaseServiceRoleKey().trim()) {
-    throw new AppError(503, "voice binding の保存に必要なサーバー設定が未完了です。");
-  }
-
-  // `voices` has no authenticated mutation policies. This server-only client is
-  // intentionally created only after the request client re-resolves the owner.
-  return createSupabaseAdminClient() as unknown as VoiceBindingWriteClient;
 }
 
 function createServerOwnedScriptAudioWriter(): ScriptAudioWriteClient {
@@ -495,55 +482,6 @@ async function getOwnedConsent(client: AppSupabaseClient, userId: string, consen
   return data;
 }
 
-async function saveVoiceRecord(
-  userId: string,
-  consent: VoiceConsentRow,
-  providerVoiceId: string,
-  input: {
-    label: string;
-    sampleAudioPath: string | null;
-  }
-) {
-  const writer = createServerOwnedVoiceBindingWriter();
-  const voices = writer.from("voices") as unknown as InsertSingleBuilder<
-    Database["public"]["Tables"]["voices"]["Insert"],
-    VoiceRow
-  >;
-
-  const { data, error } = await voices
-    .insert({
-      user_id: userId,
-      provider: consent.provider,
-      consent_id: consent.id,
-      provider_voice_id: providerVoiceId,
-      label: input.label,
-      sample_audio_path: input.sampleAudioPath,
-      is_default: true
-    })
-    .select("*")
-    .single();
-
-  if (error) {
-    throw mapVoiceError("voice の保存", error);
-  }
-
-  const voicesTable = writer.from("voices") as unknown as {
-    update(values: Database["public"]["Tables"]["voices"]["Update"]): VoicesUpdateBuilder;
-  };
-
-  const { error: unsetError } = await voicesTable
-    .update({ is_default: false })
-    .eq("user_id", userId)
-    .eq("is_default", true)
-    .neq("id", data.id);
-
-  if (unsetError) {
-    throw mapVoiceError("default voice の更新", unsetError);
-  }
-
-  return data;
-}
-
 export async function createUserVoice(client: AppSupabaseClient, userId: string, input: CreateVoiceRequestInput) {
   // Every voice write starts by re-resolving the authenticated server request.
   // The supplied userId is an ownership scope, never an authority by itself.
@@ -604,6 +542,13 @@ export async function createUserVoice(client: AppSupabaseClient, userId: string,
   }
 
   const provider = createConfiguredVoiceProvider();
+  const writeIntents = createVoiceAssetWriteIntentRepository();
+  const reservation = await writeIntents.reserve({
+    userId,
+    kind: "voice_create",
+    leaseToken: randomUUID(),
+    leaseSeconds: 900
+  });
   // Fixed boundary:
   // - service resolves owned sample references before provider calls
   // - provider adapter handles multipart/provider-specific createVoice details
@@ -617,7 +562,11 @@ export async function createUserVoice(client: AppSupabaseClient, userId: string,
     sampleAudioPath: trimmedSampleAudioPath || undefined
   });
 
-  return saveVoiceRecord(userId, consent, created.providerVoiceId, {
+  return writeIntents.finalizeVoice({
+    ...reservation,
+    userId,
+    consentId: consent.id,
+    providerVoiceId: created.providerVoiceId,
     label: input.label,
     sampleAudioPath: resolvedSampleAudio?.audioPath ?? (trimmedSampleAudioPath || null)
   });
@@ -740,38 +689,6 @@ async function assertServerOwnedScriptAudioWrite(
   }
 
   return { script, voice, writer: createServerOwnedScriptAudioWriter() };
-}
-
-async function insertServerOwnedScriptAudio(
-  client: AppSupabaseClient,
-  userId: string,
-  input: {
-    values: Database["public"]["Tables"]["script_audios"]["Insert"];
-    voiceStylePreset: string;
-  }
-) {
-  const { writer } = await assertServerOwnedScriptAudioWrite(client, userId, {
-    scriptId: input.values.script_id,
-    voiceId: input.values.voice_id ?? "",
-    provider: input.values.provider,
-    cacheKey: input.values.cache_key,
-    voiceStylePreset: input.voiceStylePreset
-  });
-  const scriptAudios = writer.from("script_audios") as unknown as InsertSingleBuilder<
-    Database["public"]["Tables"]["script_audios"]["Insert"],
-    ScriptAudioRow
-  >;
-
-  const { data, error } = await scriptAudios
-    .insert(input.values)
-    .select("*")
-    .single();
-
-  if (error) {
-    throw mapVoiceError("見本音声キャッシュの保存", error);
-  }
-
-  return data;
 }
 
 async function ensureServerOwnedScriptAudioPlaybackPath(
@@ -979,6 +896,26 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
     throw new AppError(503, providerStatus.message ?? `VOICE_PROVIDER=${providerStatus.provider} は current repo では利用できません。`);
   }
 
+  await assertAuthenticatedVoiceMutationUser(client, userId);
+  const reservedStorageObjectKey = buildScriptAudioStorageObjectKey({
+    userId,
+    scriptId: script.id,
+    voiceId: selectedVoice.id,
+    cacheKey,
+    contentType: "application/octet-stream"
+  });
+  const writeIntents = createVoiceAssetWriteIntentRepository();
+  const reservation = await writeIntents.reserve({
+    userId,
+    kind: "script_audio_create",
+    leaseToken: randomUUID(),
+    leaseSeconds: 900,
+    scriptId: script.id,
+    voiceId: selectedVoice.id,
+    cacheKey,
+    storageBucket: SCRIPT_AUDIO_STORAGE_BUCKET,
+    storageObjectKey: reservedStorageObjectKey
+  });
   const provider = createConfiguredVoiceProvider();
   const quotaEvent: QuotaEventRef | null = await withNonBlockingQuotaEventWrite("record voice generation quota attempt", () =>
     recordVoiceQuotaEventAttempt({
@@ -1019,7 +956,8 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
         scriptId: script.id,
         voiceId: selectedVoice.id,
         cacheKey,
-        synthesized
+        synthesized,
+        reservedStorageObjectKey
       }));
     } catch (error) {
       await markFailedVoiceQuotaEvent(quotaEvent, quotaContext, "storage_staging", {
@@ -1032,39 +970,29 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   let insertedAudio: ScriptAudioRow | null = null;
   try {
     const newAudio = await timeAsync("voice.speakScript.insertAudio", () =>
-      insertServerOwnedScriptAudio(client, userId, {
-        voiceStylePreset,
-        values: {
-          script_id: script.id,
-          voice_id: selectedVoice.id,
-          provider: selectedVoice.provider,
-          cache_key: cacheKey,
-          // script_audios stores the app-owned replay reference, not a provider URL.
-          storage_path: replayAsset.storagePath,
-          stored_asset: encodeStoredAssetMetadata(replayAsset.storedAsset),
-          duration_seconds: null
-        }
+      writeIntents.finalizeScriptAudio({
+        ...reservation,
+        userId,
+        provider: selectedVoice.provider,
+        // script_audios stores the app-owned replay reference, not a provider URL.
+        storagePath: replayAsset.storagePath,
+        storedAsset: encodeStoredAssetMetadata(replayAsset.storedAsset),
+        durationSeconds: null
       })
     );
     insertedAudio = await timeAsync("voice.speakScript.ensureInsertedPlaybackPath", () =>
       ensureServerOwnedScriptAudioPlaybackPath(client, userId, newAudio, voiceStylePreset)
     );
   } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
+    await markFailedVoiceQuotaEvent(quotaEvent, quotaContext, "cache_lookup", {
+      replayAsset,
+      providerRequestId: synthesized.providerRequestId,
+      partial: true
+    });
 
-    const message = error instanceof Error ? error.message : "";
-
-    if (!message.includes("duplicate") && !message.includes("unique")) {
-      await markFailedVoiceQuotaEvent(quotaEvent, quotaContext, "cache_lookup", {
-        replayAsset,
-        providerRequestId: synthesized.providerRequestId,
-        partial: true
-      });
-
-      throw mapVoiceError("見本音声キャッシュの保存", { message });
-    }
+    throw error instanceof AppError
+      ? error
+      : mapVoiceError("見本音声キャッシュの保存", { message: error instanceof Error ? error.message : "" });
   }
 
   let storedAudio: ScriptAudioRow | null;

@@ -105,7 +105,7 @@ function createAuthenticatedClient(userId = USER_A) {
   } as unknown as AppSupabaseClient;
 }
 
-function createServerWriter() {
+function createServerWriter(input: { reservationError?: { message: string } } = {}) {
   const inserted = {
     id: "44444444-4444-4444-8444-444444444444",
     user_id: USER_A,
@@ -117,34 +117,35 @@ function createServerWriter() {
     is_default: true,
     created_at: "2026-08-22T00:00:00.000Z"
   };
-  const inserts: unknown[] = [];
-  const updates: unknown[] = [];
-  const updateQuery = {
-    eq() {
-      return updateQuery;
-    },
-    neq: async () => ({ error: null })
-  };
-  const writer = {
-    from: vi.fn((table: string) => {
-      if (table !== "voices") {
-        throw new Error(`unexpected server write table: ${table}`);
+  const rpc = vi.fn(async (name: string, args: Record<string, unknown>) => {
+    if (name === "reserve_voice_asset_write_intent") {
+      if (input.reservationError) {
+        return { data: null, error: input.reservationError };
       }
 
       return {
-        insert(values: unknown) {
-          inserts.push(values);
-          return { select: () => ({ single: async () => ({ data: inserted, error: null }) }) };
+        data: {
+          id: "55555555-5555-4555-8555-555555555555",
+          user_id: USER_A,
+          kind: "voice_create",
+          status: "reserved",
+          lease_token: args.p_lease_token
         },
-        update(values: unknown) {
-          updates.push(values);
-          return updateQuery;
-        }
+        error: null
       };
-    })
+    }
+
+    if (name === "finalize_voice_create_write_intent") {
+      return { data: inserted, error: null };
+    }
+
+    throw new Error(`unexpected server RPC: ${name}`);
+  });
+  const writer = {
+    rpc
   };
 
-  return { writer, inserts, updates };
+  return { writer, rpc };
 }
 
 describe("G5C-A server-owned voice binding provenance", () => {
@@ -173,7 +174,7 @@ describe("G5C-A server-owned voice binding provenance", () => {
   });
 
   it("persists provider provenance only from the server-side provider result after re-resolving the request owner", async () => {
-    const { writer, inserts, updates } = createServerWriter();
+    const { writer, rpc } = createServerWriter();
     createSupabaseAdminClient.mockReturnValue(writer);
     const client = createAuthenticatedClient();
 
@@ -186,19 +187,21 @@ describe("G5C-A server-owned voice binding provenance", () => {
     expect(assertCurrentProcessingConsent).toHaveBeenCalledWith(client, USER_A, "voice_cloning");
     expect(createVoice).toHaveBeenCalledWith(expect.objectContaining({ userId: USER_A, consentId: CONSENT_A }));
     expect(createSupabaseAdminClient).toHaveBeenCalledTimes(1);
-    expect(inserts).toEqual([expect.objectContaining({
-      user_id: USER_A,
-      provider: "elevenlabs",
-      consent_id: CONSENT_A,
-      provider_voice_id: "provider-returned-voice-id",
-      is_default: true
-    })]);
-    expect(updates).toEqual([{ is_default: false }]);
+    expect(rpc).toHaveBeenNthCalledWith(1, "reserve_voice_asset_write_intent", expect.objectContaining({
+      p_user_id: USER_A,
+      p_kind: "voice_create"
+    }));
+    expect(rpc).toHaveBeenNthCalledWith(2, "finalize_voice_create_write_intent", expect.objectContaining({
+      p_user_id: USER_A,
+      p_consent_id: CONSENT_A,
+      p_provider_voice_id: "provider-returned-voice-id"
+    }));
+    expect(rpc.mock.invocationCallOrder[0]).toBeLessThan(createVoice.mock.invocationCallOrder[0]);
     expect(voice.provider_voice_id).toBe("provider-returned-voice-id");
   });
 
   it("rejects a mismatched authenticated owner before a provider call or server binding write", async () => {
-    const { writer, inserts } = createServerWriter();
+    const { writer, rpc } = createServerWriter();
     createSupabaseAdminClient.mockReturnValue(writer);
 
     await expect(createUserVoice(createAuthenticatedClient(USER_B), USER_A, {
@@ -208,7 +211,20 @@ describe("G5C-A server-owned voice binding provenance", () => {
 
     expect(createVoice).not.toHaveBeenCalled();
     expect(createSupabaseAdminClient).not.toHaveBeenCalled();
-    expect(inserts).toEqual([]);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rejects an active deletion reservation before the provider create call", async () => {
+    const { writer, rpc } = createServerWriter({ reservationError: { message: "voice_deletion_active" } });
+    createSupabaseAdminClient.mockReturnValue(writer);
+
+    await expect(createUserVoice(createAuthenticatedClient(), USER_A, {
+      consentId: CONSENT_A,
+      label: "My voice"
+    })).rejects.toMatchObject({ status: 409 });
+
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(createVoice).not.toHaveBeenCalled();
   });
 
   it("keeps the voice-only inventory owner-scoped rather than accepting a client-provided provider binding", () => {
@@ -216,7 +232,8 @@ describe("G5C-A server-owned voice binding provenance", () => {
     const inventorySource = compact(readFileSync(voiceDeletionServicePath, "utf8"));
 
     expect(source).toContain('await assertAuthenticatedVoiceMutationUser(client, userId);');
-    expect(source).toContain('return saveVoiceRecord(userId, consent, created.providerVoiceId, {');
+    expect(source).toContain('const reservation = await writeIntents.reserve({');
+    expect(source).toContain('return writeIntents.finalizeVoice({');
     expect(source).toContain('await client .from("voices") .select("*") .eq("user_id", userId)');
     expect(source).not.toContain("providerVoiceId: input.providerVoiceId");
     expect(inventorySource).toContain(

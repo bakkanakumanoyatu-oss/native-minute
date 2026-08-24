@@ -226,6 +226,13 @@ function isTargetRow(value: unknown): value is VoiceDeletionTargetRow {
 }
 
 function mapRepositoryError(operation: string, error: PostgrestErrorLike) {
+  if (
+    error.message.toLowerCase().includes("writer_in_progress") ||
+    error.message.toLowerCase().includes("voice_asset_snapshot_stale")
+  ) {
+    return new AppError(409, "voice asset の保存処理中です。少し待ってから voice-only deletion を再試行してください。");
+  }
+
   return new AppError(500, `${operation}に失敗しました。`);
 }
 
