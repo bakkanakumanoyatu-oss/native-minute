@@ -96,7 +96,11 @@ export type VoiceDeletionTargetVerificationStatus =
   | "present"
   | "unavailable"
   | "manual_required";
-export type VoiceAssetWriteIntentKind = "voice_create" | "script_audio_create";
+export type VoiceAssetWriteIntentKind =
+  | "voice_create"
+  | "script_audio_create"
+  | "voice_sample_upload"
+  | "voice_consent_upload";
 export type VoiceAssetWriteIntentStatus = "reserved" | "completed" | "cancelled" | "manual_required";
 
 export interface Database {
@@ -961,6 +965,16 @@ export interface Database {
           p_user_id: string;
           p_lease_token: string;
           p_known_no_side_effect: boolean;
+        };
+        Returns: Database["public"]["Tables"]["voice_asset_write_intents"]["Row"];
+      };
+      finalize_voice_upload_write_intent: {
+        Args: {
+          p_intent_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_storage_bucket: string;
+          p_storage_object_key: string;
         };
         Returns: Database["public"]["Tables"]["voice_asset_write_intents"]["Row"];
       };

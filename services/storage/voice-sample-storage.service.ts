@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
+import { createVoiceAssetWriteIntentRepository } from "@/services/voice/voice-asset-write-intent.repository";
 import type { Database } from "@/types/database";
 import { MAX_VOICE_SAMPLE_BYTES, VOICE_SAMPLE_FORMAT_LABEL, VOICE_SAMPLES_BUCKET, VOICE_SAMPLE_MIME_TYPES } from "./constants";
 
@@ -9,6 +10,10 @@ type StorageUploadInput = {
   consentId: string;
   file: File;
 };
+type VoiceAssetWriteIntents = Pick<
+  ReturnType<typeof createVoiceAssetWriteIntentRepository>,
+  "reserve" | "finalizeUpload"
+>;
 
 type PostgrestMaybeSingle<TRow> = {
   data: TRow | null;
@@ -194,7 +199,8 @@ function validateOwnedVoiceSampleKey(userId: string, consentId: string, audioSto
 export async function uploadOwnedVoiceSample(
   client: AppSupabaseClient,
   userId: string,
-  input: StorageUploadInput
+  input: StorageUploadInput,
+  writeIntents?: VoiceAssetWriteIntents
 ): Promise<UploadedVoiceSample> {
   await getOwnedConsent(client, userId, input.consentId);
 
@@ -215,6 +221,15 @@ export async function uploadOwnedVoiceSample(
   const extension = getExtension(contentType, input.file.name);
   const objectKey = `${userId}/${input.consentId}/${randomUUID()}.${extension}`;
   const bytes = Buffer.from(await input.file.arrayBuffer());
+  const durableWriteIntents = writeIntents ?? createVoiceAssetWriteIntentRepository();
+  const reservation = await durableWriteIntents.reserve({
+    userId,
+    kind: "voice_sample_upload",
+    leaseToken: randomUUID(),
+    leaseSeconds: 900,
+    storageBucket: VOICE_SAMPLES_BUCKET,
+    storageObjectKey: objectKey
+  });
 
   const { error } = await client.storage.from(VOICE_SAMPLES_BUCKET).upload(objectKey, bytes, {
     contentType,
@@ -223,8 +238,17 @@ export async function uploadOwnedVoiceSample(
   });
 
   if (error) {
+    // A Storage error may be a lost/ambiguous response after the object was
+    // persisted. Keep the durable reservation unresolved so deletion fails closed.
     throw new AppError(500, getStorageFailureMessage(error.message, "upload"));
   }
+
+  await durableWriteIntents.finalizeUpload({
+    ...reservation,
+    userId,
+    storageBucket: VOICE_SAMPLES_BUCKET,
+    storageObjectKey: objectKey
+  });
 
   return {
     audioPath: createVoiceSampleAudioPath(objectKey),

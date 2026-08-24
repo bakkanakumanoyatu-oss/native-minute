@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
+import { createVoiceAssetWriteIntentRepository } from "@/services/voice/voice-asset-write-intent.repository";
 import {
   MAX_VOICE_CONSENT_BYTES,
   VOICE_CONSENTS_BUCKET,
@@ -11,6 +12,10 @@ import {
 type StorageUploadInput = {
   file: File;
 };
+type VoiceAssetWriteIntents = Pick<
+  ReturnType<typeof createVoiceAssetWriteIntentRepository>,
+  "reserve" | "finalizeUpload"
+>;
 
 export type UploadedVoiceConsentRecording = {
   audioPath: string;
@@ -182,7 +187,8 @@ function validateOwnedVoiceConsentKey(userId: string, audioStorageKey: string) {
 export async function uploadOwnedVoiceConsentRecording(
   client: AppSupabaseClient,
   userId: string,
-  input: StorageUploadInput
+  input: StorageUploadInput,
+  writeIntents?: VoiceAssetWriteIntents
 ): Promise<UploadedVoiceConsentRecording> {
   if (!input.file.size) {
     throw new AppError(400, "同意録音が空です。ファイルを確認してください。");
@@ -201,6 +207,15 @@ export async function uploadOwnedVoiceConsentRecording(
   const extension = getExtension(contentType, input.file.name);
   const objectKey = `${userId}/${randomUUID()}.${extension}`;
   const bytes = Buffer.from(await input.file.arrayBuffer());
+  const durableWriteIntents = writeIntents ?? createVoiceAssetWriteIntentRepository();
+  const reservation = await durableWriteIntents.reserve({
+    userId,
+    kind: "voice_consent_upload",
+    leaseToken: randomUUID(),
+    leaseSeconds: 900,
+    storageBucket: VOICE_CONSENTS_BUCKET,
+    storageObjectKey: objectKey
+  });
 
   const { error } = await client.storage.from(VOICE_CONSENTS_BUCKET).upload(objectKey, bytes, {
     contentType,
@@ -209,8 +224,17 @@ export async function uploadOwnedVoiceConsentRecording(
   });
 
   if (error) {
+    // Do not infer absence from an error response. A lost response after a
+    // successful write must leave the reservation as a deletion blocker.
     throw new AppError(500, getStorageFailureMessage(error.message, "upload"));
   }
+
+  await durableWriteIntents.finalizeUpload({
+    ...reservation,
+    userId,
+    storageBucket: VOICE_CONSENTS_BUCKET,
+    storageObjectKey: objectKey
+  });
 
   return {
     audioPath: createVoiceConsentRecordingAudioPath(objectKey),

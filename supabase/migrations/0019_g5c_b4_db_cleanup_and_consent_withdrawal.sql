@@ -13,7 +13,7 @@ alter table public.voice_deletion_operations
     array_position(consent_snapshot_ids, null) is null
   );
 
--- A B4-only durable boundary for the two external writers that can expand the
+-- A B4-only durable boundary for the external writers that can expand the
 -- voice-deletion target universe. It is intentionally not a generic job table.
 create table if not exists public.voice_asset_write_intents (
   id uuid primary key default gen_random_uuid(),
@@ -30,7 +30,7 @@ create table if not exists public.voice_asset_write_intents (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint voice_asset_write_intents_kind_check check (
-    kind in ('voice_create', 'script_audio_create')
+    kind in ('voice_create', 'script_audio_create', 'voice_sample_upload', 'voice_consent_upload')
   ),
   constraint voice_asset_write_intents_status_check check (
     status in ('reserved', 'completed', 'cancelled', 'manual_required')
@@ -52,6 +52,24 @@ create table if not exists public.voice_asset_write_intents (
         or
         (status in ('completed', 'cancelled')
           and storage_bucket is null and storage_object_key is null)
+      ))
+    or
+    (kind = 'voice_sample_upload'
+      and script_id is null and voice_id is null and cache_key is null
+      and (
+        (status in ('reserved', 'completed', 'manual_required')
+          and storage_bucket = 'voice-samples' and nullif(storage_object_key, '') is not null)
+        or
+        (status = 'cancelled' and storage_bucket is null and storage_object_key is null)
+      ))
+    or
+    (kind = 'voice_consent_upload'
+      and script_id is null and voice_id is null and cache_key is null
+      and (
+        (status in ('reserved', 'completed', 'manual_required')
+          and storage_bucket = 'voice-consents' and nullif(storage_object_key, '') is not null)
+        or
+        (status = 'cancelled' and storage_bucket is null and storage_object_key is null)
       ))
   )
 );
@@ -111,7 +129,9 @@ declare
   v_voice_user_id uuid;
   v_voice_provider text;
 begin
-  if p_user_id is null or p_kind not in ('voice_create', 'script_audio_create')
+  if p_user_id is null or p_kind not in (
+    'voice_create', 'script_audio_create', 'voice_sample_upload', 'voice_consent_upload'
+  )
     or p_lease_token is null or p_lease_seconds < 1 or p_lease_seconds > 900 then
     raise exception using errcode = 'invalid_parameter_value', message = 'invalid voice asset writer reservation';
   end if;
@@ -126,6 +146,16 @@ begin
   end if;
 
   if exists (
+    select 1 from public.account_deletion_requests
+    where user_id = p_user_id and status in (
+      'requested', 'confirmed', 'processing', 'provider_cleanup_failed',
+      'storage_cleanup_failed', 'db_cleanup_failed', 'auth_cleanup_failed'
+    )
+  ) then
+    raise exception using errcode = 'object_in_use', message = 'account_deletion_active';
+  end if;
+
+  if exists (
     select 1 from public.voice_asset_write_intents
     where user_id = p_user_id and status in ('reserved', 'manual_required')
   ) then
@@ -137,7 +167,7 @@ begin
       or p_storage_bucket is not null or p_storage_object_key is not null then
       raise exception using errcode = 'invalid_parameter_value', message = 'invalid voice create reservation shape';
     end if;
-  else
+  elsif p_kind = 'script_audio_create' then
     select user_id into v_script_user_id from public.scripts where id = p_script_id;
     select user_id, provider into v_voice_user_id, v_voice_provider from public.voices where id = p_voice_id;
 
@@ -151,6 +181,27 @@ begin
       ) then
       raise exception using errcode = 'invalid_parameter_value', message = 'invalid script audio writer reservation';
     end if;
+  elsif p_kind = 'voice_sample_upload' then
+    if p_script_id is not null or p_voice_id is not null or p_cache_key is not null
+      or p_storage_bucket is distinct from 'voice-samples'
+      or nullif(p_storage_object_key, '') is null
+      or array_length(string_to_array(p_storage_object_key, '/'), 1) <> 3
+      or split_part(p_storage_object_key, '/', 1) <> p_user_id::text
+      or not exists (
+        select 1 from public.voice_consents as consent
+        where consent.user_id = p_user_id
+          and consent.id::text = split_part(p_storage_object_key, '/', 2)
+      ) then
+      raise exception using errcode = 'invalid_parameter_value', message = 'invalid voice sample upload reservation';
+    end if;
+  else
+    if p_script_id is not null or p_voice_id is not null or p_cache_key is not null
+      or p_storage_bucket is distinct from 'voice-consents'
+      or nullif(p_storage_object_key, '') is null
+      or array_length(string_to_array(p_storage_object_key, '/'), 1) <> 2
+      or split_part(p_storage_object_key, '/', 1) <> p_user_id::text then
+      raise exception using errcode = 'invalid_parameter_value', message = 'invalid voice consent upload reservation';
+    end if;
   end if;
 
   insert into public.voice_asset_write_intents (
@@ -160,6 +211,45 @@ begin
     p_user_id, p_kind, p_lease_token, now() + make_interval(secs => p_lease_seconds),
     p_script_id, p_voice_id, p_cache_key, p_storage_bucket, p_storage_object_key
   ) returning * into v_intent;
+
+  return v_intent;
+end;
+$$;
+
+create or replace function public.finalize_voice_upload_write_intent(
+  p_intent_id uuid,
+  p_user_id uuid,
+  p_lease_token uuid,
+  p_storage_bucket text,
+  p_storage_object_key text
+)
+returns public.voice_asset_write_intents
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_intent public.voice_asset_write_intents;
+begin
+  perform public.g5c_b4_lock_voice_asset_user(p_user_id);
+
+  select * into v_intent from public.voice_asset_write_intents
+  where id = p_intent_id and user_id = p_user_id for update;
+
+  if v_intent.id is null
+    or v_intent.kind not in ('voice_sample_upload', 'voice_consent_upload')
+    or v_intent.status <> 'reserved'
+    or v_intent.lease_token is distinct from p_lease_token
+    or v_intent.lease_expires_at <= now()
+    or v_intent.storage_bucket is distinct from p_storage_bucket
+    or v_intent.storage_object_key is distinct from p_storage_object_key then
+    raise exception using errcode = 'check_violation', message = 'voice upload writer finalization rejected';
+  end if;
+
+  update public.voice_asset_write_intents
+  set status = 'completed', lease_token = null, lease_expires_at = null
+  where id = p_intent_id
+  returning * into v_intent;
 
   return v_intent;
 end;
@@ -751,6 +841,21 @@ begin
       and (select count(*) from jsonb_array_elements(p_targets) as target(value)
         where target.value ->> 'target_kind' = 'saved_model_audio'
           and target.value ->> 'source_row_id' = saved.id::text) <> 1
+  ) or exists (
+    select 1
+    from public.voice_asset_write_intents as upload_intent
+    where upload_intent.user_id = p_user_id
+      and upload_intent.status = 'completed'
+      and upload_intent.kind in ('voice_sample_upload', 'voice_consent_upload')
+      and not exists (
+        select 1 from jsonb_array_elements(p_targets) as target(value)
+        where target.value ->> 'target_kind' = case upload_intent.kind
+          when 'voice_sample_upload' then 'voice_sample'
+          else 'voice_consent_recording'
+        end
+          and target.value ->> 'storage_bucket' = upload_intent.storage_bucket
+          and target.value ->> 'storage_object_key' = upload_intent.storage_object_key
+      )
   ) then
     raise exception using errcode = 'serialization_failure', message = 'voice_asset_snapshot_stale';
   end if;
@@ -1402,6 +1507,7 @@ revoke all on function public.g5c_b4_voice_deletion_writer_fence_active(uuid) fr
 revoke all on function public.g5c_b4_lock_voice_asset_user(uuid) from public, anon, authenticated, service_role;
 revoke all on function public.reserve_voice_asset_write_intent(uuid, text, uuid, integer, uuid, uuid, text, text, text) from public, anon, authenticated, service_role;
 revoke all on function public.cancel_voice_asset_write_intent(uuid, uuid, uuid, boolean) from public, anon, authenticated, service_role;
+revoke all on function public.finalize_voice_upload_write_intent(uuid, uuid, uuid, text, text) from public, anon, authenticated, service_role;
 revoke all on function public.finalize_voice_create_write_intent(uuid, uuid, uuid, uuid, text, text, text) from public, anon, authenticated, service_role;
 revoke all on function public.finalize_script_audio_write_intent(uuid, uuid, uuid, text, text, jsonb, numeric) from public, anon, authenticated, service_role;
 revoke all on function public.enforce_g5c_b4_consent_snapshot_immutability() from public, anon, authenticated, service_role;
@@ -1417,6 +1523,7 @@ revoke all on function public.enter_voice_deletion_database_cleanup_stage(uuid, 
 revoke all on function public.cleanup_voice_deletion_database_targets(uuid, uuid, uuid, integer) from public, anon, authenticated, service_role;
 grant execute on function public.reserve_voice_asset_write_intent(uuid, text, uuid, integer, uuid, uuid, text, text, text) to service_role;
 grant execute on function public.cancel_voice_asset_write_intent(uuid, uuid, uuid, boolean) to service_role;
+grant execute on function public.finalize_voice_upload_write_intent(uuid, uuid, uuid, text, text) to service_role;
 grant execute on function public.finalize_voice_create_write_intent(uuid, uuid, uuid, uuid, text, text, text) to service_role;
 grant execute on function public.finalize_script_audio_write_intent(uuid, uuid, uuid, text, text, jsonb, numeric) to service_role;
 grant execute on function public.seal_voice_deletion_consent_snapshot(uuid, uuid, uuid, integer) to service_role;

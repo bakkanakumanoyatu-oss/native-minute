@@ -9,13 +9,19 @@ import { createVoiceAssetWriteIntentRepository } from "@/services/voice/voice-as
 const migrationPath = fileURLToPath(
   new URL("../../../supabase/migrations/0019_g5c_b4_db_cleanup_and_consent_withdrawal.sql", import.meta.url)
 );
+const sampleStorageMigrationPath = fileURLToPath(
+  new URL("../../../supabase/migrations/0007_phase7_voice_sample_storage.sql", import.meta.url)
+);
+const consentStorageMigrationPath = fileURLToPath(
+  new URL("../../../supabase/migrations/0008_phase8_voice_consent_storage.sql", import.meta.url)
+);
 
 function compact(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
 describe("G5C-B4 durable voice asset writer intent contract", () => {
-  it("adds only the focused two-kind durable state with no direct browser or mobile authority", () => {
+  it("adds only the focused voice-asset writer kinds with no direct browser or mobile authority", () => {
     const sql = compact(readFileSync(migrationPath, "utf8"));
 
     expect(sql).toContain("create table if not exists public.voice_asset_write_intents");
@@ -31,7 +37,7 @@ describe("G5C-B4 durable voice asset writer intent contract", () => {
     ]) {
       expect(sql).toContain(column);
     }
-    expect(sql).toContain("kind in ('voice_create', 'script_audio_create')");
+    expect(sql).toContain("kind in ('voice_create', 'script_audio_create', 'voice_sample_upload', 'voice_consent_upload')");
     expect(sql).toContain("status in ('reserved', 'completed', 'cancelled', 'manual_required')");
     expect(sql).toContain("alter table public.voice_asset_write_intents enable row level security");
     expect(sql).toContain("revoke all privileges on table public.voice_asset_write_intents from public, anon, authenticated, service_role");
@@ -44,7 +50,7 @@ describe("G5C-B4 durable voice asset writer intent contract", () => {
 
     expect(sql).toContain("create or replace function public.g5c_b4_lock_voice_asset_user(p_user_id uuid)");
     expect(sql).toContain("pg_advisory_xact_lock(pg_catalog.hashtextextended('g5c-b4-voice-assets:' || p_user_id::text, 0))");
-    expect(sql.match(/perform public\.g5c_b4_lock_voice_asset_user\(p_user_id\)/g)).toHaveLength(6);
+    expect(sql.match(/perform public\.g5c_b4_lock_voice_asset_user\(p_user_id\)/g)).toHaveLength(7);
     expect(sql).toContain("create or replace function public.seal_voice_deletion_snapshot(");
     expect(sql).toContain("create or replace function public.seal_voice_deletion_consent_snapshot(");
   });
@@ -55,9 +61,24 @@ describe("G5C-B4 durable voice asset writer intent contract", () => {
     expect(sql).toContain("create or replace function public.reserve_voice_asset_write_intent(");
     expect(sql).toContain("status in ('pending', 'processing', 'partial_failure', 'manual_required')");
     expect(sql).toContain("message = 'voice_deletion_active'");
+    expect(sql).toContain("message = 'account_deletion_active'");
+    expect(sql).toContain("'requested', 'confirmed', 'processing', 'provider_cleanup_failed'");
     expect(sql).toContain("message = 'voice_asset_writer_in_progress'");
     expect(sql).toContain("insert into public.voice_asset_write_intents");
     expect(sql.indexOf("message = 'voice_deletion_active'")).toBeLessThan(sql.indexOf("insert into public.voice_asset_write_intents"));
+  });
+
+  it("validates upload ownership and object identity before persisting a reservation", () => {
+    const sql = compact(readFileSync(migrationPath, "utf8"));
+
+    expect(sql).toContain("p_kind = 'voice_sample_upload'");
+    expect(sql).toContain("p_storage_bucket is distinct from 'voice-samples'");
+    expect(sql).toContain("consent.user_id = p_user_id");
+    expect(sql).toContain("consent.id::text = split_part(p_storage_object_key, '/', 2)");
+    expect(sql).toContain("p_storage_bucket is distinct from 'voice-consents'");
+    expect(sql.match(/split_part\(p_storage_object_key, '\/', 1\) <> p_user_id::text/g)).toHaveLength(2);
+    expect(sql).toContain("array_length(string_to_array(p_storage_object_key, '/'), 1) <> 3");
+    expect(sql).toContain("array_length(string_to_array(p_storage_object_key, '/'), 1) <> 2");
   });
 
   it("re-resolves the writer-expandable universe inside the locked target seal", () => {
@@ -68,6 +89,11 @@ describe("G5C-B4 durable voice asset writer intent contract", () => {
     expect(sql).toContain("target.value ->> 'target_kind' = 'script_audio'");
     expect(sql).toContain("target.value ->> 'target_kind' = 'script_audio_storage'");
     expect(sql).toContain("target.value ->> 'target_kind' = 'saved_model_audio'");
+    expect(sql).toContain("upload_intent.status = 'completed'");
+    expect(sql).toContain("upload_intent.kind in ('voice_sample_upload', 'voice_consent_upload')");
+    expect(sql).toContain("when 'voice_sample_upload' then 'voice_sample'");
+    expect(sql).toContain("else 'voice_consent_recording'");
+    expect(sql).toContain("target.value ->> 'storage_object_key' = upload_intent.storage_object_key");
     expect(sql.indexOf("message = 'voice_asset_snapshot_stale'")).toBeLessThan(
       sql.indexOf("insert into public.voice_deletion_targets")
     );
@@ -94,6 +120,21 @@ describe("G5C-B4 durable voice asset writer intent contract", () => {
     expect(sql).toContain("create or replace function public.finalize_script_audio_write_intent(");
     expect(sql).toContain("insert into public.script_audios (");
     expect(sql).toContain("set status = 'completed', lease_token = null, lease_expires_at = null");
+  });
+
+  it("completes successful uploads without discarding their durable Storage locator", () => {
+    const sql = compact(readFileSync(migrationPath, "utf8"));
+    const finalizerStart = sql.indexOf("create or replace function public.finalize_voice_upload_write_intent(");
+    const cancelStart = sql.indexOf("create or replace function public.cancel_voice_asset_write_intent(");
+    const finalizer = sql.slice(finalizerStart, cancelStart);
+
+    expect(finalizer).toContain("v_intent.kind not in ('voice_sample_upload', 'voice_consent_upload')");
+    expect(finalizer).toContain("v_intent.storage_bucket is distinct from p_storage_bucket");
+    expect(finalizer).toContain("v_intent.storage_object_key is distinct from p_storage_object_key");
+    expect(finalizer).toContain("set status = 'completed', lease_token = null, lease_expires_at = null");
+    expect(finalizer).not.toContain("storage_bucket = null");
+    expect(sql).toContain("grant execute on function public.finalize_voice_upload_write_intent(uuid, uuid, uuid, text, text) to service_role");
+    expect(sql).toContain("revoke all on function public.finalize_voice_upload_write_intent(uuid, uuid, uuid, text, text) from public, anon, authenticated, service_role");
   });
 
   it("blocks every foreign or unsealed dependent before any cascade-capable delete", () => {
@@ -142,5 +183,35 @@ describe("G5C-B4 durable voice asset writer intent contract", () => {
       leaseSeconds: 900
     })).rejects.toMatchObject({ status: 409 });
     expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows cancellation only through the known-no-side-effect transition", async () => {
+    const rpc = vi.fn(async () => ({
+      data: { id: "intent-a", status: "cancelled", lease_token: null },
+      error: null
+    }));
+    const repository = createVoiceAssetWriteIntentRepository({ rpc } as never);
+
+    await expect(repository.cancelKnownNoSideEffect({
+      intentId: "intent-a",
+      userId: "user-a",
+      leaseToken: "lease-a"
+    })).resolves.toMatchObject({ status: "cancelled" });
+    expect(rpc).toHaveBeenCalledWith("cancel_voice_asset_write_intent", {
+      p_intent_id: "intent-a",
+      p_user_id: "user-a",
+      p_lease_token: "lease-a",
+      p_known_no_side_effect: true
+    });
+  });
+
+  it("retains authenticated owner-prefix Storage policies as defense in depth", () => {
+    const sampleSql = compact(readFileSync(sampleStorageMigrationPath, "utf8"));
+    const consentSql = compact(readFileSync(consentStorageMigrationPath, "utf8"));
+
+    expect(sampleSql).toContain("create policy \"voice-samples_insert_own\"");
+    expect(sampleSql).toContain("bucket_id = 'voice-samples' and (storage.foldername(name))[1] = auth.uid()::text");
+    expect(consentSql).toContain("create policy \"voice-consents_insert_own\"");
+    expect(consentSql).toContain("bucket_id = 'voice-consents' and (storage.foldername(name))[1] = auth.uid()::text");
   });
 });
