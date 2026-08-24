@@ -50,8 +50,8 @@ function asMany<TRow>(value: unknown) {
   return value as { data: TRow[] | null; error: PostgrestErrorLike | null };
 }
 
-function isSameSet(actual: string[], expected: string[]) {
-  return actual.length === expected.length && expected.every((value) => actual.includes(value));
+function isSameCanonicalArray(actual: string[], expected: string[]) {
+  return actual.length === expected.length && expected.every((value, index) => actual[index] === value);
 }
 
 export function isCurrentProcessingConsentContract(
@@ -65,8 +65,8 @@ export function isCurrentProcessingConsentContract(
     row.consent_version === contract.consentVersion &&
     row.purpose_id === contract.purposeId &&
     row.purpose_version === contract.purposeVersion &&
-    isSameSet(row.provider_set, contract.providerSet) &&
-    isSameSet(row.data_categories, contract.dataCategories)
+    isSameCanonicalArray(row.provider_set, contract.providerSet) &&
+    isSameCanonicalArray(row.data_categories, contract.dataCategories)
   );
 }
 

@@ -109,7 +109,10 @@ function isProviderStageRunnable(operation: {
 
 function isProviderStageComplete(targets: Array<{ target_kind: string; status: string }>) {
   const providerTargets = targets.filter((target) => target.target_kind === "provider_voice");
-  return providerTargets.length > 0 && providerTargets.every((target) => target.status === "verified_absent");
+  // A sealed zero-voice snapshot can legitimately reach provider_cleanup after its
+  // consent transition resolves as not_needed. There is no provider call in that
+  // case, and the next durable stage remains responsible for its own entry gate.
+  return providerTargets.every((target) => target.status === "verified_absent");
 }
 
 /**

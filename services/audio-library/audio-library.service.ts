@@ -71,7 +71,15 @@ function getAdminClient() {
 }
 
 function mapAudioLibraryDbError(operation: string, error: PostgrestErrorLike) {
-  return new AudioLibraryError(500, "audio_library_write_failed", `${operation}に失敗しました。${error.message}`);
+  if (error.message.toLowerCase().includes("voice deletion writer fence")) {
+    return new AudioLibraryError(
+      409,
+      "audio_library_write_failed",
+      "voice-only deletion の処理中は、見本音声の保存を変更できません。処理の完了後にもう一度お試しください。"
+    );
+  }
+
+  return new AudioLibraryError(500, "audio_library_write_failed", `${operation}に失敗しました。`);
 }
 
 function assertValidSlot(slot: number) {

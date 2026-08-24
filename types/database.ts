@@ -187,6 +187,7 @@ export interface Database {
           snapshot_version: string;
           snapshot_status: VoiceDeletionStageStatus;
           consent_snapshot_id: string | null;
+          consent_snapshot_ids: string[];
           consent_snapshot_state: string;
           consent_withdrawal_status: VoiceDeletionStageStatus;
           post_delete_verification_status: VoiceDeletionStageStatus;
@@ -221,6 +222,7 @@ export interface Database {
           snapshot_version?: string;
           snapshot_status?: VoiceDeletionStageStatus;
           consent_snapshot_id?: string | null;
+          consent_snapshot_ids?: string[];
           consent_snapshot_state?: string;
           consent_withdrawal_status?: VoiceDeletionStageStatus;
           post_delete_verification_status?: VoiceDeletionStageStatus;
@@ -255,6 +257,7 @@ export interface Database {
           snapshot_version?: string;
           snapshot_status?: VoiceDeletionStageStatus;
           consent_snapshot_id?: string | null;
+          consent_snapshot_ids?: string[];
           consent_snapshot_state?: string;
           consent_withdrawal_status?: VoiceDeletionStageStatus;
           post_delete_verification_status?: VoiceDeletionStageStatus;
@@ -924,6 +927,42 @@ export interface Database {
           p_operation_id: string;
           p_user_id: string;
           p_lease_token: string;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
+      seal_voice_deletion_consent_snapshot: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
+      withdraw_voice_deletion_current_consents: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
+      enter_voice_deletion_database_cleanup_stage: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
+      cleanup_voice_deletion_database_targets: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
         };
         Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
       };

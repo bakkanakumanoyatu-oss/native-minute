@@ -643,13 +643,14 @@ export function createVoiceOnlyDeletionDurableSnapshotTargets(
       });
     }
 
-    if (voice.isDefault) {
-      targets.push({
-        targetKind: "voice_binding",
-        targetFingerprint: stableFingerprint({ kind: "voice_binding", sourceRowId: voice.appVoiceId }),
-        sourceRowId: voice.appVoiceId
-      });
-    }
+    // Every owned ElevenLabs binding is a deletion target. Restricting this to the
+    // current/default row leaves non-default provider voices eligible for later
+    // replay or re-selection after their provider resource was deleted.
+    targets.push({
+      targetKind: "voice_binding",
+      targetFingerprint: stableFingerprint({ kind: "voice_binding", sourceRowId: voice.appVoiceId }),
+      sourceRowId: voice.appVoiceId
+    });
   }
 
   for (const storage of snapshot.targets.storageObjects) {

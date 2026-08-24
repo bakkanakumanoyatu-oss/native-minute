@@ -86,6 +86,14 @@ export type StorageCleanupStageEntry = Pick<VoiceDeletionLeaseClaim, "operationI
   expectedRunnerAttemptCount: number;
 };
 
+export type ConsentSnapshotSeal = Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken"> & {
+  expectedRunnerAttemptCount: number;
+};
+
+export type ConsentWithdrawal = ConsentSnapshotSeal;
+export type DatabaseCleanupStageEntry = ConsentSnapshotSeal;
+export type DatabaseTargetCleanup = ConsentSnapshotSeal;
+
 export type StorageObjectDeleteAttempt = Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken"> & {
   targetId: string;
   expectedDeleteAttemptCount: number;
@@ -163,6 +171,10 @@ export type VoiceDeletionRepository = {
   markStorageObjectInvalidTargetManualRequired(
     input: StorageObjectInvalidTargetManualTransition
   ): Promise<VoiceDeletionTargetRow | null>;
+  sealConsentSnapshot(input: ConsentSnapshotSeal): Promise<VoiceDeletionOperationRow | null>;
+  withdrawCurrentConsents(input: ConsentWithdrawal): Promise<VoiceDeletionOperationRow | null>;
+  enterDatabaseCleanupStage(input: DatabaseCleanupStageEntry): Promise<VoiceDeletionOperationRow | null>;
+  cleanupDatabaseTargets(input: DatabaseTargetCleanup): Promise<VoiceDeletionOperationRow | null>;
   finalizeOperation(operationId: string, userId: string, leaseToken: string): Promise<VoiceDeletionOperationRow>;
 };
 
@@ -544,6 +556,74 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     return isTargetRow(result.data) ? result.data : null;
   }
 
+  async function sealConsentSnapshot(input: ConsentSnapshotSeal) {
+    const result = asMaybeSingle<VoiceDeletionOperationRow>(
+      await client.rpc("seal_voice_deletion_consent_snapshot", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_lease_token: input.leaseToken,
+        p_expected_runner_attempt_count: input.expectedRunnerAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("voice deletion consent snapshot の seal", result.error);
+    }
+
+    return isOperationRow(result.data) ? result.data : null;
+  }
+
+  async function withdrawCurrentConsents(input: ConsentWithdrawal) {
+    const result = asMaybeSingle<VoiceDeletionOperationRow>(
+      await client.rpc("withdraw_voice_deletion_current_consents", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_lease_token: input.leaseToken,
+        p_expected_runner_attempt_count: input.expectedRunnerAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("voice deletion consent withdrawal", result.error);
+    }
+
+    return isOperationRow(result.data) ? result.data : null;
+  }
+
+  async function enterDatabaseCleanupStage(input: DatabaseCleanupStageEntry) {
+    const result = asMaybeSingle<VoiceDeletionOperationRow>(
+      await client.rpc("enter_voice_deletion_database_cleanup_stage", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_lease_token: input.leaseToken,
+        p_expected_runner_attempt_count: input.expectedRunnerAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("database cleanup stage への進行", result.error);
+    }
+
+    return isOperationRow(result.data) ? result.data : null;
+  }
+
+  async function cleanupDatabaseTargets(input: DatabaseTargetCleanup) {
+    const result = asMaybeSingle<VoiceDeletionOperationRow>(
+      await client.rpc("cleanup_voice_deletion_database_targets", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_lease_token: input.leaseToken,
+        p_expected_runner_attempt_count: input.expectedRunnerAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("voice deletion database cleanup", result.error);
+    }
+
+    return isOperationRow(result.data) ? result.data : null;
+  }
+
   async function finalizeOperation(operationId: string, userId: string, leaseToken: string) {
     const result = asSingle<VoiceDeletionOperationRow>(
       await client.rpc("finalize_voice_deletion_operation", {
@@ -581,6 +661,10 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     beginStorageObjectVerificationAttempt,
     recordStorageObjectVerificationResult,
     markStorageObjectInvalidTargetManualRequired,
+    sealConsentSnapshot,
+    withdrawCurrentConsents,
+    enterDatabaseCleanupStage,
+    cleanupDatabaseTargets,
     // Completion deliberately has no generic status-update helper: the focused RPC
     // atomically proves target verification, scrubs locators, and closes the lease.
     finalizeOperation

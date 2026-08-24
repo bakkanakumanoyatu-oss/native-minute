@@ -98,6 +98,7 @@ type VoicesUpdateBuilder = {
 };
 
 type VoiceBindingWriteClient = Pick<AppSupabaseClient, "from">;
+type ScriptAudioWriteClient = Pick<AppSupabaseClient, "from">;
 
 function asMaybeSingle<TRow>(value: unknown) {
   return value as { data: TRow | null; error: PostgrestErrorLike | null };
@@ -108,7 +109,11 @@ function asMany<TRow>(value: unknown) {
 }
 
 function mapVoiceError(operation: string, error: PostgrestErrorLike) {
-  return new AppError(500, `${operation}に失敗しました。${error.message}`);
+  if (error.message.toLowerCase().includes("voice deletion writer fence")) {
+    return new AppError(409, "voice-only deletion の処理中は、新しい voice と見本音声を変更できません。処理の完了後にもう一度お試しください。");
+  }
+
+  return new AppError(500, `${operation}に失敗しました。`);
 }
 
 async function assertAuthenticatedVoiceMutationUser(client: AppSupabaseClient, userId: string) {
@@ -127,6 +132,14 @@ function createServerOwnedVoiceBindingWriter(): VoiceBindingWriteClient {
   // `voices` has no authenticated mutation policies. This server-only client is
   // intentionally created only after the request client re-resolves the owner.
   return createSupabaseAdminClient() as unknown as VoiceBindingWriteClient;
+}
+
+function createServerOwnedScriptAudioWriter(): ScriptAudioWriteClient {
+  if (!getSupabaseServiceRoleKey().trim()) {
+    throw new AppError(503, "見本音声の保存に必要なサーバー設定が未完了です。");
+  }
+
+  return createSupabaseAdminClient() as unknown as ScriptAudioWriteClient;
 }
 
 function getVoiceQuotaFailureCode(failureStage: QuotaEventFailureStage) {
@@ -692,35 +705,95 @@ async function getCachedScriptAudio(
   return data;
 }
 
-async function insertScriptAudio(
+async function assertServerOwnedScriptAudioWrite(
   client: AppSupabaseClient,
-  values: Database["public"]["Tables"]["script_audios"]["Insert"]
+  userId: string,
+  input: {
+    scriptId: string;
+    voiceId: string;
+    provider: string;
+    cacheKey: string;
+    voiceStylePreset: string;
+  }
 ) {
-  const scriptAudios = client.from("script_audios") as unknown as InsertSingleBuilder<
+  await assertAuthenticatedVoiceMutationUser(client, userId);
+
+  const [script, voice] = await Promise.all([
+    getScript(client, userId, input.scriptId),
+    getOwnedVoice(client, userId, input.voiceId)
+  ]);
+
+  if (!script || !voice || voice.provider !== input.provider) {
+    throw new AppError(409, "見本音声の所有者または provider を確認できませんでした。");
+  }
+
+  const expectedCacheKey = buildScriptAudioCacheKey({
+    provider: voice.provider,
+    voiceId: voice.id,
+    scriptLocale: script.locale,
+    voiceStylePreset: input.voiceStylePreset,
+    scriptContent: script.content
+  });
+
+  if (input.cacheKey !== expectedCacheKey) {
+    throw new AppError(409, "見本音声キャッシュの識別情報を確認できませんでした。");
+  }
+
+  return { script, voice, writer: createServerOwnedScriptAudioWriter() };
+}
+
+async function insertServerOwnedScriptAudio(
+  client: AppSupabaseClient,
+  userId: string,
+  input: {
+    values: Database["public"]["Tables"]["script_audios"]["Insert"];
+    voiceStylePreset: string;
+  }
+) {
+  const { writer } = await assertServerOwnedScriptAudioWrite(client, userId, {
+    scriptId: input.values.script_id,
+    voiceId: input.values.voice_id ?? "",
+    provider: input.values.provider,
+    cacheKey: input.values.cache_key,
+    voiceStylePreset: input.voiceStylePreset
+  });
+  const scriptAudios = writer.from("script_audios") as unknown as InsertSingleBuilder<
     Database["public"]["Tables"]["script_audios"]["Insert"],
     ScriptAudioRow
   >;
 
   const { data, error } = await scriptAudios
-    .insert(values)
+    .insert(input.values)
     .select("*")
     .single();
 
   if (error) {
-    throw error;
+    throw mapVoiceError("見本音声キャッシュの保存", error);
   }
 
   return data;
 }
 
-async function ensureScriptAudioPlaybackPath(client: AppSupabaseClient, scriptAudio: ScriptAudioRow) {
+async function ensureServerOwnedScriptAudioPlaybackPath(
+  client: AppSupabaseClient,
+  userId: string,
+  scriptAudio: ScriptAudioRow,
+  voiceStylePreset: string
+) {
   const playbackPath = buildScriptAudioPlaybackPath(scriptAudio.id);
 
   if (scriptAudio.storage_path === playbackPath) {
     return scriptAudio;
   }
 
-  const scriptAudios = client.from("script_audios") as unknown as UpdateSingleBuilder<
+  const { writer } = await assertServerOwnedScriptAudioWrite(client, userId, {
+    scriptId: scriptAudio.script_id,
+    voiceId: scriptAudio.voice_id ?? "",
+    provider: scriptAudio.provider,
+    cacheKey: scriptAudio.cache_key,
+    voiceStylePreset
+  });
+  const scriptAudios = writer.from("script_audios") as unknown as UpdateSingleBuilder<
     Database["public"]["Tables"]["script_audios"]["Update"],
     ScriptAudioRow
   >;
@@ -734,7 +807,7 @@ async function ensureScriptAudioPlaybackPath(client: AppSupabaseClient, scriptAu
     .single();
 
   if (error) {
-    throw error;
+    throw mapVoiceError("見本音声キャッシュの更新", error);
   }
 
   return data;
@@ -762,7 +835,9 @@ export async function getCachedListenAudio(client: AppSupabaseClient, userId: st
       return null;
     }
 
-    const playableAudio = await timeAsync("voice.cachedListenAudio.ensurePlaybackPath", () => ensureScriptAudioPlaybackPath(client, cachedAudio));
+    const playableAudio = await timeAsync("voice.cachedListenAudio.ensurePlaybackPath", () =>
+      ensureServerOwnedScriptAudioPlaybackPath(client, userId, cachedAudio, DEFAULT_VOICE_STYLE_PRESET)
+    );
 
     return {
       audioUrl: playableAudio.storage_path,
@@ -868,7 +943,9 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   }
 
   if (cachedAudio) {
-    const playableAudio = await timeAsync("voice.speakScript.ensurePlaybackPath", () => ensureScriptAudioPlaybackPath(client, cachedAudio));
+    const playableAudio = await timeAsync("voice.speakScript.ensurePlaybackPath", () =>
+      ensureServerOwnedScriptAudioPlaybackPath(client, userId, cachedAudio, voiceStylePreset)
+    );
 
     await withNonBlockingQuotaEventWrite("record cache hit voice generation quota event", () =>
       recordVoiceQuotaEventCacheHit({
@@ -954,18 +1031,29 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
 
   let insertedAudio: ScriptAudioRow | null = null;
   try {
-    const newAudio = await timeAsync("voice.speakScript.insertAudio", () => insertScriptAudio(client, {
-      script_id: script.id,
-      voice_id: selectedVoice.id,
-      provider: selectedVoice.provider,
-      cache_key: cacheKey,
-      // script_audios stores the app-owned replay reference, not a provider URL.
-      storage_path: replayAsset.storagePath,
-      stored_asset: encodeStoredAssetMetadata(replayAsset.storedAsset),
-      duration_seconds: null
-    }));
-    insertedAudio = await timeAsync("voice.speakScript.ensureInsertedPlaybackPath", () => ensureScriptAudioPlaybackPath(client, newAudio));
+    const newAudio = await timeAsync("voice.speakScript.insertAudio", () =>
+      insertServerOwnedScriptAudio(client, userId, {
+        voiceStylePreset,
+        values: {
+          script_id: script.id,
+          voice_id: selectedVoice.id,
+          provider: selectedVoice.provider,
+          cache_key: cacheKey,
+          // script_audios stores the app-owned replay reference, not a provider URL.
+          storage_path: replayAsset.storagePath,
+          stored_asset: encodeStoredAssetMetadata(replayAsset.storedAsset),
+          duration_seconds: null
+        }
+      })
+    );
+    insertedAudio = await timeAsync("voice.speakScript.ensureInsertedPlaybackPath", () =>
+      ensureServerOwnedScriptAudioPlaybackPath(client, userId, newAudio, voiceStylePreset)
+    );
   } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
     const message = error instanceof Error ? error.message : "";
 
     if (!message.includes("duplicate") && !message.includes("unique")) {
@@ -992,7 +1080,11 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
     throw error;
   }
 
-  const completedAudio = storedAudio ? await timeAsync("voice.speakScript.ensureCompletedPlaybackPath", () => ensureScriptAudioPlaybackPath(client, storedAudio)) : insertedAudio;
+  const completedAudio = storedAudio
+    ? await timeAsync("voice.speakScript.ensureCompletedPlaybackPath", () =>
+        ensureServerOwnedScriptAudioPlaybackPath(client, userId, storedAudio, voiceStylePreset)
+      )
+    : insertedAudio;
   const reusedGeneratedCache = didReuseGeneratedScriptAudioCache({
     insertSucceeded: Boolean(insertedAudio),
     finalCacheFound: Boolean(storedAudio)
