@@ -94,7 +94,6 @@ export type StorageObjectDeleteAttempt = Pick<VoiceDeletionLeaseClaim, "operatio
 export type StorageObjectDeleteResult = StorageObjectDeleteAttempt & {
   result:
     | "request_succeeded"
-    | "invalid_target"
     | "timed_out"
     | "rate_limited"
     | "unavailable"
@@ -115,7 +114,6 @@ export type StorageObjectVerificationResult = StorageObjectVerificationAttempt &
   result:
     | "absent"
     | "present"
-    | "invalid_target"
     | "timed_out"
     | "rate_limited"
     | "unavailable"
@@ -125,6 +123,15 @@ export type StorageObjectVerificationResult = StorageObjectVerificationAttempt &
     | "rejected"
     | "protocol_error";
   retryDelaySeconds: number;
+};
+
+export type StorageObjectInvalidTargetManualTransition = Pick<
+  VoiceDeletionLeaseClaim,
+  "operationId" | "userId" | "leaseToken"
+> & {
+  targetId: string;
+  expectedDeleteAttemptCount: number;
+  expectedVerificationAttemptCount: number;
 };
 
 export type VoiceDeletionRepository = {
@@ -153,6 +160,9 @@ export type VoiceDeletionRepository = {
   recordStorageObjectDeleteResult(input: StorageObjectDeleteResult): Promise<VoiceDeletionTargetRow | null>;
   beginStorageObjectVerificationAttempt(input: StorageObjectVerificationAttempt): Promise<VoiceDeletionTargetRow | null>;
   recordStorageObjectVerificationResult(input: StorageObjectVerificationResult): Promise<VoiceDeletionTargetRow | null>;
+  markStorageObjectInvalidTargetManualRequired(
+    input: StorageObjectInvalidTargetManualTransition
+  ): Promise<VoiceDeletionTargetRow | null>;
   finalizeOperation(operationId: string, userId: string, leaseToken: string): Promise<VoiceDeletionOperationRow>;
 };
 
@@ -515,6 +525,25 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     return isTargetRow(result.data) ? result.data : null;
   }
 
+  async function markStorageObjectInvalidTargetManualRequired(input: StorageObjectInvalidTargetManualTransition) {
+    const result = asMaybeSingle<VoiceDeletionTargetRow>(
+      await client.rpc("mark_storage_object_invalid_target_manual_required", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_target_id: input.targetId,
+        p_lease_token: input.leaseToken,
+        p_expected_delete_attempt_count: input.expectedDeleteAttemptCount,
+        p_expected_verification_attempt_count: input.expectedVerificationAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("storage object invalid target の manual 記録", result.error);
+    }
+
+    return isTargetRow(result.data) ? result.data : null;
+  }
+
   async function finalizeOperation(operationId: string, userId: string, leaseToken: string) {
     const result = asSingle<VoiceDeletionOperationRow>(
       await client.rpc("finalize_voice_deletion_operation", {
@@ -551,6 +580,7 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     recordStorageObjectDeleteResult,
     beginStorageObjectVerificationAttempt,
     recordStorageObjectVerificationResult,
+    markStorageObjectInvalidTargetManualRequired,
     // Completion deliberately has no generic status-update helper: the focused RPC
     // atomically proves target verification, scrubs locators, and closes the lease.
     finalizeOperation

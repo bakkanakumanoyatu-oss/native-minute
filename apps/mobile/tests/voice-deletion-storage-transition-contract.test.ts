@@ -132,6 +132,25 @@ describe("G5C-B3 focused Storage transition contract", () => {
       p_expected_delete_attempt_count: 0
     });
 
+    await expect(
+      repository.markStorageObjectInvalidTargetManualRequired({
+        operationId: "operation-a",
+        userId: "user-a",
+        targetId: "target-a",
+        leaseToken: "lease-a",
+        expectedDeleteAttemptCount: 1,
+        expectedVerificationAttemptCount: 0
+      })
+    ).resolves.toBeNull();
+    expect(rpc).toHaveBeenCalledWith("mark_storage_object_invalid_target_manual_required", {
+      p_operation_id: "operation-a",
+      p_user_id: "user-a",
+      p_target_id: "target-a",
+      p_lease_token: "lease-a",
+      p_expected_delete_attempt_count: 1,
+      p_expected_verification_attempt_count: 0
+    });
+
     const repositorySource = compact(readFileSync(repositoryPath, "utf8"));
     expect(repositorySource).not.toContain(".update(");
     expect(repositorySource).not.toContain(".insert(");

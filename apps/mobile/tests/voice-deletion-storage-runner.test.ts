@@ -18,6 +18,8 @@ type FixtureOptions = {
   staleDeleteRecord?: boolean;
   throwDeleteRecord?: boolean;
   throwVerificationRecord?: boolean;
+  staleInvalidTargetTransition?: boolean;
+  storageObjectKey?: string | null;
 };
 
 function createFixture(options: FixtureOptions = {}) {
@@ -54,7 +56,7 @@ function createFixture(options: FixtureOptions = {}) {
             : targetKind === "recordings"
               ? "recordings"
               : "invalid-runtime-bucket",
-    storage_object_key: objectKey,
+    storage_object_key: options.storageObjectKey ?? objectKey,
     source_row_id: "source-a",
     status: options.targetStatus ?? "pending",
     delete_attempt_count: options.deleteAttempts ?? 0,
@@ -78,8 +80,10 @@ function createFixture(options: FixtureOptions = {}) {
   let verificationRecordThrown = false;
 
   const repository = {
-    claimExpiredOrAvailableLease: vi.fn(async () => {
+    claimExpiredOrAvailableLease: vi.fn(async (input: { leaseToken: string }) => {
       operation.runner_attempt_count = Number(operation.runner_attempt_count) + 1;
+      operation.lease_token = input.leaseToken;
+      operation.lease_expires_at = "2026-08-24T00:01:00.000Z";
       return operation;
     }),
     releaseLease: vi.fn(async () => true),
@@ -94,7 +98,29 @@ function createFixture(options: FixtureOptions = {}) {
       operation.next_retry_at = null;
       return operation;
     }),
-    beginStorageObjectDeleteAttempt: vi.fn(async () => {
+    beginStorageObjectDeleteAttempt: vi.fn(async (input: {
+      operationId: string;
+      userId: string;
+      targetId: string;
+      leaseToken: string;
+      expectedDeleteAttemptCount: number;
+    }) => {
+      if (
+        input.operationId !== operation.id ||
+        input.userId !== operation.user_id ||
+        input.targetId !== target.id ||
+        input.leaseToken !== operation.lease_token ||
+        operation.current_stage !== "storage_cleanup" ||
+        !["processing", "partial_failure"].includes(String(operation.status))
+      ) {
+        return null;
+      }
+      if (!["voice_sample", "voice_consent_recording", "script_audio_storage"].includes(String(target.target_kind))) {
+        return null;
+      }
+      if (Number(target.delete_attempt_count) !== input.expectedDeleteAttemptCount) {
+        return null;
+      }
       if (options.sourceManual) {
         target.status = "manual_required";
         operation.status = "manual_required";
@@ -124,7 +150,7 @@ function createFixture(options: FixtureOptions = {}) {
         target.verification_status = "pending";
         operation.status = "processing";
         operation.next_retry_at = null;
-      } else if (["auth_failed", "permission_denied", "invalid_target"].includes(input.result)) {
+      } else if (["auth_failed", "permission_denied"].includes(input.result)) {
         target.status = "manual_required";
         target.verification_status = "manual_required";
         target.last_failure_category = input.result;
@@ -145,7 +171,29 @@ function createFixture(options: FixtureOptions = {}) {
       }
       return target;
     }),
-    beginStorageObjectVerificationAttempt: vi.fn(async () => {
+    beginStorageObjectVerificationAttempt: vi.fn(async (input: {
+      operationId: string;
+      userId: string;
+      targetId: string;
+      leaseToken: string;
+      expectedVerificationAttemptCount: number;
+    }) => {
+      if (
+        input.operationId !== operation.id ||
+        input.userId !== operation.user_id ||
+        input.targetId !== target.id ||
+        input.leaseToken !== operation.lease_token ||
+        operation.current_stage !== "storage_cleanup" ||
+        !["processing", "partial_failure"].includes(String(operation.status))
+      ) {
+        return null;
+      }
+      if (!["voice_sample", "voice_consent_recording", "script_audio_storage"].includes(String(target.target_kind))) {
+        return null;
+      }
+      if (Number(target.verification_attempt_count) !== input.expectedVerificationAttemptCount) {
+        return null;
+      }
       if (Number(target.verification_attempt_count) >= 5) {
         target.status = "manual_required";
         target.verification_status = "manual_required";
@@ -186,6 +234,40 @@ function createFixture(options: FixtureOptions = {}) {
         operation.last_failure_category = input.result;
         operation.next_retry_at = null;
       }
+      return target;
+    }),
+    markStorageObjectInvalidTargetManualRequired: vi.fn(async (input: {
+      operationId: string;
+      userId: string;
+      targetId: string;
+      leaseToken: string;
+      expectedDeleteAttemptCount: number;
+      expectedVerificationAttemptCount: number;
+    }) => {
+      if (
+        options.staleInvalidTargetTransition ||
+        input.operationId !== operation.id ||
+        input.userId !== operation.user_id ||
+        input.targetId !== target.id ||
+        input.leaseToken !== operation.lease_token ||
+        operation.current_stage !== "storage_cleanup" ||
+        !["processing", "partial_failure"].includes(String(operation.status)) ||
+        !["voice_sample", "voice_consent_recording", "script_audio_storage"].includes(String(target.target_kind)) ||
+        target.status === "verified_absent" ||
+        target.status === "manual_required" ||
+        Number(target.delete_attempt_count) !== input.expectedDeleteAttemptCount ||
+        Number(target.verification_attempt_count) !== input.expectedVerificationAttemptCount
+      ) {
+        return null;
+      }
+      target.status = "manual_required";
+      target.reconciliation_status = "manual_required";
+      target.verification_status = "manual_required";
+      target.last_failure_category = "invalid_target";
+      operation.status = "manual_required";
+      operation.last_failure_stage = "storage_cleanup";
+      operation.last_failure_category = "invalid_target";
+      operation.next_retry_at = null;
       return target;
     })
   } as unknown as VoiceDeletionRepository;
@@ -267,6 +349,8 @@ describe("G5C-B3 one-object Storage runner", () => {
     expect(storageAdapter.deleteObject).toHaveBeenCalledTimes(1);
     expect(storageAdapter.verifyObjectAbsence).not.toHaveBeenCalled();
     expect(target).toMatchObject({ status: "delete_requested", verification_status: "pending", last_failure_category: "rejected" });
+    expect(repository.markStorageObjectInvalidTargetManualRequired).not.toHaveBeenCalled();
+    expect(repository.recordStorageObjectDeleteResult).toHaveBeenCalledTimes(1);
 
     await expect(runVoiceDeletionStorageStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, storageAdapter))).resolves.toEqual({
       kind: "progressed"
@@ -275,8 +359,37 @@ describe("G5C-B3 one-object Storage runner", () => {
     expect(target).toMatchObject({ status: "delete_requested", verification_status: "present" });
   });
 
-  it("persists a recordings runtime target as manual_required without storage_stage_complete", async () => {
+  it("keeps recordings out of canonical durable selection and makes no Storage call", async () => {
     const { repository, storageAdapter, target } = createFixture({ targetKind: "recordings" });
+
+    await repository.claimExpiredOrAvailableLease({
+      operationId: "operation-a",
+      userId: "user-a",
+      leaseToken: "00000000-0000-4000-8000-000000000001",
+      leaseSeconds: 60
+    });
+
+    await expect(
+      repository.beginStorageObjectDeleteAttempt({
+        operationId: "operation-a",
+        userId: "user-a",
+        targetId: "target-a",
+        leaseToken: "00000000-0000-4000-8000-000000000001",
+        expectedDeleteAttemptCount: 0
+      })
+    ).resolves.toBeNull();
+
+    await expect(runVoiceDeletionStorageStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, storageAdapter))).resolves.toEqual({
+      kind: "not_runnable"
+    });
+    expect(repository.beginStorageObjectDeleteAttempt).toHaveBeenCalledTimes(1);
+    expect(storageAdapter.deleteObject).not.toHaveBeenCalled();
+    expect(storageAdapter.verifyObjectAbsence).not.toHaveBeenCalled();
+    expect(target).toMatchObject({ target_kind: "recordings", status: "pending" });
+  });
+
+  it("uses canonical target identity to persist a delete-side adapter invalid_target as manual_required", async () => {
+    const { repository, storageAdapter, operation, target } = createFixture();
     storageAdapter.deleteObject.mockResolvedValue({ kind: "invalid_target" });
 
     await expect(runVoiceDeletionStorageStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, storageAdapter))).resolves.toEqual({
@@ -284,17 +397,21 @@ describe("G5C-B3 one-object Storage runner", () => {
     });
     expect(storageAdapter.deleteObject).toHaveBeenCalledTimes(1);
     expect(storageAdapter.verifyObjectAbsence).not.toHaveBeenCalled();
-    expect(target).toMatchObject({
-      target_kind: "recordings",
-      status: "manual_required",
-      verification_status: "manual_required",
-      last_failure_category: "invalid_target"
+    expect(repository.recordStorageObjectDeleteResult).not.toHaveBeenCalled();
+    expect(repository.markStorageObjectInvalidTargetManualRequired).toHaveBeenCalledWith({
+      operationId: "operation-a",
+      userId: "user-a",
+      targetId: "target-a",
+      leaseToken: "00000000-0000-4000-8000-000000000001",
+      expectedDeleteAttemptCount: 1,
+      expectedVerificationAttemptCount: 0
     });
+    expect(operation).toMatchObject({ status: "manual_required", next_retry_at: null, last_failure_category: "invalid_target" });
+    expect(target).toMatchObject({ status: "manual_required", verification_status: "manual_required", last_failure_category: "invalid_target" });
   });
 
-  it("persists an invalid verification result as manual_required without a retry", async () => {
+  it("uses the dedicated transition for verification-side adapter invalid_target", async () => {
     const { repository, storageAdapter, operation, target } = createFixture({
-      targetKind: "recordings",
       targetStatus: "delete_requested",
       verificationStatus: "pending",
       deleteAttempts: 1
@@ -306,8 +423,90 @@ describe("G5C-B3 one-object Storage runner", () => {
     });
     expect(storageAdapter.deleteObject).not.toHaveBeenCalled();
     expect(storageAdapter.verifyObjectAbsence).toHaveBeenCalledTimes(1);
+    expect(repository.recordStorageObjectVerificationResult).not.toHaveBeenCalled();
+    expect(repository.markStorageObjectInvalidTargetManualRequired).toHaveBeenCalledWith({
+      operationId: "operation-a",
+      userId: "user-a",
+      targetId: "target-a",
+      leaseToken: "00000000-0000-4000-8000-000000000001",
+      expectedDeleteAttemptCount: 1,
+      expectedVerificationAttemptCount: 1
+    });
     expect(operation).toMatchObject({ status: "manual_required", next_retry_at: null, last_failure_category: "invalid_target" });
     expect(target).toMatchObject({ status: "manual_required", verification_status: "manual_required", last_failure_category: "invalid_target" });
+  });
+
+  it("uses the dedicated transition before begin for an invalid local projection without a Storage call", async () => {
+    const { repository, storageAdapter, operation, target } = createFixture({ storageObjectKey: "   " });
+
+    await expect(runVoiceDeletionStorageStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, storageAdapter))).resolves.toEqual({
+      kind: "manual_required"
+    });
+    expect(repository.beginStorageObjectDeleteAttempt).not.toHaveBeenCalled();
+    expect(repository.markStorageObjectInvalidTargetManualRequired).toHaveBeenCalledWith({
+      operationId: "operation-a",
+      userId: "user-a",
+      targetId: "target-a",
+      leaseToken: "00000000-0000-4000-8000-000000000001",
+      expectedDeleteAttemptCount: 0,
+      expectedVerificationAttemptCount: 0
+    });
+    expect(storageAdapter.deleteObject).not.toHaveBeenCalled();
+    expect(storageAdapter.verifyObjectAbsence).not.toHaveBeenCalled();
+    expect(operation.status).toBe("manual_required");
+    expect(target.status).toBe("manual_required");
+  });
+
+  it("fails closed when the dedicated invalid-target transition loses its lease/CAS", async () => {
+    const { repository, storageAdapter, operation, target } = createFixture({ staleInvalidTargetTransition: true });
+    storageAdapter.deleteObject.mockResolvedValue({ kind: "invalid_target" });
+
+    await expect(runVoiceDeletionStorageStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, storageAdapter))).resolves.toEqual({
+      kind: "stale_result"
+    });
+    expect(repository.recordStorageObjectDeleteResult).not.toHaveBeenCalled();
+    expect(target).toMatchObject({ status: "delete_requested", verification_status: "pending" });
+    expect(operation.status).toBe("processing");
+  });
+
+  it("does not let a provider target or stale counters use the dedicated local-contract transition", async () => {
+    const providerTarget = createFixture({ targetKind: "provider_voice" });
+    await providerTarget.repository.claimExpiredOrAvailableLease({
+      operationId: "operation-a",
+      userId: "user-a",
+      leaseToken: "00000000-0000-4000-8000-000000000001",
+      leaseSeconds: 60
+    });
+    await expect(
+      providerTarget.repository.markStorageObjectInvalidTargetManualRequired({
+        operationId: "operation-a",
+        userId: "user-a",
+        targetId: "target-a",
+        leaseToken: "00000000-0000-4000-8000-000000000001",
+        expectedDeleteAttemptCount: 0,
+        expectedVerificationAttemptCount: 0
+      })
+    ).resolves.toBeNull();
+    expect(providerTarget.target.status).toBe("pending");
+
+    const staleCounters = createFixture();
+    await staleCounters.repository.claimExpiredOrAvailableLease({
+      operationId: "operation-a",
+      userId: "user-a",
+      leaseToken: "00000000-0000-4000-8000-000000000001",
+      leaseSeconds: 60
+    });
+    await expect(
+      staleCounters.repository.markStorageObjectInvalidTargetManualRequired({
+        operationId: "operation-a",
+        userId: "user-a",
+        targetId: "target-a",
+        leaseToken: "00000000-0000-4000-8000-000000000001",
+        expectedDeleteAttemptCount: 1,
+        expectedVerificationAttemptCount: 0
+      })
+    ).resolves.toBeNull();
+    expect(staleCounters.target.status).toBe("pending");
   });
 
   it("uses verification present to enable a later delete retry without chaining calls", async () => {

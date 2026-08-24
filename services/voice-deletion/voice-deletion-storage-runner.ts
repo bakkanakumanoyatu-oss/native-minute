@@ -20,6 +20,12 @@ const RETRY_CAP_SECONDS = 300;
 
 const STORAGE_TARGET_KINDS = ["voice_sample", "voice_consent_recording", "script_audio_storage"] as const;
 const NON_STORAGE_TARGET_KINDS = ["provider_voice", "script_audio", "saved_model_audio", "voice_binding"] as const;
+type ExternalStorageAdapterDeleteResult = Omit<StorageAdapterDeleteResult, "kind"> & {
+  kind: Exclude<StorageAdapterDeleteResult["kind"], "invalid_target">;
+};
+type ExternalStorageAdapterVerificationResult = Omit<StorageAdapterVerificationResult, "kind"> & {
+  kind: Exclude<StorageAdapterVerificationResult["kind"], "invalid_target">;
+};
 
 type StorageStepInput = {
   operationId: string;
@@ -50,8 +56,20 @@ function isStorageTargetKind(value: string): value is StorageObjectTargetKind {
   return (STORAGE_TARGET_KINDS as readonly string[]).includes(value);
 }
 
-function isStorageCleanupTarget(value: string) {
-  return !(NON_STORAGE_TARGET_KINDS as readonly string[]).includes(value);
+function isKnownNonStorageTarget(value: string) {
+  return (NON_STORAGE_TARGET_KINDS as readonly string[]).includes(value);
+}
+
+function hasUnsupportedStorageStageTarget(targets: Array<{ target_kind: string }>) {
+  return targets.some((target) => !isStorageTargetKind(target.target_kind) && !isKnownNonStorageTarget(target.target_kind));
+}
+
+function hasValidStorageAdapterProjection(target: { target_kind: string; storage_object_key: string | null }) {
+  return (
+    isStorageTargetKind(target.target_kind) &&
+    typeof target.storage_object_key === "string" &&
+    target.storage_object_key.trim().length > 0
+  );
 }
 
 function isFuture(value: string | null, now: Date) {
@@ -80,7 +98,7 @@ function isStorageStageComplete(
     reconciliation_status: string;
   }>
 ) {
-  const storageTargets = targets.filter((target) => isStorageCleanupTarget(target.target_kind));
+  const storageTargets = targets.filter((target) => isStorageTargetKind(target.target_kind));
   return storageTargets.every(
     (target) =>
       isStorageTargetKind(target.target_kind) &&
@@ -97,7 +115,7 @@ function toDeleteResult(input: {
   targetId: string;
   leaseToken: string;
   expectedDeleteAttemptCount: number;
-  result: StorageAdapterDeleteResult;
+  result: ExternalStorageAdapterDeleteResult;
   random: () => number;
 }): StorageDeleteResultInput {
   return {
@@ -119,7 +137,7 @@ function toVerificationResult(input: {
   targetId: string;
   leaseToken: string;
   expectedVerificationAttemptCount: number;
-  result: StorageAdapterVerificationResult;
+  result: ExternalStorageAdapterVerificationResult;
   random: () => number;
 }): StorageVerificationResultInput {
   return {
@@ -193,9 +211,12 @@ export async function runVoiceDeletionStorageStep(
     }
 
     const targets = await dependencies.repository.listOperationTargets(input.operationId, input.userId);
-    // Known B4/non-Storage targets are intentionally excluded. Any other runtime
-    // target is kept here so the adapter can fail it closed and persist the result.
-    const storageTargets = targets.filter((target) => isStorageCleanupTarget(target.target_kind));
+    // Canonical begin is the authority for B3 candidate selection. An unknown durable
+    // kind is not handed to the adapter and cannot become a Storage delete candidate.
+    if (hasUnsupportedStorageStageTarget(targets)) {
+      return { kind: "not_runnable" };
+    }
+    const storageTargets = targets.filter((target) => isStorageTargetKind(target.target_kind));
     if (storageTargets.some((target) => target.status === "manual_required")) {
       return { kind: "manual_required" };
     }
@@ -209,6 +230,20 @@ export async function runVoiceDeletionStorageStep(
     const target = storageTargets.find((candidate) => candidate.status !== "verified_absent" && candidate.status !== "manual_required");
     if (!target) {
       return { kind: "not_runnable" };
+    }
+
+    // This supports a local contract failure before a begin RPC can establish an
+    // external attempt. The transition authority stays entirely canonical.
+    if (!hasValidStorageAdapterProjection(target)) {
+      const recorded = await dependencies.repository.markStorageObjectInvalidTargetManualRequired({
+        operationId: input.operationId,
+        userId: input.userId,
+        targetId: target.id,
+        leaseToken,
+        expectedDeleteAttemptCount: target.delete_attempt_count,
+        expectedVerificationAttemptCount: target.verification_attempt_count
+      });
+      return recorded ? { kind: "manual_required" } : { kind: "stale_result" };
     }
 
     const mustVerify =
@@ -240,6 +275,18 @@ export async function runVoiceDeletionStorageStep(
         return { kind: "retry_later" };
       }
 
+      if (verification.kind === "invalid_target") {
+        const recorded = await dependencies.repository.markStorageObjectInvalidTargetManualRequired({
+          operationId: input.operationId,
+          userId: input.userId,
+          targetId: begun.id,
+          leaseToken,
+          expectedDeleteAttemptCount: begun.delete_attempt_count,
+          expectedVerificationAttemptCount: begun.verification_attempt_count
+        });
+        return recorded ? { kind: "manual_required" } : { kind: "stale_result" };
+      }
+
       const recorded = await dependencies.repository.recordStorageObjectVerificationResult(
         toVerificationResult({
           operationId: input.operationId,
@@ -247,7 +294,7 @@ export async function runVoiceDeletionStorageStep(
           targetId: target.id,
           leaseToken,
           expectedVerificationAttemptCount: begun.verification_attempt_count,
-          result: verification,
+          result: verification as ExternalStorageAdapterVerificationResult,
           random
         })
       );
@@ -295,6 +342,18 @@ export async function runVoiceDeletionStorageStep(
       return { kind: "retry_later" };
     }
 
+    if (deletion.kind === "invalid_target") {
+      const recorded = await dependencies.repository.markStorageObjectInvalidTargetManualRequired({
+        operationId: input.operationId,
+        userId: input.userId,
+        targetId: begun.id,
+        leaseToken,
+        expectedDeleteAttemptCount: begun.delete_attempt_count,
+        expectedVerificationAttemptCount: begun.verification_attempt_count
+      });
+      return recorded ? { kind: "manual_required" } : { kind: "stale_result" };
+    }
+
     const recorded = await dependencies.repository.recordStorageObjectDeleteResult(
       toDeleteResult({
         operationId: input.operationId,
@@ -302,7 +361,7 @@ export async function runVoiceDeletionStorageStep(
         targetId: target.id,
         leaseToken,
         expectedDeleteAttemptCount: begun.delete_attempt_count,
-        result: deletion,
+        result: deletion as ExternalStorageAdapterDeleteResult,
         random
       })
     );

@@ -1025,6 +1025,17 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["voice_deletion_targets"]["Row"];
       };
+      mark_storage_object_invalid_target_manual_required: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_target_id: string;
+          p_lease_token: string;
+          p_expected_delete_attempt_count: number;
+          p_expected_verification_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_targets"]["Row"];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
