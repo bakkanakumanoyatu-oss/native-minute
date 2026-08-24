@@ -1,5 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
+
+const mocks = vi.hoisted(() => ({
+  createSupabaseAdminClient: vi.fn()
+}));
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createSupabaseAdminClient: mocks.createSupabaseAdminClient
+}));
+
 import { uploadOwnedVoiceConsentRecording } from "@/services/storage/voice-consent-storage.service";
 import { uploadOwnedVoiceSample } from "@/services/storage/voice-sample-storage.service";
 
@@ -49,13 +58,23 @@ function intents(
   return { reserve, finalizeUpload };
 }
 
+function configureServerStorage(upload: ReturnType<typeof vi.fn>) {
+  const from = vi.fn(() => ({ upload }));
+  mocks.createSupabaseAdminClient.mockReturnValue({ storage: { from } });
+  return from;
+}
+
 describe("G5C-B4 durable voice uploads", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("rejects an active deletion before voice sample Storage is called", async () => {
-    const upload = vi.fn();
+    const authenticatedUpload = vi.fn();
     const reserve = vi.fn<ReserveMock>().mockRejectedValue({ status: 409 });
 
     await expect(uploadOwnedVoiceSample(
-      createClient(upload),
+      createClient(authenticatedUpload),
       USER_ID,
       { consentId: CONSENT_ID, file: new File(["sample"], "sample.m4a", { type: "audio/mp4" }) },
       intents(reserve)
@@ -67,15 +86,16 @@ describe("G5C-B4 durable voice uploads", () => {
       storageBucket: "voice-samples",
       storageObjectKey: expect.stringMatching(new RegExp(`^${USER_ID}/${CONSENT_ID}/[^/]+\\.m4a$`))
     }));
-    expect(upload).not.toHaveBeenCalled();
+    expect(authenticatedUpload).not.toHaveBeenCalled();
+    expect(mocks.createSupabaseAdminClient).not.toHaveBeenCalled();
   });
 
   it("rejects an active deletion before consent recording Storage is called", async () => {
-    const upload = vi.fn();
+    const authenticatedUpload = vi.fn();
     const reserve = vi.fn<ReserveMock>().mockRejectedValue({ status: 409 });
 
     await expect(uploadOwnedVoiceConsentRecording(
-      createClient(upload),
+      createClient(authenticatedUpload),
       USER_ID,
       { file: new File(["consent"], "consent.m4a", { type: "audio/mp4" }) },
       intents(reserve)
@@ -87,22 +107,28 @@ describe("G5C-B4 durable voice uploads", () => {
       storageBucket: "voice-consents",
       storageObjectKey: expect.stringMatching(new RegExp(`^${USER_ID}/[^/]+\\.m4a$`))
     }));
-    expect(upload).not.toHaveBeenCalled();
+    expect(authenticatedUpload).not.toHaveBeenCalled();
+    expect(mocks.createSupabaseAdminClient).not.toHaveBeenCalled();
   });
 
   it("keeps a successful Storage write unresolved when durable completion crashes", async () => {
     const upload = vi.fn(async () => ({ error: null }));
+    const authenticatedUpload = vi.fn();
+    const serverStorageFrom = configureServerStorage(upload);
     const finalizeUpload = vi.fn<FinalizeMock>().mockRejectedValue({ status: 500 });
     const writeIntents = intents(vi.fn<ReserveMock>().mockResolvedValue(RESERVATION), finalizeUpload);
 
     await expect(uploadOwnedVoiceSample(
-      createClient(upload),
+      createClient(authenticatedUpload),
       USER_ID,
       { consentId: CONSENT_ID, file: new File(["sample"], "sample.m4a", { type: "audio/mp4" }) },
       writeIntents
     )).rejects.toMatchObject({ status: 500 });
 
     expect(upload).toHaveBeenCalledTimes(1);
+    expect(authenticatedUpload).not.toHaveBeenCalled();
+    expect(serverStorageFrom).toHaveBeenCalledWith("voice-samples");
+    expect(mocks.createSupabaseAdminClient).toHaveBeenCalledTimes(1);
     expect(finalizeUpload).toHaveBeenCalledWith(expect.objectContaining({
       ...RESERVATION,
       userId: USER_ID,
@@ -112,17 +138,22 @@ describe("G5C-B4 durable voice uploads", () => {
 
   it("does not finalize or cancel when the Storage response is ambiguous", async () => {
     const upload = vi.fn(async () => ({ error: { message: "network timeout after request" } }));
+    const authenticatedUpload = vi.fn();
+    const serverStorageFrom = configureServerStorage(upload);
     const finalizeUpload = vi.fn<FinalizeMock>().mockResolvedValue(COMPLETED_INTENT);
     const writeIntents = intents(vi.fn<ReserveMock>().mockResolvedValue(RESERVATION), finalizeUpload);
 
     await expect(uploadOwnedVoiceConsentRecording(
-      createClient(upload),
+      createClient(authenticatedUpload),
       USER_ID,
       { file: new File(["consent"], "consent.m4a", { type: "audio/mp4" }) },
       writeIntents
     )).rejects.toMatchObject({ status: 500 });
 
     expect(upload).toHaveBeenCalledTimes(1);
+    expect(authenticatedUpload).not.toHaveBeenCalled();
+    expect(serverStorageFrom).toHaveBeenCalledWith("voice-consents");
+    expect(mocks.createSupabaseAdminClient).toHaveBeenCalledTimes(1);
     expect(finalizeUpload).not.toHaveBeenCalled();
     expect(Object.keys(writeIntents)).not.toContain("cancelKnownNoSideEffect");
   });
@@ -130,10 +161,12 @@ describe("G5C-B4 durable voice uploads", () => {
   it("terminalizes successful sample and consent uploads with the exact reserved identity", async () => {
     for (const uploadKind of ["sample", "consent"] as const) {
       const upload = vi.fn(async () => ({ error: null }));
+      const authenticatedUpload = vi.fn();
+      const serverStorageFrom = configureServerStorage(upload);
       const reserve = vi.fn<ReserveMock>().mockResolvedValue(RESERVATION);
       const finalizeUpload = vi.fn<FinalizeMock>().mockResolvedValue(COMPLETED_INTENT);
       const writeIntents = intents(reserve, finalizeUpload);
-      const client = createClient(upload);
+      const client = createClient(authenticatedUpload);
 
       if (uploadKind === "sample") {
         await uploadOwnedVoiceSample(
@@ -153,6 +186,10 @@ describe("G5C-B4 durable voice uploads", () => {
 
       const reserved = reserve.mock.calls[0]?.[0];
       expect(upload).toHaveBeenCalledWith(reserved?.storageObjectKey, expect.any(Buffer), expect.any(Object));
+      expect(authenticatedUpload).not.toHaveBeenCalled();
+      expect(serverStorageFrom).toHaveBeenCalledWith(
+        uploadKind === "sample" ? "voice-samples" : "voice-consents"
+      );
       expect(finalizeUpload).toHaveBeenCalledWith(expect.objectContaining({
         ...RESERVATION,
         storageBucket: reserved?.storageBucket,

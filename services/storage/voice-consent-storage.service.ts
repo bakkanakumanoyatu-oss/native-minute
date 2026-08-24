@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import { createVoiceAssetWriteIntentRepository } from "@/services/voice/voice-asset-write-intent.repository";
 import {
@@ -16,6 +17,7 @@ type VoiceAssetWriteIntents = Pick<
   ReturnType<typeof createVoiceAssetWriteIntentRepository>,
   "reserve" | "finalizeUpload"
 >;
+type ServerStorageClient = Pick<ReturnType<typeof createSupabaseAdminClient>, "storage">;
 
 export type UploadedVoiceConsentRecording = {
   audioPath: string;
@@ -216,8 +218,9 @@ export async function uploadOwnedVoiceConsentRecording(
     storageBucket: VOICE_CONSENTS_BUCKET,
     storageObjectKey: objectKey
   });
+  const storageClient: ServerStorageClient = createSupabaseAdminClient();
 
-  const { error } = await client.storage.from(VOICE_CONSENTS_BUCKET).upload(objectKey, bytes, {
+  const { error } = await storageClient.storage.from(VOICE_CONSENTS_BUCKET).upload(objectKey, bytes, {
     contentType,
     cacheControl: "3600",
     upsert: false

@@ -15,6 +15,9 @@ const sampleStorageMigrationPath = fileURLToPath(
 const consentStorageMigrationPath = fileURLToPath(
   new URL("../../../supabase/migrations/0008_phase8_voice_consent_storage.sql", import.meta.url)
 );
+const storageTransitionMigrationPath = fileURLToPath(
+  new URL("../../../supabase/migrations/0017_g5c_b3_storage_object_transitions.sql", import.meta.url)
+);
 
 function compact(value: string) {
   return value.replace(/\s+/g, " ").trim();
@@ -205,13 +208,43 @@ describe("G5C-B4 durable voice asset writer intent contract", () => {
     });
   });
 
-  it("retains authenticated owner-prefix Storage policies as defense in depth", () => {
+  it("preserves owner-prefix reads while closing direct authenticated Storage mutations", () => {
     const sampleSql = compact(readFileSync(sampleStorageMigrationPath, "utf8"));
     const consentSql = compact(readFileSync(consentStorageMigrationPath, "utf8"));
+    const storageTransitionSql = compact(readFileSync(storageTransitionMigrationPath, "utf8"));
+    const b4Sql = compact(readFileSync(migrationPath, "utf8"));
 
+    expect(sampleSql).toContain("create policy \"voice-samples_select_own\"");
     expect(sampleSql).toContain("create policy \"voice-samples_insert_own\"");
-    expect(sampleSql).toContain("bucket_id = 'voice-samples' and (storage.foldername(name))[1] = auth.uid()::text");
+    expect(sampleSql).toContain("create policy \"voice-samples_update_own\"");
+    expect(sampleSql).toContain("create policy \"voice-samples_delete_own\"");
+    expect(consentSql).toContain("create policy \"voice-consents_select_own\"");
     expect(consentSql).toContain("create policy \"voice-consents_insert_own\"");
-    expect(consentSql).toContain("bucket_id = 'voice-consents' and (storage.foldername(name))[1] = auth.uid()::text");
+    expect(consentSql).toContain("create policy \"voice-consents_update_own\"");
+    expect(consentSql).toContain("create policy \"voice-consents_delete_own\"");
+
+    expect(storageTransitionSql).toContain("drop policy if exists \"voice-samples_delete_own\" on storage.objects");
+    expect(storageTransitionSql).toContain("drop policy if exists \"voice-consents_delete_own\" on storage.objects");
+    expect(b4Sql).toContain("drop policy if exists \"voice-samples_insert_own\" on storage.objects");
+    expect(b4Sql).toContain("drop policy if exists \"voice-samples_update_own\" on storage.objects");
+    expect(b4Sql).toContain("drop policy if exists \"voice-consents_insert_own\" on storage.objects");
+    expect(b4Sql).toContain("drop policy if exists \"voice-consents_update_own\" on storage.objects");
+    expect(b4Sql).not.toContain("drop policy if exists \"voice-samples_select_own\" on storage.objects");
+    expect(b4Sql).not.toContain("drop policy if exists \"voice-consents_select_own\" on storage.objects");
+  });
+
+  it("changes no unrelated Storage object policy in B4", () => {
+    const sql = readFileSync(migrationPath, "utf8");
+    const droppedStoragePolicies = Array.from(
+      sql.matchAll(/drop policy if exists "([^"]+)" on storage\.objects;/g),
+      (match) => match[1]
+    );
+
+    expect(droppedStoragePolicies).toEqual([
+      "voice-samples_insert_own",
+      "voice-samples_update_own",
+      "voice-consents_insert_own",
+      "voice-consents_update_own"
+    ]);
   });
 });

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import { createVoiceAssetWriteIntentRepository } from "@/services/voice/voice-asset-write-intent.repository";
 import type { Database } from "@/types/database";
@@ -14,6 +15,7 @@ type VoiceAssetWriteIntents = Pick<
   ReturnType<typeof createVoiceAssetWriteIntentRepository>,
   "reserve" | "finalizeUpload"
 >;
+type ServerStorageClient = Pick<ReturnType<typeof createSupabaseAdminClient>, "storage">;
 
 type PostgrestMaybeSingle<TRow> = {
   data: TRow | null;
@@ -230,8 +232,9 @@ export async function uploadOwnedVoiceSample(
     storageBucket: VOICE_SAMPLES_BUCKET,
     storageObjectKey: objectKey
   });
+  const storageClient: ServerStorageClient = createSupabaseAdminClient();
 
-  const { error } = await client.storage.from(VOICE_SAMPLES_BUCKET).upload(objectKey, bytes, {
+  const { error } = await storageClient.storage.from(VOICE_SAMPLES_BUCKET).upload(objectKey, bytes, {
     contentType,
     cacheControl: "3600",
     upsert: false

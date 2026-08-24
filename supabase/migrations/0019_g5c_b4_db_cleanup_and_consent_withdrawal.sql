@@ -719,6 +719,15 @@ drop policy if exists "script_audios_insert_own" on public.script_audios;
 drop policy if exists "script_audios_update_own" on public.script_audios;
 drop policy if exists "script_audios_delete_own" on public.script_audios;
 
+-- Voice sample and consent-recording reads remain owner-prefix scoped. Object
+-- creation and identity mutation must instead pass through the server-owned
+-- durable upload writer, so authenticated Storage clients retain no INSERT or
+-- UPDATE policy for these two focused buckets. B3 already removed DELETE.
+drop policy if exists "voice-samples_insert_own" on storage.objects;
+drop policy if exists "voice-samples_update_own" on storage.objects;
+drop policy if exists "voice-consents_insert_own" on storage.objects;
+drop policy if exists "voice-consents_update_own" on storage.objects;
+
 -- Legacy provider-workflow consent rows remain append-only for authenticated users.
 drop policy if exists "voice_consents_crud_own" on public.voice_consents;
 drop policy if exists "voice_consents_select_own" on public.voice_consents;
