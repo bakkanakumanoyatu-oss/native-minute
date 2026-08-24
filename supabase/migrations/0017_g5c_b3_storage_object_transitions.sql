@@ -77,6 +77,267 @@ drop policy if exists "voice-samples_delete_own" on storage.objects;
 drop policy if exists "voice-consents_delete_own" on storage.objects;
 drop policy if exists "script-audios_delete_own" on storage.objects;
 
+-- G5C-B3 writer fence. The begin-delete RPC locks the same writer tables before
+-- it re-resolves shared references. After its durable delete intent commits, these
+-- triggers keep the exact locator fenced until the operation is safely completed.
+-- This is deliberately limited to the three B3 Storage target kinds and their
+-- current DB reference writers; it is not a general Storage policy framework.
+create or replace function public.g5c_b3_storage_reference_fence_active(
+  p_user_id uuid,
+  p_target_kind text,
+  p_storage_bucket text,
+  p_storage_object_key text,
+  p_source_row_id uuid default null
+)
+returns boolean
+language sql
+security definer
+set search_path = pg_catalog, public
+as $$
+  select
+    p_user_id is not null
+    and p_storage_object_key is not null
+    and (
+      (p_target_kind = 'voice_sample' and p_storage_bucket = 'voice-samples')
+      or (p_target_kind = 'voice_consent_recording' and p_storage_bucket = 'voice-consents')
+      or (p_target_kind = 'script_audio_storage' and p_storage_bucket = 'script-audios')
+    )
+    and exists (
+      select 1
+      from public.voice_deletion_targets as target
+      join public.voice_deletion_operations as operation
+        on operation.id = target.operation_id
+        and operation.user_id = target.user_id
+      where target.user_id = p_user_id
+        and target.target_kind = p_target_kind
+        and target.storage_bucket = p_storage_bucket
+        and target.storage_object_key = p_storage_object_key
+        and (p_source_row_id is null or target.source_row_id = p_source_row_id)
+        and target.status in ('delete_requested', 'deleted', 'verified_absent', 'manual_required')
+        and operation.destructive_started_at is not null
+        and operation.status <> 'completed'
+    );
+$$;
+
+create or replace function public.enforce_g5c_b3_voice_storage_reference_fence()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_consent_recording_path text;
+  v_object_key text;
+begin
+  if tg_op = 'UPDATE'
+    and new.user_id is not distinct from old.user_id
+    and new.sample_audio_path is not distinct from old.sample_audio_path
+    and new.consent_id is not distinct from old.consent_id then
+    return new;
+  end if;
+
+  if new.sample_audio_path like 'storage://voice-samples/%' then
+    v_object_key := substr(new.sample_audio_path, char_length('storage://voice-samples/') + 1);
+
+    if v_object_key = ''
+      or public.g5c_b3_storage_reference_fence_active(
+        new.user_id,
+        'voice_sample',
+        'voice-samples',
+        v_object_key
+      ) then
+      raise exception using
+        errcode = 'check_violation',
+        message = 'voice deletion storage reference fence is active';
+    end if;
+  end if;
+
+  if new.consent_id is not null then
+    select consent.metadata -> 'recording' ->> 'audioPath'
+    into v_consent_recording_path
+    from public.voice_consents as consent
+    where consent.id = new.consent_id
+      and consent.user_id = new.user_id;
+
+    if v_consent_recording_path like 'storage://voice-consents/%' then
+      v_object_key := substr(v_consent_recording_path, char_length('storage://voice-consents/') + 1);
+
+      if v_object_key = ''
+        or public.g5c_b3_storage_reference_fence_active(
+          new.user_id,
+          'voice_consent_recording',
+          'voice-consents',
+          v_object_key,
+          new.consent_id
+        ) then
+        raise exception using
+          errcode = 'check_violation',
+          message = 'voice deletion storage reference fence is active';
+      end if;
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.enforce_g5c_b3_voice_consent_storage_reference_fence()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_recording_path text;
+  v_object_key text;
+begin
+  v_recording_path := new.metadata -> 'recording' ->> 'audioPath';
+
+  if tg_op = 'UPDATE'
+    and new.user_id is not distinct from old.user_id
+    and v_recording_path is not distinct from old.metadata -> 'recording' ->> 'audioPath' then
+    return new;
+  end if;
+
+  if v_recording_path like 'storage://voice-consents/%' then
+    v_object_key := substr(v_recording_path, char_length('storage://voice-consents/') + 1);
+
+    if v_object_key = ''
+      or public.g5c_b3_storage_reference_fence_active(
+        new.user_id,
+        'voice_consent_recording',
+        'voice-consents',
+        v_object_key
+      ) then
+      raise exception using
+        errcode = 'check_violation',
+        message = 'voice deletion storage reference fence is active';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.enforce_g5c_b3_script_audio_storage_reference_fence()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_user_id uuid;
+  v_storage_bucket text;
+  v_object_key text;
+begin
+  if tg_op = 'UPDATE'
+    and new.script_id is not distinct from old.script_id
+    and new.voice_id is not distinct from old.voice_id
+    and new.stored_asset is not distinct from old.stored_asset then
+    return new;
+  end if;
+
+  v_storage_bucket := new.stored_asset ->> 'storageBucket';
+  v_object_key := new.stored_asset ->> 'storageObjectKey';
+
+  if v_storage_bucket = 'script-audios' and v_object_key is not null then
+    select script.user_id
+    into v_user_id
+    from public.scripts as script
+    where script.id = new.script_id;
+
+    if not found
+      or public.g5c_b3_storage_reference_fence_active(
+        v_user_id,
+        'script_audio_storage',
+        'script-audios',
+        v_object_key
+      ) then
+      raise exception using
+        errcode = 'check_violation',
+        message = 'voice deletion storage reference fence is active';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.enforce_g5c_b3_saved_model_audio_reference_fence()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_script_owner_id uuid;
+  v_storage_bucket text;
+  v_object_key text;
+begin
+  if tg_op = 'UPDATE'
+    and new.user_id is not distinct from old.user_id
+    and new.script_id is not distinct from old.script_id
+    and new.script_audio_id is not distinct from old.script_audio_id then
+    return new;
+  end if;
+
+  select script.user_id,
+         audio.stored_asset ->> 'storageBucket',
+         audio.stored_asset ->> 'storageObjectKey'
+  into v_script_owner_id, v_storage_bucket, v_object_key
+  from public.script_audios as audio
+  join public.scripts as script on script.id = audio.script_id
+  where audio.id = new.script_audio_id;
+
+  if not found then
+    raise exception using
+      errcode = 'check_violation',
+      message = 'voice deletion storage reference fence is active';
+  end if;
+
+  if v_storage_bucket = 'script-audios'
+    and v_object_key is not null
+    and v_script_owner_id = new.user_id
+    and public.g5c_b3_storage_reference_fence_active(
+      new.user_id,
+      'script_audio_storage',
+      'script-audios',
+      v_object_key,
+      new.script_audio_id
+    ) then
+    raise exception using
+      errcode = 'check_violation',
+      message = 'voice deletion storage reference fence is active';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists enforce_g5c_b3_voice_storage_reference_fence on public.voices;
+create trigger enforce_g5c_b3_voice_storage_reference_fence
+  before insert or update of user_id, sample_audio_path, consent_id on public.voices
+  for each row
+  execute function public.enforce_g5c_b3_voice_storage_reference_fence();
+
+drop trigger if exists enforce_g5c_b3_voice_consent_storage_reference_fence on public.voice_consents;
+create trigger enforce_g5c_b3_voice_consent_storage_reference_fence
+  before insert or update of user_id, metadata on public.voice_consents
+  for each row
+  execute function public.enforce_g5c_b3_voice_consent_storage_reference_fence();
+
+drop trigger if exists enforce_g5c_b3_script_audio_storage_reference_fence on public.script_audios;
+create trigger enforce_g5c_b3_script_audio_storage_reference_fence
+  before insert or update of script_id, voice_id, stored_asset on public.script_audios
+  for each row
+  execute function public.enforce_g5c_b3_script_audio_storage_reference_fence();
+
+drop trigger if exists enforce_g5c_b3_saved_model_audio_reference_fence on public.script_saved_model_audios;
+create trigger enforce_g5c_b3_saved_model_audio_reference_fence
+  before insert or update of user_id, script_id, script_audio_id on public.script_saved_model_audios
+  for each row
+  execute function public.enforce_g5c_b3_saved_model_audio_reference_fence();
+
 create or replace function public.enter_voice_deletion_storage_cleanup_stage(
   p_operation_id uuid,
   p_user_id uuid,
@@ -805,6 +1066,11 @@ revoke all on function public.begin_storage_object_delete_attempt(uuid, uuid, uu
 revoke all on function public.record_storage_object_delete_result(uuid, uuid, uuid, uuid, integer, text, integer) from public, anon, authenticated, service_role;
 revoke all on function public.begin_storage_object_verification_attempt(uuid, uuid, uuid, uuid, integer) from public, anon, authenticated, service_role;
 revoke all on function public.record_storage_object_verification_result(uuid, uuid, uuid, uuid, integer, text, integer) from public, anon, authenticated, service_role;
+revoke all on function public.g5c_b3_storage_reference_fence_active(uuid, text, text, text, uuid) from public, anon, authenticated, service_role;
+revoke all on function public.enforce_g5c_b3_voice_storage_reference_fence() from public, anon, authenticated, service_role;
+revoke all on function public.enforce_g5c_b3_voice_consent_storage_reference_fence() from public, anon, authenticated, service_role;
+revoke all on function public.enforce_g5c_b3_script_audio_storage_reference_fence() from public, anon, authenticated, service_role;
+revoke all on function public.enforce_g5c_b3_saved_model_audio_reference_fence() from public, anon, authenticated, service_role;
 grant execute on function public.enter_voice_deletion_storage_cleanup_stage(uuid, uuid, uuid, integer) to service_role;
 grant execute on function public.begin_storage_object_delete_attempt(uuid, uuid, uuid, uuid, integer) to service_role;
 grant execute on function public.record_storage_object_delete_result(uuid, uuid, uuid, uuid, integer, text, integer) to service_role;

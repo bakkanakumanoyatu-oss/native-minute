@@ -33,8 +33,8 @@ describe("G5C-B3 focused Storage transition contract", () => {
       expect(sql).toContain(`revoke all on function public.${signature} from public, anon, authenticated, service_role;`);
       expect(sql).toContain(`grant execute on function public.${signature} to service_role;`);
     }
-    expect(sql.match(/security definer/g)).toHaveLength(5);
-    expect(sql.match(/set search_path = pg_catalog, public/g)).toHaveLength(5);
+    expect(sql.match(/security definer/g)).toHaveLength(10);
+    expect(sql.match(/set search_path = pg_catalog, public/g)).toHaveLength(10);
     expect(sql).not.toContain("create table");
     expect(sql).not.toContain("delete from storage.objects");
     expect(sql).not.toContain("update storage.objects");
@@ -73,6 +73,32 @@ describe("G5C-B3 focused Storage transition contract", () => {
     expect(sql).toContain("storage_attribution_mismatch");
     expect(sql).toContain("storage_shared_reference");
     expect(sql.indexOf("lock table public.voices")).toBeLessThan(sql.indexOf("delete_attempt_count = delete_attempt_count + 1"));
+  });
+
+  it("fences every current B3 writer after a durable destructive intent", () => {
+    const sql = compact(readFileSync(migrationPath, "utf8"));
+
+    expect(sql).toContain("create or replace function public.g5c_b3_storage_reference_fence_active(");
+    expect(sql).toContain("target.user_id = p_user_id");
+    expect(sql).toContain("target.target_kind = p_target_kind");
+    expect(sql).toContain("target.storage_bucket = p_storage_bucket");
+    expect(sql).toContain("target.storage_object_key = p_storage_object_key");
+    expect(sql).toContain("target.status in ('delete_requested', 'deleted', 'verified_absent', 'manual_required')");
+    expect(sql).toContain("operation.destructive_started_at is not null");
+    expect(sql).toContain("operation.status <> 'completed'");
+
+    expect(sql).toContain("before insert or update of user_id, sample_audio_path, consent_id on public.voices");
+    expect(sql).toContain("before insert or update of user_id, metadata on public.voice_consents");
+    expect(sql).toContain("before insert or update of script_id, voice_id, stored_asset on public.script_audios");
+    expect(sql).toContain("before insert or update of user_id, script_id, script_audio_id on public.script_saved_model_audios");
+    expect(sql).toContain("'voice_sample', 'voice-samples'");
+    expect(sql).toContain("'voice_consent_recording', 'voice-consents'");
+    expect(sql).toContain("'script_audio_storage', 'script-audios'");
+    expect(sql).toContain("new.script_audio_id");
+
+    expect(sql).toContain("message = 'voice deletion storage reference fence is active'");
+    expect(sql).toContain("revoke all on function public.g5c_b3_storage_reference_fence_active(uuid, text, text, text, uuid) from public, anon, authenticated, service_role;");
+    expect(sql).not.toContain("storage://recordings/");
   });
 
   it("keeps B3 before finalization: no locator scrub, completion, or B4 transition", () => {
