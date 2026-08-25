@@ -7,6 +7,16 @@ import {
   voiceDeletionStatusCopy,
   type VoiceDeletionUiState
 } from "./voice-deletion-state";
+import {
+  MAX_VOICE_DELETION_ADVANCES,
+  canRetryVoiceDeletion,
+  getVoiceDeletionTerminalActions,
+  nextVoiceDeletionConfirmationState,
+  needsVoiceDeletionContinuation,
+  recheckVoiceDeletionStatus,
+  retainedVoiceDeletionDataCopy,
+  runVoiceDeletionAdvanceBatch
+} from "./voice-deletion-controller";
 
 export { parseVoiceDeletionUiResponse, voiceDeletionStatusCopy, type VoiceDeletionUiState, type VoiceDeletionUiStateName } from "./voice-deletion-state";
 
@@ -14,8 +24,6 @@ type PanelState =
   | { kind: "loading" }
   | { kind: "ready"; deletion: VoiceDeletionUiState }
   | { kind: "error"; message: string };
-
-const MAX_AUTOMATIC_ADVANCES = 3;
 
 async function readDeletionResponse(response: Response) {
   const payload = await response.json().catch(() => null);
@@ -26,15 +34,17 @@ export function VoiceDeletionPanel() {
   const [panel, setPanel] = useState<PanelState>({ kind: "loading" });
   const [isConfirming, setIsConfirming] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
-  const advanceBudget = useRef(MAX_AUTOMATIC_ADVANCES);
+  const [hasExhaustedAdvanceBudget, setHasExhaustedAdvanceBudget] = useState(false);
+  const advanceBudget = useRef(MAX_VOICE_DELETION_ADVANCES);
 
   const refresh = useCallback(async (resetAdvanceBudget = true) => {
     if (resetAdvanceBudget) {
-      advanceBudget.current = MAX_AUTOMATIC_ADVANCES;
+      advanceBudget.current = MAX_VOICE_DELETION_ADVANCES;
     }
+    setHasExhaustedAdvanceBudget(false);
     setPanel({ kind: "loading" });
     try {
-      const deletion = await readDeletionResponse(await fetch("/api/voice-deletion/status", { credentials: "same-origin", cache: "no-store" }));
+      const deletion = await recheckVoiceDeletionStatus(async () => readDeletionResponse(await fetch("/api/voice-deletion/status", { credentials: "same-origin", cache: "no-store" })));
       setPanel(deletion ? { kind: "ready", deletion } : { kind: "error", message: "状態を確認できませんでした。通信を確認して、もう一度お試しください。" });
     } catch {
       setPanel({ kind: "error", message: "通信に失敗しました。状態は変更されていない可能性があります。もう一度お試しください。" });
@@ -52,27 +62,30 @@ export function VoiceDeletionPanel() {
 
     let active = true;
     void (async () => {
-      while (advanceBudget.current > 0 && active) {
-        advanceBudget.current -= 1;
-        const advanced = await readDeletionResponse(await fetch("/api/voice-deletion/advance", {
+      const batch = await runVoiceDeletionAdvanceBatch({
+        maximumAdvances: advanceBudget.current,
+        advance: async () => readDeletionResponse(await fetch("/api/voice-deletion/advance", {
           method: "POST",
           credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
           body: "{}"
-        }).catch(() => new Response(null, { status: 503 })));
-        if (!advanced || !active) {
-          break;
-        }
-
-        const refreshed = await readDeletionResponse(await fetch("/api/voice-deletion/status", { credentials: "same-origin", cache: "no-store" }).catch(() => new Response(null, { status: 503 })));
-        if (!refreshed || !active) {
-          break;
-        }
-        setPanel({ kind: "ready", deletion: refreshed });
-        if (refreshed.state !== "processing" || !refreshed.canAdvance) {
-          break;
-        }
+        }).catch(() => new Response(null, { status: 503 }))),
+        getStatus: async () => readDeletionResponse(await fetch("/api/voice-deletion/status", {
+          credentials: "same-origin",
+          cache: "no-store"
+        }).catch(() => new Response(null, { status: 503 })))
+      });
+      if (!active) {
+        return;
       }
+      advanceBudget.current = Math.max(0, advanceBudget.current - batch.advances);
+      if (batch.kind === "transport_failure") {
+        setHasExhaustedAdvanceBudget(false);
+        setPanel({ kind: "error", message: "処理結果を推測しません。状態を再確認してから続けてください。" });
+        return;
+      }
+      setHasExhaustedAdvanceBudget(batch.needsContinuation);
+      setPanel({ kind: "ready", deletion: batch.deletion });
     })();
 
     return () => {
@@ -106,11 +119,12 @@ export function VoiceDeletionPanel() {
   }
 
   async function retry() {
-    if (panel.kind !== "ready" || !panel.deletion.canRetry || isRequesting) {
+    if (panel.kind !== "ready" || !canRetryVoiceDeletion(panel.deletion) || isRequesting) {
       return;
     }
     setIsRequesting(true);
-    advanceBudget.current = MAX_AUTOMATIC_ADVANCES;
+    advanceBudget.current = MAX_VOICE_DELETION_ADVANCES;
+    setHasExhaustedAdvanceBudget(false);
     try {
       const advanced = await readDeletionResponse(await fetch("/api/voice-deletion/advance", {
         method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: "{}"
@@ -126,6 +140,8 @@ export function VoiceDeletionPanel() {
       setIsRequesting(false);
     }
   }
+
+  const terminalActions = panel.kind === "ready" ? getVoiceDeletionTerminalActions(panel.deletion.state) : null;
 
   return (
     <section className="rounded-[2rem] border border-[var(--line)] bg-white p-5 shadow-sm sm:p-6" aria-live="polite">
@@ -145,7 +161,7 @@ export function VoiceDeletionPanel() {
           <p className="text-sm leading-6 text-ink-700">{voiceDeletionStatusCopy(panel.deletion)}</p>
 
           {panel.deletion.state === "not_requested" ? (
-            <button type="button" onClick={() => setIsConfirming(true)} className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white sm:w-auto">
+            <button type="button" onClick={() => setIsConfirming(nextVoiceDeletionConfirmationState("open"))} className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white sm:w-auto">
               クローンボイスを削除する
             </button>
           ) : null}
@@ -153,9 +169,17 @@ export function VoiceDeletionPanel() {
           {panel.deletion.state === "retry_available" ? (
             <div>
               {panel.deletion.retryAfterSeconds ? <p className="mb-3 text-sm text-ink-600">再試行まで約 {panel.deletion.retryAfterSeconds} 秒です。</p> : null}
-              <button type="button" disabled={!panel.deletion.canRetry || isRequesting} onClick={() => void retry()} className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+              <button type="button" disabled={!canRetryVoiceDeletion(panel.deletion) || isRequesting} onClick={() => void retry()} className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
                 {isRequesting ? "再試行しています…" : "削除を再試行する"}
               </button>
+              {!canRetryVoiceDeletion(panel.deletion) ? <button type="button" onClick={() => void refresh()} className="mt-3 inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:ml-3 sm:mt-0 sm:w-auto">状態を再確認する</button> : null}
+            </div>
+          ) : null}
+
+          {hasExhaustedAdvanceBudget && needsVoiceDeletionContinuation(panel.deletion, 0) ? (
+            <div className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
+              <p className="text-sm leading-6 text-ink-700">処理は続いています。状態を再確認して続けられます。</p>
+              <button type="button" onClick={() => void refresh()} className="mt-3 inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:w-auto">状態を再確認して続ける</button>
             </div>
           ) : null}
 
@@ -166,7 +190,17 @@ export function VoiceDeletionPanel() {
           {panel.deletion.state === "completed" ? (
             <div className="space-y-2">
               <p className="text-sm leading-6 text-ink-600">お手本を再び使うには Voice Setup で新しく同意し、声を準備してください。</p>
-              <Link href="/setup/voice" className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white sm:w-auto">Voice Setup を開く</Link>
+              <Link href="/setup/voice" className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white sm:w-auto">{terminalActions?.primary}</Link>
+            </div>
+          ) : null}
+
+          {panel.deletion.state === "already_no_voice" ? (
+            <div className="space-y-3">
+              <p className="text-sm leading-6 text-ink-600">新しくパーソナライズされた voice を使いたい場合は、Voice Setup から準備できます。</p>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/setup/voice" className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:w-auto">{terminalActions?.primary}</Link>
+                <Link href="/settings" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:w-auto">{terminalActions?.secondary}</Link>
+              </div>
             </div>
           ) : null}
         </div>
@@ -176,10 +210,10 @@ export function VoiceDeletionPanel() {
         <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950" role="dialog" aria-label="クローンボイス削除の確認">
           <p className="font-semibold">クローンボイスと、それを作るために保存した音声データを削除します。アカウントと英語学習の記録は残ります。</p>
           <p className="mt-3">削除: クローンボイス、音声サンプル、同意録音、個人用のお手本音声とキャッシュ、既定ボイス設定。</p>
-          <p className="mt-2">残るもの: アカウント、ログイン、台本、練習録音、Take、文字起こし、発音評価、進捗。</p>
+          <p className="mt-2">残るもの: {retainedVoiceDeletionDataCopy}</p>
           <div className="mt-4 flex flex-wrap gap-3">
             <button type="button" disabled={isRequesting} onClick={() => void requestDeletion()} className="inline-flex justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">{isRequesting ? "開始しています…" : "クローンボイスを削除する"}</button>
-            <button type="button" disabled={isRequesting} onClick={() => setIsConfirming(false)} className="inline-flex justify-center rounded-2xl border border-amber-300 bg-white px-4 py-3 font-semibold text-amber-950 disabled:cursor-not-allowed disabled:opacity-60">キャンセル</button>
+            <button type="button" disabled={isRequesting} onClick={() => setIsConfirming(nextVoiceDeletionConfirmationState("cancel"))} className="inline-flex justify-center rounded-2xl border border-amber-300 bg-white px-4 py-3 font-semibold text-amber-950 disabled:cursor-not-allowed disabled:opacity-60">キャンセル</button>
           </div>
         </div>
       ) : null}
