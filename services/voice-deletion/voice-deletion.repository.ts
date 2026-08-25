@@ -93,6 +93,7 @@ export type ConsentSnapshotSeal = Pick<VoiceDeletionLeaseClaim, "operationId" | 
 export type ConsentWithdrawal = ConsentSnapshotSeal;
 export type DatabaseCleanupStageEntry = ConsentSnapshotSeal;
 export type DatabaseTargetCleanup = ConsentSnapshotSeal;
+export type PostDeleteVerificationTransition = ConsentSnapshotSeal;
 
 export type StorageObjectDeleteAttempt = Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken"> & {
   targetId: string;
@@ -144,7 +145,9 @@ export type StorageObjectInvalidTargetManualTransition = Pick<
 
 export type VoiceDeletionRepository = {
   createOrGetActiveOperation(userId: string): Promise<{ operation: VoiceDeletionOperationRow; created: boolean }>;
+  markPreflightManualRequired(userId: string): Promise<VoiceDeletionOperationRow | null>;
   getActiveOperation(userId: string): Promise<VoiceDeletionOperationRow | null>;
+  getLatestOperation(userId: string): Promise<VoiceDeletionOperationRow | null>;
   getOperationForUser(operationId: string, userId: string): Promise<VoiceDeletionOperationRow | null>;
   insertSnapshotTargets(
     operationId: string,
@@ -175,6 +178,8 @@ export type VoiceDeletionRepository = {
   withdrawCurrentConsents(input: ConsentWithdrawal): Promise<VoiceDeletionOperationRow | null>;
   enterDatabaseCleanupStage(input: DatabaseCleanupStageEntry): Promise<VoiceDeletionOperationRow | null>;
   cleanupDatabaseTargets(input: DatabaseTargetCleanup): Promise<VoiceDeletionOperationRow | null>;
+  enterPostDeleteVerificationStage(input: PostDeleteVerificationTransition): Promise<VoiceDeletionOperationRow | null>;
+  completePostDeleteVerification(input: PostDeleteVerificationTransition): Promise<VoiceDeletionOperationRow | null>;
   finalizeOperation(operationId: string, userId: string, leaseToken: string): Promise<VoiceDeletionOperationRow>;
 };
 
@@ -289,6 +294,24 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     return isOperationRow(result.data) ? result.data : null;
   }
 
+  async function getLatestOperation(userId: string) {
+    const result = asMaybeSingle<VoiceDeletionOperationRow>(
+      await client
+        .from("voice_deletion_operations")
+        .select("*")
+        .eq("user_id", userId)
+        .order("requested_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("最新の voice deletion operation の取得", result.error);
+    }
+
+    return isOperationRow(result.data) ? result.data : null;
+  }
+
   async function createOrGetActiveOperation(userId: string) {
     const result = asSingle<CreateOrGetOperationResult>(
       await client.rpc("create_or_get_voice_deletion_operation", { p_user_id: userId }).single()
@@ -305,6 +328,18 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     }
 
     return { operation, created: result.data.created };
+  }
+
+  async function markPreflightManualRequired(userId: string) {
+    const result = asMaybeSingle<VoiceDeletionOperationRow>(
+      await client.rpc("mark_voice_deletion_preflight_manual_required", { p_user_id: userId })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("voice deletion preflight manual state の記録", result.error);
+    }
+
+    return isOperationRow(result.data) ? result.data : null;
   }
 
   async function sealSnapshot(operationId: string, userId: string, targets: VoiceDeletionSnapshotTarget[]) {
@@ -631,6 +666,40 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     return isOperationRow(result.data) ? result.data : null;
   }
 
+  async function enterPostDeleteVerificationStage(input: PostDeleteVerificationTransition) {
+    const result = asMaybeSingle<VoiceDeletionOperationRow>(
+      await client.rpc("enter_voice_deletion_post_delete_verification_stage", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_lease_token: input.leaseToken,
+        p_expected_runner_attempt_count: input.expectedRunnerAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("post-delete verification stage への進行", result.error);
+    }
+
+    return isOperationRow(result.data) ? result.data : null;
+  }
+
+  async function completePostDeleteVerification(input: PostDeleteVerificationTransition) {
+    const result = asMaybeSingle<VoiceDeletionOperationRow>(
+      await client.rpc("complete_voice_deletion_post_delete_verification", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_lease_token: input.leaseToken,
+        p_expected_runner_attempt_count: input.expectedRunnerAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("post-delete verification の完了", result.error);
+    }
+
+    return isOperationRow(result.data) ? result.data : null;
+  }
+
   async function finalizeOperation(operationId: string, userId: string, leaseToken: string) {
     const result = asSingle<VoiceDeletionOperationRow>(
       await client.rpc("finalize_voice_deletion_operation", {
@@ -649,7 +718,9 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
 
   return {
     createOrGetActiveOperation,
+    markPreflightManualRequired,
     getActiveOperation,
+    getLatestOperation,
     getOperationForUser,
     // A standalone target insert is deliberately unavailable: this alias preserves the
     // repository contract while routing every snapshot through the single atomic RPC.
@@ -672,6 +743,8 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     withdrawCurrentConsents,
     enterDatabaseCleanupStage,
     cleanupDatabaseTargets,
+    enterPostDeleteVerificationStage,
+    completePostDeleteVerification,
     // Completion deliberately has no generic status-update helper: the focused RPC
     // atomically proves target verification, scrubs locators, and closes the lease.
     finalizeOperation

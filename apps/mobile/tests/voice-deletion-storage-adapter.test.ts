@@ -3,10 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: vi.fn() }));
 
-import {
-  createVoiceDeletionStorageAdapter,
-  type VoiceDeletionStorageAdapter
-} from "@/services/voice-deletion/voice-deletion-storage-adapter";
+import { createVoiceDeletionStorageAdapter } from "@/services/voice-deletion/voice-deletion-storage-adapter";
 
 function createClient(options: { removeError?: unknown; listData?: unknown; listError?: unknown } = {}) {
   const remove = vi.fn().mockResolvedValue({ data: [], error: options.removeError ?? null });

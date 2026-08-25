@@ -1063,6 +1063,30 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
       };
+      mark_voice_deletion_preflight_manual_required: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
+      enter_voice_deletion_post_delete_verification_stage: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
+      complete_voice_deletion_post_delete_verification: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
       begin_provider_voice_delete_attempt: {
         Args: {
           p_operation_id: string;

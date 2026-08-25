@@ -28,6 +28,7 @@ export type MobileApiReasonCode =
   | "progress_unavailable"
   | "account_deletion_in_progress"
   | "account_deletion_unavailable"
+  | "voice_deletion_unavailable"
   | "mobile_auth_disabled";
 
 export interface MobileApiErrorBody {
