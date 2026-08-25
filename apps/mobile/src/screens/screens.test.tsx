@@ -11,9 +11,11 @@ import { getListenPrepareButtonLabel } from "./ListenScreen";
 import { ScriptsList } from "./ScriptsScreen";
 import {
   navigateToAccountDeletion,
+  navigateToVoiceDeletion,
   resolveSettingsState,
   SettingsAccountDataSection
 } from "./SettingsScreen";
+import { mobileVoiceDeletionStatusCopy, navigateToVoiceSetupAfterDeletion } from "./VoiceDeletionScreen";
 
 const evaluation = {
   score: 82,
@@ -185,8 +187,33 @@ describe("mobile practice static screens", () => {
     expect(html).toContain("クローンボイス");
     expect(html).toContain("同意を取り消しました");
     expect(html).toContain("アカウント削除へ");
+    expect(html).toContain("Voice data を管理");
 
     navigateToAccountDeletion(onNavigate);
     expect(onNavigate).toHaveBeenCalledWith({ name: "account_deletion" });
+    navigateToVoiceDeletion(onNavigate);
+    expect(onNavigate).toHaveBeenCalledWith({ name: "voice_deletion" });
+  });
+
+  it.each([
+    ["not_requested", "削除を開始する前"],
+    ["processing", "削除状況を確認"],
+    ["retry_available", "もう一度確認"],
+    ["manual_required", "サポート"],
+    ["completed", "削除しました"],
+    ["already_no_voice", "削除対象"],
+  ] as const)("renders safe voice-only deletion copy for %s", (state, expectedCopy) => {
+    expect(mobileVoiceDeletionStatusCopy({
+      state,
+      phase: state === "completed" ? "completed" : state === "manual_required" ? "manual_required" : "none",
+      canRetry: state === "retry_available",
+      canAdvance: state === "processing"
+    })).toContain(expectedCopy);
+  });
+
+  it("keeps completed voice-only deletion separate and returns to fresh Voice Setup", () => {
+    const onNavigate = vi.fn();
+    navigateToVoiceSetupAfterDeletion(onNavigate);
+    expect(onNavigate).toHaveBeenCalledWith({ name: "voice_setup" });
   });
 });

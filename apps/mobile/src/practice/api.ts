@@ -4,6 +4,7 @@ import {
   acceptMobilePronunciationConsent,
   acceptMobileVoiceConsent,
   createMobileAccountDeletionRequest,
+  createMobileVoiceDeletionRequest,
   createMobileScript,
   createMobileVoiceFromSample,
   downloadMobileScriptAudio,
@@ -12,16 +13,19 @@ import {
   fetchMobilePronunciationConsent,
   fetchMobileProcessingConsent,
   fetchMobileAccountDeletionStatus,
+  fetchMobileVoiceDeletionStatus,
   fetchMobileProgress,
   fetchMobileReview,
   fetchMobileScript,
   fetchMobileScripts,
   requestMobileScriptListen,
+  advanceMobileVoiceDeletion,
   uploadMobileRecording,
   type CreateMobileScriptInput,
   type EvaluateMobileRecordingInput,
   type MobileAudioDownloadState,
   type MobileAccountDeletionRequestStateResult,
+  type MobileVoiceDeletionRequestState,
   type MobileApiTimingCallback,
   type MobileApiTimingLabel,
   type MobileListenRequestState,
@@ -74,6 +78,9 @@ export interface PracticeApi {
   getVoiceCloningConsent(): Promise<MobileProcessingConsentRequestState>;
   getAccountDeletionStatus(): Promise<MobileAccountDeletionRequestStateResult>;
   createAccountDeletionRequest(): Promise<MobileAccountDeletionRequestStateResult>;
+  getVoiceDeletionStatus(): Promise<MobileVoiceDeletionRequestState>;
+  createVoiceDeletionRequest(): Promise<MobileVoiceDeletionRequestState>;
+  advanceVoiceDeletion(): Promise<MobileVoiceDeletionRequestState>;
   acceptPronunciationConsent(): Promise<MobileProcessingConsentRequestState>;
   acceptVoiceConsent(): Promise<MobileVoiceSetupRequestState>;
   createVoiceFromSample(sample: File): Promise<MobileVoiceSetupRequestState>;
@@ -279,6 +286,9 @@ export function createPracticeApi({
     getVoiceCloningConsent: () => request((token) => fetchMobileProcessingConsent(bffBaseUrl, token, "voice_cloning", { onTiming })),
     getAccountDeletionStatus: () => request((token) => fetchMobileAccountDeletionStatus(bffBaseUrl, token, { onTiming })),
     createAccountDeletionRequest: () => request((token) => createMobileAccountDeletionRequest(bffBaseUrl, token, { onTiming })),
+    getVoiceDeletionStatus: () => request((token) => fetchMobileVoiceDeletionStatus(bffBaseUrl, token, { onTiming })),
+    createVoiceDeletionRequest: () => request((token) => createMobileVoiceDeletionRequest(bffBaseUrl, token, { onTiming })),
+    advanceVoiceDeletion: () => request((token) => advanceMobileVoiceDeletion(bffBaseUrl, token, { onTiming })),
     acceptPronunciationConsent: () => request((token) => acceptMobilePronunciationConsent(bffBaseUrl, token, { onTiming })),
     getVoiceSetup: () => request((token) => fetchMobileVoiceSetup(bffBaseUrl, token, { onTiming })),
     acceptVoiceConsent: () => request((token) => acceptMobileVoiceConsent(bffBaseUrl, token, { onTiming })),

@@ -104,6 +104,33 @@ export type MobileAccountDeletionStatus = {
   created?: boolean;
 };
 
+export type MobileVoiceDeletionState =
+  | "not_requested"
+  | "processing"
+  | "retry_available"
+  | "manual_required"
+  | "completed"
+  | "already_no_voice";
+
+export type MobileVoiceDeletionPhase =
+  | "none"
+  | "snapshot"
+  | "consent_withdrawal"
+  | "provider_cleanup"
+  | "storage_cleanup"
+  | "database_cleanup"
+  | "post_delete_verification"
+  | "completed"
+  | "manual_required";
+
+export type MobileVoiceDeletionStatus = {
+  state: MobileVoiceDeletionState;
+  phase: MobileVoiceDeletionPhase;
+  canRetry: boolean;
+  canAdvance: boolean;
+  retryAfterSeconds?: number;
+};
+
 export type UploadMobileRecordingInput = {
   scriptId: string;
   recordingRef: string;
@@ -274,6 +301,10 @@ export type MobileAccountDeletionRequestStateResult =
   | ({ kind: "success" } & MobileAccountDeletionStatus)
   | MobileApiFailure;
 
+export type MobileVoiceDeletionRequestState =
+  | ({ kind: "success" } & MobileVoiceDeletionStatus)
+  | MobileApiFailure;
+
 export const MAX_MOBILE_AUDIO_BYTES = 15 * 1024 * 1024;
 
 const DEFAULT_HEALTH_TIMEOUT_MS = 5_000;
@@ -300,6 +331,9 @@ const MOBILE_API_PATHS = {
     `/api/mobile/consents/${consentType}`,
   accountDeletionStatus: "/api/mobile/account-deletion/status",
   accountDeletionRequest: "/api/mobile/account-deletion/request",
+  voiceDeletionStatus: "/api/mobile/voice-deletion/status",
+  voiceDeletionRequest: "/api/mobile/voice-deletion/request",
+  voiceDeletionAdvance: "/api/mobile/voice-deletion/advance",
   voiceSetup: "/api/mobile/voice-setup",
   review: (scriptId: string, takeId: string) =>
     `/api/mobile/scripts/${encodeURIComponent(scriptId)}/reviews/${encodeURIComponent(takeId)}`,
@@ -594,6 +628,41 @@ function parseAccountDeletionPayload(value: unknown): MobileAccountDeletionStatu
     requestState: deletion.requestState,
     nextAction: deletion.nextAction as MobileAccountDeletionStatus["nextAction"],
     ...(typeof deletion.created === "boolean" ? { created: deletion.created } : {})
+  };
+}
+
+const MOBILE_VOICE_DELETION_STATES = [
+  "not_requested", "processing", "retry_available", "manual_required", "completed", "already_no_voice"
+] as const satisfies readonly MobileVoiceDeletionState[];
+const MOBILE_VOICE_DELETION_PHASES = [
+  "none", "snapshot", "consent_withdrawal", "provider_cleanup", "storage_cleanup", "database_cleanup", "post_delete_verification", "completed", "manual_required"
+] as const satisfies readonly MobileVoiceDeletionPhase[];
+
+/** Keeps the BFF response at the public state allowlist and drops all unknown fields. */
+export function parseMobileVoiceDeletionPayload(value: unknown): MobileVoiceDeletionStatus | null {
+  const data = getSuccessData(value);
+  const deletion = data && isObject(data.deletion) ? data.deletion : null;
+
+  if (
+    !deletion ||
+    !(MOBILE_VOICE_DELETION_STATES as readonly string[]).includes(String(deletion.state)) ||
+    !(MOBILE_VOICE_DELETION_PHASES as readonly string[]).includes(String(deletion.phase)) ||
+    typeof deletion.canRetry !== "boolean" ||
+    typeof deletion.canAdvance !== "boolean"
+  ) {
+    return null;
+  }
+
+  if (deletion.retryAfterSeconds !== undefined && (!isNonNegativeInteger(deletion.retryAfterSeconds) || deletion.retryAfterSeconds < 1 || deletion.retryAfterSeconds > 86_400)) {
+    return null;
+  }
+
+  return {
+    state: deletion.state as MobileVoiceDeletionState,
+    phase: deletion.phase as MobileVoiceDeletionPhase,
+    canRetry: deletion.canRetry,
+    canAdvance: deletion.canAdvance,
+    ...(typeof deletion.retryAfterSeconds === "number" ? { retryAfterSeconds: deletion.retryAfterSeconds } : {})
   };
 }
 
@@ -1177,6 +1246,57 @@ export async function createMobileAccountDeletionRequest(
 
   const deletion = parseAccountDeletionPayload(attempt.body);
   return deletion ? { kind: "success", ...deletion } : { kind: "invalid-response" };
+}
+
+async function requestMobileVoiceDeletion(
+  bffBaseUrl: string,
+  path: string,
+  method: "GET" | "POST",
+  accessToken: string,
+  options: MobileApiRequestOptions = {}
+): Promise<MobileVoiceDeletionRequestState> {
+  const attempt = await requestJson(
+    bffBaseUrl,
+    path,
+    accessToken,
+    method === "GET" ? { method } : { method, body: JSON.stringify({}) },
+    options,
+    DEFAULT_REQUEST_TIMEOUT_MS
+  );
+
+  if (attempt.kind !== "response") {
+    return mapAttemptFailure(attempt);
+  }
+  if (!attempt.response.ok) {
+    return mapFailure(attempt.response, attempt.body);
+  }
+
+  const deletion = parseMobileVoiceDeletionPayload(attempt.body);
+  return deletion ? { kind: "success", ...deletion } : { kind: "invalid-response" };
+}
+
+export function fetchMobileVoiceDeletionStatus(
+  bffBaseUrl: string,
+  accessToken: string,
+  options: MobileApiRequestOptions = {}
+) {
+  return requestMobileVoiceDeletion(bffBaseUrl, MOBILE_API_PATHS.voiceDeletionStatus, "GET", accessToken, options);
+}
+
+export function createMobileVoiceDeletionRequest(
+  bffBaseUrl: string,
+  accessToken: string,
+  options: MobileApiRequestOptions = {}
+) {
+  return requestMobileVoiceDeletion(bffBaseUrl, MOBILE_API_PATHS.voiceDeletionRequest, "POST", accessToken, options);
+}
+
+export function advanceMobileVoiceDeletion(
+  bffBaseUrl: string,
+  accessToken: string,
+  options: MobileApiRequestOptions = {}
+) {
+  return requestMobileVoiceDeletion(bffBaseUrl, MOBILE_API_PATHS.voiceDeletionAdvance, "POST", accessToken, options);
 }
 
 export async function acceptMobilePronunciationConsent(

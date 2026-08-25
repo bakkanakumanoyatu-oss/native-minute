@@ -3,17 +3,20 @@ import {
   MAX_MOBILE_AUDIO_BYTES,
   createMobileApiTimingCollector,
   createMobileAccountDeletionRequest,
+  createMobileVoiceDeletionRequest,
   createMobileScript,
   downloadMobileScriptAudio,
   evaluateMobileRecording,
   fetchHealth,
   fetchMobileProgress,
   fetchMobileAccountDeletionStatus,
+  fetchMobileVoiceDeletionStatus,
   fetchMobileReview,
   fetchMobileScript,
   fetchMobileScripts,
   initialHealthState,
   requestMobileScriptListen,
+  advanceMobileVoiceDeletion,
   uploadMobileRecording
 } from "./api";
 
@@ -699,6 +702,68 @@ describe("mobile account-deletion requests", () => {
       created: true
     });
     expectBearerRequest(fetchImpl, "/api/mobile/account-deletion/request", "POST");
+  });
+});
+
+describe("mobile voice-only deletion requests", () => {
+  const processingPayload = {
+    ok: true,
+    data: {
+      deletion: {
+        state: "processing",
+        phase: "provider_cleanup",
+        canRetry: false,
+        canAdvance: true,
+        operationId: "must-not-reach-the-client",
+        providerVoiceId: "must-not-reach-the-client",
+        locator: "must-not-reach-the-client"
+      }
+    }
+  };
+
+  it("uses the Bearer-only status endpoint and keeps only the safe state allowlist", async () => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(processingPayload))
+      .mockResolvedValueOnce(jsonResponse(processingPayload));
+
+    await expect(fetchMobileVoiceDeletionStatus(BFF_BASE_URL, ACCESS_TOKEN, { fetchImpl })).resolves.toEqual({
+      kind: "success", state: "processing", phase: "provider_cleanup", canRetry: false, canAdvance: true
+    });
+    expectBearerRequest(fetchImpl, "/api/mobile/voice-deletion/status", "GET");
+  });
+
+  it("uses bounded POST endpoints with no target or operation identifier", async () => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(processingPayload))
+      .mockResolvedValueOnce(jsonResponse(processingPayload));
+
+    await expect(createMobileVoiceDeletionRequest(BFF_BASE_URL, ACCESS_TOKEN, { fetchImpl })).resolves.toMatchObject({ kind: "success", state: "processing" });
+    expectBearerRequest(fetchImpl, "/api/mobile/voice-deletion/request", "POST");
+    expect(fetchImpl.mock.calls[0]?.[1]).toEqual(expect.objectContaining({ body: "{}" }));
+
+    await expect(advanceMobileVoiceDeletion(BFF_BASE_URL, ACCESS_TOKEN, { fetchImpl })).resolves.toMatchObject({ kind: "success", state: "processing" });
+    expectBearerRequest(fetchImpl, "/api/mobile/voice-deletion/advance", "POST");
+    expect(fetchImpl.mock.calls[1]?.[1]).toEqual(expect.objectContaining({ body: "{}" }));
+  });
+
+  it.each([
+    "not_requested", "processing", "retry_available", "manual_required", "completed", "already_no_voice"
+  ])("accepts the canonical %s state", async (state) => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
+      ok: true,
+      data: { deletion: { state, phase: state === "completed" ? "completed" : state === "manual_required" ? "manual_required" : "none", canRetry: false, canAdvance: false } }
+    }));
+
+    await expect(fetchMobileVoiceDeletionStatus(BFF_BASE_URL, ACCESS_TOKEN, { fetchImpl })).resolves.toMatchObject({ kind: "success", state });
+  });
+
+  it("fails closed for malformed, unknown, and unsafe retry responses", async () => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ ok: true, data: { deletion: { state: "future", phase: "none", canRetry: false, canAdvance: false } } }))
+      .mockResolvedValueOnce(jsonResponse({ ok: true, data: { deletion: { state: "retry_available", phase: "snapshot", canRetry: false, canAdvance: false, retryAfterSeconds: 0 } } }));
+
+    await expect(fetchMobileVoiceDeletionStatus(BFF_BASE_URL, ACCESS_TOKEN, { fetchImpl })).resolves.toEqual({ kind: "invalid-response" });
+    await expect(fetchMobileVoiceDeletionStatus(BFF_BASE_URL, ACCESS_TOKEN, { fetchImpl })).resolves.toEqual({ kind: "invalid-response" });
   });
 });
 

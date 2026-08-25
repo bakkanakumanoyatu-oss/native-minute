@@ -77,6 +77,10 @@ export function navigateToAccountDeletion(onNavigate: (route: PracticeRoute) => 
   onNavigate({ name: "account_deletion" });
 }
 
+export function navigateToVoiceDeletion(onNavigate: (route: PracticeRoute) => void) {
+  onNavigate({ name: "voice_deletion" });
+}
+
 export function SettingsAccountDataSection({
   pronunciationConsent,
   voiceCloningConsent,
@@ -94,9 +98,10 @@ export function SettingsAccountDataSection({
         <div><dt>録音と発音評価</dt><dd>{consentCopy(pronunciationConsent.status)}</dd></div>
         <div><dt>クローンボイス</dt><dd>{consentCopy(voiceCloningConsent.status)}</dd></div>
       </dl>
-      <button type="button" onClick={() => navigateToAccountDeletion(onNavigate)}>
-        アカウント削除へ
-      </button>
+      <div className="settings-link-actions">
+        <button type="button" className="secondary-button" onClick={() => navigateToVoiceDeletion(onNavigate)}>Voice data を管理</button>
+        <button type="button" className="secondary-button" onClick={() => navigateToAccountDeletion(onNavigate)}>アカウント削除へ</button>
+      </div>
     </section>
   );
 }

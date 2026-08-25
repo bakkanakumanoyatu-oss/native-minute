@@ -52,6 +52,9 @@ export default async function SettingsPage() {
           <Link href="/setup/voice" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto">
             voice 設定を開く
           </Link>
+          <Link href="/settings/voice-data" className="inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 sm:w-auto">
+            Voice data を管理
+          </Link>
           <Link href="/" className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white shadow-sm sm:w-auto">
             Home に戻る
           </Link>

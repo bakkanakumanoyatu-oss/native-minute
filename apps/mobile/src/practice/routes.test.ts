@@ -10,6 +10,7 @@ describe("practice routes", () => {
     { name: "scripts" },
     { name: "settings" },
     { name: "account_deletion" },
+    { name: "voice_deletion" },
     { name: "voice_setup" },
     { name: "voice_setup", scriptId: "script-1" },
     { name: "listen", scriptId: "script-1" },
@@ -34,6 +35,7 @@ describe("practice routes", () => {
     expect(isPracticePath("/progress")).toBe(true);
     expect(isPracticePath("/settings")).toBe(true);
     expect(isPracticePath("/settings/account-deletion")).toBe(true);
+    expect(isPracticePath("/settings/voice-data")).toBe(true);
     expect(isPracticePath("/login")).toBe(false);
   });
 });

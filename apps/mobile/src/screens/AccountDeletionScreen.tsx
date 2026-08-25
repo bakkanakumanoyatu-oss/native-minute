@@ -141,7 +141,7 @@ export function AccountDeletionScreen({
         title="アカウント削除"
         detail="アカウントと関連データの削除手続きを開始できます。完了まで時間がかかる場合があります。"
       />
-      <p className="scope-note">クローンボイスだけを削除する機能は、現在この画面では提供していません。</p>
+      <p className="scope-note">クローンボイスだけを削除する場合は、Settings の「Voice data を管理」から進めてください。この画面のアカウント削除とは別の手続きです。</p>
 
       {visibleState.kind === "loading" ? <LoadingState label="削除リクエストの状況を確認しています…" /> : null}
       {visibleState.kind === "error" ? <RequestError error={visibleState.error} onRetry={reload} /> : null}

@@ -7,6 +7,7 @@ import { ScriptsScreen } from "../screens/ScriptsScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { VoiceSetupScreen } from "../screens/VoiceSetupScreen";
 import { AccountDeletionScreen } from "../screens/AccountDeletionScreen";
+import { VoiceDeletionScreen } from "../screens/VoiceDeletionScreen";
 import type { PracticeApi } from "./api";
 import { parsePracticeRoute, practiceRoutePath, type PracticeRoute } from "./routes";
 
@@ -86,6 +87,9 @@ export function PracticeApp({
     case "account_deletion":
       screen = <AccountDeletionScreen api={api} isOnline={isOnline} onNavigate={navigate} />;
       break;
+    case "voice_deletion":
+      screen = <VoiceDeletionScreen api={api} isOnline={isOnline} onNavigate={navigate} />;
+      break;
     case "voice_setup":
       screen = <VoiceSetupScreen api={api} scriptId={route.scriptId} isOnline={isOnline} onNavigate={navigate} />;
       break;
@@ -113,7 +117,7 @@ export function PracticeApp({
         <button type="button" className={route.name === "progress" ? "is-active" : ""} onClick={() => navigate({ name: "progress" })}>
           Progress
         </button>
-        <button type="button" className={route.name === "settings" || route.name === "account_deletion" ? "is-active" : ""} onClick={() => navigate({ name: "settings" })}>
+        <button type="button" className={route.name === "settings" || route.name === "account_deletion" || route.name === "voice_deletion" ? "is-active" : ""} onClick={() => navigate({ name: "settings" })}>
           Settings
         </button>
         <button type="button" onClick={onLogout}>ログアウト</button>
