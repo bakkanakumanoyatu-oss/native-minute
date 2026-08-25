@@ -5,6 +5,7 @@ import { createElevenLabsVoiceDeletionProviderAdapter } from "@/providers/voice-
 import type { Database } from "@/types/database";
 import { runVoiceDeletionConsentStep } from "./voice-deletion-consent-runner";
 import {
+  hasValidPartialFailureRetryAt,
   hasVoiceDeletionManualCandidate,
   isAlreadyNoVoiceInventory,
   mapVoiceDeletionClientState,
@@ -32,6 +33,8 @@ type StepInput = { operationId: string; userId: string };
 type StepRunner = (input: StepInput) => Promise<unknown>;
 
 const DATABASE_TARGET_KINDS = new Set(["saved_model_audio", "script_audio", "voice_binding"]);
+const PROVIDER_TARGET_KINDS = new Set(["provider_voice"]);
+const STORAGE_TARGET_KINDS = new Set(["voice_sample", "voice_consent_recording", "script_audio_storage"]);
 const DEFAULT_LEASE_SECONDS = 60;
 
 export type VoiceDeletionOperationService = {
@@ -61,6 +64,33 @@ function databaseTargetsAreComplete(targets: Target[]) {
         target.verification_status === "verified_absent" &&
         target.reconciliation_status === "not_applicable"
     );
+}
+
+function providerTargetsAreVerifiedAbsent(targets: Target[]) {
+  return targets
+    .filter((target) => PROVIDER_TARGET_KINDS.has(target.target_kind))
+    .every(
+      (target) =>
+        target.status === "verified_absent" &&
+        target.verification_status === "not_applicable" &&
+        target.reconciliation_status === "verified_absent"
+    );
+}
+
+function storageTargetsAreVerifiedAbsent(targets: Target[]) {
+  return targets
+    .filter((target) => STORAGE_TARGET_KINDS.has(target.target_kind))
+    .every(
+      (target) =>
+        target.status === "verified_absent" &&
+        target.verification_status === "verified_absent" &&
+        target.reconciliation_status === "not_applicable" &&
+        target.delete_attempt_count >= 1
+    );
+}
+
+function hasManualTarget(targets: Target[]) {
+  return targets.some((target) => target.status === "manual_required");
 }
 
 function retryIsInFuture(operation: Operation, now: Date) {
@@ -147,8 +177,10 @@ export function createVoiceDeletionOperationService(
     if (operation.status === "manual_required" || operation.status === "failed" || operation.status === "completed") {
       return;
     }
-    if (operation.status === "partial_failure" && retryIsInFuture(operation, dependencies.now())) {
-      return;
+    if (operation.status === "partial_failure") {
+      if (!hasValidPartialFailureRetryAt(operation) || retryIsInFuture(operation, dependencies.now())) {
+        return;
+      }
     }
 
     const stepInput = { operationId: operation.id, userId: input.userId };
@@ -172,11 +204,28 @@ export function createVoiceDeletionOperationService(
       return;
     }
     if (operation.current_stage === "provider_cleanup") {
-      await dependencies.runProviderStep(stepInput);
+      const targets = await repository.listOperationTargets(operation.id, input.userId);
+      if (providerTargetsAreVerifiedAbsent(targets)) {
+        if (!hasManualTarget(targets)) {
+          // Storage owns its entry transition. This POST cannot also complete a
+          // provider target, because that branch returned through its runner.
+          await dependencies.runStorageStep(stepInput);
+        }
+      } else {
+        await dependencies.runProviderStep(stepInput);
+      }
       return;
     }
     if (operation.current_stage === "storage_cleanup") {
-      await dependencies.runStorageStep(stepInput);
+      const targets = await repository.listOperationTargets(operation.id, input.userId);
+      if (storageTargetsAreVerifiedAbsent(targets)) {
+        if (!hasManualTarget(targets)) {
+          // DB owns its entry transition and therefore runs only on a later POST.
+          await dependencies.runDatabaseStep(stepInput);
+        }
+      } else {
+        await dependencies.runStorageStep(stepInput);
+      }
       return;
     }
     if (operation.current_stage === "database_cleanup") {

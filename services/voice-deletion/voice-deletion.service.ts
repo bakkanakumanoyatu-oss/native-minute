@@ -6,6 +6,7 @@ import { parseVoiceConsentRecordingReference } from "@/services/storage/voice-co
 import { parseVoiceSampleAudioReference } from "@/services/storage/voice-sample-storage.service";
 import { decodeStoredAssetMetadata } from "@/services/voice/replay.service";
 import { SCRIPT_AUDIO_STORAGE_BUCKET } from "@/services/voice/replay-storage";
+import { isCurrentProcessingConsentContract } from "@/services/consent/consent.service";
 import type { Database, Json } from "@/types/database";
 
 type VoiceRow = Database["public"]["Tables"]["voices"]["Row"];
@@ -64,11 +65,12 @@ export type VoiceOnlyDeletionManualCandidateReason =
   | "script_audio_provider_attribution_unknown"
   | "storage_object_unattributed"
   | "storage_listing_unavailable"
-  | "storage_listing_truncated";
+  | "storage_listing_truncated"
+  | "mixed_or_malformed_voice_cloning_consent";
 
 type VoiceOnlyDeletionManualCandidate = {
   reason: VoiceOnlyDeletionManualCandidateReason;
-  source: "voice" | "voice_consent" | "script_audio" | "storage";
+  source: "voice" | "voice_consent" | "script_audio" | "storage" | "processing_consent";
 };
 
 type VoiceOnlyDeletionTargetVoice = {
@@ -102,6 +104,11 @@ type StorageListing = {
   bucket: "voice-samples" | "voice-consents" | "script-audios";
   status: "available" | "truncated" | "unavailable";
   objectKeys: string[];
+};
+
+type VoiceCloningConsentInventory = {
+  canonicalConsent: VoiceOnlyDeletionCanonicalConsent;
+  hasMixedOrMalformedActiveConsent: boolean;
 };
 
 /**
@@ -223,10 +230,6 @@ export type VoiceOnlyPostDeleteVerification = {
 
 function asMany<TRow>(value: unknown) {
   return value as { data: TRow[] | null; error: PostgrestErrorLike | null };
-}
-
-function asMaybeSingle<TRow>(value: unknown) {
-  return value as { data: TRow | null; error: PostgrestErrorLike | null };
 }
 
 function asStorageList(value: unknown) {
@@ -410,19 +413,53 @@ async function listOwnedVoiceConsents(client: ReadClient, userId: string) {
   return data ?? [];
 }
 
-async function getCanonicalVoiceCloningConsent(client: ReadClient, userId: string): Promise<VoiceOnlyDeletionCanonicalConsent> {
-  const { data, error } = asMaybeSingle<ProcessingConsentRow>(
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isExactCurrentVoiceCloningConsent(row: ProcessingConsentRow) {
+  return (
+    isStringArray(row.provider_set) &&
+    isStringArray(row.data_categories) &&
+    isCurrentProcessingConsentContract(row, "voice_cloning")
+  );
+}
+
+function byNewestConsent(left: ProcessingConsentRow, right: ProcessingConsentRow) {
+  const acceptedAtDifference = Date.parse(right.accepted_at) - Date.parse(left.accepted_at);
+  return acceptedAtDifference || right.id.localeCompare(left.id);
+}
+
+async function getCanonicalVoiceCloningConsent(client: ReadClient, userId: string): Promise<VoiceCloningConsentInventory> {
+  const { data, error } = asMany<ProcessingConsentRow>(
     await client
       .from("processing_consents")
       .select("*")
       .eq("user_id", userId)
       .eq("consent_type", "voice_cloning")
-      .order("accepted_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
   );
   throwReadFailure("canonical voice consent", error);
-  return data ? { consentId: data.id, status: data.status } : { consentId: null, status: "not_found" };
+
+  const ownedVoiceCloningConsents = data ?? [];
+  const currentExactConsents = ownedVoiceCloningConsents
+    .filter(isExactCurrentVoiceCloningConsent)
+    .sort(byNewestConsent);
+  const activeExactConsent = currentExactConsents.find((consent) => consent.status === "active");
+  const latestWithdrawnExactConsent = currentExactConsents.find((consent) => consent.status === "withdrawn");
+  const hasMixedOrMalformedActiveConsent = ownedVoiceCloningConsents.some(
+    (consent) => consent.status === "active" && !isExactCurrentVoiceCloningConsent(consent)
+  );
+
+  return {
+    // B4 uses EXISTS over all exact active rows. A later withdrawal must not hide
+    // an older active exact consent during read-only B5 inventory collection.
+    canonicalConsent: activeExactConsent
+      ? { consentId: activeExactConsent.id, status: "active" }
+      : latestWithdrawnExactConsent
+        ? { consentId: latestWithdrawnExactConsent.id, status: "withdrawn" }
+        : { consentId: null, status: "not_found" },
+    hasMixedOrMalformedActiveConsent
+  };
 }
 
 function retainedCategories(): Record<VoiceOnlyDeletionRetainedCategory, true> {
@@ -441,7 +478,7 @@ export async function collectVoiceOnlyDeletionSnapshot(
   client: ReadClient,
   userId: string
 ): Promise<VoiceOnlyDeletionSnapshot> {
-  const [voices, scripts, voiceConsents, canonicalVoiceCloningConsent, voiceSamples, consentRecordings, scriptAudioStorage] = await Promise.all([
+  const [voices, scripts, voiceConsents, canonicalVoiceCloningConsentInventory, voiceSamples, consentRecordings, scriptAudioStorage] = await Promise.all([
     listOwnedVoices(client, userId),
     listOwnedScripts(client, userId),
     listOwnedVoiceConsents(client, userId),
@@ -463,6 +500,9 @@ export async function collectVoiceOnlyDeletionSnapshot(
   );
 
   const manualCandidates: VoiceOnlyDeletionManualCandidate[] = [];
+  if (canonicalVoiceCloningConsentInventory.hasMixedOrMalformedActiveConsent) {
+    manualCandidates.push({ reason: "mixed_or_malformed_voice_cloning_consent", source: "processing_consent" });
+  }
   const storageObjects: VoiceOnlyDeletionStorageTarget[] = [];
   const voiceById = new Map(voices.map((voice) => [voice.id, voice]));
 
@@ -606,7 +646,7 @@ export async function collectVoiceOnlyDeletionSnapshot(
       }))
       .sort((left, right) => left.savedModelAudioId.localeCompare(right.savedModelAudioId)),
     storageObjects: sortedStorageObjects,
-    canonicalVoiceCloningConsent
+    canonicalVoiceCloningConsent: canonicalVoiceCloningConsentInventory.canonicalConsent
   };
 
   const fingerprint = stableFingerprint({ version: SNAPSHOT_VERSION, targets });

@@ -10,6 +10,7 @@ import {
   verifyVoiceOnlyDeletionSnapshot,
   VOICE_ONLY_DELETION_RETAINED_CATEGORIES
 } from "@/services/voice-deletion";
+import { mapVoiceDeletionClientState } from "@/services/voice-deletion/voice-deletion-client-state";
 
 const USER_A = "11111111-1111-4111-8111-111111111111";
 const USER_B = "22222222-2222-4222-822222222222";
@@ -49,6 +50,42 @@ function scriptAudioRow(input: {
     duration_seconds: 60,
     created_at: "2026-08-22T00:00:00.000Z"
   };
+}
+
+function currentVoiceCloningConsent(input: {
+  id: string;
+  userId: string;
+  status: "active" | "withdrawn";
+  acceptedAt?: string;
+  overrides?: Record<string, unknown>;
+}) {
+  return {
+    id: input.id,
+    user_id: input.userId,
+    consent_type: "voice_cloning",
+    consent_version: "2026-08-22.v1",
+    purpose_id: "voice_cloning",
+    purpose_version: "v1",
+    provider_set: ["elevenlabs"],
+    data_categories: ["voice_sample", "consent_recording", "cloned_voice", "reference_audio"],
+    status: input.status,
+    accepted_at: input.acceptedAt ?? "2026-08-22T00:00:00.000Z",
+    ...input.overrides
+  };
+}
+
+function emptyConsentInventoryFixture(processingConsents: TestRow[]) {
+  const data = fixture();
+  data.tables.voices = [];
+  data.tables.scripts = [];
+  data.tables.script_audios = [];
+  data.tables.script_saved_model_audios = [];
+  data.tables.voice_consents = [];
+  data.tables.processing_consents = processingConsents;
+  data.storage["voice-samples"] = [];
+  data.storage["voice-consents"] = [];
+  data.storage["script-audios"] = [];
+  return data;
 }
 
 function fixture(): Fixture {
@@ -158,20 +195,8 @@ function fixture(): Fixture {
         }
       ],
       processing_consents: [
-        {
-          id: "canonical-a",
-          user_id: USER_A,
-          consent_type: "voice_cloning",
-          status: "active",
-          accepted_at: "2026-08-22T00:00:00.000Z"
-        },
-        {
-          id: "canonical-b",
-          user_id: USER_B,
-          consent_type: "voice_cloning",
-          status: "active",
-          accepted_at: "2026-08-22T00:00:00.000Z"
-        }
+        currentVoiceCloningConsent({ id: "canonical-a", userId: USER_A, status: "active" }),
+        currentVoiceCloningConsent({ id: "canonical-b", userId: USER_B, status: "active" })
       ]
     },
     storage: {
@@ -459,5 +484,102 @@ describe("G5C-A voice-only deletion foundation", () => {
 
     expect(source).not.toContain("services/account-deletion");
     expect(source).not.toContain("runAccountDeletion");
+  });
+
+  it("recognizes one exact active current voice-cloning consent", async () => {
+    const data = emptyConsentInventoryFixture([
+      currentVoiceCloningConsent({ id: "active-current", userId: USER_A, status: "active" })
+    ]);
+
+    const snapshot = await collectVoiceOnlyDeletionSnapshot(createClient(data), USER_A);
+
+    expect(snapshot.targets.canonicalVoiceCloningConsent).toEqual({ consentId: "active-current", status: "active" });
+  });
+
+  it("keeps an older exact active consent authoritative after a newer exact withdrawal", async () => {
+    const data = emptyConsentInventoryFixture([
+      currentVoiceCloningConsent({
+        id: "active-older",
+        userId: USER_A,
+        status: "active",
+        acceptedAt: "2026-08-22T00:00:00.000Z"
+      }),
+      currentVoiceCloningConsent({
+        id: "withdrawn-newer",
+        userId: USER_A,
+        status: "withdrawn",
+        acceptedAt: "2026-08-23T00:00:00.000Z"
+      })
+    ]);
+
+    const snapshot = await collectVoiceOnlyDeletionSnapshot(createClient(data), USER_A);
+
+    expect(snapshot.targets.canonicalVoiceCloningConsent).toEqual({ consentId: "active-older", status: "active" });
+    expect(mapVoiceDeletionClientState({ operation: null, inventory: snapshot })).toMatchObject({ state: "not_requested" });
+  });
+
+  it("recognizes multiple exact active current consents", async () => {
+    const data = emptyConsentInventoryFixture([
+      currentVoiceCloningConsent({ id: "active-older", userId: USER_A, status: "active", acceptedAt: "2026-08-22T00:00:00.000Z" }),
+      currentVoiceCloningConsent({ id: "active-newer", userId: USER_A, status: "active", acceptedAt: "2026-08-23T00:00:00.000Z" })
+    ]);
+
+    const snapshot = await collectVoiceOnlyDeletionSnapshot(createClient(data), USER_A);
+
+    expect(snapshot.targets.canonicalVoiceCloningConsent).toEqual({ consentId: "active-newer", status: "active" });
+  });
+
+  it("treats all exact current withdrawals as inactive", async () => {
+    const data = emptyConsentInventoryFixture([
+      currentVoiceCloningConsent({ id: "withdrawn-older", userId: USER_A, status: "withdrawn", acceptedAt: "2026-08-22T00:00:00.000Z" }),
+      currentVoiceCloningConsent({ id: "withdrawn-newer", userId: USER_A, status: "withdrawn", acceptedAt: "2026-08-23T00:00:00.000Z" })
+    ]);
+
+    const snapshot = await collectVoiceOnlyDeletionSnapshot(createClient(data), USER_A);
+
+    expect(snapshot.targets.canonicalVoiceCloningConsent).toEqual({ consentId: "withdrawn-newer", status: "withdrawn" });
+    expect(mapVoiceDeletionClientState({ operation: null, inventory: snapshot })).toMatchObject({ state: "already_no_voice" });
+  });
+
+  it("does not treat an old contract's active consent as current exact consent", async () => {
+    const data = emptyConsentInventoryFixture([
+      currentVoiceCloningConsent({
+        id: "old-contract-active",
+        userId: USER_A,
+        status: "active",
+        overrides: { consent_version: "2026-01-01.v1" }
+      })
+    ]);
+
+    const snapshot = await collectVoiceOnlyDeletionSnapshot(createClient(data), USER_A);
+
+    expect(snapshot.targets.canonicalVoiceCloningConsent).toEqual({ consentId: null, status: "not_found" });
+    expect(snapshot.manualCandidates).toContainEqual({
+      reason: "mixed_or_malformed_voice_cloning_consent",
+      source: "processing_consent"
+    });
+  });
+
+  it("keeps malformed or mixed active consent history fail-closed with zero targets", async () => {
+    const data = emptyConsentInventoryFixture([
+      currentVoiceCloningConsent({ id: "exact-withdrawn", userId: USER_A, status: "withdrawn" }),
+      currentVoiceCloningConsent({
+        id: "malformed-active",
+        userId: USER_A,
+        status: "active",
+        overrides: { provider_set: ["elevenlabs", "other"] }
+      })
+    ]);
+
+    const snapshot = await collectVoiceOnlyDeletionSnapshot(createClient(data), USER_A);
+    const state = mapVoiceDeletionClientState({ operation: null, inventory: snapshot });
+
+    expect(snapshot.targets.canonicalVoiceCloningConsent).toEqual({ consentId: "exact-withdrawn", status: "withdrawn" });
+    expect(snapshot.manualCandidates).toContainEqual({
+      reason: "mixed_or_malformed_voice_cloning_consent",
+      source: "processing_consent"
+    });
+    expect(state).toEqual({ state: "not_requested", phase: "none", canRetry: false, canAdvance: false });
+    expect(state.state).not.toBe("already_no_voice");
   });
 });

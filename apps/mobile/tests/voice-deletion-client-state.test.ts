@@ -74,6 +74,24 @@ describe("voice deletion safe client-state mapping", () => {
     expect(after).toMatchObject({ state: "retry_available", canRetry: true, canAdvance: true });
   });
 
+  it.each([
+    ["a missing retry timestamp", null],
+    ["an invalid retry timestamp", "not-a-timestamp"]
+  ])("fails closed for partial_failure with %s", (_description, nextRetryAt) => {
+    expect(
+      mapVoiceDeletionClientState({
+        operation: operation("partial_failure", { next_retry_at: nextRetryAt }),
+        inventory: inventory({ voice: true }),
+        now: new Date("2026-08-25T00:00:00.000Z")
+      })
+    ).toEqual({
+      state: "manual_required",
+      phase: "manual_required",
+      canRetry: false,
+      canAdvance: false
+    });
+  });
+
   it("returns already_no_voice without history and completed after response loss", () => {
     expect(mapVoiceDeletionClientState({ operation: null, inventory: inventory() })).toMatchObject({
       state: "already_no_voice"

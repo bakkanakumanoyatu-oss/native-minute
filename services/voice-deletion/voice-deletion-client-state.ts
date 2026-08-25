@@ -26,6 +26,19 @@ export type SafeVoiceDeletionClientState = {
   retryAfterSeconds?: number;
 };
 
+/**
+ * A partial failure is runnable only when its server-authored retry timestamp is
+ * present and a real instant. A malformed durable row must never inherit the
+ * expired-retry behaviour.
+ */
+export function hasValidPartialFailureRetryAt(operation: Pick<Operation, "next_retry_at">) {
+  return (
+    typeof operation.next_retry_at === "string" &&
+    operation.next_retry_at.trim().length > 0 &&
+    Number.isFinite(Date.parse(operation.next_retry_at))
+  );
+}
+
 function hasRelevantDeletionState(snapshot: VoiceOnlyDeletionSnapshot) {
   return (
     snapshot.targets.voices.length > 0 ||
@@ -52,8 +65,8 @@ function processingPhase(operation: Operation): VoiceDeletionClientPhase {
 }
 
 function retryState(operation: Operation, now: Date): SafeVoiceDeletionClientState {
-  const retryAt = operation.next_retry_at ? Date.parse(operation.next_retry_at) : Number.NaN;
-  const remainingMilliseconds = Number.isFinite(retryAt) ? Math.max(0, retryAt - now.getTime()) : 0;
+  const retryAt = Date.parse(operation.next_retry_at as string);
+  const remainingMilliseconds = Math.max(0, retryAt - now.getTime());
   const canRetry = remainingMilliseconds === 0;
 
   return {
@@ -92,6 +105,14 @@ export function mapVoiceDeletionClientState(input: {
   }
 
   if (operation?.status === "partial_failure") {
+    if (!hasValidPartialFailureRetryAt(operation)) {
+      return {
+        state: "manual_required",
+        phase: "manual_required",
+        canRetry: false,
+        canAdvance: false
+      };
+    }
     return retryState(operation, input.now ?? new Date());
   }
 
