@@ -178,6 +178,30 @@ describe("bounded request-driven voice deletion orchestration", () => {
     expect(state.dependencies.runProviderStep).not.toHaveBeenCalled();
   });
 
+  it("resumes a committed main snapshot after response loss without resealing or recreating targets", async () => {
+    const committedSnapshot = operation({
+      status: "processing",
+      current_stage: null,
+      snapshot_status: "succeeded"
+    });
+    const state = fixture(committedSnapshot);
+    state.targets.push(providerTarget());
+    const service = createVoiceDeletionOperationService(state.dependencies);
+
+    await service.request(input);
+
+    expect(state.current).toBe(committedSnapshot);
+    expect(state.repository.createOrGetActiveOperation).not.toHaveBeenCalled();
+    expect(state.repository.sealSnapshot).not.toHaveBeenCalled();
+    expect(state.targets).toHaveLength(1);
+    expect(state.dependencies.runConsentStep).toHaveBeenCalledTimes(1);
+    expect(state.dependencies.runProviderStep).not.toHaveBeenCalled();
+    expect(state.dependencies.runStorageStep).not.toHaveBeenCalled();
+    expect(state.dependencies.runDatabaseStep).not.toHaveBeenCalled();
+    expect(state.dependencies.runPostDeleteVerificationStep).not.toHaveBeenCalled();
+    expect(state.repository.finalizeOperation).not.toHaveBeenCalled();
+  });
+
   it("keeps GET read-only", async () => {
     const state = fixture(operation());
     const service = createVoiceDeletionOperationService(state.dependencies);
@@ -255,6 +279,26 @@ describe("bounded request-driven voice deletion orchestration", () => {
     active.next_retry_at = "2026-08-24T23:59:59.000Z";
     await service.advance(input);
     expect(state.dependencies.runProviderStep).toHaveBeenCalledTimes(1);
+  });
+
+  it("dispatches only the due Storage runner after a durable Storage partial failure", async () => {
+    const state = fixture(operation({
+      status: "partial_failure",
+      current_stage: "storage_cleanup",
+      snapshot_status: "succeeded",
+      next_retry_at: "2026-08-24T23:59:59.000Z"
+    }));
+    state.targets.push(storageTarget());
+    const service = createVoiceDeletionOperationService(state.dependencies);
+
+    await service.advance(input);
+
+    expect(state.dependencies.runConsentStep).not.toHaveBeenCalled();
+    expect(state.dependencies.runProviderStep).not.toHaveBeenCalled();
+    expect(state.dependencies.runStorageStep).toHaveBeenCalledTimes(1);
+    expect(state.dependencies.runDatabaseStep).not.toHaveBeenCalled();
+    expect(state.dependencies.runPostDeleteVerificationStep).not.toHaveBeenCalled();
+    expect(state.repository.finalizeOperation).not.toHaveBeenCalled();
   });
 
   it("dispatches only the provider runner while a provider target is still pending", async () => {

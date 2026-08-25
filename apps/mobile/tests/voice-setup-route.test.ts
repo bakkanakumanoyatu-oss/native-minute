@@ -72,6 +72,28 @@ describe("mobile fresh-user voice setup BFF", () => {
     expect(JSON.stringify(payload)).not.toContain("private-");
   });
 
+  it("requires fresh current consent after completed voice deletion even when legacy consent history remains", async () => {
+    const getVoiceSetupState = vi.fn(async () => ({
+      providerSupported: true,
+      consent: { id: "legacy-withdrawn-consent-id" },
+      voiceConsentCurrent: false,
+      defaultVoice: null
+    }));
+    const response = await handleMobileVoiceSetupGet(
+      mobileRequest("/api/mobile/voice-setup"),
+      dependencies(() => ({
+        providerSupported: true,
+        consent: { id: "legacy-withdrawn-consent-id" },
+        voiceConsentCurrent: false,
+        defaultVoice: null
+      }), { getVoiceSetupState })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true, data: { status: "consent_required", created: false } });
+    expect(getVoiceSetupState).toHaveBeenCalledTimes(1);
+  });
+
   it("requires Bearer authentication before consulting fresh-user voice state", async () => {
     const getVoiceSetupState = vi.fn();
     const response = await handleMobileVoiceSetupGet(

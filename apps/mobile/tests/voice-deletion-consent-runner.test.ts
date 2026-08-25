@@ -77,6 +77,21 @@ describe("G5C-B4 durable consent runner", () => {
     expect(repository.withdrawCurrentConsents).toHaveBeenCalledTimes(1);
   });
 
+  it("resumes a committed withdrawal after response loss at the provider stage without rewriting consent history", async () => {
+    const { operation, repository } = createFixture();
+    operation.status = "processing";
+    operation.current_stage = "provider_cleanup";
+    operation.consent_withdrawal_status = "succeeded";
+
+    await expect(
+      runVoiceDeletionConsentStep({ operationId: operation.id, userId: operation.user_id }, dependencies(repository))
+    ).resolves.toEqual({ kind: "provider_stage_reached" });
+
+    expect(repository.sealConsentSnapshot).not.toHaveBeenCalled();
+    expect(repository.withdrawCurrentConsents).not.toHaveBeenCalled();
+    expect(repository.releaseLease).toHaveBeenCalledTimes(1);
+  });
+
   it("does not mutate a manual operation or an unacquired lease", async () => {
     const { operation, repository } = createFixture();
     operation.status = "manual_required";
