@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "MOBILE_PROFILE=development vite --host 127.0.0.1",
-    "lint": "eslint \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" --max-warnings=0",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\" --max-warnings=0",
     "typecheck": "npm run typecheck:source && npm run typecheck:tests",
     "typecheck:source": "tsc --noEmit -p tsconfig.json",
     "typecheck:tests": "tsc --noEmit -p tsconfig.test.json",

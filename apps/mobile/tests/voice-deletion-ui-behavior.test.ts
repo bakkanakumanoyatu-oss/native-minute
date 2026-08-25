@@ -6,6 +6,7 @@ import {
   getVoiceDeletionTerminalActions,
   needsVoiceDeletionContinuation,
   nextVoiceDeletionConfirmationState,
+  remainingVoiceDeletionAdvanceBudgetAfterRetry,
   recheckVoiceDeletionStatus,
   retainedVoiceDeletionDataCopy,
   runVoiceDeletionAdvanceBatch
@@ -92,6 +93,26 @@ describe("Web voice-deletion UI controller behavior", () => {
     expect(canRetryVoiceDeletion(waiting)).toBe(false);
     expect(await recheckVoiceDeletionStatus(async () => ready)).toBe(ready);
     expect(canRetryVoiceDeletion(ready)).toBe(true);
+  });
+
+  it("counts a durable retry as the first POST in its own three-advance batch", async () => {
+    const calls: string[] = ["retry POST"];
+    const batch = await runVoiceDeletionAdvanceBatch({
+      maximumAdvances: remainingVoiceDeletionAdvanceBudgetAfterRetry(),
+      advance: async () => {
+        calls.push("POST");
+        return processing;
+      },
+      getStatus: async () => {
+        calls.push("GET");
+        return processing;
+      }
+    });
+
+    expect(remainingVoiceDeletionAdvanceBudgetAfterRetry()).toBe(2);
+    expect(batch).toMatchObject({ kind: "status", advances: 2, needsContinuation: true });
+    expect(calls).toEqual(["retry POST", "POST", "GET", "POST", "GET"]);
+    expect(calls.filter((call) => call.includes("POST"))).toHaveLength(3);
   });
 
   it("keeps the confirmation's retained learning data and terminal Voice Setup CTAs explicit", () => {

@@ -13,6 +13,7 @@ import {
   getVoiceDeletionTerminalActions,
   nextVoiceDeletionConfirmationState,
   needsVoiceDeletionContinuation,
+  remainingVoiceDeletionAdvanceBudgetAfterRetry,
   recheckVoiceDeletionStatus,
   retainedVoiceDeletionDataCopy,
   runVoiceDeletionAdvanceBatch
@@ -34,18 +35,31 @@ export function VoiceDeletionPanel() {
   const [panel, setPanel] = useState<PanelState>({ kind: "loading" });
   const [isConfirming, setIsConfirming] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
-  const [hasExhaustedAdvanceBudget, setHasExhaustedAdvanceBudget] = useState(false);
+  const [needsExplicitContinuation, setNeedsExplicitContinuation] = useState(false);
+  const [shouldStartAdvanceBatch, setShouldStartAdvanceBatch] = useState(true);
   const advanceBudget = useRef(MAX_VOICE_DELETION_ADVANCES);
 
-  const refresh = useCallback(async (resetAdvanceBudget = true) => {
+  const refresh = useCallback(async ({
+    resetAdvanceBudget = true,
+    startAdvanceBatch = true
+  }: {
+    resetAdvanceBudget?: boolean;
+    startAdvanceBatch?: boolean;
+  } = {}) => {
     if (resetAdvanceBudget) {
       advanceBudget.current = MAX_VOICE_DELETION_ADVANCES;
     }
-    setHasExhaustedAdvanceBudget(false);
+    setNeedsExplicitContinuation(false);
+    setShouldStartAdvanceBatch(startAdvanceBatch);
     setPanel({ kind: "loading" });
     try {
       const deletion = await recheckVoiceDeletionStatus(async () => readDeletionResponse(await fetch("/api/voice-deletion/status", { credentials: "same-origin", cache: "no-store" })));
-      setPanel(deletion ? { kind: "ready", deletion } : { kind: "error", message: "状態を確認できませんでした。通信を確認して、もう一度お試しください。" });
+      if (!deletion) {
+        setPanel({ kind: "error", message: "状態を確認できませんでした。通信を確認して、もう一度お試しください。" });
+        return;
+      }
+      setNeedsExplicitContinuation(!startAdvanceBatch && needsVoiceDeletionContinuation(deletion, 0));
+      setPanel({ kind: "ready", deletion });
     } catch {
       setPanel({ kind: "error", message: "通信に失敗しました。状態は変更されていない可能性があります。もう一度お試しください。" });
     }
@@ -56,7 +70,7 @@ export function VoiceDeletionPanel() {
   }, [refresh]);
 
   useEffect(() => {
-    if (panel.kind !== "ready" || panel.deletion.state !== "processing" || !panel.deletion.canAdvance || advanceBudget.current < 1) {
+    if (!shouldStartAdvanceBatch || panel.kind !== "ready" || panel.deletion.state !== "processing" || !panel.deletion.canAdvance || advanceBudget.current < 1) {
       return;
     }
 
@@ -79,19 +93,20 @@ export function VoiceDeletionPanel() {
         return;
       }
       advanceBudget.current = Math.max(0, advanceBudget.current - batch.advances);
+      setShouldStartAdvanceBatch(false);
       if (batch.kind === "transport_failure") {
-        setHasExhaustedAdvanceBudget(false);
+        setNeedsExplicitContinuation(false);
         setPanel({ kind: "error", message: "処理結果を推測しません。状態を再確認してから続けてください。" });
         return;
       }
-      setHasExhaustedAdvanceBudget(batch.needsContinuation);
+      setNeedsExplicitContinuation(batch.needsContinuation);
       setPanel({ kind: "ready", deletion: batch.deletion });
     })();
 
     return () => {
       active = false;
     };
-  }, [panel]);
+  }, [panel, shouldStartAdvanceBatch]);
 
   async function requestDeletion() {
     if (isRequesting) {
@@ -123,8 +138,10 @@ export function VoiceDeletionPanel() {
       return;
     }
     setIsRequesting(true);
-    advanceBudget.current = MAX_VOICE_DELETION_ADVANCES;
-    setHasExhaustedAdvanceBudget(false);
+    // The retry POST below is the first advance in this user-visible batch.
+    advanceBudget.current = remainingVoiceDeletionAdvanceBudgetAfterRetry();
+    setNeedsExplicitContinuation(false);
+    setShouldStartAdvanceBatch(true);
     try {
       const advanced = await readDeletionResponse(await fetch("/api/voice-deletion/advance", {
         method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: "{}"
@@ -133,7 +150,7 @@ export function VoiceDeletionPanel() {
         setPanel({ kind: "error", message: "再試行を開始できませんでした。状態を確認して、もう一度お試しください。" });
         return;
       }
-      await refresh(false);
+      await refresh({ resetAdvanceBudget: false });
     } catch {
       setPanel({ kind: "error", message: "通信に失敗しました。削除状況を確認してから、もう一度お試しください。" });
     } finally {
@@ -152,7 +169,7 @@ export function VoiceDeletionPanel() {
       {panel.kind === "error" ? (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950" role="alert">
           <p>{panel.message}</p>
-          <button type="button" onClick={() => void refresh()} className="mt-3 font-semibold underline">状態を再確認する</button>
+          <button type="button" onClick={() => void refresh({ startAdvanceBatch: false })} className="mt-3 font-semibold underline">状態を再確認する</button>
         </div>
       ) : null}
 
@@ -172,11 +189,11 @@ export function VoiceDeletionPanel() {
               <button type="button" disabled={!canRetryVoiceDeletion(panel.deletion) || isRequesting} onClick={() => void retry()} className="inline-flex w-full justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
                 {isRequesting ? "再試行しています…" : "削除を再試行する"}
               </button>
-              {!canRetryVoiceDeletion(panel.deletion) ? <button type="button" onClick={() => void refresh()} className="mt-3 inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:ml-3 sm:mt-0 sm:w-auto">状態を再確認する</button> : null}
+              {!canRetryVoiceDeletion(panel.deletion) ? <button type="button" onClick={() => void refresh({ startAdvanceBatch: false })} className="mt-3 inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-3 text-sm font-semibold text-ink-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:ml-3 sm:mt-0 sm:w-auto">状態を再確認する</button> : null}
             </div>
           ) : null}
 
-          {hasExhaustedAdvanceBudget && needsVoiceDeletionContinuation(panel.deletion, 0) ? (
+          {needsExplicitContinuation && needsVoiceDeletionContinuation(panel.deletion, 0) ? (
             <div className="rounded-2xl border border-[var(--line)] bg-ink-50 p-4">
               <p className="text-sm leading-6 text-ink-700">処理は続いています。状態を再確認して続けられます。</p>
               <button type="button" onClick={() => void refresh()} className="mt-3 inline-flex w-full justify-center rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-ink-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:w-auto">状態を再確認して続ける</button>

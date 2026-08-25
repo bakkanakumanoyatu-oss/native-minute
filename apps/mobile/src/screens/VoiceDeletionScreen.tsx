@@ -10,6 +10,7 @@ import {
   getVoiceDeletionTerminalActions,
   nextVoiceDeletionConfirmationState,
   needsVoiceDeletionContinuation,
+  remainingVoiceDeletionAdvanceBudgetAfterRetry,
   recheckVoiceDeletionStatus,
   retainedVoiceDeletionDataCopy,
   runVoiceDeletionAdvanceBatch
@@ -59,19 +60,24 @@ export function VoiceDeletionScreen({
   const [reloadKey, setReloadKey] = useState(0);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasExhaustedAdvanceBudget, setHasExhaustedAdvanceBudget] = useState(false);
+  const [needsExplicitContinuation, setNeedsExplicitContinuation] = useState(false);
+  const [shouldStartAdvanceBatch, setShouldStartAdvanceBatch] = useState(true);
   const [supportError, setSupportError] = useState<string | null>(null);
   const advanceBudget = useRef(MAX_VOICE_DELETION_ADVANCES);
+  const startAdvanceBatchAfterStatus = useRef(true);
 
-  const reload = useCallback(() => {
+  const reload = useCallback((startAdvanceBatch = true) => {
     advanceBudget.current = MAX_VOICE_DELETION_ADVANCES;
-    setHasExhaustedAdvanceBudget(false);
+    setNeedsExplicitContinuation(false);
+    startAdvanceBatchAfterStatus.current = startAdvanceBatch;
+    setShouldStartAdvanceBatch(startAdvanceBatch);
     setState({ kind: "loading" });
     setReloadKey((value) => value + 1);
   }, []);
 
   useEffect(() => {
     let active = true;
+    const startAdvanceBatch = startAdvanceBatchAfterStatus.current;
     if (!isOnline) {
       return () => { active = false; };
     }
@@ -80,14 +86,19 @@ export function VoiceDeletionScreen({
       if (!active) {
         return;
       }
-      setState(result?.kind === "success" ? { kind: "ready", deletion: result } : { kind: "error", error: result ?? { kind: "network-error" } });
+      if (result?.kind === "success") {
+        setNeedsExplicitContinuation(!startAdvanceBatch && needsVoiceDeletionContinuation(result, 0));
+        setState({ kind: "ready", deletion: result });
+        return;
+      }
+      setState({ kind: "error", error: result ?? { kind: "network-error" } });
     });
 
     return () => { active = false; };
   }, [api, isOnline, reloadKey]);
 
   useEffect(() => {
-    if (!isOnline || state.kind !== "ready" || state.deletion.state !== "processing" || !state.deletion.canAdvance || advanceBudget.current < 1) {
+    if (!isOnline || !shouldStartAdvanceBatch || state.kind !== "ready" || state.deletion.state !== "processing" || !state.deletion.canAdvance || advanceBudget.current < 1) {
       return;
     }
 
@@ -117,17 +128,18 @@ export function VoiceDeletionScreen({
         return;
       }
       advanceBudget.current = Math.max(0, advanceBudget.current - batch.advances);
+      setShouldStartAdvanceBatch(false);
       if (batch.kind === "transport_failure") {
-        setHasExhaustedAdvanceBudget(false);
+        setNeedsExplicitContinuation(false);
         setState(needsSafeStatusRecheck(requestFailure) ? { kind: "recheck" } : { kind: "error", error: requestFailure });
         return;
       }
-      setHasExhaustedAdvanceBudget(batch.needsContinuation);
+      setNeedsExplicitContinuation(batch.needsContinuation);
       setState({ kind: "ready", deletion: batch.deletion });
     })();
 
     return () => { active = false; };
-  }, [api, isOnline, state]);
+  }, [api, isOnline, shouldStartAdvanceBatch, state]);
 
   async function requestDeletion() {
     if (!isOnline || isSubmitting) {
@@ -142,7 +154,9 @@ export function VoiceDeletionScreen({
       return;
     }
     advanceBudget.current = MAX_VOICE_DELETION_ADVANCES;
-    setHasExhaustedAdvanceBudget(false);
+    setNeedsExplicitContinuation(false);
+    startAdvanceBatchAfterStatus.current = true;
+    setShouldStartAdvanceBatch(true);
     const refreshed = await api.getVoiceDeletionStatus();
     setState(refreshed.kind === "success" ? { kind: "ready", deletion: refreshed } : { kind: "error", error: refreshed });
     setIsSubmitting(false);
@@ -153,8 +167,11 @@ export function VoiceDeletionScreen({
       return;
     }
     setIsSubmitting(true);
-    advanceBudget.current = MAX_VOICE_DELETION_ADVANCES;
-    setHasExhaustedAdvanceBudget(false);
+    // The retry POST below is the first advance in this user-visible batch.
+    advanceBudget.current = remainingVoiceDeletionAdvanceBudgetAfterRetry();
+    setNeedsExplicitContinuation(false);
+    startAdvanceBatchAfterStatus.current = true;
+    setShouldStartAdvanceBatch(true);
     const advanced = await api.advanceVoiceDeletion();
     if (advanced.kind !== "success") {
       setState({ kind: "error", error: advanced });
@@ -185,10 +202,10 @@ export function VoiceDeletionScreen({
       {visibleState.kind === "recheck" ? (
         <div className="auth-error" role="alert">
           <p>処理結果を推測しません。状態を再確認してから続けてください。</p>
-          <button type="button" className="secondary-button" onClick={reload}>状態を再確認する</button>
+          <button type="button" className="secondary-button" onClick={() => reload(false)}>状態を再確認する</button>
         </div>
       ) : null}
-      {visibleState.kind === "error" ? <RequestError error={visibleState.error} onRetry={reload} retryLabel="状態を再確認する" /> : null}
+      {visibleState.kind === "error" ? <RequestError error={visibleState.error} onRetry={() => reload(false)} retryLabel="状態を再確認する" /> : null}
       {visibleState.kind === "ready" ? (
         <div className="settings-stack">
           <div className="auth-notice" role="status">{mobileVoiceDeletionStatusCopy(visibleState.deletion)}</div>
@@ -197,13 +214,13 @@ export function VoiceDeletionScreen({
             <div className="settings-stack">
               {visibleState.deletion.retryAfterSeconds ? <p className="scope-note">再試行まで約 {visibleState.deletion.retryAfterSeconds} 秒です。</p> : null}
               <button type="button" disabled={!canRetryVoiceDeletion(visibleState.deletion) || isSubmitting} onClick={() => void retryDeletion()}>{isSubmitting ? "再試行しています…" : "削除を再試行する"}</button>
-              {!canRetryVoiceDeletion(visibleState.deletion) ? <button type="button" className="secondary-button" onClick={reload}>状態を再確認する</button> : null}
+              {!canRetryVoiceDeletion(visibleState.deletion) ? <button type="button" className="secondary-button" onClick={() => reload(false)}>状態を再確認する</button> : null}
             </div>
           ) : null}
-          {hasExhaustedAdvanceBudget && needsVoiceDeletionContinuation(visibleState.deletion, 0) ? (
+          {needsExplicitContinuation && needsVoiceDeletionContinuation(visibleState.deletion, 0) ? (
             <div className="settings-stack auth-notice">
               <p>処理は続いています。状態を再確認して続けられます。</p>
-              <button type="button" className="secondary-button" onClick={reload}>状態を再確認して続ける</button>
+              <button type="button" className="secondary-button" onClick={() => reload()}>状態を再確認して続ける</button>
             </div>
           ) : null}
           {visibleState.deletion.state === "manual_required" ? <button type="button" className="secondary-button" onClick={() => void openSupport()}>Support を開く</button> : null}

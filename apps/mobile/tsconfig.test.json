@@ -11,6 +11,7 @@
     "src/vite-env.d.ts",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
-    "tests/**/*.test.ts"
+    "tests/**/*.test.ts",
+    "tests/**/*.tsx"
   ]
 }

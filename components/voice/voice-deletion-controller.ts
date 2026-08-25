@@ -26,6 +26,11 @@ export function canRetryVoiceDeletion(state: {
   return state.state === "retry_available" && state.canRetry;
 }
 
+/** A durable retry is the first POST in its new, user-visible batch. */
+export function remainingVoiceDeletionAdvanceBudgetAfterRetry() {
+  return Math.max(0, MAX_VOICE_DELETION_ADVANCES - 1);
+}
+
 export function nextVoiceDeletionConfirmationState(action: "open" | "cancel") {
   return action === "open";
 }
