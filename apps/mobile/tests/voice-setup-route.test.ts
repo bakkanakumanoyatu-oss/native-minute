@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSupabaseClient } from "../../../lib/supabase/client";
 import {
   handleMobileVoiceSetupGet,
@@ -7,6 +7,7 @@ import {
   handleMobileVoiceSetupPost,
   type MobileVoiceSetupRouteDependencies
 } from "../../../lib/mobile/voice-setup-route";
+import { getVoiceSetupState } from "../../../services/voice";
 
 const BASE_URL = "https://native-minute.example";
 const ORIGIN = "capacitor://localhost";
@@ -54,7 +55,62 @@ function dependencies(
   };
 }
 
+type FixtureReadQuery = {
+  select: ReturnType<typeof vi.fn>;
+  eq: ReturnType<typeof vi.fn>;
+  order: ReturnType<typeof vi.fn>;
+  limit: ReturnType<typeof vi.fn>;
+  maybeSingle: ReturnType<typeof vi.fn>;
+};
+
+function createFixtureMaybeSingleQuery(data: unknown): FixtureReadQuery {
+  const query = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn(),
+    maybeSingle: vi.fn(async () => ({ data, error: null }))
+  } as FixtureReadQuery;
+
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  query.order.mockReturnValue(query);
+  query.limit.mockReturnValue(query);
+
+  return query;
+}
+
+function createFixtureListQuery(data: unknown[]) {
+  const query = {
+    data,
+    error: null,
+    select: vi.fn(),
+    eq: vi.fn(),
+    order: vi.fn()
+  };
+
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  query.order.mockReturnValue(query);
+
+  return query;
+}
+
 describe("mobile fresh-user voice setup BFF", () => {
+  beforeEach(() => {
+    vi.stubEnv("VOICE_PROVIDER", "elevenlabs");
+    vi.stubEnv("ELEVENLABS_API_KEY", "fixture-only-key");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fixture-only-key");
+    vi.stubEnv("NATIVE_MINUTE_ENV", "development");
+    vi.stubEnv("VERCEL_ENV", "development");
+    vi.stubEnv("NATIVE_MINUTE_PRODUCTION_GUARD", "0");
+    vi.stubEnv("NATIVE_MINUTE_DISABLE_ELEVENLABS", "0");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("returns only a safe readiness state and never a consent, voice, provider, or storage identifier", async () => {
     const response = await handleMobileVoiceSetupGet(
       mobileRequest("/api/mobile/voice-setup"),
@@ -72,26 +128,60 @@ describe("mobile fresh-user voice setup BFF", () => {
     expect(JSON.stringify(payload)).not.toContain("private-");
   });
 
-  it("requires fresh current consent after completed voice deletion even when legacy consent history remains", async () => {
-    const getVoiceSetupState = vi.fn(async () => ({
-      providerSupported: true,
-      consent: { id: "legacy-withdrawn-consent-id" },
-      voiceConsentCurrent: false,
-      defaultVoice: null
-    }));
+  it("requires fresh current consent after completed voice deletion even when legacy ElevenLabs consent history remains", async () => {
+    const legacyVoiceConsentQuery = createFixtureMaybeSingleQuery({
+      id: "legacy-voice-consent-id",
+      user_id: USER_ID,
+      provider: "elevenlabs",
+      consented_at: "2026-08-22T00:00:00.000Z",
+      metadata: {},
+      created_at: "2026-08-22T00:00:00.000Z"
+    });
+    const currentProcessingConsentQuery = createFixtureMaybeSingleQuery(null);
+    const voicesQuery = createFixtureListQuery([]);
+    const from = vi.fn((table: string) => {
+      if (table === "voice_consents") {
+        return legacyVoiceConsentQuery;
+      }
+
+      if (table === "processing_consents") {
+        return currentProcessingConsentQuery;
+      }
+
+      if (table === "voices") {
+        return voicesQuery;
+      }
+
+      throw new Error(`unexpected table: ${table}`);
+    });
+    const client = { auth: {}, from } as unknown as AppSupabaseClient;
+
     const response = await handleMobileVoiceSetupGet(
       mobileRequest("/api/mobile/voice-setup"),
       dependencies(() => ({
         providerSupported: true,
-        consent: { id: "legacy-withdrawn-consent-id" },
+        consent: { id: "legacy-voice-consent-id" },
         voiceConsentCurrent: false,
         defaultVoice: null
-      }), { getVoiceSetupState })
+      }), {
+        createClient: () => client,
+        getVoiceSetupState
+      })
     );
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true, data: { status: "consent_required", created: false } });
-    expect(getVoiceSetupState).toHaveBeenCalledTimes(1);
+    expect(from).toHaveBeenCalledWith("voice_consents");
+    expect(from).toHaveBeenCalledWith("processing_consents");
+    expect(from).toHaveBeenCalledWith("voices");
+    expect(legacyVoiceConsentQuery.maybeSingle).toHaveBeenCalledTimes(1);
+    expect(currentProcessingConsentQuery.eq).toHaveBeenCalledWith("user_id", USER_ID);
+    expect(currentProcessingConsentQuery.eq).toHaveBeenCalledWith("consent_type", "voice_cloning");
+    expect(currentProcessingConsentQuery.eq).toHaveBeenCalledWith("consent_version", "2026-08-22.v1");
+    expect(currentProcessingConsentQuery.eq).toHaveBeenCalledWith("purpose_id", "voice_cloning");
+    expect(currentProcessingConsentQuery.eq).toHaveBeenCalledWith("purpose_version", "v1");
+    expect(currentProcessingConsentQuery.maybeSingle).toHaveBeenCalledTimes(1);
+    expect(voicesQuery.data).toEqual([]);
   });
 
   it("requires Bearer authentication before consulting fresh-user voice state", async () => {
