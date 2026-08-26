@@ -1,11 +1,11 @@
 # G5C-B6 Focused Regression / Isolation
 
-Status: `LOCAL_PASS_PENDING_INDEPENDENT_AUDIT_AND_PUSH`
+Status: `CLOSED_COMMITTED_PASS`
 
 Gate: `G5C_B6_FOCUSED_REGRESSION_ISOLATION`
 MODE: `G5C_B6_FOCUSED_P1_REMEDIATION_V1`
 
-This is a local P1-remediation checkpoint, not an independent closeout audit or a push declaration.
+The focused P1-remediation checkpoint, independent re-audit, and final normal fast-forward push are complete. Final authority is `CLOSED_COMMITTED_PASS` at pushed checkpoint `b0d4ac2f6a2fa17d07bcfc0df1cc9094a7aff93a`.
 
 Canonical Staging is `native-minute-staging` (`ztlliqishddrrvqqrrlu`). Existing canonical migration evidence is reused: `0001`–`0020` remain applied. The B6 implementation and this focused remediation add no migration, provider/Storage adapter, production source, route, BFF, or UI change.
 
@@ -29,6 +29,6 @@ This remediation passed `npm run check:workspace`, the focused Voice Setup route
 
 P0=`0`; P1=`0`; P2=`1`; remaining UNKNOWN=`1` within this focused B6 scope: the discarded first concurrent harness attempt did not retain a safe error code, then the immediate diagnostic and final independent-client proofs passed. It did not reproduce as a production defect and remains non-blocking P2; its original transport/harness cause is not asserted.
 
-P1 remediation is complete; independent re-audit and push are pending. G5C-B7 remains unstarted and deferred. No cloned voice, ElevenLabs DELETE/GET, live eventual-consistency, real provider timeout/credential proof, or Storage destructive mutation was performed.
+P1 remediation is complete; the independent re-audit passed, and the final normal fast-forward push passed. G5C-B7 remains unstarted and deferred; its live destructive provider proof is outside B6 scope. No cloned voice, ElevenLabs DELETE/GET, live eventual-consistency, real provider timeout/credential proof, or Storage destructive mutation was performed.
 
-Next single action: G5C-B6 focused independent read-only re-audit.
+Next single action: G5C-B7 disposable live destructive proof final approval packet.
