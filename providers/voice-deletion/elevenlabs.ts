@@ -3,9 +3,12 @@ import "server-only";
 import type {
   DeleteVoiceInput,
   DeleteVoiceResult,
+  ReconcileVoiceAbsenceDiagnosticResult,
   ReconcileVoiceAbsenceInput,
   ReconcileVoiceAbsenceResult,
+  VoiceDeletionProviderDiagnosticAdapter,
   VoiceDeletionProviderAdapter,
+  VoiceDeletionProviderDiagnosticEvidence,
   VoiceDeletionProviderFailureKind
 } from "./types";
 
@@ -17,6 +20,9 @@ const SAFE_PROVIDER_RESOURCE_ID = /^[A-Za-z0-9_-]+$/;
 type FetchImplementation = typeof fetch;
 type OfficialErrorDetail = { type: string; code: string };
 type BoundedJsonResponse = { status: number; payload: unknown };
+
+const SAFE_PROVIDER_TYPES = ["not_found", "authentication_error"] as const;
+const SAFE_PROVIDER_CODES = ["voice_not_found", "invalid_api_key"] as const;
 
 export type ElevenLabsVoiceDeletionAdapterOptions = {
   env?: NodeJS.ProcessEnv;
@@ -59,6 +65,37 @@ function parseOfficialErrorDetail(payload: unknown): OfficialErrorDetail | null 
   }
 
   return { type, code };
+}
+
+function safeProviderType(detail: OfficialErrorDetail | null): VoiceDeletionProviderDiagnosticEvidence["safeProviderType"] {
+  if (!detail) {
+    return "unknown";
+  }
+
+  return (SAFE_PROVIDER_TYPES as readonly string[]).includes(detail.type) ? (detail.type as "not_found" | "authentication_error") : "other";
+}
+
+function safeProviderCode(detail: OfficialErrorDetail | null): VoiceDeletionProviderDiagnosticEvidence["safeProviderCode"] {
+  if (!detail) {
+    return "unknown";
+  }
+
+  return (SAFE_PROVIDER_CODES as readonly string[]).includes(detail.code) ? (detail.code as "voice_not_found" | "invalid_api_key") : "other";
+}
+
+function diagnosticEvidence(input: {
+  adapterOutcome: VoiceDeletionProviderDiagnosticEvidence["adapterOutcome"];
+  httpStatusCategory: VoiceDeletionProviderDiagnosticEvidence["httpStatusCategory"];
+  detail?: OfficialErrorDetail | null;
+  mapperBranch: VoiceDeletionProviderDiagnosticEvidence["mapperBranch"];
+}): VoiceDeletionProviderDiagnosticEvidence {
+  return {
+    adapterOutcome: input.adapterOutcome,
+    httpStatusCategory: input.httpStatusCategory,
+    safeProviderType: safeProviderType(input.detail ?? null),
+    safeProviderCode: safeProviderCode(input.detail ?? null),
+    mapperBranch: input.mapperBranch
+  };
 }
 
 function classifyErrorResponse(input: {
@@ -158,7 +195,7 @@ function isSetupFailure(value: ReturnType<typeof getRequestSetup>): value is { k
   return "kind" in value;
 }
 
-export class ElevenLabsVoiceDeletionProviderAdapter implements VoiceDeletionProviderAdapter {
+export class ElevenLabsVoiceDeletionProviderAdapter implements VoiceDeletionProviderAdapter, VoiceDeletionProviderDiagnosticAdapter {
   private readonly env: NodeJS.ProcessEnv;
   private readonly fetchImpl: FetchImplementation;
   private readonly timeoutMs: number;
@@ -207,9 +244,22 @@ export class ElevenLabsVoiceDeletionProviderAdapter implements VoiceDeletionProv
   }
 
   async reconcileVoiceAbsence(input: ReconcileVoiceAbsenceInput): Promise<ReconcileVoiceAbsenceResult> {
+    return (await this.reconcileVoiceAbsenceWithSafeEvidence(input)).result;
+  }
+
+  async reconcileVoiceAbsenceWithSafeEvidence(
+    input: ReconcileVoiceAbsenceInput
+  ): Promise<ReconcileVoiceAbsenceDiagnosticResult> {
     const setup = getRequestSetup({ providerResourceId: input?.providerResourceId, env: this.env });
     if (isSetupFailure(setup)) {
-      return setup;
+      return {
+        result: setup,
+        evidence: diagnosticEvidence({
+          adapterOutcome: setup.kind,
+          httpStatusCategory: "not_called",
+          mapperBranch: setup.kind
+        })
+      };
     }
 
     const request = await fetchWithTimeout({
@@ -221,30 +271,81 @@ export class ElevenLabsVoiceDeletionProviderAdapter implements VoiceDeletionProv
     });
 
     if (request.failure) {
-      return { kind: request.failure };
+      return {
+        result: { kind: request.failure },
+        evidence: diagnosticEvidence({
+          adapterOutcome: request.failure,
+          httpStatusCategory: "not_called",
+          mapperBranch: request.failure
+        })
+      };
     }
 
     if (!request.response) {
-      return { kind: "network_error" };
+      return {
+        result: { kind: "network_error" },
+        evidence: diagnosticEvidence({
+          adapterOutcome: "network_error",
+          httpStatusCategory: "not_called",
+          mapperBranch: "network_error"
+        })
+      };
     }
 
     if (request.response.status === 200) {
       const payload = request.response.payload;
       if (!isRecord(payload) || payload.voice_id !== setup.providerResourceId) {
-        return { kind: "protocol_error" };
+        return {
+          result: { kind: "protocol_error" },
+          evidence: diagnosticEvidence({
+            adapterOutcome: "protocol_error",
+            httpStatusCategory: "success",
+            mapperBranch: "present_protocol_error"
+          })
+        };
       }
 
       if (payload.is_owner === true) {
-        return { kind: "present", ownerSignal: "true" };
+        return {
+          result: { kind: "present", ownerSignal: "true" },
+          evidence: diagnosticEvidence({
+            adapterOutcome: "present_owner_true",
+            httpStatusCategory: "success",
+            mapperBranch: "present_matching_voice"
+          })
+        };
       }
 
       if (payload.is_owner === false) {
-        return { kind: "present", ownerSignal: "false" };
+        return {
+          result: { kind: "present", ownerSignal: "false" },
+          evidence: diagnosticEvidence({
+            adapterOutcome: "present_owner_false",
+            httpStatusCategory: "success",
+            mapperBranch: "present_matching_voice"
+          })
+        };
       }
 
-      return payload.is_owner === undefined || payload.is_owner === null
-        ? { kind: "present", ownerSignal: "unknown" }
-        : { kind: "protocol_error" };
+      if (payload.is_owner === undefined || payload.is_owner === null) {
+        return {
+          result: { kind: "present", ownerSignal: "unknown" },
+          evidence: diagnosticEvidence({
+            adapterOutcome: "present_owner_unknown",
+            httpStatusCategory: "success",
+            mapperBranch: "present_matching_voice"
+          })
+        };
+      }
+
+      return {
+        result: { kind: "protocol_error" },
+        evidence: diagnosticEvidence({
+          adapterOutcome: "protocol_error",
+          httpStatusCategory: "success",
+          mapperBranch: "present_protocol_error"
+        })
+      };
     }
 
     const detail = parseOfficialErrorDetail(request.response.payload);
@@ -253,13 +354,56 @@ export class ElevenLabsVoiceDeletionProviderAdapter implements VoiceDeletionProv
       detail,
       allowVerifiedAbsence: true
     });
+    const result = classification === "not_found" ? "protocol_error" : classification;
+    const httpStatusCategory =
+      request.response.status === 404
+        ? "not_found"
+        : request.response.status === 401
+          ? "authentication_rejected"
+          : request.response.status === 403
+            ? "authorization_rejected"
+            : request.response.status === 429
+              ? "rate_limited"
+              : request.response.status >= 500 && request.response.status <= 599
+                ? "provider_unavailable"
+                : request.response.status >= 400 && request.response.status <= 499
+                  ? "provider_rejected"
+                  : "protocol_error";
+    const mapperBranch =
+      classification === "verified_absent"
+        ? "strict_voice_not_found"
+        : request.response.status === 404
+          ? "not_found_protocol_error"
+          : request.response.status === 401
+            ? "http_authentication_rejected"
+            : request.response.status === 403
+              ? "http_authorization_rejected"
+              : request.response.status === 429
+                ? "http_rate_limited"
+                : request.response.status >= 500 && request.response.status <= 599
+                  ? "http_provider_unavailable"
+                  : request.response.status >= 400 && request.response.status <= 499
+                    ? "http_provider_rejected"
+                    : "unexpected_http_status";
+    const adapterOutcome: VoiceDeletionProviderDiagnosticEvidence["adapterOutcome"] =
+      classification === "verified_absent"
+        ? "strict_voice_not_found"
+        : (result as Exclude<typeof result, "verified_absent">);
 
-    return { kind: classification === "not_found" ? "protocol_error" : classification };
+    return {
+      result: { kind: result },
+      evidence: diagnosticEvidence({
+        adapterOutcome,
+        httpStatusCategory,
+        detail,
+        mapperBranch
+      })
+    };
   }
 }
 
 export function createElevenLabsVoiceDeletionProviderAdapter(
   options: ElevenLabsVoiceDeletionAdapterOptions = {}
-): VoiceDeletionProviderAdapter {
+): VoiceDeletionProviderAdapter & VoiceDeletionProviderDiagnosticAdapter {
   return new ElevenLabsVoiceDeletionProviderAdapter(options);
 }

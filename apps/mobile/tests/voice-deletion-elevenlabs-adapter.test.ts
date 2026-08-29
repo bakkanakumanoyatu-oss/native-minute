@@ -176,6 +176,68 @@ describe("G5C-B2a ElevenLabs voice deletion adapter", () => {
     await expect(adapter.reconcileVoiceAbsence({ providerResourceId: VOICE_ID })).resolves.toEqual({ kind });
   });
 
+  it("retains only closed safe evidence for an exact diagnostic GET without changing normal reconciliation", async () => {
+    const diagnostic = createAdapter(jsonResponse(404, officialError("not_found", "voice_not_found")));
+    const normal = createAdapter(jsonResponse(404, officialError("not_found", "voice_not_found")));
+
+    await expect(diagnostic.adapter.reconcileVoiceAbsenceWithSafeEvidence({ providerResourceId: VOICE_ID })).resolves.toEqual({
+      result: { kind: "verified_absent" },
+      evidence: {
+        adapterOutcome: "strict_voice_not_found",
+        httpStatusCategory: "not_found",
+        safeProviderType: "not_found",
+        safeProviderCode: "voice_not_found",
+        mapperBranch: "strict_voice_not_found"
+      }
+    });
+    await expect(normal.adapter.reconcileVoiceAbsence({ providerResourceId: VOICE_ID })).resolves.toEqual({ kind: "verified_absent" });
+  });
+
+  it("allowlists diagnostic provider evidence and excludes raw provider data", async () => {
+    const { adapter } = createAdapter(
+      jsonResponse(401, {
+        detail: {
+          type: "unapproved_type",
+          code: "invalid_api_key",
+          message: "provider-private-message",
+          request_id: "provider-private-request-id",
+          nested: { token: "must-not-leak" }
+        }
+      })
+    );
+
+    const result = await adapter.reconcileVoiceAbsenceWithSafeEvidence({ providerResourceId: VOICE_ID });
+    expect(result).toEqual({
+      result: { kind: "auth_failed" },
+      evidence: {
+        adapterOutcome: "auth_failed",
+        httpStatusCategory: "authentication_rejected",
+        safeProviderType: "other",
+        safeProviderCode: "invalid_api_key",
+        mapperBranch: "http_authentication_rejected"
+      }
+    });
+    const serialized = JSON.stringify(result);
+    for (const sensitive of [VOICE_ID, "provider-private-message", "provider-private-request-id", "must-not-leak", "test-only-key"]) {
+      expect(serialized).not.toContain(sensitive);
+    }
+  });
+
+  it("collapses malformed diagnostic provider detail to unknown", async () => {
+    const { adapter } = createAdapter(jsonResponse(403, { detail: { type: 123, code: ["forbidden"] } }));
+
+    await expect(adapter.reconcileVoiceAbsenceWithSafeEvidence({ providerResourceId: VOICE_ID })).resolves.toEqual({
+      result: { kind: "permission_denied" },
+      evidence: {
+        adapterOutcome: "permission_denied",
+        httpStatusCategory: "authorization_rejected",
+        safeProviderType: "unknown",
+        safeProviderCode: "unknown",
+        mapperBranch: "http_authorization_rejected"
+      }
+    });
+  });
+
   it.each([
     [officialError(" not_found", "voice_not_found")],
     [officialError("not_found", " voice_not_found ")]
