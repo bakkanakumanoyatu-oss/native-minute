@@ -14,6 +14,8 @@ import {
   type StagingProviderOwnershipProbeDependencies
 } from "@/services/voice-deletion/staging-provider-ownership-probe";
 import type { Database } from "@/types/database";
+import { createElevenLabsVoiceDeletionProviderAdapter } from "@/providers/voice-deletion";
+import * as providerOwnershipProbeRoute from "@/app/api/internal/g5c-b7/provider-ownership-probe/route";
 
 type Operation = Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
 type Target = Database["public"]["Tables"]["voice_deletion_targets"]["Row"];
@@ -24,6 +26,9 @@ const OPERATION_ID = "33333333-3333-4333-8333-333333333333";
 const TARGET_ID = "44444444-4444-4444-8444-444444444444";
 const VOICE_ID = "sealed-voice-target";
 const PROVIDER_PAYLOAD = { voice_id: VOICE_ID, is_owner: true, secret: "must-not-leak" };
+const PRIVATE_MESSAGE = "provider-private-message";
+const PRIVATE_KEY = "test-only-key";
+const STORAGE_PATH = "voice-samples/private.wav";
 
 function request(path = "/api/internal/g5c-b7/provider-ownership-probe") {
   return new NextRequest(`https://native-minute-staging.vercel.app${path}`);
@@ -84,8 +89,15 @@ function probeDependencies(
 
 function routeDependencies(
   overrides: Partial<G5cB7ProviderOwnershipProbeRouteDependencies> = {}
-): G5cB7ProviderOwnershipProbeRouteDependencies & { probe: ReturnType<typeof vi.fn> } {
-  const probe = vi.fn(async () => ({ classification: "TARGET_PRESENT_AND_READABLE" as const }));
+): G5cB7ProviderOwnershipProbeRouteDependencies {
+  const probe = vi.fn(async () => ({
+    classification: "TARGET_PRESENT_AND_READABLE" as const,
+    evidence: {
+      adapterKind: "elevenlabs_voice_deletion_reconciliation" as const,
+      adapterOutcome: "present_owner_true" as const,
+      mapperBranch: "present_readable" as const
+    }
+  }));
   return {
     isCanonicalStagingRuntime: () => true,
     hasSupabaseConfig: () => true,
@@ -159,11 +171,50 @@ describe("G5C-B7 staging-only provider ownership probe", () => {
     const dependencies = probeDependencies();
     const result = await probeStagingProviderOwnership(USER_A, dependencies);
 
-    expect(result).toEqual({ classification: "TARGET_PRESENT_AND_READABLE" });
+    expect(result).toEqual({
+      classification: "TARGET_PRESENT_AND_READABLE",
+      evidence: {
+        adapterKind: "elevenlabs_voice_deletion_reconciliation",
+        adapterOutcome: "present_owner_true",
+        mapperBranch: "present_readable"
+      }
+    });
     expect(dependencies.getActiveOperation).toHaveBeenCalledWith(USER_A);
     expect(dependencies.listOperationTargets).toHaveBeenCalledWith(OPERATION_ID, USER_A);
     expect(dependencies.reconcileVoiceAbsence).toHaveBeenCalledWith({ providerResourceId: VOICE_ID });
     expect(dependencies.deleteVoice).not.toHaveBeenCalled();
+  });
+
+  it("classifies an exact readable GET 200 from the real adapter without an ownership signal", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(JSON.stringify({ voice_id: VOICE_ID }), { headers: { "Content-Type": "application/json" } })
+    ) as unknown as typeof fetch;
+    const dependencies = probeDependencies({
+      providerAdapter: createElevenLabsVoiceDeletionProviderAdapter({
+        env: { ELEVENLABS_API_KEY: PRIVATE_KEY },
+        fetchImpl
+      })
+    });
+
+    await expect(probeStagingProviderOwnership(USER_A, dependencies)).resolves.toEqual({
+      classification: "TARGET_PRESENT_AND_READABLE",
+      evidence: {
+        adapterKind: "elevenlabs_voice_deletion_reconciliation",
+        adapterOutcome: "present_owner_unknown",
+        mapperBranch: "present_readable"
+      }
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledWith(`https://api.elevenlabs.io/v1/voices/${VOICE_ID}`, {
+      method: "GET",
+      headers: { "xi-api-key": PRIVATE_KEY },
+      signal: expect.any(AbortSignal)
+    });
+  });
+
+  it("exports no DELETE handler", () => {
+    expect("GET" in providerOwnershipProbeRoute).toBe(true);
+    expect("DELETE" in providerOwnershipProbeRoute).toBe(false);
   });
 
   it("fails closed for an operation ownership mismatch, a target snapshot mismatch, and cross-user access", async () => {
@@ -192,10 +243,19 @@ describe("G5C-B7 staging-only provider ownership probe", () => {
       }
     });
 
-    await expect(probeStagingProviderOwnership(USER_A, operationMismatch)).resolves.toEqual({ classification: "UNKNOWN" });
-    await expect(probeStagingProviderOwnership(USER_A, targetMismatch)).resolves.toEqual({ classification: "UNKNOWN" });
-    await expect(probeStagingProviderOwnership(USER_A, unsealed)).resolves.toEqual({ classification: "UNKNOWN" });
-    await expect(probeStagingProviderOwnership(USER_B, crossUser)).resolves.toEqual({ classification: "UNKNOWN" });
+    const unavailable = {
+      classification: "UNKNOWN",
+      evidence: {
+        adapterKind: "not_called",
+        adapterOutcome: "not_called",
+        mapperBranch: "sealed_target_unavailable"
+      }
+    };
+
+    await expect(probeStagingProviderOwnership(USER_A, operationMismatch)).resolves.toEqual(unavailable);
+    await expect(probeStagingProviderOwnership(USER_A, targetMismatch)).resolves.toEqual(unavailable);
+    await expect(probeStagingProviderOwnership(USER_A, unsealed)).resolves.toEqual(unavailable);
+    await expect(probeStagingProviderOwnership(USER_B, crossUser)).resolves.toEqual(unavailable);
     expect(operationMismatch.reconcileVoiceAbsence).not.toHaveBeenCalled();
     expect(targetMismatch.reconcileVoiceAbsence).not.toHaveBeenCalled();
     expect(unsealed.reconcileVoiceAbsence).not.toHaveBeenCalled();
@@ -203,13 +263,28 @@ describe("G5C-B7 staging-only provider ownership probe", () => {
   });
 
   it.each([
-    [{ kind: "verified_absent" as const }, "VOICE_NOT_FOUND"],
-    [{ kind: "auth_failed" as const }, "AUTHENTICATION_REJECTED"],
-    [{ kind: "provider_rejected" as const }, "PROVIDER_REJECTED"]
-  ])("returns only a sanitized DTO for provider result %#", async (providerResult, classification) => {
+    [
+      { kind: "present" as const, ownerSignal: "unknown" as const },
+      "TARGET_PRESENT_AND_READABLE",
+      "present_owner_unknown",
+      "present_readable"
+    ],
+    [{ kind: "verified_absent" as const }, "VOICE_NOT_FOUND", "verified_absent", "verified_absent"],
+    [{ kind: "auth_failed" as const }, "AUTHENTICATION_REJECTED", "auth_failed", "authentication_rejected"],
+    [{ kind: "permission_denied" as const }, "AUTHORIZATION_REJECTED", "permission_denied", "authorization_rejected"],
+    [{ kind: "provider_rejected" as const }, "PROVIDER_REJECTED", "provider_rejected", "provider_rejected"],
+    [{ kind: "network_error" as const }, "UNKNOWN", "network_error", "ambiguous_provider_result"],
+    [{ kind: "protocol_error" as const }, "UNKNOWN", "protocol_error", "ambiguous_provider_result"]
+  ])(
+    "returns an explainable, sanitized DTO for adapter result %#",
+    async (providerResult, classification, adapterOutcome, mapperBranch) => {
     const rawProviderResult = {
       ...providerResult,
-      rawProviderResponse: PROVIDER_PAYLOAD
+      rawProviderResponse: PROVIDER_PAYLOAD,
+      message: PRIVATE_MESSAGE,
+      apiKey: PRIVATE_KEY,
+      storagePath: STORAGE_PATH,
+      userId: USER_A
     } as unknown as Awaited<
       ReturnType<StagingProviderOwnershipProbeDependencies["providerAdapter"]["reconcileVoiceAbsence"]>
     >;
@@ -220,22 +295,74 @@ describe("G5C-B7 staging-only provider ownership probe", () => {
     });
 
     const result = await probeStagingProviderOwnership(USER_A, dependencies);
-    expect(result).toEqual({ classification });
-    expect(JSON.stringify(result)).not.toContain(VOICE_ID);
-    expect(JSON.stringify(result)).not.toContain("must-not-leak");
+    expect(result).toEqual({
+      classification,
+      evidence: {
+        adapterKind: "elevenlabs_voice_deletion_reconciliation",
+        adapterOutcome,
+        mapperBranch
+      }
+    });
+    const serialized = JSON.stringify(result);
+    for (const sensitiveValue of [VOICE_ID, "must-not-leak", PRIVATE_MESSAGE, PRIVATE_KEY, STORAGE_PATH, USER_A]) {
+      expect(serialized).not.toContain(sensitiveValue);
+    }
     expect(dependencies.deleteVoice).not.toHaveBeenCalled();
-  });
+    }
+  );
 
   it("returns a no-store safe DTO and performs no durable mutation", async () => {
     const dependencies = routeDependencies({
-      probe: vi.fn(async () => ({ classification: "VOICE_NOT_FOUND" as const }))
+      probe: vi.fn(async () => ({
+        classification: "VOICE_NOT_FOUND" as const,
+        evidence: {
+          adapterKind: "elevenlabs_voice_deletion_reconciliation" as const,
+          adapterOutcome: "verified_absent" as const,
+          mapperBranch: "verified_absent" as const
+        }
+      }))
     });
     const response = await handleG5cB7ProviderOwnershipProbeGet(request(), dependencies);
     const body = await response.json();
 
     expect(response.headers.get("Cache-Control")).toBe("private, no-store, max-age=0");
-    expect(body).toEqual({ ok: true, data: { providerOwnershipProbe: { classification: "VOICE_NOT_FOUND" } } });
+    expect(body).toEqual({
+      ok: true,
+      data: {
+        providerOwnershipProbe: {
+          classification: "VOICE_NOT_FOUND",
+          evidence: {
+            adapterKind: "elevenlabs_voice_deletion_reconciliation",
+            adapterOutcome: "verified_absent",
+            mapperBranch: "verified_absent"
+          }
+        }
+      }
+    });
     expect(JSON.stringify(body)).not.toContain(VOICE_ID);
     expect(JSON.stringify(body)).not.toContain(USER_A);
+  });
+
+  it("returns a closed safe evidence category when the probe throws", async () => {
+    const dependencies = routeDependencies({
+      probe: vi.fn(async () => {
+        throw new Error(PRIVATE_MESSAGE);
+      })
+    });
+
+    const response = await handleG5cB7ProviderOwnershipProbeGet(request(), dependencies);
+    expect(await response.json()).toEqual({
+      ok: true,
+      data: {
+        providerOwnershipProbe: {
+          classification: "UNKNOWN",
+          evidence: {
+            adapterKind: "unavailable",
+            adapterOutcome: "unavailable",
+            mapperBranch: "route_probe_failure"
+          }
+        }
+      }
+    });
   });
 });

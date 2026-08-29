@@ -8,6 +8,7 @@ import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { createSupabaseRouteClient } from "@/lib/supabase/route";
 import {
   probeStagingProviderOwnership,
+  unavailableProbeResult,
   type StagingProviderOwnershipProbeResult
 } from "@/services/voice-deletion/staging-provider-ownership-probe";
 
@@ -98,7 +99,7 @@ export async function handleG5cB7ProviderOwnershipProbeGet(
     );
   } catch {
     return jsonOk(
-      { providerOwnershipProbe: { classification: "UNKNOWN" } satisfies StagingProviderOwnershipProbeResult },
+      { providerOwnershipProbe: unavailableProbeResult() satisfies StagingProviderOwnershipProbeResult },
       { headers: NO_STORE_HEADERS }
     );
   }
