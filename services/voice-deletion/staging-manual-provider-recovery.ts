@@ -164,7 +164,7 @@ function isUntouchedDownstreamTarget(target: Target) {
     target.delete_outcome === "not_attempted" &&
     target.delete_attempt_count === 0 &&
     target.verification_attempt_count === 0 &&
-    target.reconciliation_status === "pending" &&
+    target.reconciliation_status === "not_applicable" &&
     target.verification_status === "pending"
   );
 }

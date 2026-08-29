@@ -54,7 +54,7 @@ function target(kind: Target["target_kind"], overrides: Partial<Target> = {}): T
     provider_resource_id: kind === "provider_voice" ? VOICE_ID : null,
     status: kind === "provider_voice" ? "manual_required" : "pending",
     delete_outcome: kind === "provider_voice" ? "succeeded" : "not_attempted",
-    reconciliation_status: kind === "provider_voice" ? "manual_required" : "pending",
+    reconciliation_status: kind === "provider_voice" ? "manual_required" : "not_applicable",
     verification_status: kind === "provider_voice" ? "manual_required" : "pending",
     delete_attempt_count: kind === "provider_voice" ? 1 : 0,
     verification_attempt_count: kind === "provider_voice" ? 1 : 0,
@@ -160,7 +160,7 @@ describe("G5C-B7 manual provider recovery seam", () => {
     expect(dependencies.diagnose).not.toHaveBeenCalled();
   });
 
-  it("derives the exact sealed target and performs one diagnostic GET without a DELETE or durable writer", async () => {
+  it("reaches the provider diagnostic seam for the actual legitimate incident shape without a DELETE or durable writer", async () => {
     const dependencies = recoveryDependencies();
     const result = await diagnoseStagingManualProviderIncident(USER_A, dependencies);
 
@@ -175,6 +175,48 @@ describe("G5C-B7 manual provider recovery seam", () => {
     expect(dependencies.deleteVoice).not.toHaveBeenCalled();
   });
 
+  it("accepts a canonical untouched Storage target with reconciliation not_applicable", async () => {
+    const dependencies = recoveryDependencies();
+    const targets = exactIncidentTargets();
+    const storageTarget = targets.find((entry) => entry.target_kind === "voice_sample");
+
+    expect(storageTarget).toMatchObject({
+      status: "pending",
+      delete_outcome: "not_attempted",
+      delete_attempt_count: 0,
+      verification_attempt_count: 0,
+      reconciliation_status: "not_applicable",
+      verification_status: "pending"
+    });
+
+    await expect(diagnoseStagingManualProviderIncident(USER_A, dependencies)).resolves.toMatchObject({
+      classification: "TARGET_PRESENT_AND_READABLE"
+    });
+    expect(dependencies.reconcileVoiceAbsenceWithSafeEvidence).toHaveBeenCalledTimes(1);
+    expect(dependencies.deleteVoice).not.toHaveBeenCalled();
+  });
+
+  it("accepts a canonical untouched DB target with reconciliation not_applicable", async () => {
+    const dependencies = recoveryDependencies();
+    const targets = exactIncidentTargets();
+    const databaseTarget = targets.find((entry) => entry.target_kind === "script_audio");
+
+    expect(databaseTarget).toMatchObject({
+      status: "pending",
+      delete_outcome: "not_attempted",
+      delete_attempt_count: 0,
+      verification_attempt_count: 0,
+      reconciliation_status: "not_applicable",
+      verification_status: "pending"
+    });
+
+    await expect(diagnoseStagingManualProviderIncident(USER_A, dependencies)).resolves.toMatchObject({
+      classification: "TARGET_PRESENT_AND_READABLE"
+    });
+    expect(dependencies.reconcileVoiceAbsenceWithSafeEvidence).toHaveBeenCalledTimes(1);
+    expect(dependencies.deleteVoice).not.toHaveBeenCalled();
+  });
+
   it.each([
     ["wrong operation state", (current: Operation, targets: Target[]) => ({ operation: { ...current, status: "processing" }, targets })],
     ["wrong phase", (current: Operation, targets: Target[]) => ({ operation: { ...current, current_stage: "storage_cleanup" }, targets })],
@@ -185,6 +227,7 @@ describe("G5C-B7 manual provider recovery seam", () => {
     ["provider absence is already durably verified", (current: Operation, targets: Target[]) => ({ operation: current, targets: targets.map((entry) => entry.target_kind === "provider_voice" ? { ...entry, status: "verified_absent", verification_status: "verified_absent" } : entry) })],
     ["Storage cleanup has begun", (current: Operation, targets: Target[]) => ({ operation: current, targets: targets.map((entry) => entry.target_kind === "voice_sample" ? { ...entry, delete_attempt_count: 1, status: "delete_requested" } : entry) })],
     ["database cleanup has begun", (current: Operation, targets: Target[]) => ({ operation: current, targets: targets.map((entry) => entry.target_kind === "script_audio" ? { ...entry, status: "verified_absent", verification_status: "verified_absent" } : entry) })],
+    ["an otherwise untouched downstream target has reconciliation pending", (current: Operation, targets: Target[]) => ({ operation: current, targets: targets.map((entry) => entry.target_kind === "voice_sample" ? { ...entry, reconciliation_status: "pending" } : entry) })],
     ["snapshot membership is mismatched", (current: Operation, targets: Target[]) => ({ operation: current, targets: targets.map((entry) => entry.target_kind === "provider_voice" ? { ...entry, operation_id: "foreign-operation" } : entry) })],
     ["cross-user target relation", (current: Operation, targets: Target[]) => ({ operation: current, targets: targets.map((entry) => entry.target_kind === "provider_voice" ? { ...entry, user_id: USER_B } : entry) })]
   ])("fails closed and never reaches the provider when %s", async (_label, mutate) => {
