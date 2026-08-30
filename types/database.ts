@@ -1087,6 +1087,17 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
       };
+      accept_g5c_b7_manual_provider_absence: {
+        Args: {
+          p_operation_id: string;
+          p_user_id: string;
+          p_target_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+          p_expected_verification_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
+      };
       begin_provider_voice_delete_attempt: {
         Args: {
           p_operation_id: string;

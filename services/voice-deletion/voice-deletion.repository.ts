@@ -77,6 +77,12 @@ export type ProviderVoiceReconciliationResult = ProviderVoiceReconciliationAttem
   retryDelaySeconds: number;
 };
 
+export type ManualProviderAbsenceAcceptance = Pick<VoiceDeletionLeaseClaim, "operationId" | "userId" | "leaseToken"> & {
+  targetId: string;
+  expectedRunnerAttemptCount: number;
+  expectedVerificationAttemptCount: number;
+};
+
 export type StorageObjectTargetKind = Extract<
   VoiceDeletionTargetKind,
   "voice_sample" | "voice_consent_recording" | "script_audio_storage"
@@ -166,6 +172,7 @@ export type VoiceDeletionRepository = {
   recordProviderVoiceDeleteResult(input: ProviderVoiceDeleteResult): Promise<VoiceDeletionTargetRow | null>;
   beginProviderVoiceReconciliationAttempt(input: ProviderVoiceReconciliationAttempt): Promise<VoiceDeletionTargetRow | null>;
   recordProviderVoiceReconciliationResult(input: ProviderVoiceReconciliationResult): Promise<VoiceDeletionTargetRow | null>;
+  acceptG5cB7ManualProviderAbsence(input: ManualProviderAbsenceAcceptance): Promise<VoiceDeletionOperationRow | null>;
   enterStorageCleanupStage(input: StorageCleanupStageEntry): Promise<VoiceDeletionOperationRow | null>;
   beginStorageObjectDeleteAttempt(input: StorageObjectDeleteAttempt): Promise<VoiceDeletionTargetRow | null>;
   recordStorageObjectDeleteResult(input: StorageObjectDeleteResult): Promise<VoiceDeletionTargetRow | null>;
@@ -486,6 +493,25 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     return isTargetRow(result.data) ? result.data : null;
   }
 
+  async function acceptG5cB7ManualProviderAbsence(input: ManualProviderAbsenceAcceptance) {
+    const result = asMaybeSingle<VoiceDeletionOperationRow>(
+      await client.rpc("accept_g5c_b7_manual_provider_absence", {
+        p_operation_id: input.operationId,
+        p_user_id: input.userId,
+        p_target_id: input.targetId,
+        p_lease_token: input.leaseToken,
+        p_expected_runner_attempt_count: input.expectedRunnerAttemptCount,
+        p_expected_verification_attempt_count: input.expectedVerificationAttemptCount
+      })
+    );
+
+    if (result.error) {
+      throw mapRepositoryError("manual provider absence の受理", result.error);
+    }
+
+    return isOperationRow(result.data) ? result.data : null;
+  }
+
   async function enterStorageCleanupStage(input: StorageCleanupStageEntry) {
     const result = asMaybeSingle<VoiceDeletionOperationRow>(
       await client.rpc("enter_voice_deletion_storage_cleanup_stage", {
@@ -733,6 +759,7 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     recordProviderVoiceDeleteResult,
     beginProviderVoiceReconciliationAttempt,
     recordProviderVoiceReconciliationResult,
+    acceptG5cB7ManualProviderAbsence,
     enterStorageCleanupStage,
     beginStorageObjectDeleteAttempt,
     recordStorageObjectDeleteResult,

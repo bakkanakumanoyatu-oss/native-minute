@@ -13,6 +13,11 @@ import {
   unavailableManualProviderRecoveryResult,
   type StagingManualProviderRecoveryResult
 } from "@/services/voice-deletion/staging-manual-provider-recovery";
+import {
+  G5C_B7_MANUAL_PROVIDER_ABSENCE_CONFIRMATION,
+  acceptStagingManualProviderAbsence,
+  type ManualProviderAbsenceAcceptanceResult
+} from "@/services/voice-deletion/staging-manual-provider-absence-acceptance";
 
 const NO_STORE_HEADERS = {
   "Cache-Control": "private, no-store, max-age=0",
@@ -27,6 +32,7 @@ export type G5cB7ManualProviderRecoveryRouteDependencies = {
   createClient(): RouteClient;
   requireCurrentUser(client: RouteClient): ReturnType<typeof requireCurrentUser>;
   diagnose(userId: string): Promise<StagingManualProviderRecoveryResult>;
+  accept(userId: string): Promise<ManualProviderAbsenceAcceptanceResult>;
 };
 
 const defaultDependencies: G5cB7ManualProviderRecoveryRouteDependencies = {
@@ -34,7 +40,8 @@ const defaultDependencies: G5cB7ManualProviderRecoveryRouteDependencies = {
   hasSupabaseConfig,
   createClient: createSupabaseRouteClient,
   requireCurrentUser,
-  diagnose: diagnoseStagingManualProviderIncident
+  diagnose: diagnoseStagingManualProviderIncident,
+  accept: acceptStagingManualProviderAbsence
 };
 
 function withNoStore<T extends Response>(response: T) {
@@ -49,6 +56,17 @@ function safeError(message: string, status: number) {
 
 function unavailable() {
   return safeError("not found", 404);
+}
+
+function hasExactManualAcceptanceConfirmation(value: unknown) {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).length === 1 &&
+    "confirmation" in value &&
+    value.confirmation === G5C_B7_MANUAL_PROVIDER_ABSENCE_CONFIRMATION
+  );
 }
 
 /**
@@ -84,5 +102,44 @@ export async function handleG5cB7ManualProviderRecoveryGet(
       { manualProviderRecovery: unavailableManualProviderRecoveryResult() },
       { headers: NO_STORE_HEADERS }
     );
+  }
+}
+
+/**
+ * This acceptance endpoint neither rechecks the provider nor invokes normal
+ * advancement. Its dedicated service can only claim a lease and call the
+ * dedicated durable RPC with server-derived state.
+ */
+export async function handleG5cB7ManualProviderAbsenceAcceptancePost(
+  request: NextRequest,
+  dependencies: G5cB7ManualProviderRecoveryRouteDependencies = defaultDependencies
+) {
+  if (!dependencies.isCanonicalStagingRuntime() || !dependencies.hasSupabaseConfig()) {
+    return unavailable();
+  }
+
+  if (request.nextUrl.search) {
+    return safeError("invalid request", 400);
+  }
+
+  const payload = await request.json().catch(() => null);
+  if (!hasExactManualAcceptanceConfirmation(payload)) {
+    return safeError("invalid request", 400);
+  }
+
+  let userId: string;
+  try {
+    userId = (await dependencies.requireCurrentUser(dependencies.createClient())).id;
+  } catch (error) {
+    return safeError("authentication required", getErrorStatus(error, 503));
+  }
+
+  try {
+    return jsonOk(
+      { manualProviderAbsenceAcceptance: await dependencies.accept(userId) },
+      { headers: NO_STORE_HEADERS }
+    );
+  } catch {
+    return safeError("manual provider recovery unavailable", 503);
   }
 }

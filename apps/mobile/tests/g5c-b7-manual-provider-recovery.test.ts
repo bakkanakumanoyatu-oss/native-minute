@@ -118,14 +118,16 @@ function routeDependencies(
     classification: "TARGET_PRESENT_AND_READABLE" as const,
     evidence: safeEvidence()
   }));
+  const accept = vi.fn(async () => ({ state: "not_eligible" as const }));
   return {
     isCanonicalStagingRuntime: () => true,
     hasSupabaseConfig: () => true,
     createClient: () => ({ auth: {} } as never),
     requireCurrentUser: async () => ({ id: USER_A } as never),
-    diagnose,
-    ...overrides
-  };
+    ...overrides,
+    diagnose: overrides.diagnose ?? diagnose,
+    accept: overrides.accept ?? accept
+  } as G5cB7ManualProviderRecoveryRouteDependencies & { diagnose: ReturnType<typeof vi.fn> };
 }
 
 describe("G5C-B7 manual provider recovery seam", () => {
