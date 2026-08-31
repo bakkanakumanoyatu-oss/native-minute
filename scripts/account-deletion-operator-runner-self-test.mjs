@@ -68,16 +68,17 @@ function assertSafeOutput(label, summary) {
 }
 
 console.log("Native Minute account deletion operator runner self-test");
-console.log("- scope: internal CLI skeleton only; no destructive services are called");
+console.log("- scope: internal CLI core only; no destructive services are called");
 console.log("- secret values and raw cleanup targets: hidden");
 
 const runner = read("scripts/account-deletion-operator-runner.mjs");
+const entry = read("scripts/account-deletion-operator-entry.mjs");
 const packageJson = read("package.json");
 
 assertCheck(
   "package script is registered",
   packageJson.includes("\"account-deletion:operator\"") &&
-    packageJson.includes("node scripts/account-deletion-operator-runner.mjs") &&
+    packageJson.includes("tsx scripts/account-deletion-operator-entry.mjs") &&
     packageJson.includes("\"account-deletion:operator:self-test\""),
   "operator runner can be invoked explicitly"
 );
@@ -113,11 +114,11 @@ assertCheck(
     "proof_path_required_for_execute",
     "actual_service_not_connected_in_skeleton"
   ]),
-  "execute mode remains blocked in this skeleton"
+  "execute mode remains blocked until every modeled guard and a stage bridge are present"
 );
 
 assertCheck(
-  "actual destructive service and execute resolver seams are disconnected by default",
+  "runner core stays injection-only while canonical entry wires provider only",
   includesAll(runner, [
     "actualServiceConnected: false",
     "requestResolverConnected: false",
@@ -127,10 +128,15 @@ assertCheck(
     "assessDisposableProofCandidate",
     "sanitizeRequestResolverResult",
     "sanitizeStageServiceResult",
-    "Actual stage services remain disconnected",
-    "this skeleton does not call actual provider, Storage, DB, or Auth deletion services"
-  ]),
-  "default CLI has read-only status resolver only; execute resolver and stage services remain disconnected"
+    "Actual stage services remain disconnected"
+  ]) &&
+    includesAll(entry, [
+      "createAccountDeletionProviderOperatorBridge",
+      "stageServices: providerBridge.stageServices",
+      "resolveAccountDeletionRequestReadOnly",
+      "[\"blocked\", \"failed\", \"manual_required\"].includes(summary.status)"
+    ]),
+  "the entry exposes no Storage, DB, Auth, or completion stage service"
 );
 
 const missingStage = buildSafeSummary(parseArgs([]), {});
@@ -785,4 +791,4 @@ assertCheck(
 );
 assertSafeOutput("allowed fake service output is safe", fakeStageResult);
 
-console.log("\nResult: operator runner skeleton is safe, dry-run default, and non-destructive.");
+console.log("\nResult: operator runner core is safe, dry-run default, and non-destructive in this self-test.");

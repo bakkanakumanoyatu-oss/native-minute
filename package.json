@@ -44,8 +44,9 @@
     "account-deletion:storage-cleanup:self-test": "node scripts/account-deletion-storage-cleanup-self-test.mjs",
     "account-deletion:database-cleanup:self-test": "node scripts/account-deletion-database-cleanup-self-test.mjs",
     "account-deletion:auth-cleanup:self-test": "node scripts/account-deletion-auth-cleanup-self-test.mjs",
-    "account-deletion:operator": "node scripts/account-deletion-operator-runner.mjs",
+    "account-deletion:operator": "tsx scripts/account-deletion-operator-entry.mjs",
     "account-deletion:operator:self-test": "node scripts/account-deletion-operator-runner-self-test.mjs",
+    "account-deletion:operator:provider-self-test": "tsx scripts/account-deletion-provider-operator-bridge-self-test.mjs",
     "account-deletion:operator:rehearsal": "node scripts/account-deletion-operator-rehearsal.mjs",
     "account-deletion:operator:rehearsal:self-test": "node scripts/account-deletion-operator-rehearsal-self-test.mjs",
     "account-deletion:proof-package:self-test": "node scripts/account-deletion-proof-package-self-test.mjs",
@@ -82,6 +83,7 @@
     "eslint-config-next": "^14.2.16",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.17",
+    "tsx": "4.23.13",
     "typescript": "^5.7.3"
   }
 }

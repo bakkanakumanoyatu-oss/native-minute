@@ -192,7 +192,7 @@ function buildSafeSummary(parsed, env = process.env, options = {}) {
         actualServiceConnected: false
       },
       notes: [
-        "This operator runner is an internal skeleton.",
+        "This operator runner is an internal provider-only execution surface.",
         "It does not call provider, Storage, DB, or Auth destructive services."
       ]
     };
@@ -281,7 +281,7 @@ function buildSafeSummary(parsed, env = process.env, options = {}) {
       actualServiceConnected
     },
     notes: [
-      "Dry-run is the default and this skeleton does not perform destructive cleanup.",
+      "Dry-run is the default and does not perform destructive cleanup.",
       "No provider identifier, storage locator, DB identifier, auth credential, email, or provider response payload is printed.",
       actualServiceConnected
         ? "An injected internal stage service seam is available for this invocation."
@@ -356,6 +356,10 @@ function toSafeNonNegativeNumber(value) {
   }
 
   return Math.floor(value);
+}
+
+function toSafeNullableNonNegativeNumber(value) {
+  return value === null ? null : toSafeNonNegativeNumber(value);
 }
 
 function normalizeCleanupStatus(value) {
@@ -574,25 +578,42 @@ async function resolveAccountDeletionRequestReadOnly(input = {}, env = process.e
 }
 
 function sanitizeStageServiceResult(result = {}) {
-  const allowedStatuses = new Set(["succeeded", "not_needed", "failed", "manual_required", "blocked"]);
+  const allowedStatuses = new Set([
+    "succeeded",
+    "not_needed",
+    "already_satisfied",
+    "failed",
+    "manual_required",
+    "blocked"
+  ]);
   const status = allowedStatuses.has(result.status) ? result.status : "blocked";
   const safeCounts = result.safeCounts && typeof result.safeCounts === "object" ? result.safeCounts : {};
+  const satisfied = status === "succeeded" || status === "not_needed" || status === "already_satisfied";
 
   return {
     status,
-    safeReasonCode: toSafeReasonCode(result.safeReasonCode),
+    safeReasonCode:
+      result.safeReasonCode === null && satisfied ? null : toSafeReasonCode(result.safeReasonCode),
     safeCounts: {
       stagesRequested: 1,
       requestResolverCalls: toSafeNonNegativeNumber(safeCounts.requestResolverCalls),
       stageServiceCalls: 1,
-      destructiveOperationsAttempted: toSafeNonNegativeNumber(safeCounts.destructiveOperationsAttempted),
-      providerCandidates: toSafeNonNegativeNumber(safeCounts.providerCandidates),
+      destructiveOperationsAttempted: toSafeNullableNonNegativeNumber(
+        safeCounts.destructiveOperationsAttempted
+      ),
+      providerCandidates: toSafeNullableNonNegativeNumber(safeCounts.providerCandidates),
+      providerAttempted: toSafeNullableNonNegativeNumber(safeCounts.providerAttempted),
+      providerSucceeded: toSafeNullableNonNegativeNumber(safeCounts.providerSucceeded),
+      providerFailed: toSafeNullableNonNegativeNumber(safeCounts.providerFailed),
+      providerNotNeeded: toSafeNullableNonNegativeNumber(safeCounts.providerNotNeeded),
+      providerBlocked: toSafeNullableNonNegativeNumber(safeCounts.providerBlocked),
+      providerOutcomeUnknown: toSafeNonNegativeNumber(safeCounts.providerOutcomeUnknown),
       storageObjects: toSafeNonNegativeNumber(safeCounts.storageObjects),
       databaseTables: toSafeNonNegativeNumber(safeCounts.databaseTables),
       authUsers: toSafeNonNegativeNumber(safeCounts.authUsers)
     },
     nextAction:
-      status === "succeeded" || status === "not_needed"
+      satisfied
         ? "Record this safe stage result in the proof template, then stop before the next stage."
         : "Stop at this stage, record the safe reason code, and follow the manual review path."
   };
@@ -723,9 +744,9 @@ async function runAccountDeletionOperator(argv = process.argv.slice(2), options 
     },
     request: resolvedRequest.safeRequest,
     notes: [
-      "Safe request resolver and internal stage service seam returned safe summaries.",
+      "Safe request resolver and internal stage service bridge returned safe summaries.",
       "No raw user, provider, storage, DB, Auth, or provider response data is printed.",
-      "RR-3k self-tests use fake resolver and fake stage services only; the default CLI remains disconnected from real destructive services."
+      "The canonical G5D-1 entry connects only the provider stage; Storage, DB, Auth, and completion remain unreachable."
     ]
   };
 }
@@ -747,7 +768,8 @@ Safety:
   - execute mode also requires a prepared proof path and latest dry-run runnable confirmation
   - storage/database/auth execute mode requires --prior-stage-satisfied
   - status/summary can model disposable proof candidacy with --proof-candidate-* flags
-  - this skeleton does not call actual provider, Storage, DB, or Auth deletion services
+  - the canonical G5D-1 entry connects only the provider service behind every execute guard
+  - Storage, DB, Auth, and completion services remain disconnected
   - raw request refs are accepted for targeting but never echoed
 `);
 }
@@ -758,6 +780,7 @@ export {
   assessDisposableProofCandidate,
   buildSafeSummary,
   parseArgs,
+  printHelp,
   resolveAccountDeletionRequestReadOnly,
   runAccountDeletionOperator,
   sanitizeReadOnlyRequestResolverResult,
@@ -779,7 +802,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   });
   console.log(JSON.stringify(summary, null, 2));
 
-  if (summary.status === "blocked") {
+  if (["blocked", "failed", "manual_required"].includes(summary.status)) {
     process.exitCode = 2;
   }
 }
