@@ -57,6 +57,7 @@ const PROVIDER_FAILURE_REASON_MAP: Readonly<Record<string, string>> = {
   deletion_request_id_mismatch: "request_target_mismatch",
   provider_cleanup_not_runnable: "provider_cleanup_not_runnable",
   provider_cleanup_blocked: "provider_cleanup_blocked",
+  provider_durable_authority_required: "provider_durable_authority_required",
   provider_cleanup_candidate_mismatch: "provider_candidate_set_changed",
   elevenlabs_cost_guard_disabled: "provider_kill_switch_active",
   elevenlabs_voice_delete_auth_failed: "provider_delete_auth_failed",

@@ -404,7 +404,13 @@ console.log("- real provider calls: 0");
       "manual_required",
       "provider_target_absence_unverified"
     ],
-    ["blocked", "deletion_request_id_mismatch", "blocked", "request_target_mismatch"]
+    ["blocked", "deletion_request_id_mismatch", "blocked", "request_target_mismatch"],
+    [
+      "blocked",
+      "provider_durable_authority_required",
+      "blocked",
+      "provider_durable_authority_required"
+    ]
   ];
 
   for (const [serviceStatus, failureReasonCode, operatorStatus, safeReasonCode] of cases) {

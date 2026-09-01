@@ -456,6 +456,8 @@ const AUTH_DELETION_ACTUAL_RUNNABLE_STATUSES: AccountDeletionRequestStatus[] = [
   "auth_cleanup_failed"
 ];
 
+const LEGACY_PROVIDER_CLEANUP_DURABLE_AUTHORITY_REQUIRED = true;
+
 const STORAGE_CLEANUP_BUCKET_TARGETS: Array<{
   bucket: StorageCleanupBucketSummary["bucket"];
   storageBucket: string;
@@ -1875,6 +1877,27 @@ export async function runElevenLabsProviderCleanupActual(input: {
   }
 
   const deletionRequest = toView(request);
+
+  // G5D-2A reserves all external Provider DELETE authority for the durable
+  // per-target runner. Keep the legacy aggregate path callable only as a safe
+  // fail-closed bridge until the canonical operator is wired to that runner.
+  if (LEGACY_PROVIDER_CLEANUP_DURABLE_AUTHORITY_REQUIRED) {
+    return createProviderCleanupActualResult({
+      deletionRequest,
+      status: "blocked",
+      guard: buildProviderCleanupGuard({
+        deletionRequest,
+        deletionRequestId: input.deletionRequestId,
+        env: input.env
+      }),
+      failureReasonCode: "provider_durable_authority_required",
+      notes: [
+        "provider cleanup actual requires the durable per-target authority.",
+        "no provider delete is called and no request status is updated."
+      ]
+    });
+  }
+
   const dryRun = await planElevenLabsCleanupDryRun(input.userId);
   const guard = buildProviderCleanupGuard({
     deletionRequest,

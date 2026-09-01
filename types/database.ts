@@ -46,6 +46,27 @@ export type AccountDeletionFailureStage =
   | "auth_cleanup"
   | "notification";
 export type AccountDeletionCleanupStatus = "pending" | "not_needed" | "succeeded" | "failed" | "manual_required";
+export type AccountDeletionProviderSnapshotStatus = "pending" | "sealed";
+export type AccountDeletionProviderTargetStatus =
+  | "pending"
+  | "delete_requested"
+  | "deleted"
+  | "verified_absent"
+  | "manual_required";
+export type AccountDeletionProviderDeleteOutcome =
+  | "not_attempted"
+  | "succeeded"
+  | "not_found"
+  | "timed_out"
+  | "unavailable"
+  | "rejected";
+export type AccountDeletionProviderReconciliationStatus =
+  | "not_applicable"
+  | "pending"
+  | "verified_absent"
+  | "present"
+  | "unavailable"
+  | "manual_required";
 export type VoiceDeletionOperationStatus =
   | "pending"
   | "processing"
@@ -116,6 +137,18 @@ export interface Database {
           failure_stage: AccountDeletionFailureStage | null;
           failure_reason_code: string | null;
           provider_cleanup_status: AccountDeletionCleanupStatus;
+          provider_snapshot_version: string;
+          provider_snapshot_status: AccountDeletionProviderSnapshotStatus;
+          provider_snapshot_seal_version: number;
+          provider_snapshot_sealed_at: string | null;
+          provider_snapshot_target_count: number;
+          provider_verified_absent_count: number;
+          provider_runner_attempt_count: number;
+          provider_runner_lease_token: string | null;
+          provider_runner_lease_expires_at: string | null;
+          provider_destructive_started_at: string | null;
+          provider_sub_finalized_at: string | null;
+          provider_locator_scrubbed_at: string | null;
           storage_cleanup_status: AccountDeletionCleanupStatus;
           db_cleanup_status: AccountDeletionCleanupStatus;
           auth_cleanup_status: AccountDeletionCleanupStatus;
@@ -141,6 +174,18 @@ export interface Database {
           failure_stage?: AccountDeletionFailureStage | null;
           failure_reason_code?: string | null;
           provider_cleanup_status?: AccountDeletionCleanupStatus;
+          provider_snapshot_version?: string;
+          provider_snapshot_status?: AccountDeletionProviderSnapshotStatus;
+          provider_snapshot_seal_version?: number;
+          provider_snapshot_sealed_at?: string | null;
+          provider_snapshot_target_count?: number;
+          provider_verified_absent_count?: number;
+          provider_runner_attempt_count?: number;
+          provider_runner_lease_token?: string | null;
+          provider_runner_lease_expires_at?: string | null;
+          provider_destructive_started_at?: string | null;
+          provider_sub_finalized_at?: string | null;
+          provider_locator_scrubbed_at?: string | null;
           storage_cleanup_status?: AccountDeletionCleanupStatus;
           db_cleanup_status?: AccountDeletionCleanupStatus;
           auth_cleanup_status?: AccountDeletionCleanupStatus;
@@ -166,6 +211,18 @@ export interface Database {
           failure_stage?: AccountDeletionFailureStage | null;
           failure_reason_code?: string | null;
           provider_cleanup_status?: AccountDeletionCleanupStatus;
+          provider_snapshot_version?: string;
+          provider_snapshot_status?: AccountDeletionProviderSnapshotStatus;
+          provider_snapshot_seal_version?: number;
+          provider_snapshot_sealed_at?: string | null;
+          provider_snapshot_target_count?: number;
+          provider_verified_absent_count?: number;
+          provider_runner_attempt_count?: number;
+          provider_runner_lease_token?: string | null;
+          provider_runner_lease_expires_at?: string | null;
+          provider_destructive_started_at?: string | null;
+          provider_sub_finalized_at?: string | null;
+          provider_locator_scrubbed_at?: string | null;
           storage_cleanup_status?: AccountDeletionCleanupStatus;
           db_cleanup_status?: AccountDeletionCleanupStatus;
           auth_cleanup_status?: AccountDeletionCleanupStatus;
@@ -182,6 +239,56 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
+      };
+      account_deletion_provider_targets: {
+        Row: {
+          id: string;
+          deletion_request_id: string;
+          user_id: string | null;
+          source_voice_id: string | null;
+          provider_name: string | null;
+          provider_resource_id: string | null;
+          target_fingerprint: string | null;
+          status: AccountDeletionProviderTargetStatus;
+          delete_outcome: AccountDeletionProviderDeleteOutcome;
+          reconciliation_status: AccountDeletionProviderReconciliationStatus;
+          delete_attempt_count: number;
+          reconciliation_attempt_count: number;
+          next_retry_at: string | null;
+          last_failure_category: string | null;
+          last_attempted_at: string | null;
+          delete_succeeded_at: string | null;
+          verified_absent_at: string | null;
+          manual_required_at: string | null;
+          locator_scrubbed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          deletion_request_id: string;
+          user_id?: string | null;
+          source_voice_id?: string | null;
+          provider_name?: string | null;
+          provider_resource_id?: string | null;
+          target_fingerprint?: string | null;
+          status?: AccountDeletionProviderTargetStatus;
+          delete_outcome?: AccountDeletionProviderDeleteOutcome;
+          reconciliation_status?: AccountDeletionProviderReconciliationStatus;
+          delete_attempt_count?: number;
+          reconciliation_attempt_count?: number;
+          next_retry_at?: string | null;
+          last_failure_category?: string | null;
+          last_attempted_at?: string | null;
+          delete_succeeded_at?: string | null;
+          verified_absent_at?: string | null;
+          manual_required_at?: string | null;
+          locator_scrubbed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["account_deletion_provider_targets"]["Insert"]>;
         Relationships: [];
       };
       voice_deletion_operations: {
@@ -927,6 +1034,88 @@ export interface Database {
           p_weak_words?: Json;
         };
         Returns: string;
+      };
+      seal_account_deletion_provider_snapshot: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_user_id: string;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
+      };
+      claim_account_deletion_provider_lease: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_user_id: string;
+          p_lease_token: string;
+          p_lease_seconds: number;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
+      };
+      release_account_deletion_provider_lease: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_user_id: string;
+          p_lease_token: string;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
+      };
+      begin_account_deletion_provider_delete_attempt: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_user_id: string;
+          p_target_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+          p_expected_delete_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_provider_targets"]["Row"];
+      };
+      record_account_deletion_provider_delete_result: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_user_id: string;
+          p_target_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+          p_expected_delete_attempt_count: number;
+          p_result: string;
+          p_retry_delay_seconds: number;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_provider_targets"]["Row"];
+      };
+      begin_account_deletion_provider_reconciliation_attempt: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_user_id: string;
+          p_target_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+          p_expected_reconciliation_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_provider_targets"]["Row"];
+      };
+      record_account_deletion_provider_reconciliation_result: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_user_id: string;
+          p_target_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+          p_expected_reconciliation_attempt_count: number;
+          p_result: string;
+          p_owner_signal: string | null;
+          p_retry_delay_seconds: number;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_provider_targets"]["Row"];
+      };
+      finalize_account_deletion_provider_stage: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_user_id: string;
+          p_lease_token: string;
+          p_expected_runner_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
       };
       create_or_get_voice_deletion_operation: {
         Args: {
