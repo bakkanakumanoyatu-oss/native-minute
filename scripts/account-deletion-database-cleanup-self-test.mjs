@@ -44,13 +44,29 @@ assertCheck(
 );
 
 assertCheck(
-  "destructive guard is required before DB cleanup",
+  "legacy DB cleanup fails closed on durable authority before inventory or mutation",
   includesAll(service, [
-    "NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE",
-    "destructiveGuard",
-    "no database delete, update, or anonymize operation is called and no request status is updated"
+    "LEGACY_DATABASE_CLEANUP_DURABLE_AUTHORITY_REQUIRED = true",
+    "db_durable_authority_required",
+    "no sequential delete, quota delete, request status mutation, Auth call, or completion call is performed"
   ]),
-  "default execution stays blocked"
+  "the future atomic DB finalizer is the only mutation authority"
+);
+
+const databaseEntry = service.indexOf("export async function runDatabaseCleanupActual");
+const durableGuard = service.indexOf("db_durable_authority_required", databaseEntry);
+const legacyInventory = service.indexOf("const dryRun = await planDatabaseCleanupDryRun", databaseEntry);
+const legacyCleanup = service.indexOf("const cleanupDatabase = input.cleanupDatabase", databaseEntry);
+const legacyTerminalWrite = service.indexOf('db_cleanup_status: "succeeded"', databaseEntry);
+
+assertCheck(
+  "durable guard precedes every legacy inventory/mutation/terminal path",
+  databaseEntry >= 0 &&
+    durableGuard > databaseEntry &&
+    durableGuard < legacyInventory &&
+    durableGuard < legacyCleanup &&
+    durableGuard < legacyTerminalWrite,
+  "sequential delete, quota delete, failed/completed status writes, and Auth remain unreachable"
 );
 
 assertCheck(

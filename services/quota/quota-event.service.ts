@@ -530,7 +530,7 @@ async function insertQuotaEvent(payload: QuotaEventsTable["Insert"]): Promise<Qu
   const { data, error } = await client.from("quota_events").insert(payload).select("id").single();
 
   if (error) {
-    if (isUniqueViolation(error) && payload.dedupe_key) {
+    if (isUniqueViolation(error) && payload.dedupe_key && payload.user_id) {
       const existing = await findQuotaEventByDedupeKey(payload.user_id, payload.dedupe_key);
 
       if (existing) {

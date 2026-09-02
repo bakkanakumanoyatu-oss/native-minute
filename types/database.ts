@@ -191,6 +191,12 @@ export interface Database {
           storage_sub_finalized_at: string | null;
           storage_locator_scrubbed_at: string | null;
           db_cleanup_status: AccountDeletionCleanupStatus;
+          db_inventory_version: string;
+          db_observed_row_count: number;
+          db_deleted_row_count: number;
+          db_anonymized_row_count: number;
+          db_retained_row_count: number;
+          db_sub_finalized_at: string | null;
           auth_cleanup_status: AccountDeletionCleanupStatus;
           notification_status: AccountDeletionCleanupStatus;
           retry_count: number;
@@ -207,7 +213,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id?: string | null;
+          user_id: string | null;
           anonymized_user_ref?: string;
           request_source?: AccountDeletionRequestSource;
           status?: AccountDeletionRequestStatus;
@@ -243,6 +249,12 @@ export interface Database {
           storage_sub_finalized_at?: string | null;
           storage_locator_scrubbed_at?: string | null;
           db_cleanup_status?: AccountDeletionCleanupStatus;
+          db_inventory_version?: string;
+          db_observed_row_count?: number;
+          db_deleted_row_count?: number;
+          db_anonymized_row_count?: number;
+          db_retained_row_count?: number;
+          db_sub_finalized_at?: string | null;
           auth_cleanup_status?: AccountDeletionCleanupStatus;
           notification_status?: AccountDeletionCleanupStatus;
           retry_count?: number;
@@ -295,6 +307,12 @@ export interface Database {
           storage_sub_finalized_at?: string | null;
           storage_locator_scrubbed_at?: string | null;
           db_cleanup_status?: AccountDeletionCleanupStatus;
+          db_inventory_version?: string;
+          db_observed_row_count?: number;
+          db_deleted_row_count?: number;
+          db_anonymized_row_count?: number;
+          db_retained_row_count?: number;
+          db_sub_finalized_at?: string | null;
           auth_cleanup_status?: AccountDeletionCleanupStatus;
           notification_status?: AccountDeletionCleanupStatus;
           retry_count?: number;
@@ -422,7 +440,7 @@ export interface Database {
       voice_deletion_operations: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
           status: VoiceDeletionOperationStatus;
           current_stage: VoiceDeletionStage | null;
           snapshot_version: string;
@@ -457,7 +475,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string | null;
           status?: VoiceDeletionOperationStatus;
           current_stage?: VoiceDeletionStage | null;
           snapshot_version?: string;
@@ -492,7 +510,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          user_id?: string;
+          user_id?: string | null;
           status?: VoiceDeletionOperationStatus;
           current_stage?: VoiceDeletionStage | null;
           snapshot_version?: string;
@@ -565,7 +583,7 @@ export interface Database {
         Row: {
           id: string;
           operation_id: string;
-          user_id: string;
+          user_id: string | null;
           target_kind: VoiceDeletionTargetKind;
           source_row_id: string | null;
           provider_name: string | null;
@@ -591,7 +609,7 @@ export interface Database {
         Insert: {
           id?: string;
           operation_id: string;
-          user_id: string;
+          user_id: string | null;
           target_kind: VoiceDeletionTargetKind;
           source_row_id?: string | null;
           provider_name?: string | null;
@@ -617,7 +635,7 @@ export interface Database {
         Update: {
           id?: string;
           operation_id?: string;
-          user_id?: string;
+          user_id?: string | null;
           target_kind?: VoiceDeletionTargetKind;
           source_row_id?: string | null;
           provider_name?: string | null;
@@ -933,7 +951,7 @@ export interface Database {
       quota_events: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
           event_type: QuotaEventType;
           category: QuotaEventCategory;
           status: QuotaEventStatus;
@@ -952,13 +970,15 @@ export interface Database {
           provider_request_id: string | null;
           metadata: Json;
           attempted_at: string;
+          identifier_scrubbed_at: string | null;
+          retention_expires_at: string;
           completed_at: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id: string | null;
           event_type: QuotaEventType;
           category?: QuotaEventCategory;
           status: QuotaEventStatus;
@@ -977,13 +997,15 @@ export interface Database {
           provider_request_id?: string | null;
           metadata?: Json;
           attempted_at?: string;
+          identifier_scrubbed_at?: string | null;
+          retention_expires_at?: string;
           completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          user_id?: string;
+          user_id?: string | null;
           event_type?: QuotaEventType;
           category?: QuotaEventCategory;
           status?: QuotaEventStatus;
@@ -1002,6 +1024,8 @@ export interface Database {
           provider_request_id?: string | null;
           metadata?: Json;
           attempted_at?: string;
+          identifier_scrubbed_at?: string | null;
+          retention_expires_at?: string;
           completed_at?: string | null;
           created_at?: string;
           updated_at?: string;

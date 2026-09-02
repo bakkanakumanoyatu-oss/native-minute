@@ -45,6 +45,7 @@
     "account-deletion:storage-durable:self-test": "npm run test --workspace @native-minute/mobile -- tests/account-deletion-storage-durable-runner.test.ts tests/voice-server-owned-script-audio-writer.test.ts tests/script-audio-server-storage-writer.test.ts",
     "account-deletion:storage-cleanup:self-test": "node scripts/account-deletion-storage-cleanup-self-test.mjs",
     "account-deletion:database-cleanup:self-test": "node scripts/account-deletion-database-cleanup-self-test.mjs",
+    "account-deletion:database-foundation:self-test": "npm run test --workspace @native-minute/mobile -- tests/account-deletion-db-foundation-contract.test.ts",
     "account-deletion:auth-cleanup:self-test": "node scripts/account-deletion-auth-cleanup-self-test.mjs",
     "account-deletion:operator": "NODE_OPTIONS=--conditions=react-server tsx scripts/account-deletion-operator-entry.mjs",
     "account-deletion:operator:self-test": "node scripts/account-deletion-operator-runner-self-test.mjs",

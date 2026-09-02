@@ -458,6 +458,7 @@ const AUTH_DELETION_ACTUAL_RUNNABLE_STATUSES: AccountDeletionRequestStatus[] = [
 
 const LEGACY_PROVIDER_CLEANUP_DURABLE_AUTHORITY_REQUIRED = true;
 const LEGACY_STORAGE_CLEANUP_DURABLE_AUTHORITY_REQUIRED = true;
+const LEGACY_DATABASE_CLEANUP_DURABLE_AUTHORITY_REQUIRED = true;
 
 const STORAGE_CLEANUP_BUCKET_TARGETS: Array<{
   bucket: StorageCleanupBucketSummary["bucket"];
@@ -3301,6 +3302,27 @@ export async function runDatabaseCleanupActual(input: {
   }
 
   const deletionRequest = toView(request);
+
+  // G5D-2H reserves all DB deletion, quota anonymization, and DB terminal
+  // authority for the next focused atomic finalizer. Keep the legacy sequential
+  // executor callable only as a read-only, mutation-free fail-closed bridge.
+  if (LEGACY_DATABASE_CLEANUP_DURABLE_AUTHORITY_REQUIRED) {
+    return createDatabaseCleanupActualResult({
+      deletionRequest,
+      status: "blocked",
+      guard: buildDatabaseCleanupGuard({
+        deletionRequest,
+        deletionRequestId: input.deletionRequestId,
+        env: input.env
+      }),
+      failureReasonCode: "db_durable_authority_required",
+      notes: [
+        "database cleanup actual requires the focused durable atomic finalizer authority.",
+        "no sequential delete, quota delete, request status mutation, Auth call, or completion call is performed."
+      ]
+    });
+  }
+
   const dryRun = await planDatabaseCleanupDryRun(input.userId);
   const guard = buildDatabaseCleanupGuard({
     deletionRequest,
