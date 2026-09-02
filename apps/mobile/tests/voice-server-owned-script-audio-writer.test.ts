@@ -180,6 +180,9 @@ describe("G5C-B4 server-owned Listen cache writer", () => {
       p_user_id: USER_ID,
       p_provider: "elevenlabs"
     }));
+    expect(mocks.stageScriptAudioForReplay).toHaveBeenCalledWith(expect.objectContaining({
+      storageClient: expect.objectContaining({ rpc })
+    }));
     expect(mocks.createSupabaseAdminClient).toHaveBeenCalledTimes(1);
   });
 

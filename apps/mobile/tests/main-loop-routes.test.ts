@@ -942,11 +942,18 @@ describe("backend main-loop hardening helpers", () => {
       })),
       storage: { from: vi.fn(() => ({ upload })) }
     } as unknown as AppSupabaseClient;
+    const writeIntents = {
+      reserve: vi.fn(async (input: { leaseToken: string }) => ({ intentId: "recording-intent", leaseToken: input.leaseToken })),
+      finalizeRecordingUpload: vi.fn(async () => ({ status: "completed" }))
+    };
 
     await uploadOwnedRecording(client, USER_ID, {
       scriptId: SCRIPT_ID,
       file: new File([createPcmWave()], "attacker.exe", { type: "audio/wav" }),
       durationSeconds: 60
+    }, {
+      writeIntents: writeIntents as never,
+      storageClient: client as never
     });
 
     const storageKey = upload.mock.calls[0]?.[0];
@@ -989,12 +996,19 @@ describe("backend main-loop hardening helpers", () => {
       })),
       storage: { from: vi.fn(() => ({ upload, download })) }
     } as unknown as AppSupabaseClient;
+    const writeIntents = {
+      reserve: vi.fn(async (input: { leaseToken: string }) => ({ intentId: "recording-intent", leaseToken: input.leaseToken })),
+      finalizeRecordingUpload: vi.fn(async () => ({ status: "completed" }))
+    };
 
     const result = await uploadOwnedRecording(client, USER_ID, {
       scriptId: SCRIPT_ID,
       recordingId: RECORDING_ID,
       file: new File([wave], "take.wav", { type: "audio/wav" }),
       durationSeconds: 1
+    }, {
+      writeIntents: writeIntents as never,
+      storageClient: client as never
     });
 
     expect(upload).toHaveBeenCalledTimes(1);

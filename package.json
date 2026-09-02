@@ -42,6 +42,7 @@
     "supabase:storage-rls:check": "node scripts/check-supabase-storage-rls-readiness.mjs",
     "account-deletion:provider-cleanup:self-test": "node scripts/account-deletion-provider-cleanup-self-test.mjs",
     "account-deletion:provider-durable:self-test": "npm run test --workspace @native-minute/mobile -- tests/account-deletion-provider-durable-runner.test.ts",
+    "account-deletion:storage-durable:self-test": "npm run test --workspace @native-minute/mobile -- tests/account-deletion-storage-durable-runner.test.ts tests/voice-server-owned-script-audio-writer.test.ts tests/script-audio-server-storage-writer.test.ts",
     "account-deletion:storage-cleanup:self-test": "node scripts/account-deletion-storage-cleanup-self-test.mjs",
     "account-deletion:database-cleanup:self-test": "node scripts/account-deletion-database-cleanup-self-test.mjs",
     "account-deletion:auth-cleanup:self-test": "node scripts/account-deletion-auth-cleanup-self-test.mjs",

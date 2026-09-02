@@ -904,7 +904,8 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
     cacheKey,
     contentType: "application/octet-stream"
   });
-  const writeIntents = createVoiceAssetWriteIntentRepository();
+  const scriptAudioWriterClient = createSupabaseAdminClient();
+  const writeIntents = createVoiceAssetWriteIntentRepository(scriptAudioWriterClient);
   const reservation = await writeIntents.reserve({
     userId,
     kind: "script_audio_create",
@@ -951,7 +952,7 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   const replayAsset = await (async () => {
     try {
       return await timeAsync("voice.speakScript.stageReplay", () => stageScriptAudioForReplay({
-        client,
+        storageClient: scriptAudioWriterClient,
         userId,
         scriptId: script.id,
         voiceId: selectedVoice.id,

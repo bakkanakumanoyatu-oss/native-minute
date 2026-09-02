@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { AppError } from "@/lib/errors";
 import { timeAsync } from "@/lib/performance/timing";
 import { buildScriptAudioPlaybackPath, parseScriptAudioPlaybackPath } from "@/lib/voice-playback-path";
+import type { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import type { SynthesizeResult } from "@/providers/voice";
 import type { Database, Json } from "@/types/database";
@@ -9,6 +10,7 @@ import { SCRIPT_AUDIO_STORAGE_BUCKET, buildScriptAudioStorageObjectKey } from ".
 
 type ScriptAudioRow = Database["public"]["Tables"]["script_audios"]["Row"];
 type PostgrestErrorLike = { message: string };
+type ScriptAudioStorageClient = Pick<ReturnType<typeof createSupabaseAdminClient>, "storage">;
 
 type ReplayMaybeSingle<TRow> = {
   data: TRow | null;
@@ -221,7 +223,7 @@ async function getOwnedScriptAudioByPlaybackPath(client: AppSupabaseClient, play
 }
 
 export async function stageScriptAudioForReplay(input: {
-  client: AppSupabaseClient;
+  storageClient: ScriptAudioStorageClient;
   userId: string;
   scriptId: string;
   voiceId: string;
@@ -269,8 +271,9 @@ export async function stageScriptAudioForReplay(input: {
         contentType: resolved.contentType
       });
 
+    const scriptAudioBucket = input.storageClient.storage.from(SCRIPT_AUDIO_STORAGE_BUCKET);
     const { error } = await timeAsync("voice.replay.storageUpload", () =>
-      input.client.storage.from(SCRIPT_AUDIO_STORAGE_BUCKET).upload(objectKey, resolved.bytes, {
+      scriptAudioBucket.upload(objectKey, resolved.bytes, {
         contentType: resolved.contentType,
         cacheControl: "3600",
         upsert: false
@@ -283,6 +286,19 @@ export async function stageScriptAudioForReplay(input: {
 
       if (!isConflict) {
         throw new AppError(500, getScriptAudioStorageFailureMessage(error.message, "upload"));
+      }
+
+      const { data: existing, error: existingError } = await timeAsync(
+        "voice.replay.storageIdempotencyCheck",
+        () => scriptAudioBucket.download(objectKey)
+      );
+      if (existingError || !existing) {
+        throw new AppError(500, "既存の見本音声を安全に確認できませんでした。手動確認が必要です。");
+      }
+
+      const existingBytes = Buffer.from(await existing.arrayBuffer());
+      if (!existingBytes.equals(resolved.bytes)) {
+        throw new AppError(500, "既存の見本音声が今回の生成結果と一致しません。手動確認が必要です。");
       }
     }
 

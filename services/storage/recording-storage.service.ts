@@ -2,8 +2,10 @@ import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
 import { timeAsync } from "@/lib/performance/timing";
 import { parseMobilePcmWav } from "@/lib/pcm-wav";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import { getScript } from "@/services/scripts/scripts.service";
+import { createVoiceAssetWriteIntentRepository } from "@/services/voice/voice-asset-write-intent.repository";
 import { MAX_RECORDING_BYTES, RECORDINGS_BUCKET, RECORDING_MIME_TYPES } from "./constants";
 
 type StorageUploadInput = {
@@ -12,6 +14,11 @@ type StorageUploadInput = {
   file: File;
   durationSeconds?: number;
 };
+type RecordingWriteIntents = Pick<
+  ReturnType<typeof createVoiceAssetWriteIntentRepository>,
+  "reserve" | "finalizeRecordingUpload"
+>;
+type RecordingStorageClient = Pick<ReturnType<typeof createSupabaseAdminClient>, "storage">;
 
 export type UploadedRecording = {
   audioPath: string;
@@ -172,7 +179,11 @@ async function ensureOwnedScript(client: AppSupabaseClient, userId: string, scri
 export async function uploadOwnedRecording(
   client: AppSupabaseClient,
   userId: string,
-  input: StorageUploadInput
+  input: StorageUploadInput,
+  dependencies?: {
+    writeIntents?: RecordingWriteIntents;
+    storageClient?: RecordingStorageClient;
+  }
 ): Promise<UploadedRecording> {
   return timeAsync("recording.uploadOwned", async () => {
     await ensureOwnedScript(client, userId, input.scriptId);
@@ -204,7 +215,18 @@ export async function uploadOwnedRecording(
     const extension = getRecordingStorageExtension(contentType);
     const objectKey = `${userId}/${input.scriptId}/${recordingId ?? randomUUID()}.${extension}`;
     const bytes = await timeAsync("recording.fileToBuffer", async () => Buffer.from(await input.file.arrayBuffer()));
-    const recordingBucket = client.storage.from(RECORDINGS_BUCKET);
+    const writeIntents = dependencies?.writeIntents ?? createVoiceAssetWriteIntentRepository();
+    const reservation = await writeIntents.reserve({
+      userId,
+      kind: "recording_upload",
+      leaseToken: randomUUID(),
+      leaseSeconds: 900,
+      scriptId: input.scriptId,
+      storageBucket: RECORDINGS_BUCKET,
+      storageObjectKey: objectKey
+    });
+    const storageClient = dependencies?.storageClient ?? createSupabaseAdminClient();
+    const recordingBucket = storageClient.storage.from(RECORDINGS_BUCKET);
     const { error } = await timeAsync("recording.storageUpload", () =>
       recordingBucket.upload(objectKey, bytes, {
         contentType,
@@ -222,6 +244,11 @@ export async function uploadOwnedRecording(
       if (!existingError && existing) {
         const existingBytes = Buffer.from(await existing.arrayBuffer());
         if (existingBytes.equals(bytes)) {
+          await writeIntents.finalizeRecordingUpload({
+            ...reservation,
+            userId,
+            storageObjectKey: objectKey
+          });
           return {
             audioPath: createRecordingAudioPath(objectKey),
             audioStorageKey: objectKey,
@@ -233,8 +260,16 @@ export async function uploadOwnedRecording(
     }
 
     if (error) {
+      // A Storage error can be a lost response after persistence. Keep the
+      // durable reservation unresolved unless exact byte equality was proved.
       throw new AppError(500, getStorageFailureMessage(error.message, "upload"));
     }
+
+    await writeIntents.finalizeRecordingUpload({
+      ...reservation,
+      userId,
+      storageObjectKey: objectKey
+    });
 
     return {
       audioPath: createRecordingAudioPath(objectKey),

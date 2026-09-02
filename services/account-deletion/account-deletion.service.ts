@@ -457,6 +457,7 @@ const AUTH_DELETION_ACTUAL_RUNNABLE_STATUSES: AccountDeletionRequestStatus[] = [
 ];
 
 const LEGACY_PROVIDER_CLEANUP_DURABLE_AUTHORITY_REQUIRED = true;
+const LEGACY_STORAGE_CLEANUP_DURABLE_AUTHORITY_REQUIRED = true;
 
 const STORAGE_CLEANUP_BUCKET_TARGETS: Array<{
   bucket: StorageCleanupBucketSummary["bucket"];
@@ -2279,6 +2280,28 @@ export async function runStorageCleanupActual(input: {
   }
 
   const deletionRequest = toView(request);
+
+  // G5D-2E reserves every external Storage action and terminal transition for
+  // the durable per-target runner/sub-finalizer. The aggregate legacy executor
+  // must fail closed before inventory collection, fake/default remove calls, or
+  // direct cleanup-status mutation. Canonical operator wiring is a later unit.
+  if (LEGACY_STORAGE_CLEANUP_DURABLE_AUTHORITY_REQUIRED) {
+    return createStorageCleanupActualResult({
+      deletionRequest,
+      status: "blocked",
+      guard: buildStorageCleanupGuard({
+        deletionRequest,
+        deletionRequestId: input.deletionRequestId,
+        env: input.env
+      }),
+      failureReasonCode: "storage_durable_authority_required",
+      notes: [
+        "storage cleanup actual requires the durable per-target authority.",
+        "no Storage listing/delete is called and no request status is updated."
+      ]
+    });
+  }
+
   const dryRun = await planStorageCleanupDryRun(input.userId);
   const guard = buildStorageCleanupGuard({
     deletionRequest,

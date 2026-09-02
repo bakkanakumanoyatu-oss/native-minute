@@ -26,7 +26,7 @@ function mapIntentError(error: RpcError) {
     || message.includes("account_deletion_active")
     || message.includes("voice_asset_writer_in_progress")
   ) {
-    return new AppError(409, "voice-only deletion または別の voice 保存処理が進行中です。完了後にもう一度お試しください。");
+    return new AppError(409, "削除処理または別の音声保存処理が進行中です。完了後にもう一度お試しください。");
   }
 
   return new AppError(500, "voice asset の安全な保存予約に失敗しました。");
@@ -119,6 +119,27 @@ export function createVoiceAssetWriteIntentRepository(
     return result.data;
   }
 
+  async function finalizeRecordingUpload(input: VoiceAssetWriteReservation & {
+    userId: string;
+    storageObjectKey: string;
+  }) {
+    const result = asRpcResult<IntentRow>(await client.rpc("finalize_recording_upload_write_intent", {
+      p_intent_id: input.intentId,
+      p_user_id: input.userId,
+      p_lease_token: input.leaseToken,
+      p_storage_object_key: input.storageObjectKey
+    }));
+
+    if (
+      result.error || result.data?.id !== input.intentId || result.data.status !== "completed" ||
+      result.data.storage_bucket !== "recordings" || result.data.storage_object_key !== input.storageObjectKey
+    ) {
+      throw new AppError(500, "録音 upload の保存完了を確認できませんでした。手動確認が必要です。");
+    }
+
+    return result.data;
+  }
+
   async function finalizeVoice(input: VoiceAssetWriteReservation & {
     userId: string;
     consentId: string;
@@ -167,5 +188,12 @@ export function createVoiceAssetWriteIntentRepository(
     return result.data;
   }
 
-  return { reserve, cancelKnownNoSideEffect, finalizeUpload, finalizeVoice, finalizeScriptAudio };
+  return {
+    reserve,
+    cancelKnownNoSideEffect,
+    finalizeUpload,
+    finalizeRecordingUpload,
+    finalizeVoice,
+    finalizeScriptAudio
+  };
 }
