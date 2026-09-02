@@ -1,35 +1,22 @@
 #!/usr/bin/env node
 
+import { readFileSync } from "node:fs";
 import {
-  adaptAccountDeletionProviderOutcome,
   createAccountDeletionProviderOperatorBridge
 } from "../services/account-deletion/account-deletion-provider-operator.service.ts";
-import {
-  parseArgs,
-  runAccountDeletionOperator
-} from "./account-deletion-operator-runner.mjs";
+import { parseArgs, runAccountDeletionOperator } from "./account-deletion-operator-runner.mjs";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const REQUEST_ID = "22222222-2222-4222-8222-222222222222";
 const OTHER_REQUEST_ID = "33333333-3333-4333-8333-333333333333";
 const ANONYMIZED_REF = `adr_${"a".repeat(32)}`;
 const PROVIDER_ID = "voice_sensitive_provider_target";
-const STORAGE_LOCATOR = "voice-samples/private/locator.wav";
-const RAW_PROVIDER_RESPONSE = "raw provider response with private payload";
-const DESTRUCTIVE_ENV = {
-  NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE: "1"
-};
-const externalCalls = {
-  liveProvider: 0,
-  stagingMutation: 0
-};
+const DESTRUCTIVE_ENV = { NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE: "1" };
+const externalCalls = { liveProvider: 0, stagingMutation: 0, storage: 0, database: 0, auth: 0, completion: 0 };
 
 function assertCheck(label, condition, detail) {
   console.log(`- ${label}: ${condition ? "ok" : "failed"}${detail ? ` (${detail})` : ""}`);
-
-  if (!condition) {
-    throw new Error(label);
-  }
+  if (!condition) throw new Error(label);
 }
 
 function assertSafeOutput(label, value) {
@@ -40,77 +27,87 @@ function assertSafeOutput(label, value) {
     OTHER_REQUEST_ID,
     ANONYMIZED_REF,
     PROVIDER_ID,
-    STORAGE_LOCATOR,
-    RAW_PROVIDER_RESPONSE,
     "private@example.com",
+    "voice-samples/private/locator.wav",
+    "raw provider response with private payload",
     "service-role-secret",
     "signed-private-url"
   ];
-
-  assertCheck(
-    label,
-    forbidden.every((needle) => !output.includes(needle)),
-    "operator output contains safe statuses, reasons, counts, and markers only"
-  );
+  assertCheck(label, forbidden.every((needle) => !output.includes(needle)), "only safe progress, counts, and reason codes remain");
 }
 
 function executeArgs(stage = "provider", requestRef = REQUEST_ID) {
   const args = [
-    "--stage",
-    stage,
-    "--request",
-    requestRef,
+    "--stage", stage,
+    "--request", requestRef,
     "--execute",
-    "--proof",
-    "docs/safe-proof-template.md",
+    "--proof", "docs/safe-proof-template.md",
     "--latest-dry-run-runnable",
-    "--acknowledge-irreversible",
-    "I_UNDERSTAND_ACCOUNT_DELETION_IS_IRREVERSIBLE"
+    "--acknowledge-irreversible", "I_UNDERSTAND_ACCOUNT_DELETION_IS_IRREVERSIBLE"
   ];
-
-  if (stage !== "provider") {
-    args.push("--prior-stage-satisfied");
-  }
-
+  if (stage !== "provider") args.push("--prior-stage-satisfied");
   return parseArgs(args);
 }
 
-function makeActualResult(status, options = {}) {
-  return {
-    status,
-    failureReasonCode: options.failureReasonCode ?? null,
-    cleanup: {
-      attempted: options.attempted ?? 0,
-      succeeded: options.succeeded ?? 0,
-      failed: options.failed ?? 0,
-      notNeeded: options.notNeeded ?? 0,
-      blocked: options.blocked ?? 0
-    },
-    deletionRequest: {
-      id: REQUEST_ID,
-      userId: USER_ID,
-      email: "private@example.com"
-    },
-    providerVoiceId: PROVIDER_ID,
-    storageLocator: STORAGE_LOCATOR,
-    rawProviderResponse: RAW_PROVIDER_RESPONSE
+function requestLookup(events, row = {}) {
+  return async (input) => {
+    events.push(`lookup:${input.field}`);
+    return {
+      rows: [{
+        id: REQUEST_ID,
+        user_id: USER_ID,
+        anonymized_user_ref: ANONYMIZED_REF,
+        status: "confirmed",
+        provider_cleanup_status: "pending",
+        ...row
+      }],
+      failed: false
+    };
   };
 }
 
-function makeLookup(
-  events,
-  rows = [
-    {
-      id: REQUEST_ID,
-      user_id: USER_ID,
-      status: "confirmed",
-      provider_cleanup_status: "pending"
+function requestRow(snapshotStatus = "sealed") {
+  return {
+    id: REQUEST_ID,
+    user_id: USER_ID,
+    status: "confirmed",
+    provider_cleanup_status: "pending",
+    provider_snapshot_version: "g5d-2a.account-provider.v1",
+    provider_snapshot_status: snapshotStatus,
+    provider_snapshot_seal_version: snapshotStatus === "sealed" ? 1 : 0,
+    provider_snapshot_sealed_at: snapshotStatus === "sealed" ? "2026-09-02T00:00:00.000Z" : null
+  };
+}
+
+function repositoryFixture(events, snapshotStatus = "sealed") {
+  const row = requestRow(snapshotStatus);
+  return {
+    getRequestForOwner: async (requestId, userId) => {
+      events.push("repository:get-request");
+      return requestId === REQUEST_ID && userId === USER_ID ? row : null;
+    },
+    sealProviderSnapshot: async () => {
+      events.push("repository:seal-snapshot");
+      Object.assign(row, {
+        provider_snapshot_status: "sealed",
+        provider_snapshot_seal_version: 1,
+        provider_snapshot_sealed_at: "2026-09-02T00:00:00.000Z"
+      });
+      return row;
     }
-  ]
-) {
-  return async (input) => {
-    events.push(`lookup:${input.field}`);
-    return { rows, failed: false };
+  };
+}
+
+function providerAdapter(events) {
+  return {
+    deleteVoice: async () => {
+      events.push("fake-provider:delete");
+      return { kind: "deleted" };
+    },
+    reconcileVoiceAbsence: async () => {
+      events.push("fake-provider:get");
+      return { kind: "verified_absent" };
+    }
   };
 }
 
@@ -122,417 +119,245 @@ async function runWithBridge(parsed, bridge, env = DESTRUCTIVE_ENV) {
   });
 }
 
-console.log("Native Minute G5D-1 provider-only operator bridge behavioral fake proof");
-console.log("- provider adapter: fake only");
+console.log("Native Minute G5D-2B provider durable canonical operator wiring behavioral fake proof");
+console.log("- provider adapter: injected fake only");
 console.log("- Storage / DB / Auth / completion adapters: absent");
-console.log("- real provider calls: 0");
+console.log("- real provider / Staging calls: 0");
 
 {
-  const events = [];
+  const calls = { resolver: 0, repositoryFactory: 0, adapterFactory: 0, runner: 0 };
   const bridge = createAccountDeletionProviderOperatorBridge({
     env: {},
-    lookupRequest: makeLookup(events),
-    runProviderCleanupActual: async () => {
-      events.push("provider-service");
-      return makeActualResult("succeeded");
-    }
+    lookupRequest: async () => { calls.resolver += 1; return { rows: [], failed: false }; },
+    createRepository: () => { calls.repositoryFactory += 1; return repositoryFixture([]); },
+    createProviderAdapter: () => { calls.adapterFactory += 1; return providerAdapter([]); },
+    runDurableStep: async () => { calls.runner += 1; return { kind: "progressed" }; }
   });
   const summary = await runWithBridge(executeArgs(), bridge, {});
-
   assertCheck(
-    "destructive guard blocks before resolver and service",
-    summary.status === "blocked" &&
-      summary.safeReasonCode === "destructive_guard_missing" &&
-      events.length === 0,
-    "guard precedence prevents DB resolution and provider service reachability"
+    "guard disabled blocks before resolver, repository, runner, and adapter",
+    summary.status === "blocked" && summary.safeReasonCode === "destructive_guard_missing" && Object.values(calls).every((value) => value === 0),
+    "provider work and external action are unreachable"
   );
   assertSafeOutput("guard-blocked output is redacted", summary);
 }
 
 {
-  const events = [];
-  const bridge = createAccountDeletionProviderOperatorBridge({
-    env: DESTRUCTIVE_ENV,
-    lookupRequest: async (input) => {
-      events.push(`lookup:${input.field}:${input.value === REQUEST_ID ? "exact" : "wrong"}`);
-      return {
-        rows: [
-          {
-            id: REQUEST_ID,
-            user_id: USER_ID,
-            status: "confirmed",
-            provider_cleanup_status: "pending"
-          }
-        ],
-        failed: false
-      };
-    },
-    runProviderCleanupActual: async (input) => {
-      events.push(
-        input.userId === USER_ID && input.deletionRequestId === REQUEST_ID
-          ? "provider-service:exact"
-          : "provider-service:wrong"
-      );
-      return makeActualResult("succeeded", { attempted: 1, succeeded: 1 });
-    }
-  });
-  const summary = await runWithBridge(executeArgs(), bridge);
-
-  assertCheck(
-    "exact request is resolved before exact provider target is passed",
-    summary.status === "succeeded" &&
-      events.join(",") === "lookup:id:exact,provider-service:exact" &&
-      summary.safeCounts.providerAttempted === 1 &&
-      summary.safeCounts.providerSucceeded === 1,
-    "external UUID is resolved once and only internal user/request ids reach the service"
-  );
-  assertSafeOutput("successful provider output is redacted", summary);
-}
-
-{
-  const events = [];
-  const bridge = createAccountDeletionProviderOperatorBridge({
-    env: DESTRUCTIVE_ENV,
-    lookupRequest: async (input) => {
-      events.push(`lookup:${input.field}:${input.value === ANONYMIZED_REF ? "exact" : "wrong"}`);
-      return {
-        rows: [
-          {
-            id: REQUEST_ID,
-            user_id: USER_ID,
-            anonymized_user_ref: ANONYMIZED_REF,
-            status: "confirmed",
-            provider_cleanup_status: "succeeded"
-          }
-        ],
-        failed: false
-      };
-    },
-    runProviderCleanupActual: async (input) => {
-      events.push(
-        input.userId === USER_ID && input.deletionRequestId === REQUEST_ID
-          ? "provider-service:exact"
-          : "provider-service:wrong"
-      );
-      return makeActualResult("already_satisfied");
-    }
-  });
-  const summary = await runWithBridge(executeArgs("provider", ANONYMIZED_REF), bridge);
-
-  assertCheck(
-    "opaque request reference resolves to exactly one internal target",
-    summary.status === "already_satisfied" &&
-      events.join(",") === "lookup:anonymized_user_ref:exact,provider-service:exact",
-    "opaque reference is verified against the returned row before service invocation"
-  );
-  assertSafeOutput("opaque reference output is redacted", summary);
-}
-
-{
-  let lookupCalls = 0;
-  let providerCalls = 0;
-  const bridge = createAccountDeletionProviderOperatorBridge({
-    env: DESTRUCTIVE_ENV,
-    lookupRequest: async () => {
-      lookupCalls += 1;
-      return { rows: [], failed: false };
-    },
-    runProviderCleanupActual: async () => {
-      providerCalls += 1;
-      return makeActualResult("succeeded");
-    }
-  });
-  const invalid = await runWithBridge(executeArgs("provider", "not-a-request-reference"), bridge);
-  const wrong = await runWithBridge(executeArgs("provider", OTHER_REQUEST_ID), bridge);
-
-  assertCheck(
-    "invalid and wrong references fail closed",
-    invalid.status === "blocked" &&
-      invalid.safeReasonCode === "request_ref_invalid" &&
-      wrong.status === "blocked" &&
-      wrong.safeReasonCode === "request_not_found" &&
-      lookupCalls === 1 &&
-      providerCalls === 0,
-    "invalid syntax stops before lookup; exact but unknown UUID stops before provider service"
-  );
-  assertSafeOutput("invalid reference output is redacted", invalid);
-  assertSafeOutput("wrong reference output is redacted", wrong);
-}
-
-{
-  let providerCalls = 0;
-  const bridge = createAccountDeletionProviderOperatorBridge({
-    env: DESTRUCTIVE_ENV,
-    lookupRequest: async () => ({
-      rows: [{ id: OTHER_REQUEST_ID, user_id: USER_ID }],
-      failed: false
-    }),
-    runProviderCleanupActual: async () => {
-      providerCalls += 1;
-      return makeActualResult("succeeded");
-    }
-  });
-  const summary = await runWithBridge(executeArgs(), bridge);
-
-  assertCheck(
-    "resolver rejects a lookup result that does not match the external reference",
-    summary.status === "blocked" &&
-      summary.safeReasonCode === "request_target_mismatch" &&
-      providerCalls === 0,
-    "query construction alone is not trusted as target identity proof"
-  );
-  assertSafeOutput("mismatched lookup output is redacted", summary);
-}
-
-{
-  let providerCalls = 0;
-  const bridge = createAccountDeletionProviderOperatorBridge({
-    env: DESTRUCTIVE_ENV,
-    lookupRequest: async () => ({
-      rows: [
-        {
-          id: REQUEST_ID,
-          user_id: USER_ID,
-          status: "completed",
-          provider_cleanup_status: "succeeded"
-        }
-      ],
-      failed: false
-    }),
-    runProviderCleanupActual: async () => {
-      providerCalls += 1;
-      return makeActualResult("already_satisfied");
-    }
-  });
-  const summary = await runWithBridge(executeArgs(), bridge);
-
-  assertCheck(
-    "stale or non-runnable exact request is rejected before provider service",
-    summary.status === "blocked" &&
-      summary.safeReasonCode === "request_target_not_runnable" &&
-      providerCalls === 0,
-    "the resolver accepts only current provider-stage request/status authority"
-  );
-  assertSafeOutput("non-runnable request output is redacted", summary);
-}
-
-{
-  let providerCalls = 0;
-  const bridge = createAccountDeletionProviderOperatorBridge({
-    env: DESTRUCTIVE_ENV,
-    lookupRequest: async () => ({
-      rows: [
-        { id: REQUEST_ID, user_id: USER_ID },
-        { id: OTHER_REQUEST_ID, user_id: USER_ID }
-      ],
-      failed: false
-    }),
-    runProviderCleanupActual: async () => {
-      providerCalls += 1;
-      return makeActualResult("succeeded");
-    }
-  });
-  const summary = await runWithBridge(executeArgs("provider", ANONYMIZED_REF), bridge);
-
-  assertCheck(
-    "ambiguous opaque reference fails closed",
-    summary.status === "blocked" &&
-      summary.safeReasonCode === "request_target_ambiguous" &&
-      providerCalls === 0,
-    "the existing non-unique opaque-reference index is not treated as uniqueness authority"
-  );
-  assertSafeOutput("ambiguous reference output is redacted", summary);
-}
-
-{
-  const calls = { storage: 0, database: 0, auth: 0, completion: 0, resolver: 0 };
-  const bridge = createAccountDeletionProviderOperatorBridge({
-    env: DESTRUCTIVE_ENV,
-    lookupRequest: async () => {
-      calls.resolver += 1;
-      return {
-        rows: [
-          {
-            id: REQUEST_ID,
-            user_id: USER_ID,
-            status: "confirmed",
-            provider_cleanup_status: "pending"
-          }
-        ],
-        failed: false
-      };
-    },
-    runProviderCleanupActual: async () => makeActualResult("succeeded")
-  });
-
-  assertCheck(
-    "provider is the only connected destructive stage",
-    Object.keys(bridge.stageServices).join(",") === "provider",
-    "later stage functions do not exist in G5D-1 wiring"
-  );
-
-  for (const stage of ["storage", "database", "auth"]) {
-    const summary = await runWithBridge(executeArgs(stage), bridge);
+  for (const [requestRef, expectedField] of [[REQUEST_ID, "id"], [ANONYMIZED_REF, "anonymized_user_ref"]]) {
+    const events = [];
+    const bridge = createAccountDeletionProviderOperatorBridge({
+      env: DESTRUCTIVE_ENV,
+      lookupRequest: requestLookup(events),
+      repository: repositoryFixture(events, "pending"),
+      createProviderAdapter: () => { throw new Error("provider adapter must not be created while sealing"); },
+      runDurableStep: async () => { throw new Error("runner must not run while sealing"); }
+    });
+    const summary = await runWithBridge(executeArgs("provider", requestRef), bridge);
     assertCheck(
-      `${stage} stage is unreachable`,
+      `exact ${expectedField} target resolves and seals only`,
       summary.status === "blocked" &&
-        summary.safeReasonCode === "actual_service_not_connected_in_skeleton",
-      "later stages stop before resolution"
+        summary.safeReasonCode === "provider_snapshot_sealed_continue_required" &&
+        summary.progress.marker === "seal_only" &&
+        summary.progress.terminal === false &&
+        summary.progress.retryable === true &&
+        summary.safeCounts.providerSnapshotSeals === 1 &&
+        summary.safeCounts.providerDurableRunnerCalls === 0 &&
+        summary.safeCounts.providerExternalActions === 0 &&
+        events.join(",") === `lookup:${expectedField},repository:get-request,repository:seal-snapshot`,
+      "the sealing invocation stops before DELETE/GET"
     );
+    assertSafeOutput(`${expectedField} seal-only output is redacted`, summary);
   }
+}
 
+{
+  let providerWorkCalls = 0;
+  const base = {
+    env: DESTRUCTIVE_ENV,
+    repository: repositoryFixture([]),
+    providerAdapter: providerAdapter([]),
+    runDurableStep: async () => { providerWorkCalls += 1; return { kind: "progressed" }; }
+  };
+  const invalid = await runWithBridge(executeArgs("provider", "not-a-request-reference"), createAccountDeletionProviderOperatorBridge({ ...base, lookupRequest: requestLookup([]) }));
+  const missing = await runWithBridge(executeArgs(), createAccountDeletionProviderOperatorBridge({ ...base, lookupRequest: async () => ({ rows: [], failed: false }) }));
+  const ambiguous = await runWithBridge(executeArgs("provider", ANONYMIZED_REF), createAccountDeletionProviderOperatorBridge({
+    ...base,
+    lookupRequest: async () => ({ rows: [
+      { id: REQUEST_ID, user_id: USER_ID, anonymized_user_ref: ANONYMIZED_REF },
+      { id: OTHER_REQUEST_ID, user_id: USER_ID, anonymized_user_ref: ANONYMIZED_REF }
+    ], failed: false })
+  }));
+  const stale = await runWithBridge(executeArgs(), createAccountDeletionProviderOperatorBridge({
+    ...base,
+    lookupRequest: requestLookup([], { status: "completed", provider_cleanup_status: "succeeded" })
+  }));
   assertCheck(
-    "Storage, DB/anonymization, Auth/completion call counts stay zero",
-    calls.storage === 0 &&
-      calls.database === 0 &&
-      calls.auth === 0 &&
-      calls.completion === 0 &&
-      calls.resolver === 0,
-    "later stage wiring and calls are absent"
+    "invalid, missing, ambiguous, and stale targets fail closed",
+    invalid.safeReasonCode === "request_ref_invalid" && missing.safeReasonCode === "request_not_found" &&
+      ambiguous.safeReasonCode === "request_target_ambiguous" && stale.safeReasonCode === "request_target_not_runnable" && providerWorkCalls === 0,
+    "no durable/provider work follows an unresolved target"
   );
+  for (const value of [invalid, missing, ambiguous, stale]) assertSafeOutput("resolver failure output is redacted", value);
 }
 
 {
   const cases = [
-    ["succeeded", null, "succeeded", null],
-    ["not_needed", null, "not_needed", null],
-    ["already_satisfied", null, "already_satisfied", null],
-    ["failed", "elevenlabs_voice_delete_rate_limited", "failed", "provider_delete_rate_limited"],
-    [
-      "manual_required",
-      "elevenlabs_voice_delete_not_found",
-      "manual_required",
-      "provider_target_absence_unverified"
-    ],
-    ["blocked", "deletion_request_id_mismatch", "blocked", "request_target_mismatch"],
-    [
-      "blocked",
-      "provider_durable_authority_required",
-      "blocked",
-      "provider_durable_authority_required"
-    ]
+    [{ kind: "progressed" }, "blocked", "provider_progressed_continue_required", "progressed", true],
+    [{ kind: "target_verified" }, "blocked", "provider_target_verified_continue_required", "target_verified", true],
+    [{ kind: "retry_later" }, "blocked", "provider_retry_later", "retry_later", true],
+    [{ kind: "busy" }, "blocked", "provider_busy", "busy", true],
+    [{ kind: "stale_result" }, "blocked", "provider_stale_result", "stale_result", true],
+    [{ kind: "not_runnable" }, "blocked", "provider_cleanup_not_runnable", "not_runnable", false],
+    [{ kind: "manual_required" }, "manual_required", "provider_cleanup_manual_required", "manual_required", false],
+    [{ kind: "provider_stage_finalized", status: "succeeded" }, "succeeded", null, "terminal", false],
+    [{ kind: "already_finalized", status: "not_needed" }, "not_needed", null, "terminal", false]
   ];
 
-  for (const [serviceStatus, failureReasonCode, operatorStatus, safeReasonCode] of cases) {
-    const adapted = adaptAccountDeletionProviderOutcome(
-      makeActualResult(serviceStatus, {
-        failureReasonCode,
-        attempted: serviceStatus === "succeeded" ? 1 : 0,
-        succeeded: serviceStatus === "succeeded" ? 1 : 0,
-        notNeeded: serviceStatus === "not_needed" ? 1 : 0,
-        blocked: serviceStatus === "blocked" ? 1 : 0
-      })
-    );
-
-    assertCheck(
-      `${serviceStatus} outcome mapping is explicit`,
-      adapted.status === operatorStatus && adapted.safeReasonCode === safeReasonCode,
-      "service failureReasonCode and cleanup are converted to operator-safe semantics"
-    );
-    assertSafeOutput(`${serviceStatus} adapter output is redacted`, adapted);
-  }
-
-  const unknownRawReason = adaptAccountDeletionProviderOutcome(
-    makeActualResult("failed", {
-      failureReasonCode: `${RAW_PROVIDER_RESPONSE}:${PROVIDER_ID}`,
-      attempted: 1,
-      failed: 1
-    })
-  );
-  assertCheck(
-    "unknown provider reason is not passed through",
-    unknownRawReason.safeReasonCode === "provider_cleanup_failed",
-    "only an explicit allowlist can reach operator safeReasonCode"
-  );
-  assertSafeOutput("unknown provider reason output is redacted", unknownRawReason);
-}
-
-{
-  const events = [];
-  const results = [
-    makeActualResult("failed", {
-      failureReasonCode: "elevenlabs_voice_delete_rate_limited",
-      attempted: 2,
-      succeeded: 1,
-      failed: 1
-    }),
-    makeActualResult("manual_required", {
-      failureReasonCode: "elevenlabs_voice_delete_not_found",
-      attempted: 1,
-      failed: 1
-    })
-  ];
-  const bridge = createAccountDeletionProviderOperatorBridge({
-    env: DESTRUCTIVE_ENV,
-    lookupRequest: makeLookup(events),
-    runProviderCleanupActual: async () => {
-      events.push("provider-service");
-      return results.shift();
-    }
-  });
-  const first = await runWithBridge(executeArgs(), bridge);
-  const retry = await runWithBridge(executeArgs(), bridge);
-
-  assertCheck(
-    "partial-success retry re-resolves and remains provider-only",
-    first.status === "failed" &&
-      first.safeCounts.providerAttempted === 2 &&
-      first.safeCounts.providerSucceeded === 1 &&
-      first.safeCounts.providerFailed === 1 &&
-      retry.status === "manual_required" &&
-      retry.safeReasonCode === "provider_target_absence_unverified" &&
-      events.join(",") === "lookup:id,provider-service,lookup:id,provider-service",
-    "retry does not infer completion and never advances to Storage/DB/Auth"
-  );
-  assertSafeOutput("partial-success output is redacted", first);
-  assertSafeOutput("partial-success retry output is redacted", retry);
-}
-
-{
-  const events = [];
-  let serviceAttempt = 0;
-  const bridge = createAccountDeletionProviderOperatorBridge({
-    env: DESTRUCTIVE_ENV,
-    lookupRequest: makeLookup(events),
-    runProviderCleanupActual: async () => {
-      serviceAttempt += 1;
-      events.push("provider-service");
-
-      if (serviceAttempt === 1) {
-        throw new Error(`${RAW_PROVIDER_RESPONSE}:${USER_ID}:${REQUEST_ID}:${PROVIDER_ID}`);
+  for (const [runnerResult, expectedStatus, expectedReason, expectedMarker, retryable] of cases) {
+    const events = [];
+    let runnerCalls = 0;
+    const bridge = createAccountDeletionProviderOperatorBridge({
+      env: DESTRUCTIVE_ENV,
+      lookupRequest: requestLookup(events),
+      repository: repositoryFixture(events),
+      providerAdapter: providerAdapter(events),
+      runDurableStep: async (_input, dependencies) => {
+        runnerCalls += 1;
+        if (runnerResult.kind === "progressed") await dependencies.providerAdapter.deleteVoice({ providerResourceId: PROVIDER_ID });
+        if (runnerResult.kind === "target_verified") await dependencies.providerAdapter.reconcileVoiceAbsence({ providerResourceId: PROVIDER_ID });
+        return runnerResult;
       }
+    });
+    const summary = await runWithBridge(executeArgs(), bridge);
+    const expectedActions = ["progressed", "target_verified"].includes(runnerResult.kind) ? 1 : 0;
+    assertCheck(
+      `${runnerResult.kind} maps without false terminal success`,
+      runnerCalls === 1 && summary.status === expectedStatus && summary.safeReasonCode === expectedReason &&
+        summary.progress.marker === expectedMarker && summary.progress.retryable === retryable &&
+        summary.progress.terminal === ["succeeded", "not_needed"].includes(expectedStatus) &&
+        summary.safeCounts.providerDurableRunnerCalls === 1 && summary.safeCounts.providerExternalActions === expectedActions,
+      "one durable runner call and at most one fake provider action"
+    );
+    assertSafeOutput(`${runnerResult.kind} output is redacted`, summary);
+  }
+}
 
-      return makeActualResult("manual_required", {
-        failureReasonCode: "elevenlabs_voice_delete_not_found",
-        attempted: 1,
-        failed: 1
-      });
+{
+  const events = [];
+  const bridge = createAccountDeletionProviderOperatorBridge({
+    env: DESTRUCTIVE_ENV,
+    lookupRequest: requestLookup(events),
+    repository: repositoryFixture(events),
+    providerAdapter: providerAdapter(events),
+    runDurableStep: async (_input, dependencies) => {
+      await dependencies.providerAdapter.deleteVoice({ providerResourceId: PROVIDER_ID });
+      await dependencies.providerAdapter.reconcileVoiceAbsence({ providerResourceId: PROVIDER_ID });
+      return { kind: "progressed" };
     }
   });
-  const lostResult = await runWithBridge(executeArgs(), bridge);
-  const retry = await runWithBridge(executeArgs(), bridge);
-
+  const summary = await runWithBridge(executeArgs(), bridge);
   assertCheck(
-    "status-write/result loss is fail-closed without false zero-attempt proof",
-    lostResult.status === "manual_required" &&
-      lostResult.safeReasonCode === "provider_stage_result_unknown" &&
-      lostResult.safeCounts.destructiveOperationsAttempted === null &&
-      lostResult.safeCounts.providerAttempted === null &&
-      lostResult.safeCounts.providerSucceeded === null &&
-      lostResult.safeCounts.providerFailed === null &&
-      lostResult.safeCounts.providerOutcomeUnknown === 1 &&
-      retry.status === "manual_required" &&
-      events.join(",") === "lookup:id,provider-service,lookup:id,provider-service",
-    "retry re-resolves exact request and cannot claim prior provider completion"
+    "operator wrapper prevents a second external provider action",
+    summary.status === "manual_required" && summary.safeReasonCode === "provider_action_limit_exceeded" &&
+      summary.safeCounts.providerExternalActions === 1 && events.filter((event) => event.startsWith("fake-provider:")).length === 1,
+    "unexpected second adapter invocation fails closed before the underlying fake provider"
   );
-  assertSafeOutput("unknown provider result output is redacted", lostResult);
-  assertSafeOutput("unknown provider result retry output is redacted", retry);
+  assertSafeOutput("action-limit output is redacted", summary);
+}
+
+{
+  const bridge = createAccountDeletionProviderOperatorBridge({
+    env: DESTRUCTIVE_ENV,
+    lookupRequest: requestLookup([]),
+    repository: repositoryFixture([]),
+    providerAdapter: providerAdapter([]),
+    runDurableStep: async (_input, dependencies) => {
+      await dependencies.providerAdapter.deleteVoice({ providerResourceId: PROVIDER_ID });
+      throw new Error(`raw provider response:${USER_ID}:${REQUEST_ID}:${PROVIDER_ID}`);
+    }
+  });
+  const summary = await runWithBridge(executeArgs(), bridge);
+  assertCheck(
+    "unknown runner result fails closed without false zero-outcome proof",
+      summary.status === "manual_required" && summary.safeReasonCode === "provider_stage_result_unknown" &&
+      summary.progress.marker === "unknown" && summary.safeCounts.providerOutcomeUnknown === 1 &&
+      summary.safeCounts.providerExternalActions === 1 && summary.safeCounts.destructiveOperationsAttempted === 1,
+    "raw exception detail is discarded without claiming a false zero provider attempt"
+  );
+  assertSafeOutput("unknown result output is redacted", summary);
+}
+
+{
+  const events = [];
+  const bridge = createAccountDeletionProviderOperatorBridge({
+    env: DESTRUCTIVE_ENV,
+    lookupRequest: requestLookup(events),
+    repository: repositoryFixture(events),
+    providerAdapter: providerAdapter(events),
+    runDurableStep: async (_input, dependencies) => {
+      await dependencies.providerAdapter.deleteVoice({ providerResourceId: PROVIDER_ID });
+      return {
+        kind: "unrecognized_runtime_result",
+        rawProviderResponse: "raw provider response with private payload",
+        providerResourceId: PROVIDER_ID,
+        userId: USER_ID,
+        deletionRequestId: REQUEST_ID
+      };
+    }
+  });
+  const summary = await runWithBridge(executeArgs(), bridge);
+  assertCheck(
+    "returned unknown result preserves observed provider action evidence",
+    summary.status === "manual_required" &&
+      summary.safeReasonCode === "provider_stage_result_unknown" &&
+      summary.progress.marker === "unknown" &&
+      summary.progress.terminal === false &&
+      summary.progress.manualReviewRequired === true &&
+      summary.safeCounts.providerOutcomeUnknown === 1 &&
+      summary.safeCounts.providerExternalActions === 1 &&
+      summary.safeCounts.providerAttempted === 1 &&
+      summary.safeCounts.destructiveOperationsAttempted === 1 &&
+      events.filter((event) => event.startsWith("fake-provider:")).length === 1 &&
+      Object.keys(bridge.stageServices).join(",") === "provider",
+    "runtime mapping fail-closes without false zero evidence or a second/later-stage action"
+  );
+  assertSafeOutput("returned unknown runtime result is redacted", summary);
+}
+
+{
+  const events = [];
+  const bridge = createAccountDeletionProviderOperatorBridge({
+    env: DESTRUCTIVE_ENV,
+    lookupRequest: requestLookup(events),
+    repository: repositoryFixture(events),
+    providerAdapter: providerAdapter(events),
+    runDurableStep: async () => ({ kind: "provider_stage_finalized", status: "succeeded" })
+  });
+  assertCheck("provider is the only connected destructive stage", Object.keys(bridge.stageServices).join(",") === "provider");
+  for (const stage of ["storage", "database", "auth"]) {
+    const summary = await runWithBridge(executeArgs(stage), bridge);
+    assertCheck(`${stage} remains unreachable`, summary.status === "blocked" && summary.safeReasonCode === "actual_service_not_connected_in_skeleton");
+  }
+  assertCheck(
+    "later-stage calls remain zero",
+    externalCalls.storage === 0 && externalCalls.database === 0 && externalCalls.auth === 0 && externalCalls.completion === 0,
+    "terminal Provider result does not auto-start a later stage"
+  );
+}
+
+{
+  const source = readFileSync("services/account-deletion/account-deletion-provider-operator.service.ts", "utf8");
+  assertCheck(
+    "canonical bridge no longer references the legacy aggregate executor",
+    !source.includes("runElevenLabsProviderCleanupActual") && source.includes("runAccountDeletionProviderDurableStep"),
+    "legacy executor remains separately fail-closed"
+  );
 }
 
 assertCheck(
   "real provider and Staging mutation counts stay zero",
   externalCalls.liveProvider === 0 && externalCalls.stagingMutation === 0,
-  "all provider service behavior above was injected; no real client, DB, or environment was used"
+  "all behavior used injected fakes"
 );
 
-console.log("\nResult: G5D-1 provider-only operator bridge behavioral fake proof passed.");
+console.log("\nResult: G5D-2B provider durable canonical operator wiring behavioral fake proof passed.");

@@ -589,6 +589,27 @@ function sanitizeStageServiceResult(result = {}) {
   const status = allowedStatuses.has(result.status) ? result.status : "blocked";
   const safeCounts = result.safeCounts && typeof result.safeCounts === "object" ? result.safeCounts : {};
   const satisfied = status === "succeeded" || status === "not_needed" || status === "already_satisfied";
+  const allowedProgressMarkers = new Set([
+    "seal_only",
+    "progressed",
+    "retry_later",
+    "manual_required",
+    "target_verified",
+    "terminal",
+    "busy",
+    "not_runnable",
+    "stale_result",
+    "blocked",
+    "unknown"
+  ]);
+  const progressMarker = allowedProgressMarkers.has(result.safeProgress?.marker)
+    ? result.safeProgress.marker
+    : satisfied
+      ? "terminal"
+      : "unknown";
+  const retryable = !satisfied && result.safeProgress?.retryable === true;
+  const manualReviewRequired =
+    status === "manual_required" || result.safeProgress?.manualReviewRequired === true;
 
   return {
     status,
@@ -608,14 +629,29 @@ function sanitizeStageServiceResult(result = {}) {
       providerNotNeeded: toSafeNullableNonNegativeNumber(safeCounts.providerNotNeeded),
       providerBlocked: toSafeNullableNonNegativeNumber(safeCounts.providerBlocked),
       providerOutcomeUnknown: toSafeNonNegativeNumber(safeCounts.providerOutcomeUnknown),
+      providerSnapshotSeals: toSafeNonNegativeNumber(safeCounts.providerSnapshotSeals),
+      providerDurableRunnerCalls: toSafeNonNegativeNumber(safeCounts.providerDurableRunnerCalls),
+      providerExternalActions: toSafeNonNegativeNumber(safeCounts.providerExternalActions),
+      providerTerminal: toSafeNonNegativeNumber(safeCounts.providerTerminal),
+      providerNonterminal: toSafeNonNegativeNumber(safeCounts.providerNonterminal),
       storageObjects: toSafeNonNegativeNumber(safeCounts.storageObjects),
       databaseTables: toSafeNonNegativeNumber(safeCounts.databaseTables),
       authUsers: toSafeNonNegativeNumber(safeCounts.authUsers)
     },
+    progress: {
+      marker: progressMarker,
+      terminal: satisfied && result.safeProgress?.terminal === true,
+      retryable,
+      manualReviewRequired
+    },
     nextAction:
       satisfied
         ? "Record this safe stage result in the proof template, then stop before the next stage."
-        : "Stop at this stage, record the safe reason code, and follow the manual review path."
+        : retryable
+          ? "Stop after this one stage step, record the safe progress, and retry only in a later invocation."
+          : manualReviewRequired
+            ? "Stop at this stage, record the safe reason code, and follow the manual review path."
+            : "Stop at this stage, record the safe reason code, and do not advance to a later stage."
   };
 }
 
@@ -736,6 +772,7 @@ async function runAccountDeletionOperator(argv = process.argv.slice(2), options 
     status: safeServiceResult.status,
     safeReasonCode: safeServiceResult.safeReasonCode,
     safeCounts: safeServiceResult.safeCounts,
+    progress: safeServiceResult.progress,
     nextAction: safeServiceResult.nextAction,
     guard: {
       ...summary.guard,
