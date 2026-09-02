@@ -7,6 +7,7 @@ import {
   runAccountDeletionOperator
 } from "./account-deletion-operator-runner.mjs";
 import { createAccountDeletionProviderOperatorBridge } from "../services/account-deletion/account-deletion-provider-operator.service.ts";
+import { createAccountDeletionStorageOperatorBridge } from "../services/account-deletion/account-deletion-storage-operator.service.ts";
 
 const parsed = parseArgs(process.argv.slice(2));
 
@@ -15,13 +16,20 @@ if (parsed.help) {
 }
 
 const providerBridge = createAccountDeletionProviderOperatorBridge({ env: process.env });
+const storageBridge = createAccountDeletionStorageOperatorBridge({ env: process.env });
+const stageServices = {
+  ...providerBridge.stageServices,
+  ...storageBridge.stageServices
+};
 const summary = await runAccountDeletionOperator(parsed, {
   env: process.env,
   requestResolver: (input) =>
     input.stage === "status" || input.stage === "summary"
       ? resolveAccountDeletionRequestReadOnly(input, process.env)
-      : providerBridge.requestResolver(input),
-  stageServices: providerBridge.stageServices
+      : input.stage === "provider"
+        ? providerBridge.requestResolver(input)
+        : storageBridge.requestResolver(input),
+  stageServices
 });
 
 console.log(JSON.stringify(summary, null, 2));

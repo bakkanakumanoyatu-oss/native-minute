@@ -351,11 +351,11 @@ function toSafeReasonCode(value) {
 }
 
 function toSafeNonNegativeNumber(value) {
-  if (!Number.isFinite(value) || value < 0) {
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
     return 0;
   }
 
-  return Math.floor(value);
+  return value;
 }
 
 function toSafeNullableNonNegativeNumber(value) {
@@ -634,6 +634,16 @@ function sanitizeStageServiceResult(result = {}) {
       providerExternalActions: toSafeNonNegativeNumber(safeCounts.providerExternalActions),
       providerTerminal: toSafeNonNegativeNumber(safeCounts.providerTerminal),
       providerNonterminal: toSafeNonNegativeNumber(safeCounts.providerNonterminal),
+      storageAttempted: toSafeNonNegativeNumber(safeCounts.storageAttempted),
+      storageSealAttempts: toSafeNonNegativeNumber(safeCounts.storageSealAttempts),
+      storageInventoryReads: toSafeNonNegativeNumber(safeCounts.storageInventoryReads),
+      storageRunnerInvocations: toSafeNonNegativeNumber(safeCounts.storageRunnerInvocations),
+      storageExternalActions: toSafeNonNegativeNumber(safeCounts.storageExternalActions),
+      storageDeleteActions: toSafeNonNegativeNumber(safeCounts.storageDeleteActions),
+      storageVerificationActions: toSafeNonNegativeNumber(safeCounts.storageVerificationActions),
+      storageOutcomeUnknown: toSafeNonNegativeNumber(safeCounts.storageOutcomeUnknown),
+      storageTerminal: toSafeNonNegativeNumber(safeCounts.storageTerminal),
+      storageNonterminal: toSafeNonNegativeNumber(safeCounts.storageNonterminal),
       storageObjects: toSafeNonNegativeNumber(safeCounts.storageObjects),
       databaseTables: toSafeNonNegativeNumber(safeCounts.databaseTables),
       authUsers: toSafeNonNegativeNumber(safeCounts.authUsers)
@@ -783,7 +793,7 @@ async function runAccountDeletionOperator(argv = process.argv.slice(2), options 
     notes: [
       "Safe request resolver and internal stage service bridge returned safe summaries.",
       "No raw user, provider, storage, DB, Auth, or provider response data is printed.",
-      "The canonical G5D-1 entry connects only the provider stage; Storage, DB, Auth, and completion remain unreachable."
+      "The canonical entry connects only Provider and Storage; DB, Auth, and completion remain unreachable."
     ]
   };
 }
@@ -805,8 +815,8 @@ Safety:
   - execute mode also requires a prepared proof path and latest dry-run runnable confirmation
   - storage/database/auth execute mode requires --prior-stage-satisfied
   - status/summary can model disposable proof candidacy with --proof-candidate-* flags
-  - the canonical G5D-1 entry connects only the provider service behind every execute guard
-  - Storage, DB, Auth, and completion services remain disconnected
+  - the canonical entry connects only Provider and Storage behind every execute guard
+  - DB, Auth, and completion services remain disconnected
   - raw request refs are accepted for targeting but never echoed
 `);
 }

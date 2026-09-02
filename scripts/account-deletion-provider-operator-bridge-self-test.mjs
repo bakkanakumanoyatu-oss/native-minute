@@ -343,6 +343,24 @@ console.log("- real provider / Staging calls: 0");
     externalCalls.storage === 0 && externalCalls.database === 0 && externalCalls.auth === 0 && externalCalls.completion === 0,
     "terminal Provider result does not auto-start a later stage"
   );
+
+  let connectedStorageStageCalls = 0;
+  const terminalProvider = await runAccountDeletionOperator(executeArgs(), {
+    env: DESTRUCTIVE_ENV,
+    requestResolver: bridge.requestResolver,
+    stageServices: {
+      ...bridge.stageServices,
+      storage: async () => {
+        connectedStorageStageCalls += 1;
+        return { status: "blocked" };
+      }
+    }
+  });
+  assertCheck(
+    "terminal Provider invocation stops even when Storage is connected for a later invocation",
+    terminalProvider.status === "succeeded" && connectedStorageStageCalls === 0,
+    "one stage per invocation remains true after G5D-2G wiring"
+  );
 }
 
 {
