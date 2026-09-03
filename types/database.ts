@@ -198,6 +198,15 @@ export interface Database {
           db_retained_row_count: number;
           db_sub_finalized_at: string | null;
           auth_cleanup_status: AccountDeletionCleanupStatus;
+          auth_intent_version: string | null;
+          auth_delete_target_user_id: string | null;
+          auth_delete_generation: number;
+          auth_delete_requested_at: string | null;
+          auth_verification_attempt_count: number;
+          auth_verification_result: string | null;
+          auth_verification_result_attempt_count: number | null;
+          auth_verified_absent_at: string | null;
+          auth_sub_finalized_at: string | null;
           notification_status: AccountDeletionCleanupStatus;
           retry_count: number;
           requested_at: string;
@@ -256,6 +265,15 @@ export interface Database {
           db_retained_row_count?: number;
           db_sub_finalized_at?: string | null;
           auth_cleanup_status?: AccountDeletionCleanupStatus;
+          auth_intent_version?: string | null;
+          auth_delete_target_user_id?: string | null;
+          auth_delete_generation?: number;
+          auth_delete_requested_at?: string | null;
+          auth_verification_attempt_count?: number;
+          auth_verification_result?: string | null;
+          auth_verification_result_attempt_count?: number | null;
+          auth_verified_absent_at?: string | null;
+          auth_sub_finalized_at?: string | null;
           notification_status?: AccountDeletionCleanupStatus;
           retry_count?: number;
           requested_at?: string;
@@ -314,6 +332,15 @@ export interface Database {
           db_retained_row_count?: number;
           db_sub_finalized_at?: string | null;
           auth_cleanup_status?: AccountDeletionCleanupStatus;
+          auth_intent_version?: string | null;
+          auth_delete_target_user_id?: string | null;
+          auth_delete_generation?: number;
+          auth_delete_requested_at?: string | null;
+          auth_verification_attempt_count?: number;
+          auth_verification_result?: string | null;
+          auth_verification_result_attempt_count?: number | null;
+          auth_verified_absent_at?: string | null;
+          auth_sub_finalized_at?: string | null;
           notification_status?: AccountDeletionCleanupStatus;
           retry_count?: number;
           requested_at?: string;
@@ -1293,6 +1320,60 @@ export interface Database {
           db_retained_row_count: number;
           already_finalized: boolean;
         }>;
+      };
+      seal_account_deletion_auth_intent: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_user_id: string;
+          p_auth_intent_version: string;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
+      };
+      begin_account_deletion_auth_verification_attempt: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_target_user_id: string;
+          p_auth_intent_version: string;
+          p_expected_verification_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
+      };
+      record_account_deletion_auth_verification_result: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_target_user_id: string;
+          p_auth_intent_version: string;
+          p_expected_verification_attempt_count: number;
+          p_result: string;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
+      };
+      authorize_account_deletion_auth_delete_dispatch: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_target_user_id: string;
+          p_auth_intent_version: string;
+          p_expected_verification_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
+      };
+      record_account_deletion_auth_dispatch_outcome: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_target_user_id: string;
+          p_auth_intent_version: string;
+          p_result: string;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
+      };
+      finalize_account_deletion_auth_stage: {
+        Args: {
+          p_deletion_request_id: string;
+          p_auth_intent_version: string;
+          p_expected_delete_generation: number;
+          p_expected_verification_attempt_count: number;
+        };
+        Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
       };
       finalize_recording_upload_write_intent: {
         Args: {

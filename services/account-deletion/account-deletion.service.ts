@@ -459,6 +459,7 @@ const AUTH_DELETION_ACTUAL_RUNNABLE_STATUSES: AccountDeletionRequestStatus[] = [
 const LEGACY_PROVIDER_CLEANUP_DURABLE_AUTHORITY_REQUIRED = true;
 const LEGACY_STORAGE_CLEANUP_DURABLE_AUTHORITY_REQUIRED = true;
 const LEGACY_DATABASE_CLEANUP_DURABLE_AUTHORITY_REQUIRED = true;
+const LEGACY_AUTH_DELETION_DURABLE_AUTHORITY_REQUIRED = true;
 
 const STORAGE_CLEANUP_BUCKET_TARGETS: Array<{
   bucket: StorageCleanupBucketSummary["bucket"];
@@ -1209,7 +1210,9 @@ export async function getAccountDeletionStatus(client: SupabaseReadClient, userI
   const { data, error } = asMaybeSingle<AccountDeletionRequestRow>(
     await client
       .from("account_deletion_requests")
-      .select("*")
+      .select(
+        "id,user_id,request_source,status,failure_stage,failure_reason_code,provider_cleanup_status,storage_cleanup_status,db_cleanup_status,auth_cleanup_status,notification_status,retry_count,requested_at,confirmed_at,processing_started_at,completed_at,cancelled_at,expires_at,last_attempted_at,created_at,updated_at"
+      )
       .eq("user_id", userId)
       .order("requested_at", { ascending: false })
       .limit(1)
@@ -3715,6 +3718,25 @@ export async function runSupabaseAuthDeletionActual(input: {
   }
 
   const deletionRequest = toView(request);
+
+  if (LEGACY_AUTH_DELETION_DURABLE_AUTHORITY_REQUIRED) {
+    return createSupabaseAuthDeletionActualResult({
+      deletionRequest,
+      status: "blocked",
+      guard: buildSupabaseAuthDeletionGuard({
+        deletionRequest,
+        deletionRequestId: input.deletionRequestId,
+        env: input.env
+      }),
+      cleanup: { blocked: 1 },
+      failureReasonCode: "auth_durable_authority_required",
+      notes: [
+        "Legacy Supabase Auth deletion is disabled until the focused durable Auth runner is canonically wired.",
+        "No Auth GET, Auth DELETE, legacy completion write, or same-invocation completion is called."
+      ]
+    });
+  }
+
   const dryRun = await planSupabaseAuthDeletionDryRun(input.userId);
   const guard = buildSupabaseAuthDeletionGuard({
     deletionRequest,

@@ -26,7 +26,7 @@ function includesAll(source, needles) {
 }
 
 console.log("Native Minute account deletion Supabase Auth cleanup self-test");
-console.log("- scope: guarded static/self-test only; no Supabase Auth user delete calls");
+console.log("- scope: legacy durable-authority fail-close only; no Supabase Auth GET/DELETE calls");
 console.log("- raw Auth/user data: hidden");
 
 const service = read("services/account-deletion/account-deletion.service.ts");
@@ -44,27 +44,24 @@ assertCheck(
 );
 
 assertCheck(
-  "destructive guard is required before Auth deletion",
+  "legacy Auth path requires focused durable authority before dry-run or deletion",
   includesAll(service, [
-    "NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE",
-    "destructiveGuard",
-    "no Auth delete is called and no request status is updated"
+    "LEGACY_AUTH_DELETION_DURABLE_AUTHORITY_REQUIRED = true",
+    "auth_durable_authority_required",
+    "No Auth GET, Auth DELETE, legacy completion write, or same-invocation completion is called."
   ]),
-  "default execution stays blocked"
+  "legacy execution stays blocked"
 );
 
 assertCheck(
-  "request/stage/provider/storage/DB guards are enforced",
-  includesAll(service, [
-    "AUTH_DELETION_ACTUAL_RUNNABLE_STATUSES",
-    "requestIdMatched",
-    "providerCleanupSatisfied",
-    "storageCleanupSatisfied",
-    "databaseCleanupSatisfied",
-    "authStageRunnable",
-    "dryRunRunnable"
-  ]),
-  "confirmed request and prior stages are required"
+  "durable guard precedes permissive dry-run GET and every legacy mutation",
+  service.indexOf("if (LEGACY_AUTH_DELETION_DURABLE_AUTHORITY_REQUIRED)", service.indexOf("runSupabaseAuthDeletionActual")) <
+    service.indexOf("const dryRun = await planSupabaseAuthDeletionDryRun", service.indexOf("runSupabaseAuthDeletionActual")) &&
+    service.indexOf("if (LEGACY_AUTH_DELETION_DURABLE_AUTHORITY_REQUIRED)", service.indexOf("runSupabaseAuthDeletionActual")) <
+      service.indexOf("deleteAuthUser(input.userId)", service.indexOf("runSupabaseAuthDeletionActual")) &&
+    service.indexOf("if (LEGACY_AUTH_DELETION_DURABLE_AUTHORITY_REQUIRED)", service.indexOf("runSupabaseAuthDeletionActual")) <
+      service.indexOf("completeAuthCleanupRequest({", service.indexOf("runSupabaseAuthDeletionActual")),
+  "GET, DELETE, and completion are unreachable in the legacy path"
 );
 
 assertCheck(
@@ -88,7 +85,7 @@ assertCheck(
 );
 
 assertCheck(
-  "Auth deletion waits for all prior destructive stages",
+  "closed prior-stage checks remain present behind the fail-close guard",
   includesAll(service, [
     "provider cleanup が succeeded または not_needed",
     "storage cleanup が succeeded または not_needed",
@@ -98,14 +95,14 @@ assertCheck(
 );
 
 assertCheck(
-  "completion tracking uses existing schema safely",
+  "legacy completion branch is retained but cannot run in this unit",
   includesAll(service, [
     "status: \"completed\"",
     "auth_cleanup_status: \"succeeded\"",
     "notification_status: \"not_needed\"",
     "completion update is performed server-side by request id only after the request/user match was verified"
   ]),
-  "request row can be completed after Auth user_id is set null"
+  "future cleanup can remove the branch after canonical durable wiring"
 );
 
 assertCheck(
@@ -142,4 +139,4 @@ assertCheck(
   "self-test fixture stays redacted"
 );
 
-console.log("\nResult: Supabase Auth deletion actual boundary is guarded and non-live self-test passed.");
+console.log("\nResult: legacy Supabase Auth deletion is fail-closed before GET, DELETE, and completion.");
