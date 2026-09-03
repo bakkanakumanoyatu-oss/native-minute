@@ -1375,6 +1375,18 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
       };
+      finalize_account_deletion_completion: {
+        Args: {
+          p_deletion_request_id: string;
+        };
+        Returns: Array<{
+          completion_status: string;
+          safe_reason: string;
+          completed_at: string;
+          expires_at: string;
+          already_completed: boolean;
+        }>;
+      };
       finalize_recording_upload_write_intent: {
         Args: {
           p_intent_id: string;
