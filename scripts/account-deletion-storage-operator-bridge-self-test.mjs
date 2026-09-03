@@ -659,14 +659,16 @@ console.log("- real Storage / Staging / Production calls: 0");
     "legacy listing/remove/status mutation path remains unreachable"
   );
   assertCheck(
-    "canonical entry connects Provider then Storage only",
+    "canonical entry keeps Provider and Storage bridges while adding focused Database routing",
     entrySource.includes("createAccountDeletionProviderOperatorBridge") &&
       entrySource.includes("createAccountDeletionStorageOperatorBridge") &&
+      entrySource.includes("createAccountDeletionDatabaseOperatorBridge") &&
       entrySource.includes("...providerBridge.stageServices") &&
       entrySource.includes("...storageBridge.stageServices") &&
+      entrySource.includes("...databaseBridge.stageServices") &&
       !entrySource.includes("runDatabaseCleanupActual") &&
       !entrySource.includes("runSupabaseAuthDeletionActual"),
-    "DB/Auth/completion executors remain unavailable"
+    "legacy DB/Auth/completion executors remain unavailable"
   );
 }
 

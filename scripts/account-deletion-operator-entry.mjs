@@ -8,6 +8,7 @@ import {
 } from "./account-deletion-operator-runner.mjs";
 import { createAccountDeletionProviderOperatorBridge } from "../services/account-deletion/account-deletion-provider-operator.service.ts";
 import { createAccountDeletionStorageOperatorBridge } from "../services/account-deletion/account-deletion-storage-operator.service.ts";
+import { createAccountDeletionDatabaseOperatorBridge } from "../services/account-deletion/account-deletion-database-operator.service.ts";
 
 const parsed = parseArgs(process.argv.slice(2));
 
@@ -17,18 +18,23 @@ if (parsed.help) {
 
 const providerBridge = createAccountDeletionProviderOperatorBridge({ env: process.env });
 const storageBridge = createAccountDeletionStorageOperatorBridge({ env: process.env });
+const databaseBridge = createAccountDeletionDatabaseOperatorBridge({ env: process.env });
 const stageServices = {
   ...providerBridge.stageServices,
-  ...storageBridge.stageServices
+  ...storageBridge.stageServices,
+  ...databaseBridge.stageServices
 };
 const summary = await runAccountDeletionOperator(parsed, {
   env: process.env,
-  requestResolver: (input) =>
-    input.stage === "status" || input.stage === "summary"
-      ? resolveAccountDeletionRequestReadOnly(input, process.env)
-      : input.stage === "provider"
-        ? providerBridge.requestResolver(input)
-        : storageBridge.requestResolver(input),
+  requestResolver: (input) => {
+    if (input.stage === "status" || input.stage === "summary") {
+      return resolveAccountDeletionRequestReadOnly(input, process.env);
+    }
+    if (input.stage === "provider") return providerBridge.requestResolver(input);
+    if (input.stage === "storage") return storageBridge.requestResolver(input);
+    if (input.stage === "database") return databaseBridge.requestResolver(input);
+    return Promise.resolve({ ok: false, safeReasonCode: "stage_service_unavailable" });
+  },
   stageServices
 });
 

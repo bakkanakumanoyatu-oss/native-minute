@@ -52,6 +52,7 @@
     "account-deletion:operator:self-test": "node scripts/account-deletion-operator-runner-self-test.mjs",
     "account-deletion:operator:provider-self-test": "NODE_OPTIONS=--conditions=react-server tsx scripts/account-deletion-provider-operator-bridge-self-test.mjs",
     "account-deletion:operator:storage-self-test": "NODE_OPTIONS=--conditions=react-server tsx scripts/account-deletion-storage-operator-bridge-self-test.mjs",
+    "account-deletion:operator:database-self-test": "NODE_OPTIONS=--conditions=react-server tsx scripts/account-deletion-database-operator-bridge-self-test.mjs",
     "account-deletion:operator:rehearsal": "node scripts/account-deletion-operator-rehearsal.mjs",
     "account-deletion:operator:rehearsal:self-test": "node scripts/account-deletion-operator-rehearsal-self-test.mjs",
     "account-deletion:proof-package:self-test": "node scripts/account-deletion-proof-package-self-test.mjs",

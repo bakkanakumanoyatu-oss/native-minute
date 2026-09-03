@@ -118,7 +118,7 @@ assertCheck(
 );
 
 assertCheck(
-  "runner core stays injection-only while canonical entry wires Provider and Storage only",
+  "runner core stays injection-only while canonical entry wires Provider, Storage, and Database only",
   includesAll(runner, [
     "actualServiceConnected: false",
     "requestResolverConnected: false",
@@ -133,12 +133,14 @@ assertCheck(
     includesAll(entry, [
       "createAccountDeletionProviderOperatorBridge",
       "createAccountDeletionStorageOperatorBridge",
+      "createAccountDeletionDatabaseOperatorBridge",
       "...providerBridge.stageServices",
       "...storageBridge.stageServices",
+      "...databaseBridge.stageServices",
       "resolveAccountDeletionRequestReadOnly",
       "[\"blocked\", \"failed\", \"manual_required\"].includes(summary.status)"
     ]),
-  "the entry exposes no DB, Auth, or completion stage service"
+  "the entry exposes no Auth or completion stage service"
 );
 
 const missingStage = buildSafeSummary(parseArgs([]), {});
