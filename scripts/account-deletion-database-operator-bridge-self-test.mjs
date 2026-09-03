@@ -179,7 +179,7 @@ async function runWithBridge(bridge, parsed = databaseArgs(), env = FAKE_EXECUTE
 console.log("Native Minute G5D-2L Database finalizer canonical operator wiring behavioral fake proof");
 console.log("- Database finalizer: injected fake only");
 console.log("- real DB finalizer / Canonical Staging / Production mutations: 0");
-console.log("- Auth and completion services: not connected");
+console.log("- Auth service: separate later invocation; Completion: not connected");
 
 {
   const cases = [
@@ -670,13 +670,15 @@ console.log("- Auth and completion services: not connected");
     "legacy DB calls and Auth calls are zero"
   );
   assertCheck(
-    "canonical entry routes Database explicitly and leaves Auth unavailable",
+    "canonical entry routes Database and durable Auth explicitly",
     entrySource.includes("createAccountDeletionDatabaseOperatorBridge") &&
       entrySource.includes("input.stage === \"database\"") &&
       entrySource.includes("databaseBridge.requestResolver(input)") &&
+      entrySource.includes("createAccountDeletionAuthOperatorBridge") &&
+      entrySource.includes("authBridge.requestResolver(input)") &&
       !entrySource.includes("runSupabaseAuthDeletionActual") &&
       !entrySource.includes("runDatabaseCleanupActual"),
-    "Database is not a Storage fallback and future stages fail closed"
+    "Database/Auth have no fallback and Completion remains fail closed"
   );
   assertCheck(
     "legacy DB durable-authority guard remains unchanged",

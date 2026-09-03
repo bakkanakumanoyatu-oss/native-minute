@@ -45,8 +45,16 @@ const AUTH_SAFE_REASON_CODES = new Set([
   "auth_delete_unavailable_outcome_unknown",
   "auth_delete_outcome_unknown",
   "auth_post_delete_verification_stale",
+  "auth_terminal_authority_missing",
   "auth_durable_stage_result_unknown"
 ]);
+
+export type AccountDeletionAuthDurableRequestClassification =
+  | "no_intent_runnable"
+  | "generation_0_runnable"
+  | "generation_1_recovery"
+  | "manual_nonterminal"
+  | "terminal";
 
 export type AccountDeletionAuthDurableStepResult = {
   status: SafeStatus;
@@ -106,14 +114,14 @@ function validCurrentVerification(row: AccountDeletionAuthRequestRow) {
   );
 }
 
-function sanitizeAuthSafeReasonCode(value: unknown, status: SafeStatus): string | null {
+export function sanitizeAccountDeletionAuthSafeReasonCode(value: unknown, status: SafeStatus): string | null {
   if (value === null && (status === "succeeded" || status === "not_needed")) return null;
   return typeof value === "string" && AUTH_SAFE_REASON_CODES.has(value)
     ? value
     : AUTH_SAFE_REASON_FALLBACK;
 }
 
-function priorStagesTerminal(row: AccountDeletionAuthRequestRow) {
+export function hasAccountDeletionAuthPriorStageAuthority(row: AccountDeletionAuthRequestRow) {
   const providerPolarity = row.provider_cleanup_status === "not_needed"
     ? row.provider_snapshot_target_count === 0
     : row.provider_cleanup_status === "succeeded" && row.provider_snapshot_target_count > 0;
@@ -163,9 +171,9 @@ function priorStagesTerminal(row: AccountDeletionAuthRequestRow) {
   );
 }
 
-function validTerminal(row: AccountDeletionAuthRequestRow) {
+export function hasAccountDeletionAuthTerminalAuthority(row: AccountDeletionAuthRequestRow) {
   return (
-    priorStagesTerminal(row) &&
+    hasAccountDeletionAuthPriorStageAuthority(row) &&
     row.user_id === null &&
     (row.status === "confirmed" || row.status === "completed") &&
     row.failure_stage === null &&
@@ -188,7 +196,7 @@ function validTerminal(row: AccountDeletionAuthRequestRow) {
 
 function validNonterminalIntent(row: AccountDeletionAuthRequestRow) {
   return (
-    priorStagesTerminal(row) &&
+    hasAccountDeletionAuthPriorStageAuthority(row) &&
     ["confirmed", "auth_cleanup_failed"].includes(row.status) &&
     ["pending", "failed"].includes(row.auth_cleanup_status) &&
     row.auth_intent_version === ACCOUNT_DELETION_AUTH_INTENT_VERSION &&
@@ -203,6 +211,75 @@ function validNonterminalIntent(row: AccountDeletionAuthRequestRow) {
   );
 }
 
+function validNoIntent(row: AccountDeletionAuthRequestRow) {
+  return (
+    hasAccountDeletionAuthPriorStageAuthority(row) &&
+    row.status === "confirmed" &&
+    row.failure_stage === null &&
+    row.failure_reason_code === null &&
+    (row.auth_cleanup_status === "pending" || row.auth_cleanup_status === "failed") &&
+    typeof row.user_id === "string" &&
+    row.user_id.length > 0 &&
+    row.auth_intent_version === null &&
+    row.auth_delete_target_user_id === null &&
+    row.auth_delete_generation === 0 &&
+    row.auth_delete_requested_at === null &&
+    row.auth_verification_attempt_count === 0 &&
+    row.auth_verification_result === null &&
+    row.auth_verification_result_attempt_count === null &&
+    row.auth_verified_absent_at === null &&
+    row.auth_sub_finalized_at === null
+  );
+}
+
+function validNonterminalStatusAuthority(row: AccountDeletionAuthRequestRow) {
+  if (row.auth_cleanup_status === "pending") {
+    return row.status === "confirmed" && row.failure_stage === null && row.failure_reason_code === null;
+  }
+
+  if (row.auth_cleanup_status === "failed") {
+    return row.status === "auth_cleanup_failed" && row.failure_stage === "auth_cleanup" &&
+      typeof row.failure_reason_code === "string" && row.failure_reason_code.length > 0;
+  }
+
+  return false;
+}
+
+function validManualIntent(row: AccountDeletionAuthRequestRow) {
+  return (
+    hasAccountDeletionAuthPriorStageAuthority(row) &&
+    row.status === "auth_cleanup_failed" &&
+    row.failure_stage === "auth_cleanup" &&
+    typeof row.failure_reason_code === "string" &&
+    row.failure_reason_code.length > 0 &&
+    row.auth_cleanup_status === "manual_required" &&
+    row.auth_intent_version === ACCOUNT_DELETION_AUTH_INTENT_VERSION &&
+    typeof row.auth_delete_target_user_id === "string" &&
+    row.auth_delete_target_user_id.length > 0 &&
+    (row.auth_delete_generation === 0 || row.auth_delete_generation === 1) &&
+    hasTimestamp(row.auth_delete_requested_at) &&
+    isSafeCount(row.auth_verification_attempt_count) &&
+    (row.auth_delete_generation === 0 || row.auth_verification_attempt_count >= 1) &&
+    validCurrentVerification(row) &&
+    row.auth_sub_finalized_at === null
+  );
+}
+
+/**
+ * Shared persisted classifier for the canonical Auth resolver/service boundary.
+ * It intentionally delegates prior-stage and durable-shape semantics to the
+ * same predicates used by the durable runner; it performs no transition or RPC.
+ */
+export function classifyAccountDeletionAuthDurableRequest(
+  row: AccountDeletionAuthRequestRow
+): AccountDeletionAuthDurableRequestClassification | null {
+  if (hasAccountDeletionAuthTerminalAuthority(row)) return "terminal";
+  if (validNoIntent(row)) return "no_intent_runnable";
+  if (validManualIntent(row)) return "manual_nonterminal";
+  if (!validNonterminalIntent(row) || !validNonterminalStatusAuthority(row)) return null;
+  return row.auth_delete_generation === 0 ? "generation_0_runnable" : "generation_1_recovery";
+}
+
 function result(input: {
   status: SafeStatus;
   safeReasonCode: string | null;
@@ -211,11 +288,11 @@ function result(input: {
   authGetCalls?: number;
   authDeleteDispatches?: number;
 }): AccountDeletionAuthDurableStepResult {
-  const terminal = input.row ? validTerminal(input.row) : false;
+  const terminal = input.row ? hasAccountDeletionAuthTerminalAuthority(input.row) : false;
   const dispatches = input.authDeleteDispatches ?? 0;
   return {
     status: input.status,
-    safeReasonCode: sanitizeAuthSafeReasonCode(input.safeReasonCode, input.status),
+    safeReasonCode: sanitizeAccountDeletionAuthSafeReasonCode(input.safeReasonCode, input.status),
     safeProgress: {
       marker: input.marker,
       terminal,
@@ -261,7 +338,7 @@ export async function runAccountDeletionAuthDurableStep(
   try {
     let request = await dependencies.repository.getRequestByAuthority(input.requestRef);
     if (!request) return blocked("auth_request_not_found");
-    if (validTerminal(request)) {
+    if (hasAccountDeletionAuthTerminalAuthority(request)) {
       return result({
         status: request.auth_cleanup_status === "not_needed" ? "not_needed" : "succeeded",
         safeReasonCode: null,
@@ -272,7 +349,7 @@ export async function runAccountDeletionAuthDurableStep(
     if (request.auth_cleanup_status === "manual_required") {
       return result({ status: "manual_required", safeReasonCode: request.failure_reason_code, marker: "manual_required", row: request });
     }
-    if (!priorStagesTerminal(request)) return blocked("auth_prior_stages_not_terminal", request);
+    if (!hasAccountDeletionAuthPriorStageAuthority(request)) return blocked("auth_prior_stages_not_terminal", request);
 
     if (request.auth_intent_version === null) {
       if (!input.expectedUserId || request.user_id !== input.expectedUserId) {
@@ -305,7 +382,7 @@ export async function runAccountDeletionAuthDurableStep(
         expectedDeleteGeneration: request.auth_delete_generation as 0 | 1,
         expectedVerificationAttemptCount: request.auth_verification_attempt_count
       });
-      if (!finalized || !validTerminal(finalized)) return blocked("auth_sub_finalizer_rejected", finalized, "unknown");
+      if (!finalized || !hasAccountDeletionAuthTerminalAuthority(finalized)) return blocked("auth_sub_finalizer_rejected", finalized, "unknown");
       return result({
         status: finalized.auth_cleanup_status === "not_needed" ? "not_needed" : "succeeded",
         safeReasonCode: null,
@@ -355,7 +432,7 @@ export async function runAccountDeletionAuthDurableStep(
         expectedDeleteGeneration: request.auth_delete_generation as 0 | 1,
         expectedVerificationAttemptCount: request.auth_verification_attempt_count
       });
-      if (!finalized || !validTerminal(finalized)) return blocked("auth_sub_finalizer_rejected", finalized, "unknown");
+      if (!finalized || !hasAccountDeletionAuthTerminalAuthority(finalized)) return blocked("auth_sub_finalizer_rejected", finalized, "unknown");
       return result({
         status: finalized.auth_cleanup_status === "not_needed" ? "not_needed" : "succeeded",
         safeReasonCode: null,
@@ -441,7 +518,7 @@ export async function runAccountDeletionAuthDurableStep(
         expectedDeleteGeneration: 1,
         expectedVerificationAttemptCount: request.auth_verification_attempt_count
       });
-      if (!finalized || !validTerminal(finalized)) return blocked("auth_sub_finalizer_rejected", finalized, "unknown");
+      if (!finalized || !hasAccountDeletionAuthTerminalAuthority(finalized)) return blocked("auth_sub_finalizer_rejected", finalized, "unknown");
       return result({
         status: "succeeded",
         safeReasonCode: null,

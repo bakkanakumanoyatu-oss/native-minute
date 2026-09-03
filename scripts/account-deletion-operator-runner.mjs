@@ -26,6 +26,42 @@ const IRREVERSIBLE_ACKNOWLEDGEMENTS = new Set([
   "I_UNDERSTAND_ACCOUNT_DELETION_IS_IRREVERSIBLE",
   "DELETE_DISPOSABLE_ACCOUNT"
 ]);
+const AUTH_OPERATOR_SAFE_REASON_CODES = new Set([
+  "auth_stage_reason_unknown",
+  "auth_request_not_found",
+  "auth_intent_owner_unavailable",
+  "auth_intent_owner_mismatch",
+  "auth_prior_stages_not_terminal",
+  "auth_intent_seal_stale",
+  "auth_durable_state_invalid",
+  "auth_owner_not_null_after_verified_absence",
+  "auth_sub_finalizer_rejected",
+  "auth_verification_result_stale",
+  "auth_user_present_after_dispatch_manual_required",
+  "auth_get_permission_denied",
+  "auth_get_user_mismatch",
+  "auth_get_protocol_error",
+  "auth_get_rate_limited",
+  "auth_get_timeout",
+  "auth_get_network_error",
+  "auth_get_unavailable",
+  "auth_delete_dispatch_cas_lost",
+  "auth_delete_permission_denied",
+  "auth_delete_rate_limited_outcome_unknown",
+  "auth_delete_timeout_outcome_unknown",
+  "auth_delete_network_error_outcome_unknown",
+  "auth_delete_malformed_outcome_unknown",
+  "auth_delete_unavailable_outcome_unknown",
+  "auth_delete_outcome_unknown",
+  "auth_post_delete_verification_stale",
+  "auth_terminal_authority_missing",
+  "auth_durable_stage_result_unknown",
+  "auth_stage_not_allowed",
+  "auth_cleanup_not_runnable",
+  "auth_request_authority_mismatch",
+  "destructive_guard_missing",
+  "request_target_invalid"
+]);
 
 function parseArgs(argv) {
   const parsed = {
@@ -192,7 +228,7 @@ function buildSafeSummary(parsed, env = process.env, options = {}) {
         actualServiceConnected: false
       },
       notes: [
-        "This operator runner is an internal provider-only execution surface.",
+        "This operator runner is an internal one-stage account-deletion execution surface.",
         "It does not call provider, Storage, DB, or Auth destructive services."
       ]
     };
@@ -261,7 +297,8 @@ function buildSafeSummary(parsed, env = process.env, options = {}) {
     safeCounts: {
       stagesRequested: parsed.stages.length,
       destructiveOperationsAttempted: 0,
-      ...databaseSafeZeroCounts(stage)
+      ...databaseSafeZeroCounts(stage),
+      ...authSafeZeroCounts(stage)
     },
     safeReasonCode,
     nextAction: getNextAction({ status }),
@@ -291,14 +328,21 @@ function buildSafeSummary(parsed, env = process.env, options = {}) {
   };
 }
 
-function sanitizeRequestResolverResult(result = {}) {
+function sanitizeRequestResolverResult(result = {}, stage = "") {
   const ok = result.ok === true || result.status === "resolved";
   const internal = result.internal && typeof result.internal === "object" ? result.internal : {};
-  const hasInternalTarget =
+  const hasOwnedInternalTarget =
     typeof internal.userId === "string" &&
     internal.userId.trim().length > 0 &&
     typeof internal.deletionRequestId === "string" &&
     internal.deletionRequestId.trim().length > 0;
+  const hasAuthInternalTarget =
+    typeof internal.deletionRequestId === "string" &&
+    internal.deletionRequestId.trim().length > 0 &&
+    (internal.expectedUserId === undefined ||
+      (typeof internal.expectedUserId === "string" && internal.expectedUserId.trim().length > 0));
+  const authStage = stage === "auth";
+  const hasInternalTarget = authStage ? hasAuthInternalTarget : hasOwnedInternalTarget;
   const resolved = ok && hasInternalTarget;
 
   return {
@@ -308,13 +352,21 @@ function sanitizeRequestResolverResult(result = {}) {
       : toSafeReasonCode(result.safeReasonCode ?? (ok ? "request_resolver_missing_internal_target" : "request_resolver_blocked")),
     safeRequest: {
       requestRef: "provided_not_echoed",
-      userRef: resolved ? "resolved_not_echoed" : "not_resolved",
+      userRef: resolved
+        ? authStage && internal.expectedUserId === undefined
+          ? "not_available_after_auth_cleanup"
+          : "resolved_not_echoed"
+        : "not_resolved",
       deletionRequestRef: resolved ? "resolved_not_echoed" : "not_resolved"
     },
     internal: resolved
       ? {
-          userId: internal.userId,
-          deletionRequestId: internal.deletionRequestId
+          ...(authStage
+            ? {
+                deletionRequestId: internal.deletionRequestId,
+                ...(internal.expectedUserId === undefined ? {} : { expectedUserId: internal.expectedUserId })
+              }
+            : { userId: internal.userId, deletionRequestId: internal.deletionRequestId })
         }
       : null
   };
@@ -351,6 +403,13 @@ function toSafeReasonCode(value) {
   return normalized || "stage_service_result";
 }
 
+function toSafeAuthReasonCode(value, status) {
+  if (value === null && (status === "succeeded" || status === "not_needed")) return null;
+  return typeof value === "string" && AUTH_OPERATOR_SAFE_REASON_CODES.has(value)
+    ? value
+    : "auth_durable_stage_result_unknown";
+}
+
 function toSafeNonNegativeNumber(value) {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
     return 0;
@@ -379,6 +438,22 @@ function databaseSafeZeroCounts(stage) {
         dbDeletedRowCount: null,
         dbAnonymizedRowCount: null,
         dbRetainedRowCount: null
+      }
+    : {};
+}
+
+function authSafeZeroCounts(stage) {
+  return stage === "auth"
+    ? {
+        authDurableRunnerCalls: 0,
+        authGetCalls: 0,
+        authDeleteDispatches: 0,
+        authAttempted: 0,
+        authOutcomeUnknown: 0,
+        authTerminal: 0,
+        authNonterminal: 1,
+        verificationAttemptCount: null,
+        completionCalls: 0
       }
     : {};
 }
@@ -608,6 +683,8 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
     "blocked"
   ]);
   const databaseAllowedStatuses = new Set(["succeeded", "not_needed", "manual_required", "blocked"]);
+  const authAllowedStatuses = new Set(["succeeded", "not_needed", "failed", "manual_required", "blocked"]);
+  const safeCounts = result.safeCounts && typeof result.safeCounts === "object" ? result.safeCounts : {};
   const rawDatabaseTerminal = result.status === "succeeded" || result.status === "not_needed";
   const rawDatabaseEvidence = {
     observed: result.safeCounts?.dbObservedRowCount,
@@ -638,12 +715,55 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
   const databaseRuntimeUnknown =
     stage === "database" &&
     (!databaseAllowedStatuses.has(result.status) || !rawDatabaseTerminalSurfaceValid);
-  const status = databaseRuntimeUnknown
+  const rawAuthTerminal = result.status === "succeeded" || result.status === "not_needed";
+  const rawAuthActionCountsSafe = [
+    safeCounts.authDurableRunnerCalls,
+    safeCounts.authGetCalls,
+    safeCounts.authDeleteDispatches,
+    safeCounts.authAttempted,
+    safeCounts.authOutcomeUnknown,
+    safeCounts.authTerminal,
+    safeCounts.authNonterminal,
+    safeCounts.completionCalls,
+    safeCounts.destructiveOperationsAttempted
+  ].every((value) => typeof value === "number" && Number.isSafeInteger(value) && value >= 0);
+  const rawAuthVerificationCountSafe = safeCounts.verificationAttemptCount === null ||
+    (typeof safeCounts.verificationAttemptCount === "number" &&
+      Number.isSafeInteger(safeCounts.verificationAttemptCount) &&
+      safeCounts.verificationAttemptCount >= 0);
+  const rawAuthBoundaryValid = rawAuthActionCountsSafe && rawAuthVerificationCountSafe &&
+    safeCounts.authGetCalls <= 2 && safeCounts.authDeleteDispatches <= 1 &&
+    safeCounts.authAttempted === safeCounts.authDeleteDispatches &&
+    safeCounts.destructiveOperationsAttempted === safeCounts.authDeleteDispatches &&
+    safeCounts.completionCalls === 0;
+  const rawAuthReasonValid = rawAuthTerminal
+    ? result.safeReasonCode === null
+    : typeof result.safeReasonCode === "string" && AUTH_OPERATOR_SAFE_REASON_CODES.has(result.safeReasonCode);
+  const rawAuthTerminalSurfaceValid = !rawAuthTerminal ||
+    (rawAuthBoundaryValid &&
+      result.safeProgress?.marker === "terminal" &&
+      result.safeProgress?.terminal === true &&
+      result.safeProgress?.verifiedAbsent === true &&
+      result.safeProgress?.authSubFinalized === true &&
+      safeCounts.authDurableRunnerCalls === 1 &&
+      safeCounts.authOutcomeUnknown === 0 &&
+      safeCounts.authTerminal === 1 &&
+      safeCounts.authNonterminal === 0 &&
+      typeof safeCounts.verificationAttemptCount === "number" &&
+      safeCounts.verificationAttemptCount >= 1);
+  const rawAuthNonterminalSurfaceValid = rawAuthTerminal ||
+    (rawAuthBoundaryValid &&
+      result.safeProgress?.terminal === false &&
+      safeCounts.authTerminal === 0 &&
+      safeCounts.authNonterminal === 1);
+  const authRuntimeUnknown = stage === "auth" &&
+    (!authAllowedStatuses.has(result.status) || !rawAuthReasonValid ||
+      !rawAuthTerminalSurfaceValid || !rawAuthNonterminalSurfaceValid);
+  const status = databaseRuntimeUnknown || authRuntimeUnknown
     ? "manual_required"
     : allowedStatuses.has(result.status)
       ? result.status
       : "blocked";
-  const safeCounts = result.safeCounts && typeof result.safeCounts === "object" ? result.safeCounts : {};
   const satisfied = status === "succeeded" || status === "not_needed" || status === "already_satisfied";
   const allowedProgressMarkers = new Set([
     "seal_only",
@@ -658,20 +778,27 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
     "blocked",
     "unknown"
   ]);
-  const progressMarker = allowedProgressMarkers.has(result.safeProgress?.marker)
-    ? result.safeProgress.marker
-    : satisfied
-      ? "terminal"
-      : "unknown";
-  const retryable = !satisfied && result.safeProgress?.retryable === true;
+  const progressMarker = authRuntimeUnknown
+    ? "unknown"
+    : allowedProgressMarkers.has(result.safeProgress?.marker)
+      ? result.safeProgress.marker
+      : satisfied
+        ? "terminal"
+        : "unknown";
+  const retryable = !authRuntimeUnknown && !satisfied && result.safeProgress?.retryable === true;
   const manualReviewRequired =
-    databaseRuntimeUnknown || status === "manual_required" || result.safeProgress?.manualReviewRequired === true;
+    databaseRuntimeUnknown || authRuntimeUnknown || status === "manual_required" ||
+    result.safeProgress?.manualReviewRequired === true;
 
   return {
     status,
     safeReasonCode:
-      databaseRuntimeUnknown
+      authRuntimeUnknown
+        ? "auth_durable_stage_result_unknown"
+        : databaseRuntimeUnknown
         ? "database_stage_result_unknown"
+        : stage === "auth"
+          ? toSafeAuthReasonCode(result.safeReasonCode, status)
         : result.safeReasonCode === null && satisfied
           ? null
           : toSafeReasonCode(result.safeReasonCode),
@@ -679,9 +806,9 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
       stagesRequested: 1,
       requestResolverCalls: toSafeNonNegativeNumber(safeCounts.requestResolverCalls),
       stageServiceCalls: 1,
-      destructiveOperationsAttempted: toSafeNullableNonNegativeNumber(
-        safeCounts.destructiveOperationsAttempted
-      ),
+      destructiveOperationsAttempted: stage === "auth"
+        ? toSafeNullableEvidenceNumber(safeCounts.destructiveOperationsAttempted)
+        : toSafeNullableNonNegativeNumber(safeCounts.destructiveOperationsAttempted),
       providerCandidates: toSafeNullableNonNegativeNumber(safeCounts.providerCandidates),
       providerAttempted: toSafeNullableNonNegativeNumber(safeCounts.providerAttempted),
       providerSucceeded: toSafeNullableNonNegativeNumber(safeCounts.providerSucceeded),
@@ -728,6 +855,17 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
         stage === "database" && (!rawDatabaseTerminal || databaseRuntimeUnknown)
           ? null
           : toSafeNullableEvidenceNumber(safeCounts.dbRetainedRowCount),
+      authDurableRunnerCalls: toSafeNullableEvidenceNumber(safeCounts.authDurableRunnerCalls),
+      authGetCalls: toSafeNullableEvidenceNumber(safeCounts.authGetCalls),
+      authDeleteDispatches: toSafeNullableEvidenceNumber(safeCounts.authDeleteDispatches),
+      authAttempted: toSafeNullableEvidenceNumber(safeCounts.authAttempted),
+      authOutcomeUnknown: authRuntimeUnknown
+        ? 1
+        : toSafeNullableEvidenceNumber(safeCounts.authOutcomeUnknown),
+      authTerminal: authRuntimeUnknown ? 0 : toSafeNullableEvidenceNumber(safeCounts.authTerminal),
+      authNonterminal: authRuntimeUnknown ? 1 : toSafeNullableEvidenceNumber(safeCounts.authNonterminal),
+      verificationAttemptCount: toSafeNullableEvidenceNumber(safeCounts.verificationAttemptCount),
+      completionCalls: toSafeNullableEvidenceNumber(safeCounts.completionCalls),
       databaseTables: toSafeNonNegativeNumber(safeCounts.databaseTables),
       authUsers: toSafeNonNegativeNumber(safeCounts.authUsers)
     },
@@ -735,7 +873,9 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
       marker: progressMarker,
       terminal: satisfied && result.safeProgress?.terminal === true,
       retryable,
-      manualReviewRequired
+      manualReviewRequired,
+      verifiedAbsent: stage === "auth" && !authRuntimeUnknown && result.safeProgress?.verifiedAbsent === true,
+      authSubFinalized: stage === "auth" && !authRuntimeUnknown && result.safeProgress?.authSubFinalized === true
     },
     nextAction:
       satisfied
@@ -817,12 +957,15 @@ async function runAccountDeletionOperator(argv = process.argv.slice(2), options 
     return summary;
   }
 
-  const resolvedRequest = sanitizeRequestResolverResult(await requestResolver({
-    stage,
-    requestRef: parsed.requestRef,
-    proofPath: summary.proof.proofPath,
-    envLabel: summary.proof.envLabel
-  }));
+  const resolvedRequest = sanitizeRequestResolverResult(
+    await requestResolver({
+      stage,
+      requestRef: parsed.requestRef,
+      proofPath: summary.proof.proofPath,
+      envLabel: summary.proof.envLabel
+    }),
+    stage
+  );
 
   if (!resolvedRequest.ok) {
     return {
@@ -876,7 +1019,7 @@ async function runAccountDeletionOperator(argv = process.argv.slice(2), options 
     notes: [
       "Safe request resolver and internal stage service bridge returned safe summaries.",
       "No raw user, provider, storage, DB, Auth, or provider response data is printed.",
-      "The canonical entry connects Provider, Storage, and Database as separate stages; Auth and completion remain unreachable."
+      "The canonical entry connects Provider, Storage, Database, and Auth as separate stages; completion remains unreachable."
     ]
   };
 }
@@ -898,8 +1041,8 @@ Safety:
   - execute mode also requires a prepared proof path and latest dry-run runnable confirmation
   - storage/database/auth execute mode requires --prior-stage-satisfied
   - status/summary can model disposable proof candidacy with --proof-candidate-* flags
-  - the canonical entry connects Provider, Storage, and Database behind every execute guard
-  - Auth and completion services remain disconnected
+  - the canonical entry connects Provider, Storage, Database, and Auth behind every execute guard
+  - completion remains unavailable
   - raw request refs are accepted for targeting but never echoed
 `);
 }
