@@ -1278,6 +1278,22 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
       };
+      finalize_account_deletion_database_stage: {
+        Args: {
+          p_deletion_request_id: string;
+          p_expected_user_id: string;
+          p_expected_db_inventory_version: string;
+        };
+        Returns: Array<{
+          db_cleanup_status: string;
+          safe_reason: string;
+          db_observed_row_count: number;
+          db_deleted_row_count: number;
+          db_anonymized_row_count: number;
+          db_retained_row_count: number;
+          already_finalized: boolean;
+        }>;
+      };
       finalize_recording_upload_write_intent: {
         Args: {
           p_intent_id: string;

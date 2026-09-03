@@ -79,6 +79,40 @@ export const ACCOUNT_DELETION_DATABASE_STAGE_PREREQUISITES = {
   }
 } as const;
 
+export const ACCOUNT_DELETION_DATABASE_FINALIZER_RPC = {
+  name: "finalize_account_deletion_database_stage",
+  inventoryVersion: ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION,
+  arguments: [
+    "p_deletion_request_id",
+    "p_expected_user_id",
+    "p_expected_db_inventory_version"
+  ],
+  resultFields: [
+    "db_cleanup_status",
+    "safe_reason",
+    "db_observed_row_count",
+    "db_deleted_row_count",
+    "db_anonymized_row_count",
+    "db_retained_row_count",
+    "already_finalized"
+  ]
+} as const;
+
+// These are the production write surfaces that are not already closed by the
+// Storage writer fence or its parent/cascade relationships.
+export const ACCOUNT_DELETION_DATABASE_WRITER_FENCE_TABLES = [
+  "profiles",
+  "scripts",
+  "processing_consents",
+  "quota_events",
+  "script_saved_model_audios",
+  "script_saved_best_takes",
+  "weak_words",
+  "coach_feedback",
+  "voice_deletion_operations",
+  "voice_deletion_targets"
+] as const;
+
 export const ACCOUNT_DELETION_VOICE_WRITE_AUTHORITY = {
   voiceAssetWriteIntents: {
     reserved: "BLOCK",
