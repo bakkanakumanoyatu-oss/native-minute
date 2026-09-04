@@ -6,8 +6,9 @@ import { createClient } from "@supabase/supabase-js";
 dotenv.config({ path: ".env.local", quiet: true });
 
 const DESTRUCTIVE_GUARD_ENV = "NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE";
-const VALID_STAGES = new Set(["provider", "storage", "database", "auth", "status", "summary"]);
+const VALID_STAGES = new Set(["provider", "storage", "database", "auth", "completion", "status", "summary"]);
 const DESTRUCTIVE_STAGES = new Set(["provider", "storage", "database", "auth"]);
+const EXECUTABLE_STAGES = new Set([...DESTRUCTIVE_STAGES, "completion"]);
 const READ_ONLY_RESOLVER_STAGES = new Set(["status", "summary"]);
 const REQUEST_STATUSES = new Set([
   "requested",
@@ -61,6 +62,12 @@ const AUTH_OPERATOR_SAFE_REASON_CODES = new Set([
   "auth_request_authority_mismatch",
   "destructive_guard_missing",
   "request_target_invalid"
+]);
+const COMPLETION_OPERATOR_SAFE_REASON_CODES = new Set([
+  "completion_cleanup_not_runnable",
+  "completion_rpc_rejected",
+  "completion_stage_result_unknown",
+  "completion_terminal_authority_missing"
 ]);
 
 function parseArgs(argv) {
@@ -194,11 +201,11 @@ function buildSafeSummary(parsed, env = process.env, options = {}) {
   const hasRequestRef = parsed.requestRef.trim().length > 0;
   const proofPathProvided = parsed.proofPath.trim().length > 0;
   const acknowledgementAccepted = IRREVERSIBLE_ACKNOWLEDGEMENTS.has(parsed.acknowledge);
-  const destructiveStage = DESTRUCTIVE_STAGES.has(stage);
+  const executableStage = EXECUTABLE_STAGES.has(stage);
   const validStage = VALID_STAGES.has(stage);
   const multipleStages = hasMultipleStages(parsed.stages);
   const priorStageSatisfied = stage === "provider" ? true : parsed.priorStageSatisfied;
-  const actualServiceConnected = options.actualServiceConnected === true && destructiveStage;
+  const actualServiceConnected = options.actualServiceConnected === true && executableStage;
   const requestResolverConnected = options.requestResolverConnected === true && actualServiceConnected;
   const blockedReasons = [];
 
@@ -212,7 +219,7 @@ function buildSafeSummary(parsed, env = process.env, options = {}) {
         destructiveOperationsAttempted: 0
       },
       safeReasonCode: null,
-      nextAction: "Run with --stage provider|storage|database|auth|status|summary. Dry-run is the default.",
+      nextAction: "Run with --stage provider|storage|database|auth|completion|status|summary. Dry-run is the default.",
       proof: {
         envLabel: parsed.envLabel ? "provided" : "not_provided",
         proofPath: parsed.proofPath ? "provided" : "not_provided",
@@ -229,7 +236,7 @@ function buildSafeSummary(parsed, env = process.env, options = {}) {
       },
       notes: [
         "This operator runner is an internal one-stage account-deletion execution surface.",
-        "It does not call provider, Storage, DB, or Auth destructive services."
+        "It does not call Provider, Storage, Database, Auth, or Completion services from help mode."
       ]
     };
   }
@@ -250,8 +257,8 @@ function buildSafeSummary(parsed, env = process.env, options = {}) {
     blockedReasons.push("stage_invalid");
   }
 
-  if (parsed.execute && !destructiveStage) {
-    blockedReasons.push("execute_requires_destructive_stage");
+  if (parsed.execute && !executableStage) {
+    blockedReasons.push("execute_requires_executable_stage");
   }
 
   if (parsed.execute && !hasRequestRef) {
@@ -298,7 +305,8 @@ function buildSafeSummary(parsed, env = process.env, options = {}) {
       stagesRequested: parsed.stages.length,
       destructiveOperationsAttempted: 0,
       ...databaseSafeZeroCounts(stage),
-      ...authSafeZeroCounts(stage)
+      ...authSafeZeroCounts(stage),
+      ...completionSafeZeroCounts(stage)
     },
     safeReasonCode,
     nextAction: getNextAction({ status }),
@@ -342,7 +350,14 @@ function sanitizeRequestResolverResult(result = {}, stage = "") {
     (internal.expectedUserId === undefined ||
       (typeof internal.expectedUserId === "string" && internal.expectedUserId.trim().length > 0));
   const authStage = stage === "auth";
-  const hasInternalTarget = authStage ? hasAuthInternalTarget : hasOwnedInternalTarget;
+  const completionStage = stage === "completion";
+  const hasCompletionInternalTarget =
+    typeof internal.deletionRequestId === "string" && internal.deletionRequestId.trim().length > 0;
+  const hasInternalTarget = completionStage
+    ? hasCompletionInternalTarget
+    : authStage
+      ? hasAuthInternalTarget
+      : hasOwnedInternalTarget;
   const resolved = ok && hasInternalTarget;
 
   return {
@@ -353,7 +368,7 @@ function sanitizeRequestResolverResult(result = {}, stage = "") {
     safeRequest: {
       requestRef: "provided_not_echoed",
       userRef: resolved
-        ? authStage && internal.expectedUserId === undefined
+        ? completionStage || (authStage && internal.expectedUserId === undefined)
           ? "not_available_after_auth_cleanup"
           : "resolved_not_echoed"
         : "not_resolved",
@@ -361,7 +376,9 @@ function sanitizeRequestResolverResult(result = {}, stage = "") {
     },
     internal: resolved
       ? {
-          ...(authStage
+          ...(completionStage
+            ? { deletionRequestId: internal.deletionRequestId }
+            : authStage
             ? {
                 deletionRequestId: internal.deletionRequestId,
                 ...(internal.expectedUserId === undefined ? {} : { expectedUserId: internal.expectedUserId })
@@ -410,6 +427,13 @@ function toSafeAuthReasonCode(value, status) {
     : "auth_durable_stage_result_unknown";
 }
 
+function toSafeCompletionReasonCode(value, status) {
+  if (value === null && (status === "succeeded" || status === "already_satisfied")) return null;
+  return typeof value === "string" && COMPLETION_OPERATOR_SAFE_REASON_CODES.has(value)
+    ? value
+    : "completion_stage_result_unknown";
+}
+
 function toSafeNonNegativeNumber(value) {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
     return 0;
@@ -454,6 +478,18 @@ function authSafeZeroCounts(stage) {
         authNonterminal: 1,
         verificationAttemptCount: null,
         completionCalls: 0
+      }
+    : {};
+}
+
+function completionSafeZeroCounts(stage) {
+  return stage === "completion"
+    ? {
+        completionRpcCalls: 0,
+        completionOutcomeUnknown: 0,
+        completionTerminal: 0,
+        completionAlreadyCompleted: null,
+        externalCalls: 0
       }
     : {};
 }
@@ -684,6 +720,7 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
   ]);
   const databaseAllowedStatuses = new Set(["succeeded", "not_needed", "manual_required", "blocked"]);
   const authAllowedStatuses = new Set(["succeeded", "not_needed", "failed", "manual_required", "blocked"]);
+  const completionAllowedStatuses = new Set(["succeeded", "already_satisfied", "manual_required", "blocked"]);
   const safeCounts = result.safeCounts && typeof result.safeCounts === "object" ? result.safeCounts : {};
   const rawDatabaseTerminal = result.status === "succeeded" || result.status === "not_needed";
   const rawDatabaseEvidence = {
@@ -759,7 +796,65 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
   const authRuntimeUnknown = stage === "auth" &&
     (!authAllowedStatuses.has(result.status) || !rawAuthReasonValid ||
       !rawAuthTerminalSurfaceValid || !rawAuthNonterminalSurfaceValid);
-  const status = databaseRuntimeUnknown || authRuntimeUnknown
+  const rawCompletionTerminalStatus = result.status === "succeeded" || result.status === "already_satisfied";
+  const rawCompletionRpcCalls = safeCounts.completionRpcCalls;
+  const rawCompletionOutcomeUnknown = safeCounts.completionOutcomeUnknown;
+  const rawCompletionTerminal = safeCounts.completionTerminal;
+  const rawCompletionAlreadyCompleted = safeCounts.completionAlreadyCompleted;
+  const sanitizedCompletionRpcCalls =
+    rawCompletionRpcCalls === 0 || rawCompletionRpcCalls === 1 ? rawCompletionRpcCalls : null;
+  const rawCompletionTerminalAuthorityMissingRpcValid =
+    result.safeReasonCode !== "completion_terminal_authority_missing" || rawCompletionRpcCalls === 1;
+  const rawCompletionBoundaryValid =
+    sanitizedCompletionRpcCalls !== null &&
+    (rawCompletionOutcomeUnknown === 0 || rawCompletionOutcomeUnknown === 1) &&
+    (rawCompletionTerminal === null || rawCompletionTerminal === 0 || rawCompletionTerminal === 1) &&
+    (rawCompletionAlreadyCompleted === null || rawCompletionAlreadyCompleted === 0 || rawCompletionAlreadyCompleted === 1) &&
+    safeCounts.externalCalls === 0 &&
+    safeCounts.destructiveOperationsAttempted === 0 &&
+    result.safeProgress?.terminal === (rawCompletionTerminal === 1);
+  const rawCompletionTerminalSurfaceValid = !rawCompletionTerminalStatus ||
+    (result.safeReasonCode === null &&
+      result.safeProgress?.marker === "terminal" &&
+      rawCompletionRpcCalls === 1 &&
+      rawCompletionOutcomeUnknown === 0 &&
+      rawCompletionTerminal === 1 &&
+      rawCompletionAlreadyCompleted === (result.status === "already_satisfied" ? 1 : 0));
+  const rawCompletionRejectedSurfaceValid =
+    result.status !== "blocked" || result.safeReasonCode !== "completion_rpc_rejected" ||
+    (result.safeProgress?.marker === "completion_rpc_rejected" &&
+      rawCompletionRpcCalls === 1 && rawCompletionOutcomeUnknown === 0 &&
+      rawCompletionTerminal === 0 && rawCompletionAlreadyCompleted === null);
+  const rawCompletionPrecheckSurfaceValid =
+    result.status !== "blocked" || result.safeReasonCode !== "completion_cleanup_not_runnable" ||
+    (result.safeProgress?.marker === "not_runnable" &&
+      rawCompletionRpcCalls === 0 && rawCompletionOutcomeUnknown === 0 &&
+      rawCompletionTerminal === 0 && rawCompletionAlreadyCompleted === null);
+  const rawCompletionUnknownSurfaceValid = result.status !== "manual_required" ||
+    ((result.safeReasonCode === "completion_stage_result_unknown" ||
+      result.safeReasonCode === "completion_terminal_authority_missing") &&
+      result.safeProgress?.marker === "unknown" &&
+      rawCompletionOutcomeUnknown === 1 && rawCompletionTerminal === null &&
+      rawCompletionAlreadyCompleted === null &&
+      rawCompletionTerminalAuthorityMissingRpcValid);
+  const rawCompletionReasonValid = rawCompletionTerminalStatus
+    ? result.safeReasonCode === null
+    : typeof result.safeReasonCode === "string" &&
+      COMPLETION_OPERATOR_SAFE_REASON_CODES.has(result.safeReasonCode);
+  const rawCompletionStatusReasonValid =
+    (rawCompletionTerminalStatus && result.safeReasonCode === null) ||
+    (result.status === "blocked" &&
+      (result.safeReasonCode === "completion_rpc_rejected" ||
+        result.safeReasonCode === "completion_cleanup_not_runnable")) ||
+    (result.status === "manual_required" &&
+      (result.safeReasonCode === "completion_stage_result_unknown" ||
+        result.safeReasonCode === "completion_terminal_authority_missing"));
+  const completionRuntimeUnknown = stage === "completion" &&
+    (!completionAllowedStatuses.has(result.status) || !rawCompletionBoundaryValid ||
+      !rawCompletionReasonValid || !rawCompletionStatusReasonValid || !rawCompletionTerminalSurfaceValid ||
+      !rawCompletionRejectedSurfaceValid || !rawCompletionPrecheckSurfaceValid ||
+      !rawCompletionUnknownSurfaceValid);
+  const status = databaseRuntimeUnknown || authRuntimeUnknown || completionRuntimeUnknown
     ? "manual_required"
     : allowedStatuses.has(result.status)
       ? result.status
@@ -775,19 +870,21 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
     "busy",
     "not_runnable",
     "stale_result",
+    "completion_rpc_rejected",
     "blocked",
     "unknown"
   ]);
-  const progressMarker = authRuntimeUnknown
+  const progressMarker = authRuntimeUnknown || completionRuntimeUnknown
     ? "unknown"
     : allowedProgressMarkers.has(result.safeProgress?.marker)
       ? result.safeProgress.marker
       : satisfied
         ? "terminal"
         : "unknown";
-  const retryable = !authRuntimeUnknown && !satisfied && result.safeProgress?.retryable === true;
+  const retryable = !authRuntimeUnknown && !completionRuntimeUnknown && !satisfied &&
+    result.safeProgress?.retryable === true;
   const manualReviewRequired =
-    databaseRuntimeUnknown || authRuntimeUnknown || status === "manual_required" ||
+    databaseRuntimeUnknown || authRuntimeUnknown || completionRuntimeUnknown || status === "manual_required" ||
     result.safeProgress?.manualReviewRequired === true;
 
   return {
@@ -795,10 +892,14 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
     safeReasonCode:
       authRuntimeUnknown
         ? "auth_durable_stage_result_unknown"
+        : completionRuntimeUnknown
+        ? "completion_stage_result_unknown"
         : databaseRuntimeUnknown
         ? "database_stage_result_unknown"
         : stage === "auth"
           ? toSafeAuthReasonCode(result.safeReasonCode, status)
+        : stage === "completion"
+          ? toSafeCompletionReasonCode(result.safeReasonCode, status)
         : result.safeReasonCode === null && satisfied
           ? null
           : toSafeReasonCode(result.safeReasonCode),
@@ -806,7 +907,9 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
       stagesRequested: 1,
       requestResolverCalls: toSafeNonNegativeNumber(safeCounts.requestResolverCalls),
       stageServiceCalls: 1,
-      destructiveOperationsAttempted: stage === "auth"
+      destructiveOperationsAttempted: stage === "completion"
+        ? 0
+        : stage === "auth"
         ? toSafeNullableEvidenceNumber(safeCounts.destructiveOperationsAttempted)
         : toSafeNullableNonNegativeNumber(safeCounts.destructiveOperationsAttempted),
       providerCandidates: toSafeNullableNonNegativeNumber(safeCounts.providerCandidates),
@@ -866,6 +969,18 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
       authNonterminal: authRuntimeUnknown ? 1 : toSafeNullableEvidenceNumber(safeCounts.authNonterminal),
       verificationAttemptCount: toSafeNullableEvidenceNumber(safeCounts.verificationAttemptCount),
       completionCalls: toSafeNullableEvidenceNumber(safeCounts.completionCalls),
+      ...(stage === "completion"
+        ? {
+            completionRpcCalls:
+              rawCompletionTerminalAuthorityMissingRpcValid ? sanitizedCompletionRpcCalls : null,
+            completionOutcomeUnknown: completionRuntimeUnknown
+              ? 1
+              : rawCompletionOutcomeUnknown,
+            completionTerminal: completionRuntimeUnknown ? null : rawCompletionTerminal,
+            completionAlreadyCompleted: completionRuntimeUnknown ? null : rawCompletionAlreadyCompleted,
+            externalCalls: 0
+          }
+        : {}),
       databaseTables: toSafeNonNegativeNumber(safeCounts.databaseTables),
       authUsers: toSafeNonNegativeNumber(safeCounts.authUsers)
     },
@@ -947,7 +1062,7 @@ async function runAccountDeletionOperator(argv = process.argv.slice(2), options 
         resolvedStatus.ok
           ? "Read-only request resolver returned safe request status and stage statuses."
           : "Read-only request resolver could not resolve the request reference.",
-        "No provider, Storage, DB, or Auth cleanup service was called.",
+        "No Provider, Storage, Database, Auth, or Completion service was called.",
         "No raw user id, deletion request id, email, request reference, auth credential, or admin key is printed."
       ]
     };
@@ -987,7 +1102,7 @@ async function runAccountDeletionOperator(argv = process.argv.slice(2), options 
       request: resolvedRequest.safeRequest,
       notes: [
         "Request resolver did not return a safe internal target.",
-        "No provider, Storage, DB, or Auth stage service was called.",
+        "No Provider, Storage, Database, Auth, or Completion stage service was called.",
         "No raw user id, deletion request id, email, or request reference is printed."
       ]
     };
@@ -1019,7 +1134,7 @@ async function runAccountDeletionOperator(argv = process.argv.slice(2), options 
     notes: [
       "Safe request resolver and internal stage service bridge returned safe summaries.",
       "No raw user, provider, storage, DB, Auth, or provider response data is printed.",
-      "The canonical entry connects Provider, Storage, Database, and Auth as separate stages; completion remains unreachable."
+      "The canonical entry connects Provider, Storage, Database, Auth, and Completion as separate one-invocation stages."
     ]
   };
 }
@@ -1032,17 +1147,17 @@ Usage:
   npm run account-deletion:operator -- --stage provider --request <request-ref> --execute --proof <proof-doc> --latest-dry-run-runnable --acknowledge-irreversible I_UNDERSTAND_ACCOUNT_DELETION_IS_IRREVERSIBLE
 
 Stages:
-  provider | storage | database | auth | status | summary
+  provider | storage | database | auth | completion | status | summary
 
 Safety:
   - dry-run is the default
   - one stage per invocation
   - execute mode is blocked unless ${DESTRUCTIVE_GUARD_ENV}=1 and acknowledgement are present
   - execute mode also requires a prepared proof path and latest dry-run runnable confirmation
-  - storage/database/auth execute mode requires --prior-stage-satisfied
+  - storage/database/auth/completion execute mode requires --prior-stage-satisfied
   - status/summary can model disposable proof candidacy with --proof-candidate-* flags
-  - the canonical entry connects Provider, Storage, Database, and Auth behind every execute guard
-  - completion remains unavailable
+  - the canonical entry connects Provider, Storage, Database, Auth, and Completion behind every execute guard
+  - Completion is a terminal DB mutation and reports zero external destructive operations
   - raw request refs are accepted for targeting but never echoed
 `);
 }

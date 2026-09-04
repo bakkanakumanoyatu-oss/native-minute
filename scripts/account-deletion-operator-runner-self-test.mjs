@@ -118,7 +118,7 @@ assertCheck(
 );
 
 assertCheck(
-  "runner core stays injection-only while canonical entry wires Provider, Storage, Database, and Auth",
+  "runner core stays injection-only while canonical entry wires Provider, Storage, Database, Auth, and Completion",
   includesAll(runner, [
     "actualServiceConnected: false",
     "requestResolverConnected: false",
@@ -135,14 +135,17 @@ assertCheck(
       "createAccountDeletionStorageOperatorBridge",
       "createAccountDeletionDatabaseOperatorBridge",
       "createAccountDeletionAuthOperatorBridge",
+      "createAccountDeletionCompletionOperatorBridge",
       "...providerBridge.stageServices",
       "...storageBridge.stageServices",
       "...databaseBridge.stageServices",
       "...authBridge.stageServices",
+      "...completionBridge.stageServices",
       "resolveAccountDeletionRequestReadOnly",
+      "input.stage === \"completion\"",
       "[\"blocked\", \"failed\", \"manual_required\"].includes(summary.status)"
     ]),
-  "the entry exposes four exact stages while Completion stays unavailable"
+  "the entry exposes five exact executable stages"
 );
 
 const missingStage = buildSafeSummary(parseArgs([]), {});
@@ -233,7 +236,7 @@ assertCheck(
   "execute without prior stage satisfaction is blocked",
   executeWithoutPriorStage.status === "blocked" &&
     executeWithoutPriorStage.safeReasonCode === "prior_stage_not_satisfied",
-  "storage/database/auth cannot run before earlier stages are satisfied"
+  "storage/database/auth/completion cannot run before earlier stages are satisfied"
 );
 assertSafeOutput("execute without prior stage output is safe", executeWithoutPriorStage);
 
@@ -298,6 +301,24 @@ assertCheck(
   "resolver can carry internal target without exposing it in safe markers"
 );
 assertSafeOutput("sanitized resolver result safe markers are safe", sanitizedRawResolverResult.safeRequest);
+
+const sanitizedCompletionResolverResult = sanitizeRequestResolverResult({
+  status: "resolved",
+  internal: {
+    deletionRequestId: "delreq_raw_should_not_echo",
+    userId: "user_raw_should_not_echo",
+    rawMetadata: "raw metadata"
+  }
+}, "completion");
+assertCheck(
+  "Completion resolver sanitizer accepts only the owner-null internal request authority",
+  sanitizedCompletionResolverResult.ok === true &&
+    sanitizedCompletionResolverResult.safeRequest.userRef === "not_available_after_auth_cleanup" &&
+    sanitizedCompletionResolverResult.internal.deletionRequestId === "delreq_raw_should_not_echo" &&
+    !("userId" in sanitizedCompletionResolverResult.internal),
+  "Completion receives deletionRequestId only"
+);
+assertSafeOutput("Completion resolver safe markers are redacted", sanitizedCompletionResolverResult.safeRequest);
 
 const sanitizedReadOnlyStatus = sanitizeReadOnlyRequestResolverResult({
   ok: true,
@@ -421,7 +442,7 @@ assertCheck(
   destructiveDryRun.status === "ready_for_dry_run" &&
     destructiveDryRunResolverCalls === 0 &&
     destructiveDryRun.safeCounts.destructiveOperationsAttempted === 0,
-  "provider/storage/database/auth dry-run remains summary-only"
+  "provider/storage/database/auth/completion dry-run remains summary-only"
 );
 assertSafeOutput("destructive stage dry-run output is safe", destructiveDryRun);
 
@@ -713,7 +734,7 @@ assertCheck(
     blockedByPriorStage.safeReasonCode === "prior_stage_not_satisfied" &&
     priorStageResolverCalls === 0 &&
     priorStageServiceCalls === 0,
-  "storage/database/auth cannot reach resolver or service seams before earlier stages are satisfied"
+  "storage/database/auth/completion cannot reach resolver or service seams before earlier stages are satisfied"
 );
 assertSafeOutput("missing prior stage fake output is safe", blockedByPriorStage);
 
@@ -796,5 +817,130 @@ assertCheck(
   "RR-3k connects the CLI to injected fake resolver and fake service seams only"
 );
 assertSafeOutput("allowed fake service output is safe", fakeStageResult);
+
+const sanitizedCompletionResult = sanitizeStageServiceResult({
+  status: "already_satisfied",
+  safeReasonCode: null,
+  safeProgress: {
+    marker: "terminal",
+    terminal: true,
+    retryable: false,
+    manualReviewRequired: false
+  },
+  safeCounts: {
+    requestResolverCalls: 1,
+    completionRpcCalls: 1,
+    completionOutcomeUnknown: 0,
+    completionTerminal: 1,
+    completionAlreadyCompleted: 1,
+    externalCalls: 0,
+    destructiveOperationsAttempted: 0
+  }
+}, "completion");
+assertCheck(
+  "Completion sanitizer preserves verified replay and zero external accounting",
+  sanitizedCompletionResult.status === "already_satisfied" &&
+    sanitizedCompletionResult.progress.terminal === true &&
+    sanitizedCompletionResult.safeCounts.completionRpcCalls === 1 &&
+    sanitizedCompletionResult.safeCounts.completionAlreadyCompleted === 1 &&
+    sanitizedCompletionResult.safeCounts.externalCalls === 0 &&
+    sanitizedCompletionResult.safeCounts.destructiveOperationsAttempted === 0,
+  "Completion terminal DB mutation does not become an external destructive action"
+);
+assertSafeOutput("sanitized Completion result is safe", sanitizedCompletionResult);
+
+function completionUnknownSurface(safeReasonCode, completionRpcCalls = {}) {
+  return {
+    status: "manual_required",
+    safeReasonCode,
+    safeProgress: {
+      marker: "unknown",
+      terminal: false,
+      retryable: false,
+      manualReviewRequired: true
+    },
+    safeCounts: {
+      requestResolverCalls: 1,
+      completionOutcomeUnknown: 1,
+      completionTerminal: null,
+      completionAlreadyCompleted: null,
+      externalCalls: 0,
+      destructiveOperationsAttempted: 0,
+      ...completionRpcCalls
+    },
+    requestId: "8d9c6c2a-1111-4111-8111-123456789abc",
+    metadata: { raw: "raw provider response" },
+    credentials: "service_role token"
+  };
+}
+
+for (const [label, completionRpcCalls] of [
+  ["missing", {}],
+  ["undefined", { completionRpcCalls: undefined }],
+  ["NaN", { completionRpcCalls: Number.NaN }],
+  ["Infinity", { completionRpcCalls: Number.POSITIVE_INFINITY }],
+  ["-Infinity", { completionRpcCalls: Number.NEGATIVE_INFINITY }],
+  ["negative", { completionRpcCalls: -1 }],
+  ["fraction", { completionRpcCalls: 0.5 }],
+  ["greater than one", { completionRpcCalls: 2 }],
+  ["numeric string", { completionRpcCalls: "1" }]
+]) {
+  const sanitized = sanitizeStageServiceResult(
+    completionUnknownSurface("completion_stage_result_unknown", completionRpcCalls),
+    "completion"
+  );
+  assertCheck(
+    `Completion sanitizer maps ${label} RPC accounting to unknown, never zero`,
+    sanitized.status === "manual_required" &&
+      sanitized.safeReasonCode === "completion_stage_result_unknown" &&
+      sanitized.progress.terminal === false &&
+      sanitized.safeCounts.completionRpcCalls === null &&
+      sanitized.safeCounts.completionOutcomeUnknown === 1 &&
+      sanitized.safeCounts.completionTerminal === null &&
+      sanitized.safeCounts.completionAlreadyCompleted === null,
+    "only exact numeric 0 or 1 is trusted Completion RPC evidence"
+  );
+  assertSafeOutput(`${label} Completion RPC accounting output is redacted`, sanitized);
+}
+
+for (const [label, completionRpcCalls] of [
+  ["zero", { completionRpcCalls: 0 }],
+  ["missing", {}],
+  ["NaN", { completionRpcCalls: Number.NaN }]
+]) {
+  const sanitized = sanitizeStageServiceResult(
+    completionUnknownSurface("completion_terminal_authority_missing", completionRpcCalls),
+    "completion"
+  );
+  assertCheck(
+    `Completion terminal-authority-missing with ${label} RPC accounting fails closed`,
+    sanitized.status === "manual_required" &&
+      sanitized.safeReasonCode === "completion_stage_result_unknown" &&
+      sanitized.progress.terminal === false &&
+      sanitized.safeCounts.completionRpcCalls === null &&
+      sanitized.safeCounts.completionOutcomeUnknown === 1 &&
+      sanitized.safeCounts.completionTerminal === null &&
+      sanitized.safeCounts.completionAlreadyCompleted === null,
+    "post-RPC terminal authority cannot be claimed without exact RPC count one"
+  );
+  assertSafeOutput(`${label} terminal-authority-missing output is redacted`, sanitized);
+}
+
+const sanitizedTerminalAuthorityMissing = sanitizeStageServiceResult(
+  completionUnknownSurface("completion_terminal_authority_missing", { completionRpcCalls: 1 }),
+  "completion"
+);
+assertCheck(
+  "Completion terminal-authority-missing preserves trusted post-RPC accounting",
+  sanitizedTerminalAuthorityMissing.status === "manual_required" &&
+    sanitizedTerminalAuthorityMissing.safeReasonCode === "completion_terminal_authority_missing" &&
+    sanitizedTerminalAuthorityMissing.progress.terminal === false &&
+    sanitizedTerminalAuthorityMissing.safeCounts.completionRpcCalls === 1 &&
+    sanitizedTerminalAuthorityMissing.safeCounts.completionOutcomeUnknown === 1 &&
+    sanitizedTerminalAuthorityMissing.safeCounts.completionTerminal === null &&
+    sanitizedTerminalAuthorityMissing.safeCounts.completionAlreadyCompleted === null,
+  "the valid post-RPC mismatch surface remains unchanged"
+);
+assertSafeOutput("trusted terminal-authority-missing output is redacted", sanitizedTerminalAuthorityMissing);
 
 console.log("\nResult: operator runner core is safe, dry-run default, and non-destructive in this self-test.");
