@@ -61,6 +61,7 @@
     "account-deletion:operator:rehearsal": "node scripts/account-deletion-operator-rehearsal.mjs",
     "account-deletion:operator:rehearsal:self-test": "node scripts/account-deletion-operator-rehearsal-self-test.mjs",
     "account-deletion:proof-package:self-test": "node scripts/account-deletion-proof-package-self-test.mjs",
+    "g5d4:proof-tooling:self-test": "node scripts/g5d4-proof-tooling-self-test.mjs",
     "home:css-smoke": "node scripts/home-css-smoke.mjs",
     "e2e:auth-guard": "npx playwright test tests/e2e/auth-guard.spec.ts",
     "e2e:smoke": "npx playwright test tests/e2e/auth-guard.spec.ts tests/e2e/smoke.spec.ts",
