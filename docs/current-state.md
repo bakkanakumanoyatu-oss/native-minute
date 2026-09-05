@@ -11,6 +11,10 @@
 8. `/progress` で最大5本の練習スロットから成果を選び、最新結果 / ベスト結果 / 保存済み録音を見る。
 
 
+## Mobile UI/UX implementation
+- Quiet Speaking Studioの最初の実装単位はReviewのみ。保存済みfocus配列 → nextStep全文 → 同じ台本のRecord / Listen → score / weak words / transcript / 詳細 → Progressの順に表示。外側shellのstyleもReview表示時だけ適用し、BFF / DTO / 保存契約は維持。
+- Human visual acceptance / commit / push前。長いnextStep＋文字拡大時のCTA到達距離、実機Dynamic Type / VoiceOver / safe area / 音声 / 遷移時scroll・focusはP2継続。他画面へ自動展開しない。
+
 ## Workspace guard
 - 正しい working directory / git root は `/Users/karasawatakahiro/Developer/native-minute`。`/Users/karasawatakahiro/Desktop/native-minute` と隔離済み Desktop checkout は編集・参照しない。
 - `npm run check:workspace` を追加し、cwd / git root / Desktop 側 checkout の存在を検査して、混線時は non-zero で停止する。

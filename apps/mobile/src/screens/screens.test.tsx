@@ -70,7 +70,7 @@ describe("mobile practice static screens", () => {
   });
 
   it("renders only persisted review fields, including word-level feedback and coach", () => {
-    const html = renderToStaticMarkup(<ReviewContent review={review} />);
+    const html = renderToStaticMarkup(<ReviewContent review={review} onNavigate={() => undefined} />);
     expect(html).toContain("This is the persisted transcript.");
     expect(html).toContain("Accuracy");
     expect(html).toContain("native");

@@ -42,13 +42,13 @@ export function ScreenHeading({
   title,
   detail
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   detail?: string;
 }) {
   return (
     <header className="practice-heading">
-      <p className="eyebrow">{eyebrow}</p>
+      {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
       <h1>{title}</h1>
       {detail ? <p>{detail}</p> : null}
     </header>

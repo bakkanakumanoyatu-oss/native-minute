@@ -14,73 +14,108 @@ type ReviewState =
 
 function Score({ label, value }: { label: string; value: number }) {
   return (
-    <div className="score-tile">
-      <span>{label}</span>
-      <strong>{value}</strong>
+    <div>
+      <dt lang="en">{label}</dt>
+      <dd>{value}</dd>
     </div>
   );
 }
 
-export function ReviewContent({ review }: { review: MobileReview }) {
+export function ReviewContent({
+  review,
+  onNavigate
+}: {
+  review: MobileReview;
+  onNavigate: (route: PracticeRoute) => void;
+}) {
   return (
     <>
-      <div className="review-date">{formatReviewDate(review.reviewedAt ?? review.createdAt)}</div>
-      <section className="overall-score" aria-label="総合スコア">
-        <span>Overall</span>
-        <strong>{review.evaluation.score}</strong>
-      </section>
-      <div className="score-grid">
-        <Score label="Accuracy" value={review.evaluation.accuracyScore} />
-        <Score label="Fluency" value={review.evaluation.fluencyScore} />
-        <Score label="Rhythm" value={review.evaluation.rhythmScore} />
-      </div>
-
-      <section className="result-section">
-        <p className="eyebrow">Transcript</p>
-        <h2>今回の文字起こし</h2>
-        <p className="transcript-copy">{review.transcriptText || "文字起こしは保存されませんでした。"}</p>
-      </section>
-
-      <section className="result-section">
-        <p className="eyebrow">Evaluation</p>
-        <h2>評価</h2>
-        <p>{review.evaluation.summaryJa}</p>
-        {review.evaluation.strengthsJa.length > 0 ? (
-          <ul>
-            {review.evaluation.strengthsJa.map((strength, index) => <li key={`${index}-${strength}`}>{strength}</li>)}
+      <p className="review-date">{formatReviewDate(review.reviewedAt ?? review.createdAt)}</p>
+      <section className="review-next-step" aria-labelledby="review-next-title">
+        <h2 id="review-next-title">次の一歩</h2>
+        {review.coach.focusWords.length > 0 ? (
+          <ul className="review-focus" lang="en" aria-label="次に意識する語">
+            {review.coach.focusWords.map((word, index) => (
+              <li key={`${index}-${word}`}>
+                {review.coach.focusWords.length === 2 && index === 1 ? (
+                  <span className="review-focus-separator" aria-hidden="true">/</span>
+                ) : null}
+                <span className="review-focus-word">{word}</span>
+              </li>
+            ))}
           </ul>
         ) : null}
+        <p className="review-advice">{review.coach.nextStepJa}</p>
+        <button type="button" className="review-primary" onClick={() => onNavigate({ name: "record", scriptId: review.scriptId })}>
+          <span>次のTakeを録る</span><span className="review-arrow" aria-hidden="true">→</span>
+        </button>
+        <div className="review-listen">
+          <button type="button" className="review-text-action" onClick={() => onNavigate({ name: "listen", scriptId: review.scriptId })}>
+            お手本を聞き直す
+          </button>
+        </div>
       </section>
 
-      <section className="result-section">
-        <p className="eyebrow">Word feedback</p>
-        <h2>改善ワード</h2>
+      <section className="review-results" aria-labelledby="review-result-title">
+        <div className="review-result-top">
+          <h2 id="review-result-title">今回の結果</h2>
+          <p className="review-score" aria-label={`総合スコア ${review.evaluation.score} / 100`}>
+            <span className="review-score-value">{review.evaluation.score}</span>
+            <span className="review-meta">/ 100</span>
+          </p>
+        </div>
+        <dl className="review-metrics">
+          <Score label="Accuracy" value={review.evaluation.accuracyScore} />
+          <Score label="Fluency" value={review.evaluation.fluencyScore} />
+          <Score label="Rhythm" value={review.evaluation.rhythmScore} />
+        </dl>
+      </section>
+
+      <section className="review-section review-weak" aria-labelledby="review-weak-title">
+        <div className="review-result-top">
+          <h2 id="review-weak-title">改善ワード</h2>
+          {review.evaluation.weakWords.length > 0 ? <span className="review-meta">単語スコア</span> : null}
+        </div>
         {review.evaluation.weakWords.length > 0 ? (
-          <ul className="weak-word-list">
+          <ul className="review-weak-list">
             {review.evaluation.weakWords.map((item, index) => (
               <li key={`${index}-${item.word}`}>
-                <div><strong>{item.word}</strong><span>{item.score}</span></div>
+                <div className="review-weak-heading">
+                  <strong lang="en">{item.word}</strong>
+                  <span className="review-meta" aria-label={`単語スコア ${item.score}`}>{item.score}</span>
+                </div>
                 <p>{item.note}</p>
               </li>
             ))}
           </ul>
-        ) : <p>今回、優先して直す単語はありません。</p>}
+        ) : <p className="review-empty">今回、優先して直す単語はありません。</p>}
       </section>
 
-      <section className="coach-card">
-        <p className="eyebrow">Coach</p>
-        <h2>{review.coach.titleJa}</h2>
-        <p>{review.coach.summaryJa}</p>
-        {review.coach.bulletPointsJa.length > 0 ? (
-          <ul>{review.coach.bulletPointsJa.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul>
-        ) : null}
-        <strong className="next-step-label">次の一歩</strong>
-        <p>{review.coach.nextStepJa}</p>
-        {review.coach.focusWords.length > 0 ? (
-          <div className="focus-words" aria-label="練習する単語">
-            {review.coach.focusWords.map((word, index) => <span key={`${index}-${word}`}>{word}</span>)}
-          </div>
-        ) : null}
+      <section className="review-section review-transcript-section" aria-labelledby="review-transcript-title">
+        <h2 id="review-transcript-title" lang="en">Transcript</h2>
+        <p className="review-transcript" lang={review.transcriptText ? "en" : "ja"}>
+          {review.transcriptText || "文字起こしは保存されませんでした。"}
+        </p>
+      </section>
+
+      <section className="review-section review-feedback" aria-labelledby="review-feedback-title">
+        <h2 id="review-feedback-title">詳細feedback</h2>
+        <div className="review-feedback-block">
+          <h3>評価</h3>
+          <p>{review.evaluation.summaryJa}</p>
+          {review.evaluation.strengthsJa.length > 0 ? (
+            <ul>
+              {review.evaluation.strengthsJa.map((strength, index) => <li key={`${index}-${strength}`}>{strength}</li>)}
+            </ul>
+          ) : null}
+        </div>
+        <div className="review-feedback-block">
+          <h3>{review.coach.titleJa}</h3>
+          <p>{review.coach.summaryJa}</p>
+          {review.coach.bulletPointsJa.length > 0 ? (
+            <ul>{review.coach.bulletPointsJa.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}</ul>
+          ) : null}
+        </div>
       </section>
     </>
   );
@@ -135,18 +170,20 @@ export function ReviewScreen({
     : { kind: "error", error: { kind: "offline" } };
 
   return (
-    <section className="intro-card practice-card" aria-live="polite">
-      <ScreenHeading eyebrow="Review" title="今回のReview" detail="保存済みの評価とコーチだけを表示しています。" />
+    <section className="review-screen" aria-live="polite">
+      <ScreenHeading title="Review" />
       {visibleState.kind === "loading" ? <LoadingState label="Reviewを読み込んでいます…" /> : null}
       {visibleState.kind === "error" ? <RequestError error={visibleState.error} onRetry={reload} /> : null}
-      {visibleState.kind === "ready" ? <ReviewContent review={visibleState.review} /> : null}
-
-      <div className="stacked-actions">
-        <button type="button" disabled={visibleState.kind !== "ready"} onClick={() => onNavigate({ name: "record", scriptId })}>
-          2回目のTakeを録る
+      {visibleState.kind === "ready" ? (
+        <ReviewContent review={visibleState.review} onNavigate={onNavigate} />
+      ) : (
+        <button type="button" className="review-primary" disabled>
+          <span>次のTakeを録る</span><span className="review-arrow" aria-hidden="true">→</span>
         </button>
-        <button type="button" className="secondary-button" onClick={() => onNavigate({ name: "progress", scriptId })}>
-          Progressを見る
+      )}
+      <div className="review-progress">
+        <button type="button" className="review-text-action" onClick={() => onNavigate({ name: "progress", scriptId })}>
+          成長を見る
         </button>
       </div>
     </section>
