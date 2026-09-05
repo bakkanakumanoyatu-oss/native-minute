@@ -8,7 +8,7 @@ import type { MobileProgress, MobileReview, MobileScript } from "../practice/api
 import { ProgressContent } from "./ProgressScreen";
 import { ReviewContent } from "./ReviewScreen";
 import { formatListenMediaTime, getListenPrepareButtonLabel } from "./ListenScreen";
-import { ScriptsList } from "./ScriptsScreen";
+import { getScriptExcerpt, ScriptsList } from "./ScriptsScreen";
 import {
   navigateToAccountDeletion,
   navigateToVoiceDeletion,
@@ -77,8 +77,35 @@ describe("mobile practice static screens", () => {
     };
     const html = renderToStaticMarkup(<ScriptsList scripts={[script]} onNavigate={() => undefined} />);
     expect(html).toContain("Morning update");
-    expect(html).toContain("お手本を聴く");
+    expect(html).toContain("練習する");
     expect(html).toContain("録音する");
+  });
+
+  it("makes a display excerpt without changing the practice content", () => {
+    expect(getScriptExcerpt("  A quiet morning.  ")).toBe("A quiet morning.");
+    expect(getScriptExcerpt("A quiet morning. The full script continues here.")).toBe("A quiet morning\u2060…");
+    const content = `${Array.from({ length: 30 }, (_, index) => `word${index + 1}`).join(" ")}.`;
+    expect(getScriptExcerpt(content)).toBe(`${Array.from({ length: 24 }, (_, index) => `word${index + 1}`).join(" ")}\u2060…`);
+    expect(content).toContain("word30.");
+    expect(getScriptExcerpt("A quiet morning... The script continues.")).toBe("A quiet morning\u2060…");
+    expect(getScriptExcerpt(" \n ")).toBe("");
+  });
+
+  it("keeps all five scripts in server order with their own metadata and excerpt", () => {
+    const scripts = ["Zulu", "Alpha", "Morning", "Evening", "Afternoon"].map((title, index) => ({
+      id: `script-${index}`,
+      title,
+      content: `Opening for ${title}. The rest stays available in practice.`,
+      targetSeconds: 60,
+      locale: "en-US",
+      createdAt: "2026-08-13T00:00:00.000Z",
+      updatedAt: "2026-08-13T00:00:00.000Z"
+    }));
+    const html = renderToStaticMarkup(<ScriptsList scripts={scripts} onNavigate={() => undefined} />);
+    expect([...html.matchAll(/<h2[^>]*>(.*?)<\/h2>/g)].map((match) => match[1])).toEqual(scripts.map((script) => script.title));
+    expect(html.match(/目標 60秒/g)).toHaveLength(5);
+    expect(html).not.toContain("The rest stays available in practice.");
+    expect(scripts.every((script) => script.content.endsWith("The rest stays available in practice."))).toBe(true);
   });
 
   it("renders only persisted review fields, including word-level feedback and coach", () => {

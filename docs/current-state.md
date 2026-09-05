@@ -12,6 +12,8 @@
 
 
 ## Mobile UI/UX implementation
+- Scripts unitは `FRONTEND_IMPLEMENTED=YES / BROWSER_VERIFIED=YES`（local mockのみ）、Human確認・commit / push前。server順の等価divider行にtitle → locale / 目標時間 → 最大24語の表示専用抜粋 → Listenへの「練習する」/ Record直行を配置。既存create / 150語超warning / 保存後Listen / safe `script_limit_reached` / retryを維持し、shell調整もScripts表示時だけ。
+- Scriptsは `DEVICE_ACCEPTANCE_PENDING=YES`。428 / 320px・文字100 / 200%の56状態・表示条件、操作・回復 / Review・Record・Listen CSS回帰23条件、2 / 4本の補足4条件をlocalで確認。実iPhone / Dynamic Type / VoiceOver / HumanのListen開始とRecord直行の理解 / 実データ5本の使用感はP2継続。Progress等へ自動展開しない。
 - Quiet Speaking StudioのReview unitはcommit / push済み。保存済みfocus配列 → nextStep全文 → 同じ台本のRecord / Listen → score / weak words / transcript / 詳細 → Progressの順に表示。外側shellのstyleもReview表示時だけ適用し、BFF / DTO / 保存契約は維持。
 - Reviewの長いnextStep＋文字拡大時のCTA到達距離、実機Dynamic Type / VoiceOver / safe area / 音声 / 遷移時scroll・focusはP2継続。
 - Record unitは `FRONTEND_IMPLEMENTED=YES / BROWSER_VERIFIED=YES`（local mockのみ）。before / recording / after未確認・確認済み / upload済み評価retryを、本文scrollと独立した下端dockへ配置。shell調整はRecord表示時だけ。native preview・手動確認gate・stable Take・upload再利用・conflict時の保存済みReview回復を維持。

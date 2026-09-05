@@ -12,6 +12,16 @@ type ScriptsLoadState =
   | { kind: "ready"; scripts: MobileScript[] }
   | { kind: "error"; error: PracticeRequestFailure };
 
+// Display-only excerpt. The server-owned content remains intact for practice.
+export function getScriptExcerpt(content: string) {
+  const text = content.trim().replace(/\s+/g, " ");
+  const firstSentence = text.match(/^.*?[.!?]["'”’]?(?=\s|$)/u)?.[0] ?? text;
+  const excerpt = firstSentence.split(" ").slice(0, 24).join(" ");
+  return excerpt.length < text.length
+    ? `${excerpt.replace(/[.,;:!?…\s]+$/u, "")}\u2060…`
+    : excerpt;
+}
+
 export function ScriptsList({
   scripts,
   onNavigate
@@ -19,31 +29,30 @@ export function ScriptsList({
   scripts: MobileScript[];
   onNavigate: (route: PracticeRoute) => void;
 }) {
-  if (scripts.length === 0) {
-    return (
-      <EmptyState title="保存済みの台本はまだありません">
-        <p>下のフォームで、今日練習する約1分の英語台本を作成してください。</p>
-      </EmptyState>
-    );
-  }
-
   return (
-    <ul className="script-list practice-script-list">
+    <ul className="script-list practice-script-list" aria-label="保存済みの台本">
       {scripts.map((script) => (
         <li key={script.id}>
+          <h2 lang={script.locale}>{script.title}</h2>
           <div className="script-meta">
-            <span>{script.locale}</span>
-            <span>{script.targetSeconds}秒</span>
+            <span>目標 {script.targetSeconds}秒</span>
+            <span aria-hidden="true">·</span>
+            <span lang={script.locale}>{script.locale}</span>
           </div>
-          <h2>{script.title}</h2>
-          <p>{script.content}</p>
-          <div className="button-row">
-            <button type="button" onClick={() => onNavigate({ name: "listen", scriptId: script.id })}>
-              お手本を聴く
+          <p className="script-excerpt" lang={script.locale}>{getScriptExcerpt(script.content)}</p>
+          <div className="scripts-row-actions">
+            <button
+              type="button"
+              className="scripts-text-action scripts-practice-action"
+              aria-label={`${script.title}のお手本を聴いて練習する`}
+              onClick={() => onNavigate({ name: "listen", scriptId: script.id })}
+            >
+              <span>練習する</span><span aria-hidden="true">→</span>
             </button>
             <button
               type="button"
-              className="secondary-button"
+              className="scripts-text-action scripts-record-action"
+              aria-label={`${script.title}を録音する`}
               onClick={() => onNavigate({ name: "record", scriptId: script.id })}
             >
               録音する
@@ -75,6 +84,13 @@ export function ScriptsScreen({
     | { kind: "error"; error: PracticeRequestFailure }
   >({ kind: "idle" });
   const createGeneration = useRef(0);
+  const titleInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showCreate) {
+      titleInput.current?.focus();
+    }
+  }, [showCreate]);
 
   useEffect(() => () => {
     createGeneration.current += 1;
@@ -155,24 +171,32 @@ export function ScriptsScreen({
   const visibleState: ScriptsLoadState = isOnline
     ? state
     : { kind: "error", error: { kind: "offline" } };
+  const isEmpty = visibleState.kind === "ready" && visibleState.scripts.length === 0;
 
   return (
-    <section className="intro-card practice-card" aria-live="polite">
-      <ScreenHeading
-        eyebrow="Scripts"
-        title="自分の1分台本"
-        detail="台本を選び、お手本を聴いてから今日のTakeを録ります。"
-      />
-
-      <button type="button" className="secondary-button compact-button" onClick={() => setShowCreate((value) => !value)}>
-        {showCreate ? "作成フォームを閉じる" : "新しい台本を作る"}
-      </button>
+    <section className="scripts-screen" lang="ja" aria-label="Scripts">
+      <div className="scripts-heading">
+        <ScreenHeading title="Scripts" />
+        {!isEmpty || showCreate ? (
+          <button
+            type="button"
+            className="scripts-text-action scripts-create-action"
+            aria-expanded={showCreate}
+            aria-controls="script-create-form"
+            onClick={() => setShowCreate((value) => !value)}
+          >
+            {showCreate ? "フォームを閉じる" : "台本を作る"}
+          </button>
+        ) : null}
+      </div>
+      <p className="scripts-intro">練習する1分を選ぶ</p>
 
       {showCreate ? (
-        <form className="script-create-form" onSubmit={(event) => void submitCreate(event)}>
+        <form id="script-create-form" className="script-create-form" onSubmit={(event) => void submitCreate(event)}>
           <label htmlFor="script-title">タイトル</label>
           <input
             id="script-title"
+            ref={titleInput}
             value={title}
             maxLength={120}
             onChange={(event) => setTitle(event.target.value)}
@@ -182,6 +206,8 @@ export function ScriptsScreen({
           <label htmlFor="script-content">英語台本</label>
           <textarea
             id="script-content"
+            lang="en-US"
+            aria-describedby="script-length-note"
             value={content}
             maxLength={4_000}
             rows={8}
@@ -189,19 +215,50 @@ export function ScriptsScreen({
             placeholder="Write the English script you want to practice."
             required
           />
-          <p className={wordCount > 150 ? "length-note length-warning" : "length-note"}>
+          <p id="script-length-note" className={wordCount > 150 ? "length-note length-warning" : "length-note"}>
             {wordCount} words · 目標60秒{wordCount > 150 ? "（長めの可能性があります）" : ""}
           </p>
-          {createState.kind === "error" ? <RequestError error={createState.error} /> : null}
-          <button type="submit" disabled={createState.kind === "submitting"}>
+          {createState.kind === "error" ? (
+            createState.error.kind === "conflict" && createState.error.reasonCode === "script_limit_reached" ? (
+              <div className="auth-error" role="alert">
+                <p>台本の保存上限に達しています。</p>
+                <p>保存済みの台本から練習を続けられます。</p>
+              </div>
+            ) : <RequestError error={createState.error} />
+          ) : null}
+          <button className="scripts-primary" type="submit" disabled={createState.kind === "submitting"}>
             {createState.kind === "submitting" ? "保存中…" : "台本を保存して聴く"}
           </button>
         </form>
       ) : null}
 
-      {visibleState.kind === "loading" ? <LoadingState label="台本を読み込んでいます…" /> : null}
-      {visibleState.kind === "error" ? <RequestError error={visibleState.error} onRetry={reload} /> : null}
-      {visibleState.kind === "ready" ? <ScriptsList scripts={visibleState.scripts} onNavigate={onNavigate} /> : null}
+      {visibleState.kind === "loading" ? (
+        <div className="scripts-state">
+          <LoadingState label="台本を読み込んでいます…" />
+          <div className="scripts-placeholder" aria-hidden="true"><span /><span /><span /></div>
+        </div>
+      ) : null}
+      {visibleState.kind === "error" ? (
+        <div className="scripts-state scripts-error">
+          <h2>台本一覧を読み込めませんでした</h2>
+          <RequestError error={visibleState.error} onRetry={reload} />
+        </div>
+      ) : null}
+      {isEmpty && !showCreate ? (
+        <EmptyState title="まだ台本がありません">
+          <p>まず、練習する約1分の台本を作りましょう。</p>
+          <button
+            type="button"
+            className="scripts-text-action scripts-practice-action"
+            aria-expanded={showCreate}
+            aria-controls="script-create-form"
+            onClick={() => setShowCreate(true)}
+          >
+            <span>台本を作る</span><span aria-hidden="true">→</span>
+          </button>
+        </EmptyState>
+      ) : null}
+      {visibleState.kind === "ready" && !isEmpty ? <ScriptsList scripts={visibleState.scripts} onNavigate={onNavigate} /> : null}
     </section>
   );
 }
