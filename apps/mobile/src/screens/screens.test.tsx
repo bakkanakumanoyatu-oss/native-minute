@@ -7,7 +7,7 @@ import {
 import type { MobileProgress, MobileReview, MobileScript } from "../practice/api";
 import { ProgressContent } from "./ProgressScreen";
 import { ReviewContent } from "./ReviewScreen";
-import { getListenPrepareButtonLabel } from "./ListenScreen";
+import { formatListenMediaTime, getListenPrepareButtonLabel } from "./ListenScreen";
 import { ScriptsList } from "./ScriptsScreen";
 import {
   navigateToAccountDeletion,
@@ -48,9 +48,21 @@ const review: MobileReview = {
 };
 
 describe("mobile practice static screens", () => {
-  it("keeps a backgrounded reference audio visibly cached instead of looking ungenerated", () => {
-    expect(getListenPrepareButtonLabel("idle", true)).toBe("保存済みのお手本を再準備");
-    expect(getListenPrepareButtonLabel("idle", false)).toBe("お手本を準備");
+  it("shows prepare only when the local reference audio needs it", () => {
+    expect(getListenPrepareButtonLabel("idle", true)).toBe("再準備する");
+    expect(getListenPrepareButtonLabel("idle", false)).toBe("お手本を準備する");
+    expect(getListenPrepareButtonLabel("loading", true)).toBe("お手本を準備中…");
+    expect(getListenPrepareButtonLabel("error", true)).toBe("再準備する");
+    expect(getListenPrepareButtonLabel("ready", true)).toBeNull();
+    expect(getListenPrepareButtonLabel("ready", false)).toBeNull();
+  });
+
+  it("uses measured media time and leaves unknown duration explicit", () => {
+    expect(formatListenMediaTime(0)).toBe("0:00");
+    expect(formatListenMediaTime(62.8)).toBe("1:02");
+    for (const unknown of [NaN, Infinity, -1]) {
+      expect(formatListenMediaTime(unknown)).toBe("—:—");
+    }
   });
 
   it("renders script selection actions", () => {

@@ -16,6 +16,8 @@
 - Reviewの長いnextStep＋文字拡大時のCTA到達距離、実機Dynamic Type / VoiceOver / safe area / 音声 / 遷移時scroll・focusはP2継続。
 - Record unitは `FRONTEND_IMPLEMENTED=YES / BROWSER_VERIFIED=YES`（local mockのみ）。before / recording / after未確認・確認済み / upload済み評価retryを、本文scrollと独立した下端dockへ配置。shell調整はRecord表示時だけ。native preview・手動確認gate・stable Take・upload再利用・conflict時の保存済みReview回復を維持。
 - Recordは `DEVICE_ACCEPTANCE_PENDING=YES`、Human確認・commit / push前。428 / 320px・文字200%で操作常時アクセスと本文最終行を確認したが、拡大時のdock高、短いviewport、実iPhone safe area / Dynamic Type / VoiceOver / マイク・再生 / interruption・復帰 / 遷移時scroll / usabilityはP2継続。Listen等へ自動展開しない。
+- Listen unitは `FRONTEND_IMPLEMENTED=YES / BROWSER_VERIFIED=YES`（local mockのみ）、Human確認・commit / push前。Recordのshell / 本文 / dock stylesを再利用し、初回準備 → 実mediaの再生・一時停止 → Record、解放後の再準備・voice setup・error回復を接続。通常readyに再取得操作を常設せず、全文再生gateは追加しない。既存request / audioId / Bearer取得 / cache判定 / object URL・世代管理は維持。
+- Listenは `DEVICE_ACCEPTANCE_PENDING=YES`。428 / 320px・文字100 / 200%の主要28条件、追加回復・media動作・Record / Review CSS回帰32条件をlocalで確認。実iPhone safe area・短いviewport・Dynamic Type・VoiceOver・実音声・Bluetooth / speaker・interruption・background / foreground・遷移時scroll / state・Human usabilityはP2継続。Scripts等へ自動展開しない。
 
 ## Workspace guard
 - 正しい working directory / git root は `/Users/karasawatakahiro/Developer/native-minute`。`/Users/karasawatakahiro/Desktop/native-minute` と隔離済み Desktop checkout は編集・参照しない。

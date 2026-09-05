@@ -3,7 +3,7 @@ import { AudioObjectUrl } from "../audio/object-url";
 import { addAppStateChangeListener } from "../lib/app-lifecycle";
 import type { PracticeApi, MobileScript, PracticeRequestFailure } from "../practice/api";
 import type { PracticeRoute } from "../practice/routes";
-import { LoadingState, RequestError, ScreenHeading } from "./ScreenParts";
+import { LoadingState, RequestError, ScreenHeading, formatSeconds } from "./ScreenParts";
 
 type ScriptState =
   | { kind: "loading" }
@@ -25,11 +25,17 @@ export function getListenPrepareButtonLabel(
   }
 
   if (state === "ready") {
-    return "お手本を再取得";
+    return null;
   }
 
-  return hasPreparedReferenceAudio ? "保存済みのお手本を再準備" : "お手本を準備";
+  return hasPreparedReferenceAudio ? "再準備する" : "お手本を準備する";
 }
+
+export function formatListenMediaTime(seconds: number) {
+  return Number.isFinite(seconds) && seconds >= 0 ? formatSeconds(seconds) : "—:—";
+}
+
+const EMPTY_PLAYBACK = { playing: false, waiting: false, currentTime: 0, duration: NaN };
 
 function releaseAudioElement(element: HTMLAudioElement | null) {
   if (!element) {
@@ -59,15 +65,21 @@ export function ListenScreen({
   const [scriptState, setScriptState] = useState<ScriptState>({ kind: "loading" });
   const [listenState, setListenState] = useState<ListenState>({ kind: "idle" });
   const [hasPreparedReferenceAudio, setHasPreparedReferenceAudio] = useState(false);
+  const [playback, setPlayback] = useState(EMPTY_PLAYBACK);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [objectUrl] = useState(() => new AudioObjectUrl());
   const audioElement = useRef<HTMLAudioElement | null>(null);
   const retainedAudioElement = useRef<HTMLAudioElement | null>(null);
   const operationGeneration = useRef(0);
   const operationInFlight = useRef(false);
+  const playbackRequest = useRef(0);
   const releaseCurrentAudio = useCallback(() => {
+    playbackRequest.current += 1;
     releaseAudioElement(audioElement.current ?? retainedAudioElement.current);
     retainedAudioElement.current = null;
+    setPlayback(EMPTY_PLAYBACK);
+    setPlaybackError(null);
   }, []);
 
   const reloadScript = useCallback(() => {
@@ -188,57 +200,133 @@ export function ListenScreen({
     setListenState({ kind: "ready", url, cached: requested.cached });
   }
 
+  function syncPlayback(element: HTMLAudioElement, waiting = false) {
+    if (element !== audioElement.current || !objectUrl.value) {
+      return;
+    }
+    setPlayback({
+      playing: !element.paused && !element.ended,
+      waiting,
+      currentTime: element.currentTime,
+      duration: element.duration
+    });
+  }
+
+  async function togglePlayback() {
+    const element = audioElement.current;
+    if (!element || listenState.kind !== "ready") {
+      return;
+    }
+    const request = ++playbackRequest.current;
+    setPlaybackError(null);
+    if (!element.paused) {
+      element.pause();
+      return;
+    }
+    try {
+      await element.play();
+    } catch {
+      if (request === playbackRequest.current && element === audioElement.current && objectUrl.value) {
+        syncPlayback(element);
+        setPlaybackError("再生を開始できませんでした。もう一度、再生してください。");
+      }
+    }
+  }
+
+  function handlePlaybackError(element: HTMLAudioElement) {
+    if (element !== audioElement.current || !objectUrl.value) {
+      return;
+    }
+    releaseCurrentAudio();
+    objectUrl.clear();
+    setListenState({ kind: "idle" });
+    setPlaybackError("お手本音声を再生できませんでした。再準備してお試しください。");
+  }
+
   const visibleScriptState: ScriptState = isOnline
     ? scriptState
     : { kind: "error", error: { kind: "offline" } };
+  const voiceSetupRequired = listenState.kind === "error" &&
+    listenState.error.kind === "conflict" && listenState.error.reasonCode === "voice_setup_required";
+  const prepareLabel = getListenPrepareButtonLabel(listenState.kind, hasPreparedReferenceAudio);
+  const scriptIsLong = visibleScriptState.kind === "ready" &&
+    visibleScriptState.script.content.trim().split(/\s+/).length > 150;
 
   return (
-    <section className="intro-card practice-card" aria-live="polite">
-      <ScreenHeading eyebrow="Listen" title="お手本を聴く" detail="発音とリズムを一度まねしてから録音へ進みます。" />
+    <section className="listen-screen" lang="ja" aria-label="Listen">
+      <ScreenHeading title="Listen" />
 
-      {visibleScriptState.kind === "loading" ? <LoadingState label="台本を読み込んでいます…" /> : null}
-      {visibleScriptState.kind === "error" ? <RequestError error={visibleScriptState.error} onRetry={reloadScript} /> : null}
-      {visibleScriptState.kind === "ready" ? (
-        <article className="script-reading-card">
-          <div className="script-meta"><span>{visibleScriptState.script.locale}</span><span>{visibleScriptState.script.targetSeconds}秒</span></div>
-          <h2>{visibleScriptState.script.title}</h2>
-          <p>{visibleScriptState.script.content}</p>
-        </article>
-      ) : null}
+      <div className="listen-script-scroll" role="region" aria-label="お手本の台本" tabIndex={0}>
+        {visibleScriptState.kind === "loading" ? <LoadingState label="台本を読み込んでいます…" /> : null}
+        {visibleScriptState.kind === "error" ? <RequestError error={visibleScriptState.error} onRetry={reloadScript} /> : null}
+        {visibleScriptState.kind === "ready" ? (
+          <article className="listen-script">
+            <h2 lang={visibleScriptState.script.locale}>{visibleScriptState.script.title}</h2>
+            <div className="listen-script-meta"><span>目標 {visibleScriptState.script.targetSeconds}秒</span><span>{visibleScriptState.script.locale}</span></div>
+            {scriptIsLong ? <p className="listen-length-note">目標時間には長めの可能性があります。</p> : null}
+            <p className="listen-script-text" lang={visibleScriptState.script.locale}>{visibleScriptState.script.content}</p>
+          </article>
+        ) : null}
+      </div>
 
-      {listenState.kind === "error" && listenState.error.kind === "conflict" && listenState.error.reasonCode === "voice_setup_required" ? (
-        <div className="auth-notice" role="status">
-          <strong>お手本ボイスの準備が必要です</strong>
-          <p>同意と短い声の録音を完了すると、この台本のお手本を準備できます。</p>
-          <button type="button" onClick={() => onNavigate({ name: "voice_setup", scriptId })}>お手本ボイスを準備する</button>
-        </div>
-      ) : null}
-      {listenState.kind === "error" && !(listenState.error.kind === "conflict" && listenState.error.reasonCode === "voice_setup_required") ? <RequestError error={listenState.error} onRetry={() => void prepareAudio()} /> : null}
-      {listenState.kind === "ready" ? (
-        <div className="audio-card">
-          <p className="eyebrow">Reference audio</p>
-          <audio ref={(element) => {
-            if (element) {
-              audioElement.current = element;
-              retainedAudioElement.current = element;
-            } else {
-              audioElement.current = null;
-            }
-          }} controls preload="metadata" src={listenState.url} />
-          <p>{listenState.cached ? "保存済みのお手本を再利用しました。" : "お手本の準備ができました。"}</p>
-        </div>
-      ) : null}
+      <div className="listen-control-dock" role="region" aria-label="お手本音声と録音への操作">
+        {voiceSetupRequired ? (
+          <div className="listen-notice" role="status">
+            <strong>お手本ボイスの準備が必要です</strong>
+            <p>同意と短い声の録音を完了すると、この台本のお手本を準備できます。</p>
+          </div>
+        ) : null}
+        {listenState.kind === "error" && !voiceSetupRequired ? <RequestError error={listenState.error} /> : null}
+        {playbackError ? <p className="listen-playback-error" role="alert">{playbackError}</p> : null}
+        {listenState.kind === "idle" && hasPreparedReferenceAudio ? <p className="listen-notice" role="status">保存済みのお手本を再準備</p> : null}
+        {listenState.kind === "loading" ? <span className="listen-sr-status" role="status">お手本を準備中…</span> : null}
 
-      <button
-        type="button"
-        onClick={() => void prepareAudio()}
-        disabled={listenState.kind === "loading" || visibleScriptState.kind !== "ready"}
-      >
-        {getListenPrepareButtonLabel(listenState.kind, hasPreparedReferenceAudio)}
-      </button>
-      <button type="button" className="secondary-button" disabled={visibleScriptState.kind !== "ready"} onClick={() => onNavigate({ name: "record", scriptId })}>
-        録音へ進む
-      </button>
+        {listenState.kind === "ready" ? (
+          <>
+            <audio ref={(element) => {
+              if (element) {
+                audioElement.current = element;
+                retainedAudioElement.current = element;
+              } else {
+                audioElement.current = null;
+              }
+            }} preload="metadata" src={listenState.url}
+              onLoadedMetadata={(event) => syncPlayback(event.currentTarget)}
+              onDurationChange={(event) => syncPlayback(event.currentTarget)}
+              onTimeUpdate={(event) => syncPlayback(event.currentTarget)}
+              onPlay={(event) => syncPlayback(event.currentTarget)}
+              onPlaying={(event) => syncPlayback(event.currentTarget)}
+              onPause={(event) => syncPlayback(event.currentTarget)}
+              onEnded={(event) => syncPlayback(event.currentTarget)}
+              onWaiting={(event) => syncPlayback(event.currentTarget, true)}
+              onCanPlay={(event) => syncPlayback(event.currentTarget)}
+              onError={(event) => handlePlaybackError(event.currentTarget)}
+            />
+            <div className="listen-player">
+              <div className="listen-audio-info">
+                <strong>お手本音声</strong>
+                <span className="listen-audio-time" aria-live="off">{formatListenMediaTime(playback.currentTime)} / {formatListenMediaTime(playback.duration)}</span>
+              </div>
+              <button type="button" className="listen-play" aria-label={playback.playing ? "お手本音声を一時停止" : "お手本音声を再生"} onClick={() => void togglePlayback()}>
+                <span className={playback.playing ? "listen-pause-icon" : "listen-play-icon"} aria-hidden="true" />
+                <span>{playback.playing ? "一時停止" : "再生"}</span>
+              </button>
+              <span className="listen-sr-status" role="status">{playback.waiting ? "音声の読み込みを待っています…" : playback.playing ? "再生中" : "再生できます"}</span>
+            </div>
+          </>
+        ) : null}
+
+        {voiceSetupRequired ? (
+          <button type="button" className="listen-primary" onClick={() => onNavigate({ name: "voice_setup", scriptId })}>お手本ボイスを準備する</button>
+        ) : prepareLabel ? (
+          <button type="button" className="listen-primary" onClick={() => void prepareAudio()} disabled={listenState.kind === "loading" || visibleScriptState.kind !== "ready"}>
+            {prepareLabel}
+          </button>
+        ) : null}
+        <button type="button" className={listenState.kind === "ready" ? "listen-primary" : "listen-text-action"} disabled={visibleScriptState.kind !== "ready"} onClick={() => onNavigate({ name: "record", scriptId })}>
+          録音へ進む
+        </button>
+      </div>
     </section>
   );
 }
