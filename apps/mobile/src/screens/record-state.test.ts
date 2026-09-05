@@ -1,9 +1,37 @@
 import { describe, expect, it } from "vitest";
 import {
   buildMobileEvaluationInput,
+  canRetryUploadedMobileEvaluation,
   canSubmitMobileTake,
   createStableMobileTakeId
 } from "./RecordScreen";
+import type { PracticeRequestFailure } from "../practice/api";
+
+describe("record evaluation retry presentation", () => {
+  it.each([
+    { kind: "server-error", status: 503 },
+    { kind: "timeout" },
+    { kind: "network-error" },
+    { kind: "rate-limited", retryAfterSeconds: 10 },
+    { kind: "invalid-response" }
+  ] satisfies PracticeRequestFailure[])("requires a retained upload for $kind", (error) => {
+    expect(canRetryUploadedMobileEvaluation(error, false)).toBe(false);
+    expect(canRetryUploadedMobileEvaluation(error, true)).toBe(true);
+  });
+
+  it.each([
+    { kind: "offline" },
+    { kind: "unauthorized", reasonCode: "session_expired" },
+    { kind: "forbidden", reasonCode: "consent_required" },
+    { kind: "not-found", reasonCode: "recording_not_found" },
+    { kind: "conflict", reasonCode: "evaluation_in_progress" },
+    { kind: "invalid-request", reasonCode: "recording_invalid" },
+    { kind: "payload-too-large", reasonCode: "recording_too_large" },
+    { kind: "unsupported-media-type", reasonCode: "recording_type_unsupported" }
+  ] satisfies PracticeRequestFailure[])("preserves separate recovery for $kind", (error) => {
+    expect(canRetryUploadedMobileEvaluation(error, true)).toBe(false);
+  });
+});
 
 describe("record take identity", () => {
   it("creates opaque UUID take identifiers before upload/evaluation retries", () => {

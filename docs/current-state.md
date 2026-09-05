@@ -12,8 +12,10 @@
 
 
 ## Mobile UI/UX implementation
-- Quiet Speaking Studioの最初の実装単位はReviewのみ。保存済みfocus配列 → nextStep全文 → 同じ台本のRecord / Listen → score / weak words / transcript / 詳細 → Progressの順に表示。外側shellのstyleもReview表示時だけ適用し、BFF / DTO / 保存契約は維持。
-- Human visual acceptance / commit / push前。長いnextStep＋文字拡大時のCTA到達距離、実機Dynamic Type / VoiceOver / safe area / 音声 / 遷移時scroll・focusはP2継続。他画面へ自動展開しない。
+- Quiet Speaking StudioのReview unitはcommit / push済み。保存済みfocus配列 → nextStep全文 → 同じ台本のRecord / Listen → score / weak words / transcript / 詳細 → Progressの順に表示。外側shellのstyleもReview表示時だけ適用し、BFF / DTO / 保存契約は維持。
+- Reviewの長いnextStep＋文字拡大時のCTA到達距離、実機Dynamic Type / VoiceOver / safe area / 音声 / 遷移時scroll・focusはP2継続。
+- Record unitは `FRONTEND_IMPLEMENTED=YES / BROWSER_VERIFIED=YES`（local mockのみ）。before / recording / after未確認・確認済み / upload済み評価retryを、本文scrollと独立した下端dockへ配置。shell調整はRecord表示時だけ。native preview・手動確認gate・stable Take・upload再利用・conflict時の保存済みReview回復を維持。
+- Recordは `DEVICE_ACCEPTANCE_PENDING=YES`、Human確認・commit / push前。428 / 320px・文字200%で操作常時アクセスと本文最終行を確認したが、拡大時のdock高、短いviewport、実iPhone safe area / Dynamic Type / VoiceOver / マイク・再生 / interruption・復帰 / 遷移時scroll / usabilityはP2継続。Listen等へ自動展開しない。
 
 ## Workspace guard
 - 正しい working directory / git root は `/Users/karasawatakahiro/Developer/native-minute`。`/Users/karasawatakahiro/Desktop/native-minute` と隔離済み Desktop checkout は編集・参照しない。

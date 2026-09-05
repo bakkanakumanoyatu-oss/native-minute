@@ -62,6 +62,21 @@ export function canSubmitMobileTake(
   );
 }
 
+// This presentation is only for transient evaluation failures with an upload
+// still retained by this mounted screen. Conflict recovery stays in submitTake.
+export function canRetryUploadedMobileEvaluation(
+  error: PracticeRequestFailure,
+  hasUploadedRecording: boolean
+) {
+  return hasUploadedRecording && (
+    error.kind === "server-error" ||
+    error.kind === "timeout" ||
+    error.kind === "network-error" ||
+    error.kind === "rate-limited" ||
+    error.kind === "invalid-response"
+  );
+}
+
 export function buildMobileEvaluationInput(
   scriptId: string,
   take: PreparedTake,
@@ -499,112 +514,142 @@ export function RecordScreen({
     : { kind: "error", error: { kind: "offline" } };
   const pronunciationConsentAccepted = pronunciationConsentState.kind === "ready" && pronunciationConsentState.status === "accepted";
 
+  const evaluationRetry = Boolean(preparedTake) && submitState.kind === "error" &&
+    canRetryUploadedMobileEvaluation(submitState.error, Boolean(uploadedRecording));
+  const scriptIsLong = visibleScriptState.kind === "ready" &&
+    visibleScriptState.script.content.trim().split(/\s+/).length > 150;
+
   return (
-    <section className="intro-card practice-card" aria-live="polite">
-      <ScreenHeading eyebrow="Record" title="今日のTakeを録る" detail="30〜60秒を目安に、語尾まで言い切ってください。" />
+    <section className="record-screen" lang="ja" aria-label="Record">
+      <ScreenHeading title="Record" />
 
-      {visibleScriptState.kind === "loading" ? <LoadingState label="台本を読み込んでいます…" /> : null}
-      {visibleScriptState.kind === "error" ? <RequestError error={visibleScriptState.error} onRetry={() => {
-        setScriptState({ kind: "loading" });
-        setScriptReloadKey((value) => value + 1);
-      }} /> : null}
-      {visibleScriptState.kind === "ready" ? (
-        <article className="script-reading-card compact-script">
-          <div className="script-meta"><span>{visibleScriptState.script.locale}</span><span>{visibleScriptState.script.targetSeconds}秒</span></div>
-          <h2>{visibleScriptState.script.title}</h2>
-          <p>{visibleScriptState.script.content}</p>
-        </article>
-      ) : null}
-
-      {pronunciationConsentState.kind === "loading" ? <LoadingState label="録音と発音評価への同意を確認しています…" /> : null}
-      {pronunciationConsentState.kind === "error" ? <RequestError error={pronunciationConsentState.error} onRetry={() => {
-        setPronunciationConsentState({ kind: "loading" });
-        void api.getPronunciationConsent().then((result) => {
-          setPronunciationConsentState(result.kind === "success" ? { kind: "ready", status: result.status } : { kind: "error", error: result });
-        });
-      }} /> : null}
-      {pronunciationConsentState.kind === "ready" && pronunciationConsentState.status !== "accepted" ? (
-        <div className="voice-setup-step" data-testid="mobile-pronunciation-consent">
-          <p>録音した音声を、文字起こし、発音評価、日本語フィードバック生成のために処理します。</p>
-          <p className="scope-note">録音した音声は、文字起こしと発音評価のため OpenAI と Azure で処理されます。</p>
-          {pronunciationConsentState.status === "withdrawn" ? <p className="scope-note">同意は撤回済みです。録音と新しい評価を再開するには、もう一度同意してください。</p> : null}
-          <div className="button-row">
-            <button type="button" onClick={() => void acceptPronunciationConsent()}>同意して録音へ進む</button>
-            <button type="button" className="secondary-button" onClick={() => onNavigate({ name: "listen", scriptId })}>同意しない</button>
+      <div className="record-script-scroll" role="region" aria-label="録音用の台本" tabIndex={0}>
+        {visibleScriptState.kind === "loading" ? <LoadingState label="台本を読み込んでいます…" /> : null}
+        {visibleScriptState.kind === "error" ? <RequestError error={visibleScriptState.error} onRetry={() => {
+          setScriptState({ kind: "loading" });
+          setScriptReloadKey((value) => value + 1);
+        }} /> : null}
+        {pronunciationConsentState.kind === "ready" && pronunciationConsentState.status !== "accepted" ? (
+          <div className="record-consent" id="record-consent-description" data-testid="mobile-pronunciation-consent">
+            <p>録音した音声を、文字起こし、発音評価、日本語フィードバック生成のために処理します。</p>
+            <p>録音した音声は、文字起こしと発音評価のため OpenAI と Azure で処理されます。</p>
+            {pronunciationConsentState.status === "withdrawn" ? <p>同意は撤回済みです。録音と新しい評価を再開するには、もう一度同意してください。</p> : null}
           </div>
-        </div>
-      ) : null}
-
-      {pronunciationConsentAccepted ? (
-        <>
-      <div className={recorderState.kind === "recording" ? "recording-console is-recording" : "recording-console"}>
-        <div className="recording-indicator" aria-hidden="true" />
-        <span>{recorderState.kind === "recording" ? "Recording" : normalizing ? "Preparing" : "Ready"}</span>
-        <strong>{formatSeconds(elapsedSeconds)}</strong>
-        <small>最大 {formatSeconds(MOBILE_RECORDING_MAX_SECONDS)}</small>
+        ) : null}
+        {pronunciationConsentAccepted && shortPrompt ? <p className="record-body-notice">{shortPrompt}</p> : null}
+        {pronunciationConsentAccepted && submitState.kind === "error" && !evaluationRetry ? <div className="record-body-notice"><RequestError error={submitState.error} /></div> : null}
+        {pronunciationConsentAccepted && (captureDiagnostic.audioTrackPresent || recorderState.kind === "error" || signalClassification) ? (
+          <details className="record-details">
+            <summary>録音の詳細</summary>
+            <p>audioTrackPresent: {captureDiagnostic.audioTrackPresent ? "yes" : "no"}</p>
+            <p>audioTrackLive: {captureDiagnostic.audioTrackLive ? "yes" : "no"}</p>
+            <p>audioTrackMuted: {captureDiagnostic.audioTrackMuted ? "yes" : "no"}</p>
+            <p>signalClassification: {signalClassification ?? "PENDING"}</p>
+            {preparedTake ? (
+              <>
+                <p>{(preparedTake.file.size / 1024).toFixed(0)} KB · mono 16-bit / 16kHz WAV</p>
+                <button type="button" className="record-text-action record-discard" onClick={cancelRecording} disabled={submitting}>このTakeを破棄</button>
+              </>
+            ) : null}
+          </details>
+        ) : null}
+        {evaluationRetry && submitState.kind === "error" ? (
+          <details className="record-details">
+            <summary>エラーの詳細</summary>
+            <RequestError error={submitState.error} />
+          </details>
+        ) : null}
+        {visibleScriptState.kind === "ready" ? (
+          <article className="record-script">
+            <h2 lang={visibleScriptState.script.locale}>{visibleScriptState.script.title}</h2>
+            <div className="record-script-meta"><span>目標 {visibleScriptState.script.targetSeconds}秒</span><span>{visibleScriptState.script.locale}</span></div>
+            {scriptIsLong ? <p className="record-length-note">目標時間には長めの可能性があります。</p> : null}
+            <p className="record-script-text" lang={visibleScriptState.script.locale}>{visibleScriptState.script.content}</p>
+          </article>
+        ) : null}
       </div>
 
-      {recorderState.kind === "error" ? <div className="auth-error" role="alert"><p>{RECORDER_ERROR_COPY[recorderState.reason]}</p></div> : null}
-      {localError ? <div className="auth-error" role="alert"><p>{localError}</p></div> : null}
-      {captureDiagnostic.audioTrackPresent || recorderState.kind === "error" || signalClassification ? (
-        <div className="recording-warning" role="status">
-          <p>Audio diagnostic</p>
-          <p>audioTrackPresent: {captureDiagnostic.audioTrackPresent ? "yes" : "no"}</p>
-          <p>audioTrackLive: {captureDiagnostic.audioTrackLive ? "yes" : "no"}</p>
-          <p>audioTrackMuted: {captureDiagnostic.audioTrackMuted ? "yes" : "no"}</p>
-          <p>signalClassification: {signalClassification ?? "PENDING"}</p>
-        </div>
-      ) : null}
-      {signalClassification === "LOW_SIGNAL" ? <div className="recording-warning" role="status"><p>音声が小さめです。プレビューで声が聞こえることを確認してください。</p></div> : null}
-      {shortPrompt ? <div className="recording-warning" role="status"><p>{shortPrompt}</p></div> : null}
-      {submitState.kind === "error" ? <RequestError error={submitState.error} onRetry={() => void submitTake()} retryLabel="同じTakeで再試行" /> : null}
+      <div className="record-control-dock" role="region" aria-label="録音の操作">
+        {pronunciationConsentState.kind === "loading" ? <LoadingState label="録音と発音評価への同意を確認しています…" /> : null}
+        {pronunciationConsentState.kind === "error" ? <RequestError error={pronunciationConsentState.error} onRetry={() => {
+          setPronunciationConsentState({ kind: "loading" });
+          void api.getPronunciationConsent().then((result) => {
+            setPronunciationConsentState(result.kind === "success" ? { kind: "ready", status: result.status } : { kind: "error", error: result });
+          });
+        }} /> : null}
+        {pronunciationConsentState.kind === "ready" && pronunciationConsentState.status !== "accepted" ? (
+          <div className="record-consent-actions">
+            <button type="button" className="record-primary" aria-describedby="record-consent-description" onClick={() => void acceptPronunciationConsent()}>同意して録音へ進む</button>
+            <button type="button" className="record-text-action" onClick={() => onNavigate({ name: "listen", scriptId })}>同意しない</button>
+          </div>
+        ) : null}
 
-      {previewUrl && preparedTake ? (
-        <div className="audio-card">
-          <p className="eyebrow">Your take</p>
-          <audio ref={(element) => {
-            if (element) {
-              previewElement.current = element;
-              retainedPreviewElement.current = element;
-            } else {
-              previewElement.current = null;
-            }
-          }} controls preload="metadata" src={previewUrl} />
-          <p>{formatSeconds(preparedTake.durationSeconds)} · {(preparedTake.file.size / 1024).toFixed(0)} KB · mono 16-bit / 16kHz WAV</p>
-          <label>
-            <input
-              type="checkbox"
-              checked={previewConfirmed}
-              onChange={(event) => setPreviewConfirmed(event.currentTarget.checked)}
-            />
-            プレビューで自分の声が聞こえました
-          </label>
-        </div>
-      ) : null}
+        {pronunciationConsentAccepted ? (
+          <>
+            {recorderState.kind === "error" ? <div className="auth-error" role="alert"><p>{RECORDER_ERROR_COPY[recorderState.reason]}</p></div> : null}
+            {localError ? <div className="auth-error" role="alert"><p>{localError}</p></div> : null}
+            {signalClassification === "LOW_SIGNAL" ? <p className="record-notice" role="status">音声が小さめです。</p> : null}
+            {shortPrompt ? <p className="record-notice" role="status">短めの録音です。録り直しをおすすめします。</p> : null}
+            {submitState.kind === "error" ? (
+              evaluationRetry ? (
+                <div className="record-retry-message" role="alert">
+                  <p className="record-error-title">評価を完了できませんでした</p>
+                  <p>この画面の録音です。</p>
+                </div>
+              ) : (
+                <p className="record-error-title" role="alert">{!uploadedRecording ? "録音の送信を完了できませんでした" : submitState.error.kind === "conflict" && submitState.error.reasonCode === "evaluation_in_progress" ? "同じTakeを評価中です" : "評価を完了できませんでした"}</p>
+              )
+            ) : null}
 
-      {recorderState.kind === "recording" ? (
-        <div className="button-row">
-          <button type="button" onClick={() => recorder.current?.stop()}>停止</button>
-          <button type="button" className="danger-button" onClick={cancelRecording}>キャンセル</button>
-        </div>
-      ) : (
-        <button type="button" onClick={() => void startRecording()} disabled={busy || submitting || visibleScriptState.kind !== "ready"}>
-          {recorderState.kind === "requesting-permission" ? "マイクを準備中…" : normalizing ? "音声を整えています…" : preparedTake ? "録り直す" : "録音を開始"}
-        </button>
-      )}
+            {previewUrl && preparedTake ? (
+              <div className="record-preview">
+                <div className="record-preview-heading"><strong>自分の録音</strong><span>{formatSeconds(preparedTake.durationSeconds)}</span></div>
+                <audio ref={(element) => {
+                  if (element) {
+                    previewElement.current = element;
+                    retainedPreviewElement.current = element;
+                  } else {
+                    previewElement.current = null;
+                  }
+                }} aria-label="自分の録音を再生" controls preload="metadata" src={previewUrl} />
+                {!evaluationRetry ? <p id="record-preview-help">再生して、自分の声を確認してください。</p> : null}
+                <label className="record-confirmation">
+                  <input
+                    type="checkbox"
+                    checked={previewConfirmed}
+                    aria-describedby={evaluationRetry ? undefined : "record-preview-help"}
+                    onChange={(event) => setPreviewConfirmed(event.currentTarget.checked)}
+                  />
+                  <span>録音を確認した</span>
+                </label>
+              </div>
+            ) : null}
 
-      {preparedTake ? (
-        <>
-          <button type="button" onClick={() => void submitTake()} disabled={busy || submitting || !canSubmitMobileTake(preparedTake, previewConfirmed)}>
-            {submitState.kind === "uploading" ? "録音を保存中…" : submitState.kind === "evaluating" ? "評価中…" : uploadedRecording ? "評価を再試行" : "このTakeを評価"}
-          </button>
-          <button type="button" className="text-button full-width-button" onClick={cancelRecording} disabled={submitting}>
-            このTakeを削除
-          </button>
-        </>
-      ) : null}
-        </>
-      ) : null}
+            {recorderState.kind === "recording" ? (
+              <>
+                <div className="record-status">
+                  <strong role="status"><span className="record-dot" aria-hidden="true" />録音中</strong>
+                  <span className="record-clock" aria-live="off">{formatSeconds(elapsedSeconds)} <span> / 最大 {formatSeconds(MOBILE_RECORDING_MAX_SECONDS)}</span></span>
+                </div>
+                <button type="button" className="record-primary" onClick={() => recorder.current?.stop()}><span className="record-stop-icon" aria-hidden="true" />停止</button>
+                <button type="button" className="record-text-action" onClick={cancelRecording}>キャンセル</button>
+              </>
+            ) : preparedTake ? (
+              <>
+                <button type="button" className="record-primary" aria-label={submitState.kind === "uploading" ? "録音を保存中…" : submitState.kind === "evaluating" ? "評価中…" : evaluationRetry ? "同じ録音で評価を再試行" : "この録音で評価する"} onClick={() => void submitTake()} disabled={busy || submitting || !canSubmitMobileTake(preparedTake, previewConfirmed)}>
+                  {submitState.kind === "uploading" ? "録音を保存中…" : submitState.kind === "evaluating" ? "評価中…" : evaluationRetry ? <span><span className="record-action-phrase">同じ録音で</span><span className="record-action-phrase">評価を再試行</span></span> : <span><span className="record-action-phrase">この録音で</span><span className="record-action-phrase">評価する</span></span>}
+                </button>
+                <button type="button" className="record-text-action" onClick={() => void startRecording()} disabled={busy || submitting || visibleScriptState.kind !== "ready"}>録り直す</button>
+              </>
+            ) : (
+              <button type="button" className="record-primary" onClick={() => void startRecording()} disabled={busy || submitting || visibleScriptState.kind !== "ready"}>
+                {recorderState.kind === "requesting-permission" ? "マイクを準備中…" : recorderState.kind === "stopping" ? "録音を停止中…" : normalizing ? "音声を整えています…" : "録音する"}
+              </button>
+            )}
+            <span className="record-sr-status" role="status">{submitState.kind === "uploading" ? "録音を保存中…" : submitState.kind === "evaluating" ? "評価中…" : recorderState.kind === "requesting-permission" ? "マイクを準備中…" : recorderState.kind === "stopping" ? "録音を停止中…" : normalizing ? "音声を整えています…" : ""}</span>
+          </>
+        ) : null}
+      </div>
     </section>
   );
 }
