@@ -2,6 +2,7 @@ import { z } from "zod";
 import { G5D4_SCHEMA_VERSIONS, g5d4FixtureBindingSchema } from "./g5d4-proof-contract.mjs";
 import {
   bindVerifiedLiveFixtureAuthority,
+  confirmLiveRecordingCheckpointFromTty,
   verifyLiveFixtureAuthority,
   loadLatestPrivateManifest
 } from "./g5d4-proof-private-state.mjs";
@@ -64,7 +65,11 @@ const checkpointEvidenceSchemas = Object.freeze({
     .object({
       fixtureARecordingPresent: z.literal(true),
       fixtureBRecordingPresent: z.literal(true),
-      recordingContract: z.enum(["consent_gated_web", "consent_gated_mobile"]),
+      // Procedure observations under HD-G5D4-RECORDING-ORIGIN-EVIDENCE-V1.
+      // These fields do not attest server execution or grant destructive access.
+      recordingContract: z.literal("consent_gated_web"),
+      humanCanonicalWebSuccessObserved: z.literal(true),
+      immediateReadOnlyReconciliationVerified: z.literal(true),
       directStorageBypassUsed: z.literal(false)
     })
     .strict(),
@@ -116,10 +121,17 @@ const ORDER = G5D4_FIXTURE_PREPARATION_STATES;
 
 // The verifier owns the reads and capability construction. Human checkpoint
 // observations alone never populate a live manifest or create authorization.
+// For A, then B: Human performs the canonical Web recording; this helper
+// immediately reconciles the exact candidate, displays its safe alias, obtains
+// live TTY confirmation, then binds both authorities in one generation.
 export async function bindVerifiedFixturePreparationAuthority(runDirectory, input) {
   if (arguments.length !== 2) throw new Error("fixture helper accepts no caller verification evidence");
   const binding = g5d4FixtureBindingSchema.parse(input);
   const receipt = await verifyLiveFixtureAuthority(runDirectory, binding);
+  if (binding.kind === "storage" && binding.target.bucket === "recordings") {
+    const checkpoint = await confirmLiveRecordingCheckpointFromTty(runDirectory, binding, receipt);
+    return bindVerifiedLiveFixtureAuthority(runDirectory, binding, receipt, checkpoint);
+  }
   return bindVerifiedLiveFixtureAuthority(runDirectory, binding, receipt);
 }
 
@@ -164,7 +176,7 @@ export function advanceFixturePreparation(currentState, checkpoint, evidence, op
     checkpoint === "normal_recordings_verified" &&
     (evidence.directStorageBypassUsed || !evidence.recordingContract.startsWith("consent_gated_"))
   ) {
-    throw new Error("canonical recording fixture must use the normal consent-gated Web/Mobile contract");
+    throw new Error("canonical recording fixture requires the Human consent-gated Web procedure");
   }
 
   const index = ORDER.indexOf(checkpoint);

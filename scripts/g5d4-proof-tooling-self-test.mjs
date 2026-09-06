@@ -21,6 +21,7 @@ import {
   G5D4_B_CONTROL_TABLE_CONTRACT,
   G5D4_CANONICAL_STAGING,
   G5D4_PROVENANCE,
+  G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS,
   G5D4_REQUIRED_MIGRATIONS,
   G5D4_STORAGE_BUCKETS,
   G5D4_WRITER_INTENT_KINDS,
@@ -35,6 +36,9 @@ import {
 } from "./g5d4-proof-contract.mjs";
 import {
   G5D4_CONFIRMATION_PHRASE,
+  G5D4_RECORDING_CONFIRMATION_PHRASE,
+  confirmLiveRecordingCheckpointFromTty,
+  createSelfTestRecordingCheckpoint,
   assertSecureRunDirectory,
   assertFixtureManifestComplete,
   bindFixtureManifestAuthority,
@@ -60,6 +64,7 @@ import {
   sealPrivateManifest
 } from "./g5d4-proof-private-state.mjs";
 import {
+  assertReadOnlyCollectorAdapters,
   buildBStableFingerprint,
   collectG5d4SelfTestReadOnlyEvidence,
   collectSelfTestBControlFingerprint,
@@ -375,10 +380,10 @@ function fixtureBindings(state) {
 }
 
 let isolatedModuleSequence = 0;
-async function createIsolatedVerificationModule(state, mutateObservations = () => {}, mutableReceipt = false) {
-  // Test-only module isolation replaces the private, unarmed reader factory.
+async function createIsolatedVerificationModule(state, mutateObservations = () => {}, mutableReceipt = false, humanOptions = {}) {
+  // Test-only source isolation replaces machine reads and the terminal input.
   // The optional external-key freeze exception is confined below. Production
-  // accepts neither option; validation, snapshot, bind and chain checks run unchanged.
+  // accepts no such options; validation, snapshot, bind and chain checks run unchanged.
   const observations = fixtureBindings(state).map((binding) => {
     const fixtureRole = binding.fixtureRole ?? "fixture_a";
     const userId = fixtureRole === "fixture_a" ? state.userA : state.userB;
@@ -397,7 +402,13 @@ async function createIsolatedVerificationModule(state, mutateObservations = () =
       method: "readStorageBinding", query: { ...owner, ...binding.target },
       result: { ...owner, ...binding.target, present: true, count: 1,
         dbLocator: { userId, ...binding.target, count: 1 },
-        recordingContract: binding.target.bucket === "recordings" ? "consent_gated_web" : null, directStorageBypassUsed: false }
+        recordingState: binding.target.bucket === "recordings" ? {
+          scriptId: "private-script", consentId: "private-consent", consentType: "pronunciation_processing",
+          consentStatus: "active", consentVersion: "2026-08-22.v1", writerIntentId: "private-writer",
+          writerKind: "recording_upload", writerStatus: "completed", writerOwnerId: userId,
+          writerScriptId: "private-script", writerBucket: binding.target.bucket, writerKey: binding.target.key,
+          storageObjectId: "private-object"
+        } : null }
     };
     return {
       method: "readDeletionRequest",
@@ -422,6 +433,24 @@ async function createIsolatedVerificationModule(state, mutateObservations = () =
       return result;
     }]));
   }`);
+  if (!humanOptions.realTty) {
+    const tty = /async function readRecordingPhraseFromLiveTty\(summary\) \{[\s\S]*?\n\}/;
+    if (!tty.test(source)) throw new Error("isolated recording TTY boundary missing");
+    source = source.replace(tty, `async function readRecordingPhraseFromLiveTty(summary) {
+      isolatedHumanPrompts.push(summary);
+      if (isolatedHumanState.duringPrompt) await isolatedHumanState.duringPrompt();
+      return isolatedHumanState.phrase;
+    }`);
+  }
+  // Reproduce the old machine-only bind in a source copy. Real production
+  // completion/seal and chain readers below must reject the resulting fixture.
+  if (humanOptions.legacyMachineOnly) {
+    source = source.replace(/function assertAcceptedRecordingVerification\(verified, manifest, binding, key\) \{[\s\S]*?\n\}/,
+      "function assertAcceptedRecordingVerification() {}");
+    const conjunction = /  let accepted = verified;[\s\S]*?  assertAcceptedRecordingVerification\(accepted, current, binding, key\);/;
+    if (!conjunction.test(source)) throw new Error("legacy conjunction test boundary missing");
+    source = source.replace(conjunction, "  const accepted = verified;\n  const checkpoints = new WeakMap();");
+  }
   // Defense-in-depth test only: remove external-key freezing in an isolated
   // instance. Snapshot construction/lookup/persistence remain unchanged.
   if (mutableReceipt) {
@@ -431,8 +460,12 @@ async function createIsolatedVerificationModule(state, mutateObservations = () =
   }
   source = source.replace('const MODULE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");', `const MODULE_ROOT = ${JSON.stringify(ROOT)};`)
     .replaceAll('"zod"', JSON.stringify(import.meta.resolve("zod")))
-    .replaceAll('"./g5d4-proof-contract.mjs"', JSON.stringify(new URL("./g5d4-proof-contract.mjs", import.meta.url).href));
-  source += `\nexport const isolatedReadCounts = {};\nexport const isolatedReadResults = [];\n// isolated instance ${++isolatedModuleSequence}\n`;
+    .replaceAll('"./g5d4-proof-contract.mjs"', JSON.stringify(new URL("./g5d4-proof-contract.mjs", import.meta.url).href))
+    .replaceAll('"./g5d4-live-read-only-adapters.mjs"', JSON.stringify(new URL("./g5d4-live-read-only-adapters.mjs", import.meta.url).href));
+  source += `\nexport const isolatedReadCounts = {};\nexport const isolatedReadResults = [];
+    export const isolatedHumanPrompts = [];
+    export const isolatedHumanState = { phrase: G5D4_RECORDING_CONFIRMATION_PHRASE };
+    // isolated instance ${++isolatedModuleSequence}\n`;
   const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
   const isolated = await import(moduleUrl);
   let helper = readFileSync(join(ROOT, "scripts/g5d4-fixture-prepare.mjs"), "utf8");
@@ -676,6 +709,8 @@ async function checkIncrementalManifest(state, trackRun) {
       if (binding.target.bucket === "recordings") {
         if (!await expectReject(() => bindVerifiedFixturePreparationAuthority(directory, binding, evidence))) return false;
         evidence.recordingContract = "consent_gated_web";
+        evidence.humanCanonicalWebSuccessObserved = true;
+        evidence.immediateReadOnlyReconciliationVerified = true;
         evidence.directStorageBypassUsed = false;
       }
       if (binding.fixtureRole === "fixture_b" && !await expectReject(() => bindFixtureManifestAuthority(directory, {
@@ -751,7 +786,7 @@ async function checkIncrementalManifest(state, trackRun) {
       ["consent_sample_material_verified", { fixtureAConsentSamplePresent: true, fixtureBConsentSamplePresent: true,
         personalMaterialExcluded: true }],
       ["normal_recordings_verified", { fixtureARecordingPresent: true, fixtureBRecordingPresent: true,
-        recordingContract: "consent_gated_web", directStorageBypassUsed: false }],
+        recordingContract: "consent_gated_web", humanCanonicalWebSuccessObserved: true, immediateReadOnlyReconciliationVerified: true, directStorageBypassUsed: false }],
       ["provider_awareness_verified", { disposableProviderResourceCountA: 1, disposableProviderResourceCountB: 1,
         humanProviderAwarenessObserved: true }],
       ["deletion_request_verified", { fixtureADeletionRequestCount: 1, fixtureARequestState: "confirmed", fixtureBDeletionRequestCount: 0 }],
@@ -975,7 +1010,7 @@ async function checkVerifiedBindingBoundary(state, trackRun) {
     ["Storage wrong bucket", 4, (result) => { result.bucket = "script-audios"; }],
     ["Storage wrong DB locator", 4, (result) => { result.dbLocator.key = "private-other-object"; }],
     ["Storage wrong owner", 4, (result) => { result.dbLocator.userId = state.userB; }],
-    ["recording consent-contract bypass", 4, (result) => { result.recordingContract = null; }],
+    ["recording missing current consent state", 4, (result) => { result.recordingState = null; }],
     ["request absence", 12, (result) => { result.count = 0; }],
     ["request wrong owner", 12, (result) => { result.userId = state.userB; }],
     ["request unconfirmed state", 12, (result) => { result.state = "requested"; }],
@@ -1030,13 +1065,14 @@ function installReceiptSubstitution(receipt, directory, binding, substitute) {
   const owner = (value) => value.kind === "identity" ? value.userId
     : manifest.rawAuthorities[value.fixtureRole === "fixture_b" ? "fixtureBUserId" : "fixtureAUserId"];
   const original = Object.keys(receipt).length ? clone(receipt) : {
-    schemaVersion: "g5d4.fixture-verification.v1", runId: manifest.runId, runPurpose: manifest.runPurpose,
+    schemaVersion: "g5d4.fixture-verification.v2", runId: manifest.runId, runPurpose: manifest.runPurpose,
     verificationProvenance: G5D4_PROVENANCE.live.collector,
     generation: manifest.generation, generationDigest: manifest.generationDigest,
     fixtureRole: binding.fixtureRole ?? "fixture_a", kind: binding.kind,
     targetDigest: hmacSha256Hex(key, "fixture-binding-target", binding),
     ownerDigest: hmacSha256Hex(key, "fixture-binding-owner", owner(binding)),
-    relationDigest: "0".repeat(64), verifiedState: binding.kind === "identity" ? "fresh_zero_baseline"
+    relationDigest: "0".repeat(64), recordingScriptDigest: null, humanRecordingCheckpoint: null,
+    verifiedState: binding.kind === "identity" ? "fresh_zero_baseline"
       : binding.kind === "request" ? "confirmed_no_conflict" : "present_owned",
     verifiedCount: 1, verifiedAt: INSTANT
   };
@@ -1088,7 +1124,9 @@ async function checkImmutableBindingSnapshot(state, trackRun) {
         const attack = installReceiptSubstitution(receipt, directory, binding, substitute);
         if (!await expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, substitute, receipt)) ||
             loadLatestPrivateManifest(directory).generationDigest !== before.generationDigest) return false;
-        const bound = api.bindVerifiedLiveFixtureAuthority(directory, binding, receipt).manifest;
+        const checkpoint = binding.kind === "storage" && binding.target.bucket === "recordings"
+          ? await api.confirmLiveRecordingCheckpointFromTty(directory, binding, receipt) : undefined;
+        const bound = api.bindVerifiedLiveFixtureAuthority(directory, binding, receipt, checkpoint).manifest;
         const metadata = bound.bindingVerifications.at(-1);
         const raw = bound.rawAuthorities;
         const persisted = binding.kind === "identity" ? { ...binding, userId: raw.fixtureAUserId }
@@ -1146,7 +1184,8 @@ async function checkImmutableBindingSnapshot(state, trackRun) {
     const receipt = await api.verifyLiveFixtureAuthority(directory, input);
     const before = reads;
     Object.defineProperty(target, "key", { get: () => "private-unverified-nested-key" });
-    const manifest = api.bindVerifiedLiveFixtureAuthority(directory, bindings[4], receipt).manifest;
+    const checkpoint = await api.confirmLiveRecordingCheckpointFromTty(directory, bindings[4], receipt);
+    const manifest = api.bindVerifiedLiveFixtureAuthority(directory, bindings[4], receipt, checkpoint).manifest;
     return canonicalJson(manifest.rawAuthorities.fixtureAStorageTargets[0]) === canonicalJson(bindings[4].target) && reads === before;
   });
   for (const binding of bindings.slice(5)) await api.helper.bindVerifiedFixturePreparationAuthority(directory, binding);
@@ -1185,7 +1224,9 @@ async function checkImmutableBindingSnapshot(state, trackRun) {
         attacks.push(installReceiptSubstitution(receipt, attackedRun, binding, substitute));
         if (!await expectReject(() => mutableApi.bindVerifiedLiveFixtureAuthority(attackedRun, substitute, receipt))) return false;
       }
-      mutableApi.bindVerifiedLiveFixtureAuthority(attackedRun, binding, receipt);
+      const checkpoint = binding.kind === "storage" && binding.target.bucket === "recordings"
+        ? await mutableApi.confirmLiveRecordingCheckpointFromTty(attackedRun, binding, receipt) : undefined;
+      mutableApi.bindVerifiedLiveFixtureAuthority(attackedRun, binding, receipt, checkpoint);
     }
     completeFixtureManifest(attackedRun);
     sealPrivateManifest(attackedRun);
@@ -1197,6 +1238,417 @@ async function checkImmutableBindingSnapshot(state, trackRun) {
         value.verificationProvenance === G5D4_PROVENANCE.live.collector);
   });
   process.stdout.write(`G5D4_IMMUTABLE_SNAPSHOT_FOCUSED_PASS ${number - 145}/${number - 145}\n`);
+}
+
+async function checkHumanDecisionAndLiveReaders() {
+  const userId = "11111111-1111-4111-8111-111111111111";
+  const scriptId = "22222222-2222-4222-8222-222222222222";
+  const id = "33333333-3333-4333-8333-333333333333";
+  const key = `${userId}/${scriptId}/${id}.wav`;
+  const raw = Object.fromEntries(G5D4_A_PREP_TABLE_CONTRACT.map(({ table }) => [table, []]));
+  const row = { id, owner_id: userId, created_at: INSTANT, updated_at: null, status: null };
+  raw.profiles = [{ ...row, id: userId }];
+  raw.scripts = [{ ...row, id: scriptId }];
+  raw.processing_consents = [{ ...row, consent_type: "pronunciation_processing", consent_version: "2026-08-22.v1",
+    purpose_id: "pronunciation_processing", purpose_version: "v1", provider_set: ["openai", "azure"],
+    data_categories: ["recorded_audio", "transcript", "pronunciation_result"], status: "active", accepted_at: INSTANT, withdrawn_at: null }];
+  raw.voice_asset_write_intents = [{ ...row, kind: "recording_upload", status: "completed", script_id: scriptId,
+    storage_bucket: "recordings", storage_object_key: key }];
+  const objects = [{ id, bucket_id: "recordings", name: key, owner_id: null,
+    created_at: INSTANT, updated_at: INSTANT, version: "v1", size: "4", content_type: "audio/wav", etag: "etag" }];
+  const env = { NEXT_PUBLIC_SUPABASE_URL: "https://ztlliqishddrrvqqrrlu.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "synthetic-only",
+    ELEVENLABS_API_KEY: "synthetic-only", SUPABASE_ACCESS_TOKEN: `sbp_${"1".repeat(40)}` };
+  async function isolated(options = {}) {
+    let source = readFileSync(join(ROOT, "scripts/g5d4-live-read-only-adapters.mjs"), "utf8");
+    source = source.replace('const ROOT = resolve(new URL("..", import.meta.url).pathname);', `const ROOT = ${JSON.stringify(ROOT)};`)
+      .replaceAll('"zod"', JSON.stringify(import.meta.resolve("zod")))
+      .replaceAll('"dotenv"', JSON.stringify(import.meta.resolve("dotenv")))
+      .replaceAll('"./g5d4-proof-contract.mjs"', JSON.stringify(new URL("./g5d4-proof-contract.mjs", import.meta.url).href))
+      .replace('  const file = join(ROOT, ".env.local");\n  const env = { ...(existsSync(file) ? dotenv.parse(readFileSync(file)) : {}), ...process.env };',
+        `  const env = ${canonicalJson({ ...env, ...options.env })};`);
+    const state = { raw: clone(raw), objects: clone(objects), history: G5D4_REQUIRED_MIGRATIONS,
+      project: { id: G5D4_CANONICAL_STAGING.projectRef, name: "native-minute-staging", region: "ap-northeast-1", status: "ACTIVE_HEALTHY" }, ...options.state };
+    source = source.replace(/async function request\(url, headers, body\) \{[\s\S]*?\n\}/, `async function request(url, headers, body) {
+      isolatedCalls.push({url, body});
+      let value;
+      if (url.endsWith('/database/query/read-only')) {
+        if (!body.query.startsWith('select ') || /\\b(insert|update|delete|upsert|call|grant|alter|create)\\b/i.test(body.query)) throw new Error('non SELECT query');
+        if (body.query.includes('supabase_migrations.schema_migrations')) value=isolatedState.history.map(version=>({version}));
+        else if (body.query.includes('has_table_privilege')) value=[{writer_select:true,reader_role:'supabase_read_only_user'}];
+        else if (body.query.includes('storage.objects')) value=body.query.includes('where false')?[]:isolatedState.objects;
+        else if (body.query.includes('jsonb_build_object')) value=[{owned:body.query.includes('where false')?Object.fromEntries(Object.keys(isolatedState.raw).map(name=>[name,[]])):isolatedState.raw}];
+        else throw new Error('unknown query');
+      } else if (url === 'https://api.supabase.com/v1/projects/${G5D4_CANONICAL_STAGING.projectRef}') value=isolatedState.project;
+      else if (url.endsWith('/auth/v1/admin/users/${userId}')) value={id:'${userId}',email:'fixture@example.test',email_confirmed_at:'${INSTANT}',app_metadata:{provider:'email'},identities:[{identity_id:'${id}',user_id:'${userId}',provider:'email'}]};
+      else if (url.endsWith('/auth/v1/settings')) value={};
+      else if (url.endsWith('/storage/v1/bucket')) value=${canonicalJson(G5D4_STORAGE_BUCKETS.map((id) => ({ id, public: false })))};
+      else throw new Error('unexpected endpoint');
+      return {json:async()=>structuredClone(value)};
+    }`);
+    source += `\nexport const isolatedCalls=[];\nexport const isolatedState=${canonicalJson(state)};\nexport {recordingState, bindingStorage, validateOwnedRows, storageRows, ownedRowsQuery, storageQuery, databaseSnapshot, FIELDS};\n// instance ${++isolatedModuleSequence}\n`;
+    return import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
+  }
+  let n = 166;
+  const focused = async (name, test) => check(n++, name, test);
+  const api = await isolated();
+  await focused("Human Decision current-state recording accepted without historical origin artifact", async () => {
+    const observation = api.bindingStorage(raw, objects, { fixtureRole: "fixture_a", userId, bucket: "recordings", key });
+    return observation.recordingState.writerStatus === "completed" && !('recordingContract' in observation) && !('directStorageBypassUsed' in observation);
+  });
+  for (const [label, mutate] of [
+    ["missing pronunciation consent", (r) => { r.processing_consents = []; }],
+    ["withdrawn pronunciation consent", (r) => { r.processing_consents[0].status = "withdrawn"; }],
+    ["stale consent version", (r) => { r.processing_consents[0].consent_version = "obsolete"; }],
+    ["consent provider set", (r) => { r.processing_consents[0].provider_set = []; }],
+    ["wrong recording owner", (r) => { r.voice_asset_write_intents[0].owner_id = id; }],
+    ["wrong recording script", (r) => { r.scripts[0].id = id; }],
+    ["writer script mismatch", (r) => { r.voice_asset_write_intents[0].script_id = id; }],
+    ["writer kind mismatch", (r) => { r.voice_asset_write_intents[0].kind = "voice_sample_upload"; }],
+    ["incomplete writer", (r) => { r.voice_asset_write_intents[0].status = "reserved"; }],
+    ["writer Storage locator", (r) => { r.voice_asset_write_intents[0].storage_object_key = "wrong"; }],
+    ["duplicate writer", (r) => { r.voice_asset_write_intents.push(clone(r.voice_asset_write_intents[0])); }],
+    ["mismatched take", (r) => { r.takes = [{ ...row, script_id: scriptId, audio_path: "wrong" }]; }]
+  ]) await focused(`recording reconciliation rejects ${label}`, async () => {
+    const changed = clone(raw); mutate(changed);
+    return expectReject(() => api.recordingState(changed, objects, userId, key));
+  });
+  for (const [label, changed] of [["missing", []], ["wrong", [{ ...objects[0], name: "wrong" }]], ["duplicate", [...objects, ...objects]]]) {
+    await focused(`recording reconciliation rejects ${label} Storage object`, async () => expectReject(() => api.recordingState(raw, changed, userId, key)));
+  }
+  await focused("Storage list rejects foreign owner and malformed owned prefix", async () =>
+    await expectReject(() => api.storageRows([{ ...objects[0], owner_id: id }], userId)) &&
+    await expectReject(() => api.storageRows([{ ...objects[0], name: `${id}/wrong` }], userId)));
+  const preparation = { schemaVersion: "g5d4.fixture-preparation.v1", state: "consent_sample_material_verified",
+    completedCheckpoints: [], nextCheckpoint: "normal_recordings_verified", humanActionRequired: true, destructiveExecutionAuthorized: false };
+  const evidence = { fixtureARecordingPresent: true, fixtureBRecordingPresent: true, recordingContract: "consent_gated_web",
+    humanCanonicalWebSuccessObserved: true, immediateReadOnlyReconciliationVerified: true, directStorageBypassUsed: false };
+  await focused("accepted Human Web checkpoint remains procedure-only and non-destructive", async () =>
+    advanceFixturePreparation(preparation, "normal_recordings_verified", evidence).destructiveExecutionAuthorized === false);
+  for (const field of ["humanCanonicalWebSuccessObserved", "immediateReadOnlyReconciliationVerified"]) {
+    await focused(`Human checkpoint requires ${field}`, async () => {
+      const changed = { ...evidence }; delete changed[field];
+      return expectReject(() => advanceFixturePreparation(preparation, "normal_recordings_verified", changed));
+    });
+  }
+  await focused("Human Decision rejects direct fixture upload and Mobile procedure substitution", async () =>
+    await expectReject(() => advanceFixturePreparation(preparation, "normal_recordings_verified", { ...evidence, directStorageBypassUsed: true })) &&
+    await expectReject(() => advanceFixturePreparation(preparation, "normal_recordings_verified", { ...evidence, recordingContract: "consent_gated_mobile" })) &&
+    assertFixturePreparationHasNoUnsafeAutomation(readFileSync(join(ROOT, "scripts/g5d4-fixture-prepare.mjs"), "utf8")));
+  for (const [label, env] of [["Production", { NATIVE_MINUTE_PRODUCTION_GUARD: "1" }], ["ref", { NEXT_PUBLIC_SUPABASE_URL: "https://other.invalid" }], ["destructive guard", { NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE: "1" }]]) {
+    await focused(`${label} rejected before any target read`, async () => {
+      const isolatedApi = await isolated({ env });
+      return await expectReject(() => isolatedApi.createLiveReadOnlyAdapters().reader.readStorageBinding({ fixtureRole: "fixture_a", userId, bucket: "recordings", key })) && isolatedApi.isolatedCalls.length === 0;
+    });
+  }
+  for (const field of ["id", "name", "region", "status"]) {
+    await focused(`project ${field} mismatch rejected before SQL/Auth/Storage reads`, async () => {
+      const isolatedApi = await isolated(); isolatedApi.isolatedState.project[field] = "mismatch";
+      return await expectReject(() => isolatedApi.createLiveReadOnlyAdapters().smoke()) && isolatedApi.isolatedCalls.length === 1;
+    });
+  }
+  await focused("migration mismatch rejected before fixture data access", async () => {
+    const isolatedApi = await isolated({ state: { history: ["0001"] } });
+    return await expectReject(() => isolatedApi.createLiveReadOnlyAdapters().smoke()) && isolatedApi.isolatedCalls.length === 2;
+  });
+  await focused("read-only live adapter exact capability surface and injection rejection", async () => {
+    const live = api.createLiveReadOnlyAdapters();
+    return assertReadOnlyCollectorAdapters(live.adapters) && Object.values(live.adapters).every(Object.isFrozen) &&
+      Object.isFrozen(live.reader) && await expectReject(() => api.createLiveReadOnlyAdapters({ db: {} }));
+  });
+  await focused("isolated live reader reconciles actual recording projection", async () => {
+    const result = await api.createLiveReadOnlyAdapters().reader.readStorageBinding({ fixtureRole: "fixture_a", userId, bucket: "recordings", key });
+    return result.recordingState.scriptId === scriptId && result.recordingState.writerKey === key;
+  });
+  await focused("identity reader verifies exact Auth/profile/17 zero baseline and empty Storage", async () => {
+    const baseline = clone(raw);
+    for (const name of Object.keys(baseline)) if (name !== "profiles") baseline[name] = [];
+    const isolatedApi = await isolated({ state: { raw: baseline, objects: [] } });
+    const result = await isolatedApi.createLiveReadOnlyAdapters().reader.readIdentityBaseline({ fixtureRole: "fixture_a", userId });
+    return result.auth.confirmed && result.profile.count === 1 && result.baseline.length === 17 && result.baseline.every((row) => row.count === 0);
+  });
+  await focused("bounded smoke uses no fixture identity, Provider resource or mutation endpoint", async () => {
+    const isolatedApi = await isolated(); const result = await isolatedApi.createLiveReadOnlyAdapters().smoke();
+    return result.fixturePass === false && result.mutations === 0 && isolatedApi.isolatedCalls.length === 7 &&
+      isolatedApi.isolatedCalls.every(({ url, body }) => body === undefined || url.endsWith('/database/query/read-only')) &&
+      !isolatedApi.isolatedCalls.some(({ url }) => url.includes('elevenlabs') || url.includes('/admin/users'));
+  });
+  await focused("static SELECT owner parameters reject SQL injection", async () =>
+    await expectReject(() => api.ownedRowsQuery("'; delete from public.profiles; --")) &&
+    await expectReject(() => api.storageQuery("'; select 1; --")));
+  const full = clone(raw);
+  full.processing_consents.push({ ...row, consent_type: "voice_cloning", consent_version: "2026-08-22.v1",
+    purpose_id: "voice_cloning", purpose_version: "v1", provider_set: ["elevenlabs"],
+    data_categories: ["voice_sample", "consent_recording", "cloned_voice", "reference_audio"], status: "active", accepted_at: INSTANT, withdrawn_at: null });
+  for (const kind of G5D4_WRITER_INTENT_KINDS.filter((kind) => kind !== "recording_upload")) full.voice_asset_write_intents.push({ ...row, kind, status: "completed" });
+  for (const name of ["takes", "weak_words", "coach_feedback", "script_audios", "voices", "voice_consents", "quota_events"]) full[name] = [{ ...row }];
+  full.voices[0].provider = "elevenlabs"; full.voices[0].provider_voice_id = "A".repeat(20);
+  await focused("live DB projection retains B16/A17/A22 and exact 18 category contract", async () => {
+    const schema = await import("./g5d4-proof-contract.mjs");
+    const total = (snapshot) => schema.g5d4PrivateDatabaseSnapshotSchema.parse(snapshot).tables.reduce((sum, table) => sum + table.rows.length, 0);
+    if (total(api.databaseSnapshot(full, objects, userId)) !== 16) return false;
+    full.account_deletion_requests = [{ ...row, status: "confirmed", confirmed_at: INSTANT, provider_snapshot_status: "pending", storage_snapshot_status: "pending", provider_snapshot_target_count: 0, storage_snapshot_target_count: 0 }];
+    if (total(api.databaseSnapshot(full, objects, userId, id)) !== 17) return false;
+    Object.assign(full.account_deletion_requests[0], { provider_snapshot_status: "sealed", storage_snapshot_status: "sealed", provider_snapshot_target_count: 1, storage_snapshot_target_count: 4 });
+    full.account_deletion_provider_targets = [{ ...row, deletion_request_id: id, source_voice_id: id, provider_name: "elevenlabs", provider_resource_id: "A".repeat(20), status: "pending", delete_outcome: "not_attempted" }];
+    const stored = G5D4_STORAGE_BUCKETS.map((bucket_id) => ({ ...objects[0], bucket_id }));
+    full.account_deletion_storage_targets = stored.map((object) => ({ ...row, deletion_request_id: id, storage_bucket: object.bucket_id, storage_object_key: object.name, status: "pending", delete_outcome: "not_attempted" }));
+    const snapshot = api.databaseSnapshot(full, stored, userId, id);
+    return total(snapshot) === 22 && canonicalJson(snapshot.tables.map(({table,category,rows})=>({table,category,count:rows.length}))) === canonicalJson(G5D4_A_SEALED_TABLE_CONTRACT);
+  });
+  await focused("live DB rejects substituted durable target before accepting count-only evidence", async () => {
+    const stored = G5D4_STORAGE_BUCKETS.map((bucket_id) => ({ ...objects[0], bucket_id }));
+    const providerWrong = clone(full); providerWrong.account_deletion_provider_targets[0].provider_resource_id = "B".repeat(20);
+    const storageWrong = clone(full); storageWrong.account_deletion_storage_targets[0].storage_object_key = "wrong";
+    return await expectReject(() => api.databaseSnapshot(providerWrong, stored, userId, id)) &&
+      await expectReject(() => api.databaseSnapshot(storageWrong, stored, userId, id));
+  });
+  await focused("proof current-consent version remains aligned with product authority", async () => {
+    const source = readFileSync(join(ROOT,"services/consent/consent.service.ts"),"utf8");
+    return source.includes('CURRENT_PRONUNCIATION_CONSENT_VERSION = "2026-08-22.v1"') &&
+      source.includes('CURRENT_VOICE_CLONING_CONSENT_VERSION = "2026-08-22.v1"');
+  });
+  await focused("every live SELECT projection field exists in canonical DB types", async () => {
+    const source = readFileSync(join(ROOT, "types/database.ts"), "utf8");
+    for (const [table, fields] of Object.entries(api.FIELDS)) {
+      const start = source.indexOf(`      ${table}: {\n        Row: {`);
+      if (start < 0) return false;
+      const body = source.slice(start, source.indexOf("\n        };", start));
+      for (const field of fields) if (!body.includes(`          ${field}:`)) return false;
+    }
+    return true;
+  });
+  process.stdout.write(`G5D4_HUMAN_DECISION_LIVE_READER_FOCUSED_PASS ${n - 166}/${n - 166}\n`);
+}
+
+async function checkRecordingCheckpointAcceptance(state, trackRun, bypassOnly = false) {
+  let number = 203;
+  const focused = (label, operation) => check(++number, label, operation);
+  const bindings = fixtureBindings(state);
+  const a = bindings[4];
+  const b = bindings[8];
+  const prepare = async (api, purpose = G5D4_PROVENANCE.live.runPurpose) => {
+    const directory = trackRun(createPrivateRunDirectory({ runPurpose: purpose }));
+    createInitialPrivateManifest(directory, privateManifestInput(purpose));
+    createAliasKey(directory);
+    for (const binding of bindings.slice(0, 2)) {
+      if (purpose === G5D4_PROVENANCE.live.runPurpose) await api.helper.bindVerifiedFixturePreparationAuthority(directory, binding);
+      else bindFixtureManifestAuthority(directory, binding);
+    }
+    return directory;
+  };
+
+  // Exact reviewed bypass: every required machine binding, zero Human calls.
+  // Only the legacy source copy can populate it; acceptance uses the real module.
+  const legacy = await createIsolatedVerificationModule(state, undefined, false, { legacyMachineOnly: true });
+  const legacyDirectory = await prepare(legacy);
+  for (const binding of bindings.slice(2)) {
+    const receipt = await legacy.verifyLiveFixtureAuthority(legacyDirectory, binding);
+    legacy.bindVerifiedLiveFixtureAuthority(legacyDirectory, binding, receipt);
+  }
+  const legacyFull = legacy.loadLatestPrivateManifest(legacyDirectory);
+  await focused("previous bypass has 13 machine bindings and exactly zero Human recording calls", async () =>
+    legacyFull.bindingVerifications.length === 13 && legacy.isolatedHumanPrompts.length === 0 &&
+    legacyFull.bindingVerifications.every((item) => item.humanRecordingCheckpoint === null));
+  await focused("previous bypass fixture_complete REJECT with all machine bindings populated", async () =>
+    expectReject(() => completeFixtureManifest(legacyDirectory)));
+  await focused("previous bypass seal REJECT with zero Human checkpoints", async () =>
+    expectReject(() => sealPrivateManifest(legacyDirectory)));
+  legacy.completeFixtureManifest(legacyDirectory);
+  await focused("seal independently rejects legacy fixture_complete lacking A/B checkpoints", async () =>
+    expectReject(() => sealPrivateManifest(legacyDirectory)));
+  process.stdout.write("G5D4_PREVIOUS_BYPASS_REPRODUCTION_PASS human_checkpoint_calls=0 machine_bindings=13 fixture_complete=REJECT seal=REJECT\n");
+  if (bypassOnly) return;
+
+  const api = await createIsolatedVerificationModule(state);
+  const directory = await prepare(api);
+  const receiptA = await api.verifyLiveFixtureAuthority(directory, a);
+  const receiptB = await api.verifyLiveFixtureAuthority(directory, b);
+  await focused("machine reconciliation PASS alone rejects recording acceptance", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, a, receiptA)));
+  for (const value of [true, { confirmed: true }, { provenance: "human_web_recording_tty_live_v1" }]) {
+    await focused("caller boolean or metadata cannot supply live checkpoint capability", async () =>
+      expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, a, receiptA, value)));
+  }
+  await focused("confirmation rejects caller stream/phrase/env-style overrides", async () =>
+    expectReject(() => api.confirmLiveRecordingCheckpointFromTty(directory, a, receiptA, {
+      input: createFakeTty().input, phrase: G5D4_RECORDING_CONFIRMATION_PHRASE, confirmed: true
+    })));
+  const checkpointA = await api.confirmLiveRecordingCheckpointFromTty(directory, a, receiptA);
+  await focused("Human checkpoint is opaque immutable and emits only safe run/role/recording/script", async () => {
+    const text = api.isolatedHumanPrompts.join("\n");
+    return Object.isFrozen(checkpointA) && Reflect.ownKeys(checkpointA).length === 0 &&
+      text.includes("fixture_a") && text.includes("g5d4_v1") &&
+      ![state.userA, state.userB, a.target.key, "private-script"].some((raw) => text.includes(raw));
+  });
+  await focused("same verification cannot silently issue a replacement checkpoint", async () =>
+    expectReject(() => api.confirmLiveRecordingCheckpointFromTty(directory, a, receiptA)));
+  await focused("A checkpoint cannot satisfy B role/owner/recording", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, b, receiptB, checkpointA)));
+  await focused("recording A checkpoint cannot switch exact recording candidate", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory,
+      { ...a, target: { ...a.target, key: "private-other-recording" } }, receiptA, checkpointA)));
+  await focused("wrong role assertion rejects even with original recording capability", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, { ...a, fixtureRole: "fixture_b" }, receiptA, checkpointA)));
+  const other = await prepare(api);
+  const otherReceipt = await api.verifyLiveFixtureAuthority(other, a);
+  await focused("run A checkpoint cannot satisfy same recording in run B", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(other, a, otherReceipt, checkpointA)));
+  const secondReceiptA = await api.verifyLiveFixtureAuthority(directory, a);
+  await focused("checkpoint cannot attach to another machine observation of the same candidate", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, a, secondReceiptA, checkpointA)));
+  await focused("copied/Proxy checkpoint cannot enter live capability registry", async () =>
+    await expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, a, receiptA, clone(checkpointA))) &&
+    await expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, a, receiptA, new Proxy(checkpointA, {
+      get() { throw new Error("must not read caller checkpoint"); }
+    }))));
+  const synthetic = await prepare(api, G5D4_PROVENANCE.selfTest.runPurpose);
+  const syntheticReceipt = api.createSelfTestFixtureVerification(synthetic, a);
+  const syntheticCheckpoint = api.createSelfTestRecordingCheckpoint(synthetic, a, syntheticReceipt);
+  await focused("self_test_v1 checkpoint cannot satisfy valid live machine receipt", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, a, receiptA, syntheticCheckpoint)));
+  await focused("self-test factory cannot mint checkpoint for live run", async () =>
+    await expectReject(() => api.createSelfTestRecordingCheckpoint(directory, a, receiptA)) &&
+    await expectReject(() => createSelfTestRecordingCheckpoint(directory, a, receiptA)));
+  await focused("live confirmation rejects self-test run/capability", async () =>
+    expectReject(() => api.confirmLiveRecordingCheckpointFromTty(synthetic, a, syntheticReceipt)));
+  const failedApi = await createIsolatedVerificationModule(state, (observations) => {
+    observations[4].result.recordingState.consentStatus = "withdrawn";
+  });
+  await focused("Human checkpoint alone with failed machine reconciliation rejects", async () =>
+    await expectReject(() => failedApi.verifyLiveFixtureAuthority(directory, a)) &&
+    await expectReject(() => failedApi.bindVerifiedLiveFixtureAuthority(directory, a, undefined, checkpointA)) &&
+    failedApi.isolatedHumanPrompts.length === 0);
+  await focused("A matching live-profile Human and machine inputs accept exact A recording", async () => {
+    const result = api.bindVerifiedLiveFixtureAuthority(directory, a, receiptA, checkpointA).manifest;
+    return result.bindingVerifications.at(-1).humanRecordingCheckpoint.provenance === "human_web_recording_tty_live_v1" &&
+      canonicalJson(result.rawAuthorities.fixtureAStorageTargets) === canonicalJson([a.target]);
+  });
+  await focused("consumed A checkpoint cannot be reused for B after fresh B reconciliation", async () => {
+    const freshB = await api.verifyLiveFixtureAuthority(directory, b);
+    return expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, b, freshB, checkpointA));
+  });
+  await focused("B helper performs machine then explicit narrow Human input then bind", async () => {
+    const result = await api.helper.bindVerifiedFixturePreparationAuthority(directory, b);
+    return result.manifest.bindingVerifications.at(-1).humanRecordingCheckpoint.fixtureRole === "fixture_b" &&
+      api.isolatedHumanPrompts.length === 2;
+  });
+  for (const binding of bindings.slice(2).filter((value) => value !== a && value !== b)) {
+    await api.helper.bindVerifiedFixturePreparationAuthority(directory, binding);
+  }
+  const full = loadLatestPrivateManifest(directory);
+  const checkpointEntries = full.bindingVerifications.filter((entry) => entry.humanRecordingCheckpoint);
+  await focused("A+B valid checkpoint fixture completes with unchanged thirteen bindings", async () =>
+    checkpointEntries.length === 2 && completeFixtureManifest(directory).manifest.lifecycle === "fixture_complete");
+  await focused("valid completed fixture seals without inventing Human metadata", async () => {
+    const sealed = sealPrivateManifest(directory).manifest;
+    return canonicalJson(sealed.bindingVerifications) === canonicalJson(full.bindingVerifications) &&
+      loadLatestPrivateManifest(directory, { requireSealed: true }).lifecycle === "sealed";
+  });
+
+  // Re-signing the enclosing verification cannot hide a checkpoint mismatch.
+  // This exercises complete/seal's semantic checks independently of outer hashes.
+  const key = readAliasKey(directory);
+  const resignVerification = (entry) => {
+    entry.integrityMac = hmacSha256Hex(key, "fixture-binding-verification",
+      Object.fromEntries(Object.entries(entry).filter(([field]) => field !== "integrityMac")));
+  };
+  const mutations = [
+    ["missing A checkpoint", (entry) => { entry.humanRecordingCheckpoint = null; }],
+    ["duplicate A checkpoint used for B", (entry) => { entry.humanRecordingCheckpoint = clone(checkpointEntries[0].humanRecordingCheckpoint); }, 1],
+    ["wrong script", (entry) => { entry.humanRecordingCheckpoint.scriptDigest = "0".repeat(64); }],
+    ["wrong role", (entry) => { entry.humanRecordingCheckpoint.fixtureRole = "fixture_b"; }],
+    ["wrong run", (entry) => { entry.humanRecordingCheckpoint.runId = "g5d4_run_" + "0".repeat(32); }],
+    ["wrong recording alias", (entry) => { entry.humanRecordingCheckpoint.recordingAlias = checkpointEntries[1].humanRecordingCheckpoint.recordingAlias; }],
+    ["self-test provenance", (entry) => { entry.humanRecordingCheckpoint.provenance = "self_test_v1"; }],
+    ["wrong generation", (entry) => { entry.humanRecordingCheckpoint.generation += 1; }],
+    ["wrong manifest digest", (entry) => { entry.humanRecordingCheckpoint.generationDigest = "0".repeat(64); }],
+    ["wrong machine observation", (entry) => { entry.humanRecordingCheckpoint.machineVerificationDigest = "0".repeat(64); }],
+    ["tampered checkpoint MAC", (entry) => { entry.humanRecordingCheckpoint.integrityMac = "0".repeat(64); }],
+    ["Human timestamp before machine", (entry) => { entry.humanRecordingCheckpoint.confirmedAt = INSTANT; }],
+    ["Human timestamp beyond immediate window", (entry) => {
+      entry.humanRecordingCheckpoint.confirmedAt = new Date(Date.parse(entry.verifiedAt) + G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS + 1).toISOString();
+    }]
+  ];
+  for (const [label, mutate, index = 0] of mutations) {
+    await focused(`complete/seal authority rejects ${label}`, async () => {
+      const changed = clone(full);
+      const entry = changed.bindingVerifications.filter((value) => value.humanRecordingCheckpoint)[index];
+      mutate(entry);
+      if (entry.humanRecordingCheckpoint && label !== "tampered checkpoint MAC") {
+        entry.humanRecordingCheckpoint.integrityMac = hmacSha256Hex(key, "fixture-web-recording-checkpoint",
+          Object.fromEntries(Object.entries(entry.humanRecordingCheckpoint).filter(([field]) => field !== "integrityMac")));
+      }
+      resignVerification(entry);
+      return expectReject(() => assertFixtureManifestComplete(changed, key));
+    });
+  }
+  await focused("later generation cannot replace a bound Human checkpoint", async () => {
+    const before = loadAndVerifyManifestChain(directory).find((value) => value.lifecycle === "fixture_complete");
+    const copy = trackRun(createPrivateRunDirectory({ runPurpose: G5D4_PROVENANCE.live.runPurpose }));
+    for (const name of readdirSync(directory).filter((name) => name === "alias-key.bin" ||
+      (/^manifest-/.test(name) && Number(name.slice(9, 15)) <= before.generation))) {
+      atomicPublishPrivateFile(copy, name, readFileSync(join(directory, name)));
+    }
+    const next = { ...clone(before), generation: before.generation + 1, previousGenerationDigest: before.generationDigest,
+      lifecycle: "sealed", sealed: true, manifestSealDigest: "0".repeat(64) };
+    const entry = next.bindingVerifications.find((value) => value.humanRecordingCheckpoint);
+    entry.humanRecordingCheckpoint.confirmedAt = new Date(Date.parse(entry.humanRecordingCheckpoint.confirmedAt) + 1).toISOString();
+    entry.humanRecordingCheckpoint.integrityMac = hmacSha256Hex(key, "fixture-web-recording-checkpoint",
+      Object.fromEntries(Object.entries(entry.humanRecordingCheckpoint).filter(([field]) => field !== "integrityMac")));
+    resignVerification(entry);
+    // Keep the seal and outer digest valid: rejection must come from the
+    // immutable completion/seal transition, not merely an invalid seal MAC.
+    next.manifestSealDigest = hmacSha256Hex(key, "manifest-seal", canonicalJson({
+      ...Object.fromEntries(Object.entries(next).filter(([field]) => !["generationDigest", "manifestSealDigest"].includes(field))),
+      manifestSealDigest: null
+    }));
+    next.generationDigest = sha256Hex(canonicalJson(Object.fromEntries(Object.entries(next).filter(([field]) => field !== "generationDigest"))));
+    atomicPublishPrivateFile(copy, `manifest-${String(next.generation).padStart(6, "0")}.json`, canonicalJson(next));
+    return expectReject(() => loadLatestPrivateManifest(copy));
+  });
+
+  const staleRun = await prepare(api);
+  const staleReceipt = await api.verifyLiveFixtureAuthority(staleRun, a);
+  const staleCheckpoint = await api.confirmLiveRecordingCheckpointFromTty(staleRun, a, staleReceipt);
+  await api.helper.bindVerifiedFixturePreparationAuthority(staleRun, bindings[2]);
+  await focused("intervening manifest generation rejects already issued Human checkpoint", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(staleRun, a, staleReceipt, staleCheckpoint)));
+  const promptRun = await prepare(api);
+  const promptReceipt = await api.verifyLiveFixtureAuthority(promptRun, a);
+  api.isolatedHumanState.duringPrompt = () => api.helper.bindVerifiedFixturePreparationAuthority(promptRun, bindings[2]);
+  await focused("manifest advancement during Human interaction rejects checkpoint issuance", async () =>
+    expectReject(() => api.confirmLiveRecordingCheckpointFromTty(promptRun, a, promptReceipt)));
+  delete api.isolatedHumanState.duringPrompt;
+  const freshReceipt = await api.verifyLiveFixtureAuthority(promptRun, a);
+  api.isolatedHumanState.phrase = G5D4_CONFIRMATION_PHRASE;
+  await focused("destructive authorization phrase cannot confirm recording procedure", async () =>
+    expectReject(() => api.confirmLiveRecordingCheckpointFromTty(promptRun, a, freshReceipt)));
+  api.isolatedHumanState.phrase = "";
+  await focused("empty or automatic default is never Human confirmation", async () =>
+    expectReject(() => api.confirmLiveRecordingCheckpointFromTty(promptRun, a, freshReceipt)));
+  api.isolatedHumanState.phrase = G5D4_RECORDING_CONFIRMATION_PHRASE;
+  await focused("expired machine read cannot issue a Human checkpoint", async () => {
+    const originalNow = Date.now;
+    Date.now = () => originalNow() + G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS + 1000;
+    try { return await expectReject(() => api.confirmLiveRecordingCheckpointFromTty(promptRun, a, freshReceipt)); }
+    finally { Date.now = originalNow; }
+  });
+  const realTtyApi = await createIsolatedVerificationModule(state, undefined, false, { realTty: true });
+  const realTtyReceipt = await realTtyApi.verifyLiveFixtureAuthority(promptRun, a);
+  await focused("actual production TTY reader rejects non-TTY automated process", async () =>
+    !process.stdin.isTTY && !process.stdout.isTTY &&
+    await expectReject(() => realTtyApi.confirmLiveRecordingCheckpointFromTty(promptRun, a, realTtyReceipt)));
+  await focused("public live module cannot accept isolated synthetic machine/checkpoint handles", async () =>
+    await expectReject(() => confirmLiveRecordingCheckpointFromTty(promptRun, a, freshReceipt)) &&
+    await expectReject(() => bindVerifiedLiveFixtureAuthority(promptRun, a, freshReceipt, checkpointA)));
+  await focused("self-test synthetic checkpoints complete and seal only with self_test_v1", async () => {
+    for (const binding of bindings.slice(2)) bindFixtureManifestAuthority(synthetic, binding);
+    completeFixtureManifest(synthetic);
+    const sealed = sealPrivateManifest(synthetic).manifest;
+    const checkpoints = sealed.bindingVerifications.flatMap((value) => value.humanRecordingCheckpoint ?? []);
+    return checkpoints.length === 2 && checkpoints.every((value) => value.provenance === "self_test_v1" && value.runPurpose === "g5d4_self_test");
+  });
+  process.stdout.write(`G5D4_RECORDING_CHECKPOINT_FOCUSED_PASS ${number - 203}/${number - 203}\n`);
 }
 
 async function main() {
@@ -1953,6 +2405,7 @@ async function main() {
         fixtureARecordingPresent: true,
         fixtureBRecordingPresent: true,
         recordingContract: "consent_gated_web",
+        humanCanonicalWebSuccessObserved: true, immediateReadOnlyReconciliationVerified: true,
         directStorageBypassUsed: false
       });
       const source = readFileSync(join(ROOT, "scripts", "g5d4-fixture-prepare.mjs"), "utf8");
@@ -2186,13 +2639,18 @@ async function main() {
       return result.childSpawnCount === 0;
     });
 
-    await check(60, "unarmed live-owned collector factory fails before network", async () =>
-      expectReject(() => Promise.resolve(createLiveReadOnlyCollector(liveRun.runDirectory)))
-    );
+    await check(60, "live-owned factory has only fixed collector methods and rejects injected adapters", async () => {
+      const collector = createLiveReadOnlyCollector(liveRun.runDirectory);
+      return Object.isFrozen(collector) && canonicalJson(Object.keys(collector).sort()) === canonicalJson(["collectBControl", "collectReadiness"]) &&
+        await expectReject(() => createLiveReadOnlyCollector(liveRun.runDirectory, adapters)) &&
+        await expectReject(() => collector.collectReadiness({ adapters }));
+    });
 
     await checkIncrementalManifest(state, trackIsolationRun);
     await checkVerifiedBindingBoundary(state, trackIsolationRun);
     await checkImmutableBindingSnapshot(state, trackIsolationRun);
+    await checkHumanDecisionAndLiveReaders();
+    await checkRecordingCheckpointAcceptance(state, trackIsolationRun);
 
     for (const directory of isolationRunDirectories) cleanupPrivateRunDirectory(directory);
     isolationRunDirectories.clear();
@@ -2216,12 +2674,16 @@ async function main() {
 
 if (process.argv[2] === "--consume-worker") {
   await consumeWorker();
-} else if (["--verified-binding-only", "--immutable-snapshot-only"].includes(process.argv[2])) {
+} else if (["--verified-binding-only", "--immutable-snapshot-only", "--recording-checkpoint-only", "--recording-bypass-only"].includes(process.argv[2])) {
   const directories = new Set();
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error("unexpected real network access"); };
   try {
-    const suite = process.argv[2] === "--immutable-snapshot-only" ? checkImmutableBindingSnapshot : checkVerifiedBindingBoundary;
-    await suite(makeHarnessState(), (directory) => { directories.add(directory); return directory; });
+    const suite = process.argv[2].startsWith("--recording-") ? checkRecordingCheckpointAcceptance
+      : process.argv[2] === "--immutable-snapshot-only" ? checkImmutableBindingSnapshot : checkVerifiedBindingBoundary;
+    await suite(makeHarnessState(), (directory) => { directories.add(directory); return directory; }, process.argv[2] === "--recording-bypass-only");
   } finally {
+    globalThis.fetch = originalFetch;
     for (const directory of directories) if (existsSync(directory)) cleanupPrivateRunDirectory(directory);
   }
 } else {

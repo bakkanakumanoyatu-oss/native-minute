@@ -2,7 +2,7 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
 export const G5D4_SCHEMA_VERSIONS = Object.freeze({
-  privateManifest: "g5d4.private-manifest.v3",
+  privateManifest: "g5d4.private-manifest.v4",
   collectorSafe: "g5d4.collector-safe.v2",
   authorization: "g5d4.authorization.v2",
   proofBinding: "g5d4.proof-binding.v2",
@@ -23,7 +23,12 @@ export const G5D4_PROVENANCE = Object.freeze({
   })
 });
 
-export const G5D4_BINDING_VERIFICATION_VERSION = "g5d4.fixture-verification.v1";
+export const G5D4_BINDING_VERIFICATION_VERSION = "g5d4.fixture-verification.v2";
+export const G5D4_RECORDING_CHECKPOINT_PROVENANCE = Object.freeze({
+  live: "human_web_recording_tty_live_v1",
+  selfTest: "self_test_v1"
+});
+export const G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS = 5 * 60 * 1000;
 
 export const G5D4_CANONICAL_STAGING = Object.freeze({
   projectLabel: "native-minute-staging",
@@ -400,6 +405,27 @@ export const g5d4FixtureBindingSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("request"), deletionRequestId: rawIdentitySchema, deletionRequestRef: rawIdentitySchema }).strict()
 ]);
 
+// Procedural Human confirmation, separate from product consent, historical
+// route attestation and destructive authorization. All identifiers are safe.
+export const g5d4RecordingCheckpointSchema = z.object({
+  schemaVersion: z.literal("g5d4.web-recording-checkpoint.v1"),
+  purpose: z.literal("fixture_web_recording_success"),
+  flow: z.literal("web"),
+  runId: runIdSchema,
+  runPurpose: runPurposeSchema,
+  provenance: z.enum(Object.values(G5D4_RECORDING_CHECKPOINT_PROVENANCE)),
+  fixtureRole: fixtureRoleSchema,
+  recordingAlias: g5d4AliasSchema,
+  targetDigest: digestSchema,
+  ownerDigest: digestSchema,
+  scriptDigest: digestSchema,
+  generation: positiveIntSchema,
+  generationDigest: digestSchema,
+  machineVerificationDigest: digestSchema,
+  confirmedAt: instantSchema,
+  integrityMac: digestSchema
+}).strict();
+
 export const g5d4FixtureVerificationSchema = z.object({
   schemaVersion: z.literal(G5D4_BINDING_VERIFICATION_VERSION),
   runId: runIdSchema,
@@ -412,6 +438,8 @@ export const g5d4FixtureVerificationSchema = z.object({
   targetDigest: digestSchema,
   ownerDigest: digestSchema,
   relationDigest: digestSchema,
+  recordingScriptDigest: digestSchema.nullable(),
+  humanRecordingCheckpoint: g5d4RecordingCheckpointSchema.nullable(),
   verifiedState: z.enum(["fresh_zero_baseline", "present_owned", "confirmed_no_conflict"]),
   verifiedCount: z.literal(1),
   verifiedAt: instantSchema,

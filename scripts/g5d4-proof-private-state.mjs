@@ -18,15 +18,20 @@ import {
   writeFileSync
 } from "node:fs";
 import { randomBytes } from "node:crypto";
+import { createInterface } from "node:readline";
+import { isatty } from "node:tty";
 import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { createLiveReadOnlyAdapters } from "./g5d4-live-read-only-adapters.mjs";
 import {
   G5D4_BINDING_VERIFICATION_VERSION,
   G5D4_CANONICAL_STAGING,
   G5D4_A_PREP_TABLE_CONTRACT,
   G5D4_PROVENANCE,
+  G5D4_RECORDING_CHECKPOINT_PROVENANCE,
+  G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS,
   G5D4_SCHEMA_VERSIONS,
   canonicalJson,
   g5d4AliasRoleSchema,
@@ -34,6 +39,7 @@ import {
   g5d4FixtureBindingSchema,
   g5d4FixtureVerificationSchema,
   g5d4PrivateManifestSchema,
+  g5d4RecordingCheckpointSchema,
   hmacSha256Hex,
   safeDigestEqual,
   sha256Hex
@@ -49,6 +55,9 @@ const NO_FOLLOW = fsConstants.O_NOFOLLOW ?? 0;
 
 export const G5D4_CONFIRMATION_PHRASE =
   "I CONFIRM G5D4 MICRO STEP FOR THE SEALED DISPOSABLE FIXTURE";
+
+export const G5D4_RECORDING_CONFIRMATION_PHRASE =
+  "I CONFIRM THIS EXACT RECORDING IS THE CANONICAL WEB ACTION I JUST PERFORMED";
 
 function isPathInside(candidate, parent) {
   const child = resolve(candidate);
@@ -377,6 +386,9 @@ export function assertFixtureManifestComplete(manifest, key) {
 // can mint a capability. This is not an OS-user signature.
 const liveVerificationCapabilities = new WeakMap();
 const selfTestVerificationCapabilities = new WeakMap();
+const liveRecordingCheckpoints = new WeakMap();
+const selfTestRecordingCheckpoints = new WeakMap();
+const checkpointIssuedForVerification = new WeakSet();
 
 function verificationCapabilitiesFor(runPurpose) {
   if (runPurpose === G5D4_PROVENANCE.live.runPurpose) return liveVerificationCapabilities;
@@ -410,6 +422,46 @@ function verificationMac(receipt, key) {
   return hmacSha256Hex(key, "fixture-binding-verification", withoutFields(receipt, ["integrityMac"]));
 }
 
+function isRecordingBinding(binding) {
+  return binding.kind === "storage" && binding.target.bucket === "recordings";
+}
+
+function recordingAlias(binding, key) {
+  return createAliasRegistry(key).alias("storage_target", `${binding.target.bucket}\0${binding.target.key}`);
+}
+
+function recordingCheckpointMac(checkpoint, key) {
+  return hmacSha256Hex(key, "fixture-web-recording-checkpoint", withoutFields(checkpoint, ["integrityMac"]));
+}
+
+function assertRecordingCheckpoint(checkpoint, verified, manifest, binding, key) {
+  const parsed = g5d4RecordingCheckpointSchema.parse(checkpoint);
+  const expectedProvenance = manifest.runPurpose === G5D4_PROVENANCE.live.runPurpose
+    ? G5D4_RECORDING_CHECKPOINT_PROVENANCE.live : G5D4_RECORDING_CHECKPOINT_PROVENANCE.selfTest;
+  const elapsed = Date.parse(parsed.confirmedAt) - Date.parse(verified.verifiedAt);
+  if (!isRecordingBinding(binding) || !verified.recordingScriptDigest ||
+      parsed.runId !== manifest.runId || parsed.runPurpose !== manifest.runPurpose ||
+      parsed.provenance !== expectedProvenance || parsed.fixtureRole !== bindingRole(binding) ||
+      parsed.recordingAlias !== recordingAlias(binding, key) ||
+      parsed.targetDigest !== verified.targetDigest || parsed.ownerDigest !== verified.ownerDigest ||
+      parsed.scriptDigest !== verified.recordingScriptDigest ||
+      parsed.generation !== verified.generation || parsed.generationDigest !== verified.generationDigest ||
+      parsed.machineVerificationDigest !== verificationMac({ ...verified, humanRecordingCheckpoint: null }, key) ||
+      elapsed < 0 || elapsed > G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS ||
+      !safeDigestEqual(parsed.integrityMac, recordingCheckpointMac(parsed, key))) {
+    throw new Error("Human recording checkpoint exact machine/run/role/recording/state binding mismatch");
+  }
+  return parsed;
+}
+
+function assertAcceptedRecordingVerification(verified, manifest, binding, key) {
+  if (isRecordingBinding(binding)) {
+    assertRecordingCheckpoint(verified.humanRecordingCheckpoint, verified, manifest, binding, key);
+  } else if (verified.humanRecordingCheckpoint !== null || verified.recordingScriptDigest !== null) {
+    throw new Error("Human recording checkpoint is restricted to recording bindings");
+  }
+}
+
 function assertVerificationBinding(receipt, manifest, binding, key) {
   const parsed = g5d4FixtureVerificationSchema.parse(receipt);
   const provenance = manifest.runPurpose === G5D4_PROVENANCE.live.runPurpose
@@ -435,6 +487,9 @@ function assertVerifiedManifestBindings(manifest, key) {
       throw new Error("fixture verification coverage/generation mismatch");
     }
     assertVerificationBinding(receipt, manifest, binding, key);
+    // Also runs on every chain reread, complete and seal. Machine coverage
+    // alone (including an old full thirteen-binding fixture) is insufficient.
+    assertAcceptedRecordingVerification(receipt, manifest, binding, key);
     seen.add(receipt.targetDigest);
   }
 }
@@ -453,10 +508,7 @@ function assertPreparingPurpose(runDirectory, runPurpose) {
 }
 
 function createLiveFixtureVerificationReader() {
-  // Like the existing live collector, deliberately unarmed until the separate
-  // approved live reader wiring unit. No input, adapter, flag or environment
-  // override can turn observations supplied by a caller into live authority.
-  throw new Error("live fixture verification reader is not armed");
+  return createLiveReadOnlyAdapters().reader;
 }
 
 // These are read results, never public caller attestations. Exact IDs and DB
@@ -492,8 +544,17 @@ async function inspectFixtureBinding(reader, manifest, binding) {
     return z.object({
       ...owner, bucket: exact(target.bucket), key: exact(target.key), present: z.literal(true), count: z.literal(1),
       dbLocator: z.object({ userId: exact(userId), bucket: exact(target.bucket), key: exact(target.key), count: z.literal(1) }).strict(),
-      recordingContract: recording ? z.enum(["consent_gated_web", "consent_gated_mobile"]) : z.null(),
-      directStorageBypassUsed: z.literal(false)
+      // HD-G5D4-RECORDING-ORIGIN-EVIDENCE-V1: this is current persisted
+      // state authority. Canonical Web success is a separate Human procedure
+      // checkpoint, never a DB-derived historical route attestation.
+      recordingState: recording ? z.object({
+        scriptId: z.string().min(1), consentId: z.string().min(1),
+        consentType: z.literal("pronunciation_processing"), consentStatus: z.literal("active"),
+        consentVersion: z.literal("2026-08-22.v1"), writerIntentId: z.string().min(1),
+        writerKind: z.literal("recording_upload"), writerStatus: z.literal("completed"),
+        writerOwnerId: exact(userId), writerScriptId: z.string().min(1),
+        writerBucket: exact(target.bucket), writerKey: exact(target.key), storageObjectId: z.string().min(1)
+      }).strict().refine((state) => state.scriptId === state.writerScriptId, "recording script relation mismatch") : z.null()
     }).strict().parse(await reader.readStorageBinding({ fixtureRole, userId, ...target }));
   }
   if (!manifest.rawAuthorities.fixtureBUserId) throw new Error("request verification requires B control identity");
@@ -519,6 +580,9 @@ function createFixtureVerificationCapability(runDirectory, manifest, binding, ob
     targetDigest: hmacSha256Hex(key, "fixture-binding-target", binding),
     ownerDigest: hmacSha256Hex(key, "fixture-binding-owner", bindingOwner(manifest, binding)),
     relationDigest: hmacSha256Hex(key, "fixture-binding-relations", observation),
+    recordingScriptDigest: isRecordingBinding(binding)
+      ? hmacSha256Hex(key, "fixture-recording-script", observation.recordingState.scriptId) : null,
+    humanRecordingCheckpoint: null,
     verifiedState: binding.kind === "identity" ? "fresh_zero_baseline"
       : binding.kind === "request" ? "confirmed_no_conflict" : "present_owned",
     verifiedCount: 1, verifiedAt: new Date().toISOString()
@@ -560,13 +624,100 @@ export function createSelfTestFixtureVerification(runDirectory, input) {
   assertNoCredentialMaterial(input);
   const binding = g5d4FixtureBindingSchema.parse(input);
   const manifest = assertPreparingPurpose(runDirectory, G5D4_PROVENANCE.selfTest.runPurpose);
-  return createFixtureVerificationCapability(runDirectory, manifest, binding, { synthetic: "self_test_v1" });
+  return createFixtureVerificationCapability(runDirectory, manifest, binding, {
+    synthetic: "self_test_v1", recordingState: { scriptId: "self_test_v1" }
+  });
 }
 
-export function bindVerifiedLiveFixtureAuthority(runDirectory, input, receipt) {
-  if (arguments.length !== 3) throw new Error("verified live bind accepts no overrides");
+function currentRecordingSnapshot(runDirectory, input, receipt, runPurpose) {
+  const manifest = assertPreparingPurpose(runDirectory, runPurpose);
+  const snapshot = verificationCapabilitiesFor(runPurpose).get(receipt);
+  const binding = g5d4FixtureBindingSchema.parse(input);
+  if (!snapshot || snapshot.runDirectory !== assertSecureRunDirectory(runDirectory) ||
+      !isRecordingBinding(snapshot.binding) || canonicalJson(binding) !== canonicalJson(snapshot.binding)) {
+    throw new Error("Human recording checkpoint requires exact machine verification capability");
+  }
+  const { verification: verified } = snapshot;
+  assertVerificationBinding(verified, manifest, snapshot.binding, readAliasKey(runDirectory));
+  const age = Date.now() - Date.parse(verified.verifiedAt);
+  if (verified.generation !== manifest.generation || verified.generationDigest !== manifest.generationDigest ||
+      age < 0 || age > G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS) {
+    throw new Error("Human recording checkpoint machine reconciliation is stale");
+  }
+  const prefix = bindingRole(binding) === "fixture_a" ? "fixtureA" : "fixtureB";
+  if (manifest.rawAuthorities[`${prefix}StorageTargets`].some((target) => target.bucket === "recordings")) {
+    throw new Error("recording authority already bound");
+  }
+  return { manifest, snapshot };
+}
+
+function createRecordingCheckpointCapability(runDirectory, manifest, snapshot, receipt) {
+  if (checkpointIssuedForVerification.has(receipt)) throw new Error("Human recording checkpoint already issued");
+  const key = readAliasKey(runDirectory);
+  const verified = snapshot.verification;
+  const checkpoint = {
+    schemaVersion: "g5d4.web-recording-checkpoint.v1",
+    purpose: "fixture_web_recording_success", flow: "web",
+    runId: manifest.runId, runPurpose: manifest.runPurpose,
+    provenance: manifest.runPurpose === G5D4_PROVENANCE.live.runPurpose
+      ? G5D4_RECORDING_CHECKPOINT_PROVENANCE.live : G5D4_RECORDING_CHECKPOINT_PROVENANCE.selfTest,
+    fixtureRole: verified.fixtureRole, recordingAlias: recordingAlias(snapshot.binding, key),
+    targetDigest: verified.targetDigest, ownerDigest: verified.ownerDigest, scriptDigest: verified.recordingScriptDigest,
+    generation: verified.generation, generationDigest: verified.generationDigest,
+    machineVerificationDigest: verified.integrityMac, confirmedAt: new Date().toISOString()
+  };
+  checkpoint.integrityMac = recordingCheckpointMac(checkpoint, key);
+  const checked = Object.freeze(assertRecordingCheckpoint(checkpoint, verified, manifest, snapshot.binding, key));
+  const capability = Object.freeze(Object.create(null));
+  const registry = manifest.runPurpose === G5D4_PROVENANCE.live.runPurpose ? liveRecordingCheckpoints : selfTestRecordingCheckpoints;
+  registry.set(capability, Object.freeze({ runDirectory: snapshot.runDirectory, receipt, checkpoint: checked }));
+  checkpointIssuedForVerification.add(receipt);
+  return capability;
+}
+
+// Only the real process terminal supplies live procedural confirmation. No
+// caller stream, phrase, boolean, argv, environment or automation override.
+async function readRecordingPhraseFromLiveTty(summary) {
+  if (process.stdin.isTTY !== true || process.stdout.isTTY !== true || !isatty(0) || !isatty(1)) {
+    throw new Error("Human recording checkpoint requires actual live TTY stdin/stdout");
+  }
+  process.stdout.write(`${summary}\nConfirm this exact reconciled recording is the canonical consent-gated Web action you just performed.\nType exactly: ${G5D4_RECORDING_CONFIRMATION_PHRASE}\n`);
+  const terminal = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    return await new Promise((resolvePhrase, reject) => {
+      terminal.once("close", () => reject(new Error("Human recording checkpoint input closed")));
+      terminal.question("> ", (phrase) => resolvePhrase(phrase));
+    });
+  } finally {
+    terminal.close();
+  }
+}
+
+export async function confirmLiveRecordingCheckpointFromTty(runDirectory, input, receipt) {
+  if (arguments.length !== 3) throw new Error("Human recording checkpoint accepts no confirmation overrides");
+  const purpose = G5D4_PROVENANCE.live.runPurpose;
+  const { manifest, snapshot } = currentRecordingSnapshot(runDirectory, input, receipt, purpose);
+  if (checkpointIssuedForVerification.has(receipt)) throw new Error("Human recording checkpoint already issued");
+  const alias = recordingAlias(snapshot.binding, readAliasKey(runDirectory));
+  const phrase = await readRecordingPhraseFromLiveTty(
+    `Run ${manifest.runId}; role ${snapshot.verification.fixtureRole}; recording ${alias}; script ${snapshot.verification.recordingScriptDigest}`
+  );
+  if (phrase !== G5D4_RECORDING_CONFIRMATION_PHRASE) throw new Error("Human recording checkpoint phrase mismatch");
+  // Human input may take time; require the very same unbound state afterwards.
+  currentRecordingSnapshot(runDirectory, snapshot.binding, receipt, purpose);
+  return createRecordingCheckpointCapability(runDirectory, manifest, snapshot, receipt);
+}
+
+export function createSelfTestRecordingCheckpoint(runDirectory, input, receipt) {
+  if (arguments.length !== 3) throw new Error("self-test recording checkpoint accepts no overrides");
+  const { manifest, snapshot } = currentRecordingSnapshot(runDirectory, input, receipt, G5D4_PROVENANCE.selfTest.runPurpose);
+  return createRecordingCheckpointCapability(runDirectory, manifest, snapshot, receipt);
+}
+
+export function bindVerifiedLiveFixtureAuthority(runDirectory, input, receipt, checkpoint) {
+  if (arguments.length < 3 || arguments.length > 4) throw new Error("verified live bind accepts no overrides");
   const manifest = assertPreparingPurpose(runDirectory, G5D4_PROVENANCE.live.runPurpose);
-  return bindManifestAuthority(runDirectory, input, receipt, manifest);
+  return bindManifestAuthority(runDirectory, input, receipt, manifest, checkpoint);
 }
 
 function appendManifestGeneration(runDirectory, current, changes, options = {}) {
@@ -583,10 +734,13 @@ export function bindFixtureManifestAuthority(runDirectory, input) {
   // Backwards-compatible name, now structurally self-test-only.
   if (arguments.length !== 2) throw new Error("raw fixture bind accepts no overrides");
   const current = assertPreparingPurpose(runDirectory, G5D4_PROVENANCE.selfTest.runPurpose);
-  return bindManifestAuthority(runDirectory, input, createSelfTestFixtureVerification(runDirectory, input), current);
+  const binding = g5d4FixtureBindingSchema.parse(input);
+  const receipt = createSelfTestFixtureVerification(runDirectory, binding);
+  const checkpoint = isRecordingBinding(binding) ? createSelfTestRecordingCheckpoint(runDirectory, binding, receipt) : undefined;
+  return bindManifestAuthority(runDirectory, binding, receipt, current, checkpoint);
 }
 
-function bindManifestAuthority(runDirectory, input, receipt, current) {
+function bindManifestAuthority(runDirectory, input, receipt, current, checkpoint) {
   const capabilities = verificationCapabilitiesFor(current.runPurpose);
   const snapshot = capabilities.get(receipt);
   if (!snapshot || snapshot.runDirectory !== assertSecureRunDirectory(runDirectory)) {
@@ -604,6 +758,21 @@ function bindManifestAuthority(runDirectory, input, receipt, current) {
     throw new Error("fixture verification generation is stale");
   }
   if (current.lifecycle !== "preparing") throw new Error("fixture bindings require preparing manifest");
+  let accepted = verified;
+  const checkpoints = current.runPurpose === G5D4_PROVENANCE.live.runPurpose ? liveRecordingCheckpoints : selfTestRecordingCheckpoints;
+  if (isRecordingBinding(binding)) {
+    currentRecordingSnapshot(runDirectory, binding, receipt, current.runPurpose);
+    const human = checkpoints.get(checkpoint);
+    if (!human || human.receipt !== receipt || human.runDirectory !== snapshot.runDirectory) {
+      throw new Error("recording acceptance requires matching Human Web checkpoint and machine verification");
+    }
+    assertRecordingCheckpoint(human.checkpoint, verified, current, binding, key);
+    accepted = { ...verified, humanRecordingCheckpoint: human.checkpoint };
+    accepted.integrityMac = verificationMac(accepted, key);
+  } else if (checkpoint !== undefined) {
+    throw new Error("Human recording checkpoint cannot bind another resource kind");
+  }
+  assertAcceptedRecordingVerification(accepted, current, binding, key);
   const raw = structuredClone(current.rawAuthorities);
   const prefix = binding.fixtureRole === "fixture_a" ? "fixtureA" : "fixtureB";
   const bindOnce = (field, value) => {
@@ -625,9 +794,10 @@ function bindManifestAuthority(runDirectory, input, receipt, current) {
   }
   const derived = createAliasesAndTargets(raw, readAliasKey(runDirectory));
   const published = appendManifestGeneration(runDirectory, current, {
-    rawAuthorities: raw, ...derived, bindingVerifications: [...current.bindingVerifications, verified]
+    rawAuthorities: raw, ...derived, bindingVerifications: [...current.bindingVerifications, accepted]
   });
   capabilities.delete(receipt);
+  if (checkpoint !== undefined) checkpoints.delete(checkpoint);
   return published;
 }
 

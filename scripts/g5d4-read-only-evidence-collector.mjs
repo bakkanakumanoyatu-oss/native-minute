@@ -1,3 +1,4 @@
+import { createLiveReadOnlyAdapters } from "./g5d4-live-read-only-adapters.mjs";
 import {
   G5D4_A_PREP_TABLE_CONTRACT,
   G5D4_A_SEALED_TABLE_CONTRACT,
@@ -115,7 +116,7 @@ function normalizeDownloadedBytes(value) {
   throw new Error("storage download did not return bytes");
 }
 
-async function collectStorage(adapters, rawUserId, expected) {
+async function collectStorage(adapters, rawUserId, expected, digestContent = true) {
   const listed = validateStorageUniverse(
     await adapters.storage.list({ operation: "list", rawUserId }),
     expected
@@ -128,10 +129,10 @@ async function collectStorage(adapters, rawUserId, expected) {
     if (!info.present || info.bucket !== target.bucket || info.key !== target.key) {
       throw new Error("storage presence or identity mismatch");
     }
-    const bytes = normalizeDownloadedBytes(
+    const bytes = digestContent ? normalizeDownloadedBytes(
       await adapters.storage.download({ operation: "download", bucket: target.bucket, key: target.key })
-    );
-    if (bytes.length !== info.size) throw new Error("storage size/content mismatch");
+    ) : null;
+    if (bytes !== null && bytes.length !== info.size) throw new Error("storage size/content mismatch");
     objects.push({ info, bytes });
   }
   return objects;
@@ -177,7 +178,7 @@ function stableStorageProjection(objects, key) {
       key: hmacSha256Hex(key, `b-storage-key:${info.bucket}`, info.key),
       present: info.present,
       size: info.size,
-      content: hmacSha256Hex(key, `b-storage-content:${info.bucket}`, bytes),
+      content: bytes === null ? null : hmacSha256Hex(key, `b-storage-content:${info.bucket}`, bytes),
       contentType: info.contentType,
       version: info.version,
       stableMetadata: info.stableMetadata
@@ -311,9 +312,9 @@ function assertSelfTestCollectorManifest(manifest) {
   return manifest;
 }
 
-export async function collectG5d4SelfTestReadOnlyEvidence(input) {
+async function collectReadOnlyEvidence(input, live = false) {
   const adapters = assertReadOnlyCollectorAdapters(input.adapters);
-  const manifest = assertSelfTestCollectorManifest(
+  const manifest = (live ? assertLiveCollectorManifest : assertSelfTestCollectorManifest)(
     assertCanonicalManifestAuthority(
       loadLatestPrivateManifest(input.runDirectory, { requireSealed: input.phase === "sealed" })
     )
@@ -322,26 +323,20 @@ export async function collectG5d4SelfTestReadOnlyEvidence(input) {
   const phase = input.phase;
   if (phase !== "prep_stop" && phase !== "sealed") throw new Error("collector phase mismatch");
 
-  const [environmentRaw, migrationsRaw, gitRaw, databaseARaw, databaseBRaw] = await Promise.all([
+  const [environmentRaw, migrationsRaw, gitRaw] = await Promise.all([
     adapters.environment.inspectProject({ operation: "inspect_project" }),
     adapters.environment.inspectMigrations({ operation: "inspect_migrations" }),
-    adapters.git.inspect({ operation: "inspect_local_git" }),
-    adapters.db.select({
-      operation: "select",
-      fixtureRole: "fixture_a",
-      rawUserId: manifest.rawAuthorities.fixtureAUserId,
-      rawRequestId: manifest.rawAuthorities.deletionRequestId
-    }),
-    adapters.db.select({
-      operation: "select",
-      fixtureRole: "fixture_b",
-      rawUserId: manifest.rawAuthorities.fixtureBUserId
-    })
+    adapters.git.inspect({ operation: "inspect_local_git" })
   ]);
-
   const environment = g5d4EnvironmentInspectionSchema.parse(environmentRaw);
   const migrations = g5d4MigrationInspectionSchema.parse(migrationsRaw);
   const git = g5d4GitInspectionSchema.parse(gitRaw);
+  assertCollectorAuthority(environment, migrations, git, manifest);
+  const [databaseARaw, databaseBRaw] = await Promise.all([
+    adapters.db.select({ operation: "select", fixtureRole: "fixture_a",
+      rawUserId: manifest.rawAuthorities.fixtureAUserId, rawRequestId: manifest.rawAuthorities.deletionRequestId }),
+    adapters.db.select({ operation: "select", fixtureRole: "fixture_b", rawUserId: manifest.rawAuthorities.fixtureBUserId })
+  ]);
   const databaseA = g5d4PrivateDatabaseSnapshotSchema.parse(databaseARaw);
   const databaseB = g5d4PrivateDatabaseSnapshotSchema.parse(databaseBRaw);
   assertCollectorAuthority(environment, migrations, git, manifest);
@@ -362,7 +357,8 @@ export async function collectG5d4SelfTestReadOnlyEvidence(input) {
     collectStorage(
       adapters,
       manifest.rawAuthorities.fixtureAUserId,
-      manifest.rawAuthorities.fixtureAStorageTargets
+      manifest.rawAuthorities.fixtureAStorageTargets,
+      false
     ),
     collectStorage(
       adapters,
@@ -495,42 +491,32 @@ export async function collectG5d4SelfTestReadOnlyEvidence(input) {
   };
 }
 
-export async function collectSelfTestBControlFingerprint(input) {
+async function collectBControlFingerprint(input, live = false) {
   const adapters = assertReadOnlyCollectorAdapters(input.adapters);
-  const manifest = assertSelfTestCollectorManifest(
+  const manifest = (live ? assertLiveCollectorManifest : assertSelfTestCollectorManifest)(
     assertCanonicalManifestAuthority(
       loadLatestPrivateManifest(input.runDirectory, { requireSealed: true })
     )
   );
   const key = readAliasKey(input.runDirectory);
-  const [databaseRaw, providerRaw, authRaw, storage, environmentRaw, migrationsRaw, gitRaw] =
-    await Promise.all([
-      adapters.db.select({
-        operation: "select",
-        fixtureRole: "fixture_b",
-        rawUserId: manifest.rawAuthorities.fixtureBUserId
-      }),
-      adapters.provider.get({
-        operation: "get",
-        resourceId: manifest.rawAuthorities.fixtureBProviderResourceId
-      }),
-      adapters.auth.get({ operation: "get", userId: manifest.rawAuthorities.fixtureBUserId }),
-      collectStorage(
-        adapters,
-        manifest.rawAuthorities.fixtureBUserId,
-        manifest.rawAuthorities.fixtureBStorageTargets
-      ),
-      adapters.environment.inspectProject({ operation: "inspect_project" }),
-      adapters.environment.inspectMigrations({ operation: "inspect_migrations" }),
-      adapters.git.inspect({ operation: "inspect_local_git" })
-    ]);
-  const database = g5d4PrivateDatabaseSnapshotSchema.parse(databaseRaw);
-  const provider = g5d4PrivateProviderSnapshotSchema.parse(providerRaw);
-  const auth = g5d4PrivateAuthSnapshotSchema.parse(authRaw);
+  const [environmentRaw, migrationsRaw, gitRaw] = await Promise.all([
+    adapters.environment.inspectProject({ operation: "inspect_project" }),
+    adapters.environment.inspectMigrations({ operation: "inspect_migrations" }),
+    adapters.git.inspect({ operation: "inspect_local_git" })
+  ]);
   const environment = g5d4EnvironmentInspectionSchema.parse(environmentRaw);
   const migrations = g5d4MigrationInspectionSchema.parse(migrationsRaw);
   const git = g5d4GitInspectionSchema.parse(gitRaw);
   assertCollectorAuthority(environment, migrations, git, manifest);
+  const [databaseRaw, providerRaw, authRaw, storage] = await Promise.all([
+    adapters.db.select({ operation: "select", fixtureRole: "fixture_b", rawUserId: manifest.rawAuthorities.fixtureBUserId }),
+    adapters.provider.get({ operation: "get", resourceId: manifest.rawAuthorities.fixtureBProviderResourceId }),
+    adapters.auth.get({ operation: "get", userId: manifest.rawAuthorities.fixtureBUserId }),
+    collectStorage(adapters, manifest.rawAuthorities.fixtureBUserId, manifest.rawAuthorities.fixtureBStorageTargets)
+  ]);
+  const database = g5d4PrivateDatabaseSnapshotSchema.parse(databaseRaw);
+  const provider = g5d4PrivateProviderSnapshotSchema.parse(providerRaw);
+  const auth = g5d4PrivateAuthSnapshotSchema.parse(authRaw);
   validateDatabaseOwnership(database, manifest.rawAuthorities.fixtureBUserId);
   if (
     provider.resourceId !== manifest.rawAuthorities.fixtureBProviderResourceId ||
@@ -581,16 +567,37 @@ export function createSelfTestReadOnlyCollector(runDirectory, adapters) {
   });
 }
 
-export function createLiveReadOnlyCollector(runDirectory) {
-  const manifest = assertCanonicalManifestAuthority(
-    loadLatestPrivateManifest(runDirectory, { requireSealed: true })
-  );
-  if (
-    manifest.runPurpose !== G5D4_PROVENANCE.live.runPurpose ||
-    manifest.confirmationProvenance !== G5D4_PROVENANCE.live.confirmation ||
-    manifest.collectorProvenance !== G5D4_PROVENANCE.live.collector
-  ) {
+export function collectG5d4SelfTestReadOnlyEvidence(input) {
+  return collectReadOnlyEvidence(input);
+}
+
+export function collectSelfTestBControlFingerprint(input) {
+  return collectBControlFingerprint(input);
+}
+
+function assertLiveCollectorManifest(manifest) {
+  if (manifest.runPurpose !== G5D4_PROVENANCE.live.runPurpose ||
+      manifest.confirmationProvenance !== G5D4_PROVENANCE.live.confirmation ||
+      manifest.collectorProvenance !== G5D4_PROVENANCE.live.collector) {
     throw new Error("exact live collector provenance required");
   }
-  throw new Error("live read-only collector factory is not armed");
+  return manifest;
+}
+
+export function createLiveReadOnlyCollector(runDirectory) {
+  if (arguments.length !== 1) throw new Error("live collector accepts no caller adapters");
+  assertLiveCollectorManifest(assertCanonicalManifestAuthority(loadLatestPrivateManifest(runDirectory)));
+  const { adapters } = createLiveReadOnlyAdapters();
+  assertReadOnlyCollectorAdapters(adapters);
+  const options = (value = {}) => {
+    if (!value || Object.keys(value).some((key) => !["phase", "collectedAt"].includes(key))) throw new Error("live collector option override rejected");
+    if (value.collectedAt !== undefined && (typeof value.collectedAt !== "string" || !Number.isFinite(Date.parse(value.collectedAt)))) {
+      throw new Error("live collector timestamp invalid");
+    }
+    return { runDirectory, adapters, phase: value.phase ?? "sealed", collectedAt: value.collectedAt };
+  };
+  return Object.freeze({
+    collectReadiness: (value) => collectReadOnlyEvidence(options(value), true),
+    collectBControl: (value) => collectBControlFingerprint(options(value), true)
+  });
 }
