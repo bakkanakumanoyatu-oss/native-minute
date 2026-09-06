@@ -12,6 +12,7 @@
 
 
 ## Mobile UI/UX implementation
+- Recordのoffline中に停止／キャンセルが消えるP1を修正。録音中の操作と読込済み台本をnetwork / consent取得stateから独立させ、新規録音・upload / evaluateの既存gateは維持。追加12件を含む関連138 tests、local mock browser 22条件はPASS。Human確認・commit / push前、実機は `DEVICE_ACCEPTANCE_PENDING=YES`。
 - Progress unitは `FRONTEND_IMPLEMENTED=YES / BROWSER_VERIFIED=YES`（local mockのみ）、Human確認・commit / push前。台本title → latestのnextStep全文 → 保存順のfocus先頭最大3語 → 同じRecord → serverのLatest / Best → 保存順のhistory / Review → Scripts。ID一致だけでsame-take注記を出し、全体Progress・scriptId絞り込みを維持。複数台本は等価なtext再開操作、shell調整はProgress表示時のみ。BFF / DTO / service契約は変更なし。
 - Progressは `DEVICE_ACCEPTANCE_PENDING=YES`。428 / 320px・文字100 / 200%の76表示条件、操作・回復17条件、既存4画面のCSS・画像回帰16条件をlocalで確認。実iPhone / Dynamic Type / VoiceOver / Human usability / 長いnextStep＋拡大時のCTA距離 / 複数台本実データの使用感はP2継続。Library / Gate 5へ自動展開しない。
 - Scripts unitは `FRONTEND_IMPLEMENTED=YES / BROWSER_VERIFIED=YES`（local mockのみ）、Human確認・commit / push前。server順の等価divider行にtitle → locale / 目標時間 → 最大24語の表示専用抜粋 → Listenへの「練習する」/ Record直行を配置。既存create / 150語超warning / 保存後Listen / safe `script_limit_reached` / retryを維持し、shell調整もScripts表示時だけ。

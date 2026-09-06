@@ -648,6 +648,13 @@ html:has(:is(.record-screen, .listen-screen)) {
   text-decoration: underline;
 }
 
+/* Active capture reports offline/reconnecting in the script region so those
+   shell notices do not move its stop/cancel dock. Other health errors remain. */
+.app-shell:has(.record-screen.is-recording) > .status-card:is(.status-offline, .status-checking),
+.app-shell:has(.record-screen.is-recording) .offline-banner {
+  display: none;
+}
+
 :is(.record-screen, .listen-screen) {
   height: 100%;
   display: grid;

@@ -504,7 +504,8 @@ export function RecordScreen({
     );
   }
 
-  const busy = recorderState.kind === "requesting-permission" || recorderState.kind === "recording" || recorderState.kind === "stopping" || normalizing;
+  const isRecording = recorderState.kind === "recording";
+  const busy = recorderState.kind === "requesting-permission" || isRecording || recorderState.kind === "stopping" || normalizing;
   const submitting = submitState.kind === "uploading" || submitState.kind === "evaluating";
   const shortPrompt = scriptState.kind === "ready" && preparedTake
     ? getShortRecordingPrompt(preparedTake.durationSeconds, scriptState.script.targetSeconds)
@@ -513,19 +514,21 @@ export function RecordScreen({
     ? scriptState
     : { kind: "error", error: { kind: "offline" } };
   const pronunciationConsentAccepted = pronunciationConsentState.kind === "ready" && pronunciationConsentState.status === "accepted";
+  // Keep the already loaded reading surface during capture without changing any action gate.
+  const readingScriptState = isRecording && scriptState.kind === "ready" ? scriptState : visibleScriptState;
 
   const evaluationRetry = Boolean(preparedTake) && submitState.kind === "error" &&
     canRetryUploadedMobileEvaluation(submitState.error, Boolean(uploadedRecording));
-  const scriptIsLong = visibleScriptState.kind === "ready" &&
-    visibleScriptState.script.content.trim().split(/\s+/).length > 150;
+  const scriptIsLong = readingScriptState.kind === "ready" &&
+    readingScriptState.script.content.trim().split(/\s+/).length > 150;
 
   return (
-    <section className="record-screen" lang="ja" aria-label="Record">
+    <section className={isRecording ? "record-screen is-recording" : "record-screen"} lang="ja" aria-label="Record">
       <ScreenHeading title="Record" />
 
       <div className="record-script-scroll" role="region" aria-label="録音用の台本" tabIndex={0}>
-        {visibleScriptState.kind === "loading" ? <LoadingState label="台本を読み込んでいます…" /> : null}
-        {visibleScriptState.kind === "error" ? <RequestError error={visibleScriptState.error} onRetry={() => {
+        {readingScriptState.kind === "loading" ? <LoadingState label="台本を読み込んでいます…" /> : null}
+        {readingScriptState.kind === "error" ? <RequestError error={readingScriptState.error} onRetry={() => {
           setScriptState({ kind: "loading" });
           setScriptReloadKey((value) => value + 1);
         }} /> : null}
@@ -538,7 +541,7 @@ export function RecordScreen({
         ) : null}
         {pronunciationConsentAccepted && shortPrompt ? <p className="record-body-notice">{shortPrompt}</p> : null}
         {pronunciationConsentAccepted && submitState.kind === "error" && !evaluationRetry ? <div className="record-body-notice"><RequestError error={submitState.error} /></div> : null}
-        {pronunciationConsentAccepted && (captureDiagnostic.audioTrackPresent || recorderState.kind === "error" || signalClassification) ? (
+        {(pronunciationConsentAccepted || isRecording) && (captureDiagnostic.audioTrackPresent || recorderState.kind === "error" || signalClassification) ? (
           <details className="record-details">
             <summary>録音の詳細</summary>
             <p>audioTrackPresent: {captureDiagnostic.audioTrackPresent ? "yes" : "no"}</p>
@@ -559,32 +562,46 @@ export function RecordScreen({
             <RequestError error={submitState.error} />
           </details>
         ) : null}
-        {visibleScriptState.kind === "ready" ? (
+        {readingScriptState.kind === "ready" ? (
           <article className="record-script">
-            <h2 lang={visibleScriptState.script.locale}>{visibleScriptState.script.title}</h2>
-            <div className="record-script-meta"><span>目標 {visibleScriptState.script.targetSeconds}秒</span><span>{visibleScriptState.script.locale}</span></div>
+            <h2 lang={readingScriptState.script.locale}>{readingScriptState.script.title}</h2>
+            <div className="record-script-meta"><span>目標 {readingScriptState.script.targetSeconds}秒</span><span>{readingScriptState.script.locale}</span></div>
             {scriptIsLong ? <p className="record-length-note">目標時間には長めの可能性があります。</p> : null}
-            <p className="record-script-text" lang={visibleScriptState.script.locale}>{visibleScriptState.script.content}</p>
+            <p className="record-script-text" lang={readingScriptState.script.locale}>{readingScriptState.script.content}</p>
           </article>
         ) : null}
+        {isRecording && !isOnline ? <p className="record-body-notice" role="status">オフラインです。録音は停止できます。</p> : null}
+        {isRecording && isOnline && pronunciationConsentState.kind === "loading" ? <LoadingState label="録音と発音評価への同意を確認しています…" /> : null}
+        {isRecording && isOnline && pronunciationConsentState.kind === "error" ? <RequestError error={pronunciationConsentState.error} /> : null}
       </div>
 
       <div className="record-control-dock" role="region" aria-label="録音の操作">
-        {pronunciationConsentState.kind === "loading" ? <LoadingState label="録音と発音評価への同意を確認しています…" /> : null}
-        {pronunciationConsentState.kind === "error" ? <RequestError error={pronunciationConsentState.error} onRetry={() => {
+        {/* Stopping active capture never depends on network or consent-fetch availability. */}
+        {isRecording ? (
+          <>
+            <div className="record-status">
+              <strong role="status"><span className="record-dot" aria-hidden="true" />録音中</strong>
+              <span className="record-clock" aria-live="off">{formatSeconds(elapsedSeconds)} <span> / 最大 {formatSeconds(MOBILE_RECORDING_MAX_SECONDS)}</span></span>
+            </div>
+            <button type="button" className="record-primary" onClick={() => recorder.current?.stop()}><span className="record-stop-icon" aria-hidden="true" />停止</button>
+            <button type="button" className="record-text-action" onClick={cancelRecording}>キャンセル</button>
+          </>
+        ) : null}
+        {!isRecording && pronunciationConsentState.kind === "loading" ? <LoadingState label="録音と発音評価への同意を確認しています…" /> : null}
+        {!isRecording && pronunciationConsentState.kind === "error" ? <RequestError error={pronunciationConsentState.error} onRetry={() => {
           setPronunciationConsentState({ kind: "loading" });
           void api.getPronunciationConsent().then((result) => {
             setPronunciationConsentState(result.kind === "success" ? { kind: "ready", status: result.status } : { kind: "error", error: result });
           });
         }} /> : null}
-        {pronunciationConsentState.kind === "ready" && pronunciationConsentState.status !== "accepted" ? (
+        {!isRecording && pronunciationConsentState.kind === "ready" && pronunciationConsentState.status !== "accepted" ? (
           <div className="record-consent-actions">
             <button type="button" className="record-primary" aria-describedby="record-consent-description" onClick={() => void acceptPronunciationConsent()}>同意して録音へ進む</button>
             <button type="button" className="record-text-action" onClick={() => onNavigate({ name: "listen", scriptId })}>同意しない</button>
           </div>
         ) : null}
 
-        {pronunciationConsentAccepted ? (
+        {!isRecording && pronunciationConsentAccepted ? (
           <>
             {recorderState.kind === "error" ? <div className="auth-error" role="alert"><p>{RECORDER_ERROR_COPY[recorderState.reason]}</p></div> : null}
             {localError ? <div className="auth-error" role="alert"><p>{localError}</p></div> : null}
@@ -625,16 +642,7 @@ export function RecordScreen({
               </div>
             ) : null}
 
-            {recorderState.kind === "recording" ? (
-              <>
-                <div className="record-status">
-                  <strong role="status"><span className="record-dot" aria-hidden="true" />録音中</strong>
-                  <span className="record-clock" aria-live="off">{formatSeconds(elapsedSeconds)} <span> / 最大 {formatSeconds(MOBILE_RECORDING_MAX_SECONDS)}</span></span>
-                </div>
-                <button type="button" className="record-primary" onClick={() => recorder.current?.stop()}><span className="record-stop-icon" aria-hidden="true" />停止</button>
-                <button type="button" className="record-text-action" onClick={cancelRecording}>キャンセル</button>
-              </>
-            ) : preparedTake ? (
+            {preparedTake ? (
               <>
                 <button type="button" className="record-primary" aria-label={submitState.kind === "uploading" ? "録音を保存中…" : submitState.kind === "evaluating" ? "評価中…" : evaluationRetry ? "同じ録音で評価を再試行" : "この録音で評価する"} onClick={() => void submitTake()} disabled={busy || submitting || !canSubmitMobileTake(preparedTake, previewConfirmed)}>
                   {submitState.kind === "uploading" ? "録音を保存中…" : submitState.kind === "evaluating" ? "評価中…" : evaluationRetry ? <span><span className="record-action-phrase">同じ録音で</span><span className="record-action-phrase">評価を再試行</span></span> : <span><span className="record-action-phrase">この録音で</span><span className="record-action-phrase">評価する</span></span>}
