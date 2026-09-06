@@ -29,12 +29,19 @@ import {
   g5d4AFixtureContractSchema,
   g5d4AuthorizationSchema,
   g5d4BControlContractSchema,
+  g5d4PrivateManifestSchema,
   hmacSha256Hex,
   sha256Hex
 } from "./g5d4-proof-contract.mjs";
 import {
   G5D4_CONFIRMATION_PHRASE,
   assertSecureRunDirectory,
+  assertFixtureManifestComplete,
+  bindFixtureManifestAuthority,
+  bindVerifiedLiveFixtureAuthority,
+  verifyLiveFixtureAuthority,
+  createSelfTestFixtureVerification,
+  completeFixtureManifest,
   atomicPublishPrivateFile,
   cleanupPrivateRunDirectory,
   confirmAuthorizationFromTty,
@@ -46,6 +53,7 @@ import {
   inspectPrivateStatePermissions,
   issueAuthorizationRecord,
   loadLatestPrivateManifest,
+  loadAndVerifyManifestChain,
   readAliasKey,
   readAuthorizationRecord,
   readPrivateJson,
@@ -64,6 +72,7 @@ import {
 } from "./g5d4-authorized-step-wrapper.mjs";
 import {
   advanceFixturePreparation,
+  bindVerifiedFixturePreparationAuthority,
   assertFixturePreparationHasNoUnsafeAutomation,
   createFixturePreparationState
 } from "./g5d4-fixture-prepare.mjs";
@@ -338,7 +347,7 @@ function confirmAuthorizationForSelfTest(runDirectory, issuedPath, confirmedAt) 
   return { path, record };
 }
 
-function privateManifestInput(state, runPurpose) {
+function privateManifestInput(runPurpose) {
   return {
     runPurpose,
     createdAt: INSTANT,
@@ -346,30 +355,115 @@ function privateManifestInput(state, runPurpose) {
       environment: "canonical_staging",
       projectLabel: G5D4_CANONICAL_STAGING.projectLabel,
       projectRef: G5D4_CANONICAL_STAGING.projectRef,
+      region: "ap-northeast-1",
       commit: COMMIT
-    },
-    rawAuthorities: {
-      fixtureAUserId: state.userA,
-      fixtureBUserId: state.userB,
-      fixtureAProviderResourceId: state.providerAId,
-      fixtureBProviderResourceId: state.providerBId,
-      fixtureAStorageTargets: state.targetsA,
-      fixtureBStorageTargets: state.targetsB,
-      deletionRequestId: "private-deletion-request-id",
-      deletionRequestRef: "private-deletion-request-ref"
     }
   };
 }
 
-function createSyntheticPrivateRun(state, runPurpose, options = {}) {
+// Synthetic identifiers stay exclusively in this fake-only harness.
+function fixtureBindings(state) {
+  return [
+    { kind: "identity", fixtureRole: "fixture_a", userId: state.userA },
+    { kind: "identity", fixtureRole: "fixture_b", userId: state.userB },
+    { kind: "provider", fixtureRole: "fixture_a", resourceId: state.providerAId },
+    { kind: "provider", fixtureRole: "fixture_b", resourceId: state.providerBId },
+    ...state.targetsA.map((target) => ({ kind: "storage", fixtureRole: "fixture_a", target })),
+    ...state.targetsB.map((target) => ({ kind: "storage", fixtureRole: "fixture_b", target })),
+    { kind: "request", deletionRequestId: "private-deletion-request-id", deletionRequestRef: "private-deletion-request-ref" }
+  ];
+}
+
+let isolatedModuleSequence = 0;
+async function createIsolatedVerificationModule(state, mutateObservations = () => {}, mutableReceipt = false) {
+  // Test-only module isolation replaces the private, unarmed reader factory.
+  // The optional external-key freeze exception is confined below. Production
+  // accepts neither option; validation, snapshot, bind and chain checks run unchanged.
+  const observations = fixtureBindings(state).map((binding) => {
+    const fixtureRole = binding.fixtureRole ?? "fixture_a";
+    const userId = fixtureRole === "fixture_a" ? state.userA : state.userB;
+    const owner = { fixtureRole, userId };
+    if (binding.kind === "identity") return {
+      method: "readIdentityBaseline", query: owner,
+      result: { ...owner, auth: { userId, present: true, confirmed: true }, profile: { userId, count: 1 },
+        baseline: G5D4_A_PREP_TABLE_CONTRACT.filter(({ table }) => table !== "profiles").map(({ table }) => ({ table, count: 0 })) }
+    };
+    if (binding.kind === "provider") return {
+      method: "readProviderBinding", query: { ...owner, resourceId: binding.resourceId },
+      result: { ...owner, resourceId: binding.resourceId, present: true, count: 1,
+        dbBinding: { userId, resourceId: binding.resourceId, count: 1 } }
+    };
+    if (binding.kind === "storage") return {
+      method: "readStorageBinding", query: { ...owner, ...binding.target },
+      result: { ...owner, ...binding.target, present: true, count: 1,
+        dbLocator: { userId, ...binding.target, count: 1 },
+        recordingContract: binding.target.bucket === "recordings" ? "consent_gated_web" : null, directStorageBypassUsed: false }
+    };
+    return {
+      method: "readDeletionRequest",
+      query: { ...owner, deletionRequestId: binding.deletionRequestId, deletionRequestRef: binding.deletionRequestRef, fixtureBUserId: state.userB },
+      result: { ...owner, deletionRequestId: binding.deletionRequestId, deletionRequestRef: binding.deletionRequestRef,
+        count: 1, state: "confirmed", conflictCount: 0, fixtureBUserId: state.userB, fixtureBRequestCount: 0 }
+    };
+  });
+  mutateObservations(observations);
+  const privatePath = join(ROOT, "scripts/g5d4-proof-private-state.mjs");
+  let source = readFileSync(privatePath, "utf8");
+  const factory = /function createLiveFixtureVerificationReader\(\) \{[\s\S]*?\n\}/;
+  if (!factory.test(source)) throw new Error("isolated reader factory boundary missing");
+  source = source.replace(factory, `function createLiveFixtureVerificationReader() {
+    const observations = ${canonicalJson(observations)};
+    return Object.fromEntries(["readIdentityBaseline", "readProviderBinding", "readStorageBinding", "readDeletionRequest"].map(method => [method, async query => {
+      isolatedReadCounts[method] = (isolatedReadCounts[method] ?? 0) + 1;
+      const observed = observations.find(item => item.method === method && canonicalJson(item.query) === canonicalJson(query));
+      if (!observed) throw new Error("isolated fake read target missing");
+      const result = structuredClone(observed.result);
+      isolatedReadResults.push(result);
+      return result;
+    }]));
+  }`);
+  // Defense-in-depth test only: remove external-key freezing in an isolated
+  // instance. Snapshot construction/lookup/persistence remain unchanged.
+  if (mutableReceipt) {
+    const declaration = "const receipt = Object.freeze(Object.create(null));";
+    if (!source.includes(declaration)) throw new Error("opaque receipt test boundary missing");
+    source = source.replace(declaration, "const receipt = Object.create(null);");
+  }
+  source = source.replace('const MODULE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");', `const MODULE_ROOT = ${JSON.stringify(ROOT)};`)
+    .replaceAll('"zod"', JSON.stringify(import.meta.resolve("zod")))
+    .replaceAll('"./g5d4-proof-contract.mjs"', JSON.stringify(new URL("./g5d4-proof-contract.mjs", import.meta.url).href));
+  source += `\nexport const isolatedReadCounts = {};\nexport const isolatedReadResults = [];\n// isolated instance ${++isolatedModuleSequence}\n`;
+  const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
+  const isolated = await import(moduleUrl);
+  let helper = readFileSync(join(ROOT, "scripts/g5d4-fixture-prepare.mjs"), "utf8");
+  helper = helper.replaceAll('"./g5d4-proof-contract.mjs"', JSON.stringify(new URL("./g5d4-proof-contract.mjs", import.meta.url).href))
+    .replaceAll('"zod"', JSON.stringify(import.meta.resolve("zod")))
+    .replaceAll('"./g5d4-proof-private-state.mjs"', JSON.stringify(moduleUrl));
+  return { ...isolated, helper: await import(`data:text/javascript;base64,${Buffer.from(helper).toString("base64")}`) };
+}
+
+function populateSyntheticManifest(runDirectory, state) {
+  for (const binding of fixtureBindings(state)) bindFixtureManifestAuthority(runDirectory, binding);
+  return completeFixtureManifest(runDirectory);
+}
+
+async function createSyntheticPrivateRun(state, runPurpose, options = {}) {
   const runDirectory = createPrivateRunDirectory({ runPurpose });
-  createAliasKey(runDirectory);
-  const initial = createInitialPrivateManifest(
-    runDirectory,
-    privateManifestInput(state, runPurpose)
-  );
-  const sealed = options.sealed === false ? null : sealPrivateManifest(runDirectory, { createdAt: INSTANT });
-  return { runDirectory, initial, sealed };
+  try {
+    const initial = createInitialPrivateManifest(runDirectory, privateManifestInput(runPurpose));
+    createAliasKey(runDirectory);
+    if (runPurpose === G5D4_PROVENANCE.selfTest.runPurpose) populateSyntheticManifest(runDirectory, state);
+    else {
+      const isolated = await createIsolatedVerificationModule(state);
+      for (const binding of fixtureBindings(state)) await isolated.helper.bindVerifiedFixturePreparationAuthority(runDirectory, binding);
+      completeFixtureManifest(runDirectory);
+    }
+    const sealed = options.sealed === false ? null : sealPrivateManifest(runDirectory, { createdAt: INSTANT });
+    return { runDirectory, initial, sealed };
+  } catch {
+    cleanupPrivateRunDirectory(runDirectory);
+    throw new Error("isolated fake manifest setup failed");
+  }
 }
 
 function copyPrivateRunToLiveLookingDirectory(sourceDirectory, mutateFile) {
@@ -433,7 +527,13 @@ async function expectReject(operation) {
 
 let passed = 0;
 async function check(number, label, operation) {
-  const ok = await operation();
+  let ok;
+  try {
+    ok = await operation();
+  } catch {
+    // Never dump isolated module source or private fixture observations.
+    throw new Error(`case ${number} failed during isolated check`);
+  }
   if (!ok) throw new Error(`case ${number} failed`);
   passed += 1;
   process.stdout.write(`- ${String(number).padStart(2, "0")} ${label}: PASS\n`);
@@ -464,6 +564,641 @@ async function consumeWorker() {
   }
 }
 
+async function checkIncrementalManifest(state, trackRun) {
+  const isolated = await createIsolatedVerificationModule(state);
+  const { bindVerifiedFixturePreparationAuthority } = isolated.helper;
+  const directory = trackRun(createPrivateRunDirectory({ runPurpose: G5D4_PROVENANCE.live.runPurpose }));
+  const bindings = fixtureBindings(state);
+  const initialInput = privateManifestInput(G5D4_PROVENANCE.live.runPurpose);
+  let initial;
+  let preparation = createFixturePreparationState();
+  let bOnly;
+  const identityEvidence = (fixtureRole) => ({ fixtureRole, magicLinkLoginObserved: true, zeroBaselineVerified: true });
+  const persistedBytes = new Map();
+  function preserveGenerations() {
+    for (const manifest of loadAndVerifyManifestChain(directory)) {
+      const name = `manifest-${String(manifest.generation).padStart(6, "0")}.json`;
+      const bytes = readFileSync(join(directory, name), "utf8");
+      if (persistedBytes.has(name) && persistedBytes.get(name) !== bytes) throw new Error("prior generation changed");
+      persistedBytes.set(name, bytes);
+    }
+    return true;
+  }
+  await check(62, "preparing live-purpose creation needs no future resource or key", async () => {
+    if (!await expectReject(() => createInitialPrivateManifest(directory, {
+      ...initialInput, rawAuthorities: { fixtureAUserId: state.userA }
+    }))) return false;
+    initial = createInitialPrivateManifest(directory, initialInput);
+    const raw = initial.manifest.rawAuthorities;
+    return initial.manifest.lifecycle === "preparing" && !existsSync(join(directory, "alias-key.bin")) &&
+      Object.values(raw).every((value) => value === null || (Array.isArray(value) && value.length === 0)) &&
+      Object.keys(initial.manifest.aliases).length === 0 && Object.keys(initial.manifest.stageTargets).length === 0;
+  });
+  await check(63, "unbound preparing generation integrity passes before key creation", async () =>
+    loadLatestPrivateManifest(directory).generationDigest === initial.manifest.generationDigest && preserveGenerations()
+  );
+  createAliasKey(directory);
+  await check(64, "A baseline verification then one identity binding and checkpoint", async () => {
+    if (!await expectReject(() => bindVerifiedFixturePreparationAuthority(directory, bindings[0], {
+      ...identityEvidence("fixture_a"), zeroBaselineVerified: false
+    }))) return false;
+    if (!await expectReject(() => advanceFixturePreparation(preparation, "fixture_a_login_verified", {
+      fixtureRole: "fixture_a", magicLinkLoginObserved: true
+    }, { runDirectory: directory }))) return false;
+    const result = await bindVerifiedFixturePreparationAuthority(directory, bindings[0]);
+    preparation = advanceFixturePreparation(preparation, "fixture_a_login_verified", {
+      fixtureRole: "fixture_a", magicLinkLoginObserved: true
+    }, { runDirectory: directory });
+    return result.manifest.rawAuthorities.fixtureAUserId === state.userA &&
+      result.manifest.rawAuthorities.fixtureBUserId === null && preserveGenerations();
+  });
+  await check(65, "same-value A rebind and raw identity replacement fail without a generation", async () => {
+    const before = loadLatestPrivateManifest(directory).generation;
+    return await expectReject(() => bindFixtureManifestAuthority(directory, bindings[0])) &&
+      await expectReject(() => bindFixtureManifestAuthority(directory, { ...bindings[0], userId: state.userB })) &&
+      loadLatestPrivateManifest(directory).generation === before;
+  });
+  await check(66, "B binds independently including before A", async () => {
+    bOnly = trackRun(createPrivateRunDirectory({ runPurpose: G5D4_PROVENANCE.live.runPurpose }));
+    createInitialPrivateManifest(bOnly, initialInput);
+    createAliasKey(bOnly);
+    const independent = await bindVerifiedFixturePreparationAuthority(bOnly, bindings[1]);
+    await bindVerifiedFixturePreparationAuthority(directory, bindings[1]);
+    preparation = advanceFixturePreparation(preparation, "fixture_b_login_verified", {
+      fixtureRole: "fixture_b", magicLinkLoginObserved: true
+    }, { runDirectory: directory });
+    return independent.manifest.rawAuthorities.fixtureAUserId === null &&
+      independent.manifest.rawAuthorities.fixtureBUserId === state.userB && preserveGenerations();
+  });
+  await check(67, "A/B identity substitution and B rebind rejected", async () =>
+    await expectReject(() => bindFixtureManifestAuthority(bOnly, { ...bindings[0], userId: state.userB })) &&
+    await expectReject(() => bindVerifiedFixturePreparationAuthority(bOnly, bindings[0], identityEvidence("fixture_b"))) &&
+    await expectReject(() => bindFixtureManifestAuthority(directory, bindings[1]))
+  );
+  await check(68, "partial preparing manifest cannot seal or claim fixture_complete", async () =>
+    await expectReject(() => sealPrivateManifest(directory)) &&
+    await expectReject(() => completeFixtureManifest(directory)) &&
+    !g5d4PrivateManifestSchema.safeParse({ ...loadLatestPrivateManifest(directory), lifecycle: "fixture_complete" }).success
+  );
+  await check(69, "partial manifest cannot issue authorization", async () =>
+    await expectReject(() => issueAuthorizationRecord(directory, {})) &&
+    !readdirSync(directory).some((name) => name.startsWith("g5d4_authz_"))
+  );
+  await check(70, "partial live manifest fails wrapper and Human-ready checkpoint closed", async () => {
+    const result = await runG5d4AuthorizedStep({
+      runDirectory: directory, microStep: "provider_cleanup", confirmedAuthorizationPath: join(directory, "missing-confirmed.json")
+    });
+    const refused = await expectReject(() => advanceFixturePreparation({
+      ...preparation, state: "targets_sealed_verified", nextCheckpoint: "human_gate_ready"
+    }, "human_gate_ready", {
+      sealedManifestVerified: true, collectorCurrent: true, humanAuthorizationCreated: false, destructiveGuardEnabled: false
+    }, { runDirectory: directory }));
+    return result.status === "not_started" && result.childSpawnCount === 0 && refused;
+  });
+  await check(71, "A/B Provider resources bind incrementally after their identities", async () => {
+    if (!await expectReject(() => bindFixtureManifestAuthority(bOnly, bindings[2]))) return false;
+    for (const binding of bindings.slice(2, 4)) {
+      if (binding.fixtureRole === "fixture_b" && !await expectReject(() => bindFixtureManifestAuthority(directory, {
+        ...binding, resourceId: state.providerAId
+      }))) return false;
+      await bindVerifiedFixturePreparationAuthority(directory, binding);
+      preserveGenerations();
+    }
+    return loadLatestPrivateManifest(directory).rawAuthorities.deletionRequestId === null;
+  });
+  await check(72, "Provider same-value rebind and conflicting replacement rejected", async () =>
+    await expectReject(() => bindFixtureManifestAuthority(directory, bindings[2])) &&
+    await expectReject(() => bindFixtureManifestAuthority(directory, { ...bindings[2], resourceId: "private-replacement-provider" }))
+  );
+  await check(73, "A/B exact Storage universe binds one verified object per generation", async () => {
+    for (const binding of bindings.slice(4, 12)) {
+      const evidence = { fixtureRole: binding.fixtureRole, resourcePresent: true, ownershipVerified: true };
+      if (binding.target.bucket === "recordings") {
+        if (!await expectReject(() => bindVerifiedFixturePreparationAuthority(directory, binding, evidence))) return false;
+        evidence.recordingContract = "consent_gated_web";
+        evidence.directStorageBypassUsed = false;
+      }
+      if (binding.fixtureRole === "fixture_b" && !await expectReject(() => bindFixtureManifestAuthority(directory, {
+        ...binding, target: state.targetsA.find((target) => target.bucket === binding.target.bucket)
+      }))) return false;
+      await bindVerifiedFixturePreparationAuthority(directory, binding);
+      preserveGenerations();
+    }
+    return loadLatestPrivateManifest(directory).rawAuthorities.fixtureBStorageTargets.length === 4;
+  });
+  await check(74, "duplicate and conflicting Storage objects cannot overwrite", async () =>
+    await expectReject(() => bindFixtureManifestAuthority(directory, bindings[4])) &&
+    await expectReject(() => bindFixtureManifestAuthority(directory, {
+      ...bindings[4], target: { ...bindings[4].target, key: "private-replacement-object" }
+    }))
+  );
+  await check(75, "request remains truly unbound before creation and blocks completion", async () => {
+    const manifest = loadLatestPrivateManifest(directory);
+    return manifest.rawAuthorities.deletionRequestId === null && manifest.rawAuthorities.deletionRequestRef === null &&
+      manifest.aliases.request === undefined && manifest.stageTargets.completion_verification === undefined &&
+      manifest.stageTargets.database_cleanup === undefined &&
+      await expectReject(() => completeFixtureManifest(directory));
+  });
+  await check(76, "confirmed existing request binds ID/ref together exactly once", async () => {
+    const binding = bindings.at(-1);
+    const evidence = { fixtureADeletionRequestCount: 1, fixtureARequestState: "confirmed", fixtureBDeletionRequestCount: 0 };
+    if (!await expectReject(() => bindVerifiedFixturePreparationAuthority(directory, binding, {
+      ...evidence, fixtureADeletionRequestCount: 0
+    }))) return false;
+    await bindVerifiedFixturePreparationAuthority(directory, binding);
+    return await expectReject(() => bindFixtureManifestAuthority(directory, binding)) &&
+      await expectReject(() => bindFixtureManifestAuthority(directory, { ...binding, deletionRequestRef: "private-replacement-request" })) &&
+      preserveGenerations();
+  });
+  await check(77, "completion rejects every missing final raw/alias/target authority", async () => {
+    const manifest = loadLatestPrivateManifest(directory);
+    for (const section of ["rawAuthorities", "aliases", "stageTargets"]) {
+      for (const field of Object.keys(manifest[section])) {
+        const missing = clone(manifest);
+        delete missing[section][field];
+        if (!await expectReject(() => assertFixtureManifestComplete(missing, readAliasKey(directory)))) return false;
+      }
+    }
+    return true;
+  });
+  await check(78, "completion validates structure, derived bindings and exact provenance", async () => {
+    const manifest = loadLatestPrivateManifest(directory);
+    const mutations = [
+      (value) => { value.rawAuthorities.fixtureAStorageTargets[3] = clone(value.rawAuthorities.fixtureAStorageTargets[0]); },
+      (value) => { value.rawAuthorities.fixtureBStorageTargets.pop(); },
+      (value) => { value.aliases.targetSet = value.aliases.fixtureA; },
+      (value) => { value.aliases.storageTargets.reverse(); },
+      (value) => { value.stageTargets.database_cleanup.count = 14; },
+      (value) => { value.stageTargets.provider_cleanup.digest = "0".repeat(64); },
+      (value) => { value.collectorProvenance = G5D4_PROVENANCE.selfTest.collector; },
+      (value) => { delete value.confirmationProvenance; }
+    ];
+    for (const mutate of mutations) {
+      const changed = clone(manifest);
+      mutate(changed);
+      if (!await expectReject(() => assertFixtureManifestComplete(changed, readAliasKey(directory)))) return false;
+    }
+    return true;
+  });
+  await check(79, "full validation permits only the fixture_complete transition", async () => {
+    const current = loadLatestPrivateManifest(directory);
+    assertFixtureManifestComplete(current, readAliasKey(directory));
+    if (!await expectReject(() => sealPrivateManifest(directory))) return false;
+    const complete = completeFixtureManifest(directory).manifest;
+    const observations = [
+      ["processing_consents_verified", { fixtureAConsentCount: 2, fixtureBConsentCount: 2,
+        voiceCloningAcceptedForBoth: true, pronunciationProcessingAcceptedForBoth: true }],
+      ["consent_sample_material_verified", { fixtureAConsentSamplePresent: true, fixtureBConsentSamplePresent: true,
+        personalMaterialExcluded: true }],
+      ["normal_recordings_verified", { fixtureARecordingPresent: true, fixtureBRecordingPresent: true,
+        recordingContract: "consent_gated_web", directStorageBypassUsed: false }],
+      ["provider_awareness_verified", { disposableProviderResourceCountA: 1, disposableProviderResourceCountB: 1,
+        humanProviderAwarenessObserved: true }],
+      ["deletion_request_verified", { fixtureADeletionRequestCount: 1, fixtureARequestState: "confirmed", fixtureBDeletionRequestCount: 0 }],
+      ["prep_stop_verified", { fixtureAObservedRows: 17, fixtureBObservedRows: 16, durableTargetsBeforeSeal: 0, destructiveMutations: 0 }]
+    ];
+    for (const [checkpoint, evidence] of observations) {
+      preparation = advanceFixturePreparation(preparation, checkpoint, evidence, { runDirectory: directory });
+    }
+    return complete.lifecycle === "fixture_complete" && !complete.sealed &&
+      complete.previousGenerationDigest === current.generationDigest &&
+      await expectReject(() => issueAuthorizationRecord(directory, {})) && preserveGenerations();
+  });
+  await check(80, "complete manifest seals with original final target semantics", async () => {
+    const sealed = sealPrivateManifest(directory).manifest;
+    const current = loadLatestPrivateManifest(directory, { requireSealed: true });
+    preparation = advanceFixturePreparation(preparation, "targets_sealed_verified", {
+      fixtureAObservedRows: 22, providerTargets: 1, storageTargets: 4, durableTargets: 5,
+      deletedRows: 15, anonymizedRows: 1, retainedRows: 6, destructiveMutations: 0
+    }, { runDirectory: directory });
+    preparation = advanceFixturePreparation(preparation, "human_gate_ready", {
+      sealedManifestVerified: true, collectorCurrent: true, humanAuthorizationCreated: false, destructiveGuardEnabled: false
+    }, { runDirectory: directory });
+    return !preparation.destructiveExecutionAuthorized && current.lifecycle === "sealed" && current.generationDigest === sealed.generationDigest &&
+      current.stageTargets.database_cleanup.count === 15 && current.stageTargets.storage_cleanup.count === 4 &&
+      current.runPurpose === G5D4_PROVENANCE.live.runPurpose && preserveGenerations();
+  });
+  await check(81, "sealed fixture identities/resources and lifecycle stay immutable", async () => {
+    for (const binding of bindings) {
+      if (!await expectReject(() => bindFixtureManifestAuthority(directory, binding))) return false;
+    }
+    return await expectReject(() => completeFixtureManifest(directory)) &&
+      await expectReject(() => sealPrivateManifest(directory)) && preserveGenerations();
+  });
+  await check(82, "all prior generation bytes/digests/provenance preserved; tampering refused", async () => {
+    const chain = loadAndVerifyManifestChain(directory);
+    const copy = trackRun(copyPrivateRunToLiveLookingDirectory(directory, (name, bytes) => {
+      if (name !== "manifest-000003.json") return bytes;
+      const changed = JSON.parse(bytes.toString("utf8"));
+      changed.rawAuthorities.fixtureAUserId = "private-replaced-identity";
+      return Buffer.from(canonicalJson(changed));
+    }));
+    return chain.length === 16 && chain.every((manifest, index) =>
+      manifest.previousGenerationDigest === (index ? chain[index - 1].generationDigest : null) &&
+      manifest.runPurpose === G5D4_PROVENANCE.live.runPurpose &&
+      manifest.confirmationProvenance === G5D4_PROVENANCE.live.confirmation &&
+      manifest.collectorProvenance === G5D4_PROVENANCE.live.collector
+    ) && await expectReject(() => loadLatestPrivateManifest(copy)) && preserveGenerations();
+  });
+  await check(83, "valid digest cannot hide a replaced binding or changed run provenance", async () => {
+    for (const field of ["rawAuthorities", "runPurpose"]) {
+      const copy = trackRun(copyPrivateRunToLiveLookingDirectory(bOnly));
+      const previous = loadLatestPrivateManifest(copy);
+      const changed = {
+        ...previous, generation: previous.generation + 1, previousGenerationDigest: previous.generationDigest
+      };
+      if (field === "rawAuthorities") changed.rawAuthorities.fixtureBUserId = "private-replaced-b";
+      else {
+        changed.runPurpose = G5D4_PROVENANCE.selfTest.runPurpose;
+        changed.confirmationProvenance = G5D4_PROVENANCE.selfTest.confirmation;
+        changed.collectorProvenance = G5D4_PROVENANCE.selfTest.collector;
+      }
+      const unsigned = Object.fromEntries(Object.entries(changed).filter(([key]) => key !== "generationDigest"));
+      changed.generationDigest = sha256Hex(canonicalJson(unsigned));
+      atomicPublishPrivateFile(copy, "manifest-000003.json", canonicalJson(changed));
+      if (!await expectReject(() => loadLatestPrivateManifest(copy))) return false;
+    }
+    return true;
+  });
+}
+
+async function checkVerifiedBindingBoundary(state, trackRun) {
+  const api = await createIsolatedVerificationModule(state);
+  const bindings = fixtureBindings(state);
+  const prepare = (purpose = G5D4_PROVENANCE.live.runPurpose) => {
+    const directory = trackRun(createPrivateRunDirectory({ runPurpose: purpose }));
+    createInitialPrivateManifest(directory, privateManifestInput(purpose));
+    createAliasKey(directory);
+    return directory;
+  };
+  const directory = prepare();
+  let number = 83;
+  const focused = (label, operation) => check(++number, label, operation);
+  const verifiedBind = (binding) => api.helper.bindVerifiedFixturePreparationAuthority(directory, binding);
+  for (const [label, binding] of [["A", bindings[0]], ["B", bindings[1]], ["Provider", bindings[2]],
+    ["Storage", bindings[4]], ["request", bindings.at(-1)]]) {
+    await focused(`live raw ${label} bind rejected`, async () =>
+      await expectReject(() => bindFixtureManifestAuthority(directory, binding)) && loadLatestPrivateManifest(directory).generation === 1);
+  }
+  const synthetic = prepare(G5D4_PROVENANCE.selfTest.runPurpose);
+  const syntheticReceipt = api.createSelfTestFixtureVerification(synthetic, bindings[0]);
+  await focused("live rejects self-test verification capability", async () =>
+    Object.isFrozen(syntheticReceipt) && Reflect.ownKeys(syntheticReceipt).length === 0 &&
+    await expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[0], syntheticReceipt)));
+  const receiptA = await api.verifyLiveFixtureAuthority(directory, bindings[0]);
+  const staleB = await api.verifyLiveFixtureAuthority(directory, bindings[1]);
+  await focused("A receipt cannot bind B role", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, { ...bindings[0], fixtureRole: "fixture_b" }, receiptA)));
+  await focused("receipt cannot bind another raw identity", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, { ...bindings[0], userId: state.userB }, receiptA)));
+  for (const field of ["targetDigest", "generation", "generationDigest", "verificationProvenance", "ownerDigest", "relationDigest", "verifiedCount", "verifiedAt", "integrityMac"]) {
+    await focused(`receipt tampered ${field} rejected`, async () => {
+      const receipt = await api.verifyLiveFixtureAuthority(directory, bindings[0]);
+      return await expectReject(() => { receipt[field] = "0".repeat(64); }) &&
+        await expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[0], { ...receipt, [field]: "0".repeat(64) }));
+    });
+  }
+  await focused("receipt missing verification provenance rejected", async () => {
+    const receipt = await api.verifyLiveFixtureAuthority(directory, bindings[0]);
+    return !Reflect.defineProperty(receipt, "verificationProvenance", { value: "self_test_v1" }) &&
+      await expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[0], { ...receipt }));
+  });
+  await focused("public live bind rejects copied and caller re-signed receipts", async () => {
+    const forged = clone(receiptA);
+    forged.integrityMac = hmacSha256Hex(readAliasKey(directory), "fixture-binding-verification",
+      Object.fromEntries(Object.entries(forged).filter(([field]) => field !== "integrityMac")));
+    return await expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[0], forged)) &&
+      await expectReject(() => bindVerifiedLiveFixtureAuthority(directory, bindings[0], receiptA));
+  });
+  await focused("verified A read evidence binds A", async () =>
+    api.bindVerifiedLiveFixtureAuthority(directory, bindings[0], receiptA).manifest.rawAuthorities.fixtureAUserId === state.userA);
+  await focused("successful receipt is single-use and from previous generation", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[0], receiptA)));
+  await focused("intervening A bind makes unconsumed B receipt stale", async () =>
+    await expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[1], staleB)) &&
+    loadLatestPrivateManifest(directory).generation === 2);
+  await focused("verified B read evidence binds B", async () =>
+    (await verifiedBind(bindings[1])).manifest.rawAuthorities.fixtureBUserId === state.userB);
+  const providerReceipt = await api.verifyLiveFixtureAuthority(directory, bindings[2]);
+  await focused("Provider receipt cannot bind Storage", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[4], providerReceipt)));
+  await focused("verified Provider read evidence binds exact A/B resources", async () => {
+    api.bindVerifiedLiveFixtureAuthority(directory, bindings[2], providerReceipt);
+    await verifiedBind(bindings[3]);
+    return loadLatestPrivateManifest(directory).rawAuthorities.fixtureBProviderResourceId === state.providerBId;
+  });
+  await focused("verified Storage reads bind all eight exact owned bucket objects", async () => {
+    for (const binding of bindings.slice(4, 12)) await verifiedBind(binding);
+    return loadLatestPrivateManifest(directory).bindingVerifications.filter(({ kind }) => kind === "storage").length === 8;
+  });
+  await focused("verified confirmed no-conflict request read binds A request", async () =>
+    (await verifiedBind(bindings.at(-1))).manifest.rawAuthorities.deletionRequestId === bindings.at(-1).deletionRequestId);
+  await focused("verified same-value rebinding rejected for all authority kinds", async () => {
+    const generation = loadLatestPrivateManifest(directory).generation;
+    for (const binding of bindings) if (!await expectReject(() => verifiedBind(binding))) return false;
+    return loadLatestPrivateManifest(directory).generation === generation;
+  });
+  await focused("raw resource binds still rejected with identities already present", async () => {
+    for (const binding of bindings.slice(2)) if (!await expectReject(() => bindFixtureManifestAuthority(directory, binding))) return false;
+    return true;
+  });
+  await focused("complete validation rejects missing, synthetic and tampered persisted provenance", async () => {
+    const full = loadLatestPrivateManifest(directory);
+    for (const mutate of [
+      (value) => { delete value.bindingVerifications; },
+      (value) => { value.bindingVerifications = []; },
+      (value) => { value.bindingVerifications[0].verificationProvenance = "self_test_v1"; },
+      (value) => { value.bindingVerifications[0].relationDigest = "0".repeat(64); },
+      (value) => { value.bindingVerifications[0].ownerDigest = "0".repeat(64); }
+    ]) {
+      const changed = clone(full);
+      mutate(changed);
+      if (!await expectReject(() => assertFixtureManifestComplete(changed, readAliasKey(directory)))) return false;
+    }
+    return true;
+  });
+  // Recompute the full unsealed digest chain: this negative must fail for
+  // absent verified bindings, not merely a stale outer generation digest.
+  let previousDigest = null;
+  const legacy = trackRun(copyPrivateRunToLiveLookingDirectory(directory, (name, bytes) => {
+    if (!name.startsWith("manifest-")) return bytes;
+    const value = JSON.parse(bytes);
+    value.bindingVerifications = [];
+    value.previousGenerationDigest = previousDigest;
+    value.generationDigest = sha256Hex(canonicalJson(Object.fromEntries(Object.entries(value).filter(([field]) => field !== "generationDigest"))));
+    previousDigest = value.generationDigest;
+    return Buffer.from(canonicalJson(value));
+  }));
+  await focused("fully populated legacy raw live manifest cannot complete", async () => expectReject(() => completeFixtureManifest(legacy)));
+  await focused("unverified live manifest cannot seal", async () => expectReject(() => sealPrivateManifest(legacy)));
+  await focused("full verified live fixture completes", async () => completeFixtureManifest(directory).manifest.lifecycle === "fixture_complete");
+  await focused("full verified live fixture seals and rereads", async () => {
+    sealPrivateManifest(directory);
+    return loadLatestPrivateManifest(directory, { requireSealed: true }).bindingVerifications.length === 13;
+  });
+  await focused("self-test raw fixture population retains only self_test_v1 provenance", async () => {
+    populateSyntheticManifest(synthetic, state);
+    sealPrivateManifest(synthetic);
+    return loadLatestPrivateManifest(synthetic, { requireSealed: true }).bindingVerifications.every((item) =>
+      item.runPurpose === "g5d4_self_test" && item.verificationProvenance === "self_test_v1");
+  });
+  const fresh = prepare();
+  await focused("production live verifier and helper reject caller observations or adapters", async () =>
+    await expectReject(() => verifyLiveFixtureAuthority(fresh, bindings[0], { readIdentityBaseline: () => ({}) })) &&
+    await expectReject(() => bindVerifiedFixturePreparationAuthority(fresh, bindings[0], { zeroBaselineVerified: true })) &&
+    await expectReject(() => verifyLiveFixtureAuthority(fresh, bindings[0])) &&
+    loadLatestPrivateManifest(fresh).generation === 1);
+  await focused("self-test public receipt factory cannot produce live provenance", async () =>
+    await expectReject(() => createSelfTestFixtureVerification(fresh, bindings[0])) &&
+    await expectReject(() => createSelfTestFixtureVerification(synthetic, bindings[0], { runPurpose: "g5d4_live" })));
+  const other = prepare();
+  await focused("receipt cannot cross runs even for exact same raw target", async () => {
+    const receipt = await api.verifyLiveFixtureAuthority(fresh, bindings[0]);
+    return expectReject(() => api.bindVerifiedLiveFixtureAuthority(other, bindings[0], receipt));
+  });
+  await focused("intervening successful binding during read prevents receipt issuance", async () => {
+    const receipt = await api.verifyLiveFixtureAuthority(fresh, bindings[0]);
+    const pendingB = api.verifyLiveFixtureAuthority(fresh, bindings[1]);
+    api.bindVerifiedLiveFixtureAuthority(fresh, bindings[0], receipt);
+    return expectReject(() => pendingB);
+  });
+  const malformed = [
+    ["Auth exact identity presence", 0, (result) => { result.auth.present = false; }],
+    ["Auth target mismatch", 0, (result) => { result.auth.userId = state.userB; }],
+    ["profile absence", 0, (result) => { result.profile.count = 0; }],
+    ["nonzero fresh baseline", 0, (result) => { result.baseline[0].count = 1; }],
+    ["baseline missing table coverage", 0, (result) => { result.baseline[0].table = result.baseline[1].table; }],
+    ["wrong identity role", 0, (result) => { result.fixtureRole = "fixture_b"; }],
+    ["Provider absence", 2, (result) => { result.present = false; }],
+    ["Provider wrong owner relation", 2, (result) => { result.dbBinding.userId = state.userB; }],
+    ["Storage object absence", 4, (result) => { result.present = false; }],
+    ["Storage wrong bucket", 4, (result) => { result.bucket = "script-audios"; }],
+    ["Storage wrong DB locator", 4, (result) => { result.dbLocator.key = "private-other-object"; }],
+    ["Storage wrong owner", 4, (result) => { result.dbLocator.userId = state.userB; }],
+    ["recording consent-contract bypass", 4, (result) => { result.recordingContract = null; }],
+    ["request absence", 12, (result) => { result.count = 0; }],
+    ["request wrong owner", 12, (result) => { result.userId = state.userB; }],
+    ["request unconfirmed state", 12, (result) => { result.state = "requested"; }],
+    ["request conflicts", 12, (result) => { result.conflictCount = 1; }],
+    ["B request conflict", 12, (result) => { result.fixtureBRequestCount = 1; }]
+  ];
+  // All malformed read cases use an unbound resource slot with both identities
+  // present, except baseline cases which use a fresh run.
+  await api.helper.bindVerifiedFixturePreparationAuthority(fresh, bindings[1]);
+  for (const [label, index, mutate] of malformed) {
+    await focused(`read-only check rejects ${label}`, async () => {
+      const isolated = await createIsolatedVerificationModule(state, (observations) => mutate(observations[index].result));
+      const targetRun = index === 0 ? other : fresh;
+      const before = loadLatestPrivateManifest(targetRun).generation;
+      return await expectReject(() => isolated.helper.bindVerifiedFixturePreparationAuthority(targetRun, bindings[index])) &&
+        loadLatestPrivateManifest(targetRun).generation === before &&
+        Object.values(isolated.isolatedReadCounts).reduce((sum, count) => sum + count, 0) === 1;
+    });
+  }
+  await focused("valid reader checks actually performed for every authority kind", async () =>
+    ["readIdentityBaseline", "readProviderBinding", "readStorageBinding", "readDeletionRequest"].every((method) => api.isolatedReadCounts[method] > 0));
+  const conflicts = [
+    ["A/B identity substitution", 1, (value) => { value.userB = value.userA; }],
+    ["A/B Provider substitution", 3, (value) => { value.providerBId = value.providerAId; }],
+    ["A/B Storage substitution", 8, (value) => { value.targetsB[0] = clone(value.targetsA[0]); }],
+    ["Storage bucket replacement", 4, (value) => { value.targetsA[0].key = "private-replacement-verified-object"; }]
+  ];
+  for (const [label, index, mutate] of conflicts) {
+    await focused(`verified evidence still rejects ${label}`, async () => {
+      const conflictRun = prepare();
+      for (const binding of bindings.slice(0, index === 4 ? 5 : index)) {
+        await api.helper.bindVerifiedFixturePreparationAuthority(conflictRun, binding);
+      }
+      const changed = clone(state);
+      mutate(changed);
+      const conflictingApi = await createIsolatedVerificationModule(changed);
+      const before = loadLatestPrivateManifest(conflictRun).generation;
+      return await expectReject(() => conflictingApi.helper.bindVerifiedFixturePreparationAuthority(conflictRun, fixtureBindings(changed)[index])) &&
+        Object.values(conflictingApi.isolatedReadCounts).reduce((sum, count) => sum + count, 0) === 1 &&
+        loadLatestPrivateManifest(conflictRun).generation === before;
+    });
+  }
+  process.stdout.write(`G5D4_VERIFIED_BINDING_FOCUSED_PASS ${number - 83}/${number - 83}\n`);
+}
+
+// Reproduce the reviewed same-object TOCTOU: every field returns the original
+// receipt for the canonical comparison, then a caller-re-signed substitution
+// for the later parse. The old implementation can persist the unverified B.
+function installReceiptSubstitution(receipt, directory, binding, substitute) {
+  const manifest = loadLatestPrivateManifest(directory);
+  const key = readAliasKey(directory);
+  const owner = (value) => value.kind === "identity" ? value.userId
+    : manifest.rawAuthorities[value.fixtureRole === "fixture_b" ? "fixtureBUserId" : "fixtureAUserId"];
+  const original = Object.keys(receipt).length ? clone(receipt) : {
+    schemaVersion: "g5d4.fixture-verification.v1", runId: manifest.runId, runPurpose: manifest.runPurpose,
+    verificationProvenance: G5D4_PROVENANCE.live.collector,
+    generation: manifest.generation, generationDigest: manifest.generationDigest,
+    fixtureRole: binding.fixtureRole ?? "fixture_a", kind: binding.kind,
+    targetDigest: hmacSha256Hex(key, "fixture-binding-target", binding),
+    ownerDigest: hmacSha256Hex(key, "fixture-binding-owner", owner(binding)),
+    relationDigest: "0".repeat(64), verifiedState: binding.kind === "identity" ? "fresh_zero_baseline"
+      : binding.kind === "request" ? "confirmed_no_conflict" : "present_owned",
+    verifiedCount: 1, verifiedAt: INSTANT
+  };
+  const forged = { ...original,
+    targetDigest: hmacSha256Hex(key, "fixture-binding-target", substitute),
+    ownerDigest: hmacSha256Hex(key, "fixture-binding-owner", owner(substitute)) };
+  forged.integrityMac = hmacSha256Hex(key, "fixture-binding-verification",
+    Object.fromEntries(Object.entries(forged).filter(([field]) => field !== "integrityMac")));
+  let getterReads = 0;
+  let installed = 0;
+  for (const field of Object.keys(forged)) {
+    let reads = 0;
+    if (Reflect.defineProperty(receipt, field, { enumerable: true, configurable: true,
+      get() { getterReads += 1; return reads++ === 0 ? original[field] : forged[field]; }
+    })) installed += 1;
+  }
+  return { reads: () => getterReads, installed };
+}
+
+async function checkImmutableBindingSnapshot(state, trackRun) {
+  let number = 145;
+  const focused = (label, operation) => check(++number, label, operation);
+  const bindings = fixtureBindings(state);
+  const prepare = (purpose = G5D4_PROVENANCE.live.runPurpose) => {
+    const directory = trackRun(createPrivateRunDirectory({ runPurpose: purpose }));
+    createInitialPrivateManifest(directory, privateManifestInput(purpose));
+    createAliasKey(directory);
+    return directory;
+  };
+  const replacements = [
+    [0, { ...bindings[0], userId: "private-unverified-user-b" }],
+    [2, { ...bindings[2], resourceId: "private-unverified-provider-b" }],
+    [4, { ...bindings[4], target: { ...bindings[4].target, key: "private-unverified-storage-b" } }],
+    [12, { kind: "request", deletionRequestId: "private-unverified-request-b", deletionRequestRef: "private-unverified-ref-b" }]
+  ];
+  // First run the exact exploit against the normal returned key. Repeat with
+  // a mutable key to prove private snapshot authority independently of freeze.
+  for (const mutableReceipt of [false, true]) {
+    const api = await createIsolatedVerificationModule(state, undefined, mutableReceipt);
+    for (const [index, substitute] of replacements) {
+      await focused(`${mutableReceipt ? "mutable-key snapshot" : "opaque receipt"} ${bindings[index].kind} stateful A-to-B substitution rejected`, async () => {
+        const directory = prepare();
+        for (const binding of bindings.slice(0, index === 0 ? 0 : 2)) {
+          await api.helper.bindVerifiedFixturePreparationAuthority(directory, binding);
+        }
+        const binding = bindings[index];
+        const receipt = await api.verifyLiveFixtureAuthority(directory, binding);
+        const before = loadLatestPrivateManifest(directory);
+        const attack = installReceiptSubstitution(receipt, directory, binding, substitute);
+        if (!await expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, substitute, receipt)) ||
+            loadLatestPrivateManifest(directory).generationDigest !== before.generationDigest) return false;
+        const bound = api.bindVerifiedLiveFixtureAuthority(directory, binding, receipt).manifest;
+        const metadata = bound.bindingVerifications.at(-1);
+        const raw = bound.rawAuthorities;
+        const persisted = binding.kind === "identity" ? { ...binding, userId: raw.fixtureAUserId }
+          : binding.kind === "provider" ? { ...binding, resourceId: raw.fixtureAProviderResourceId }
+          : binding.kind === "storage" ? { ...binding, target: raw.fixtureAStorageTargets[0] }
+          : { kind: "request", deletionRequestId: raw.deletionRequestId, deletionRequestRef: raw.deletionRequestRef };
+        return metadata.targetDigest === hmacSha256Hex(readAliasKey(directory), "fixture-binding-target", binding) &&
+          metadata.targetDigest !== hmacSha256Hex(readAliasKey(directory), "fixture-binding-target", substitute) &&
+          canonicalJson(persisted) === canonicalJson(binding) &&
+          metadata.generationDigest === before.generationDigest && attack.reads() === 0 &&
+          (mutableReceipt ? attack.installed > 0 : attack.installed === 0 && Object.isFrozen(receipt));
+      });
+    }
+  }
+
+  const api = await createIsolatedVerificationModule(state);
+  const directory = prepare();
+  const receiptA = await api.verifyLiveFixtureAuthority(directory, bindings[0]);
+  const staleB = await api.verifyLiveFixtureAuthority(directory, bindings[1]);
+  await focused("receipt is a frozen empty opaque identity", async () =>
+    Object.isFrozen(receiptA) && Object.getPrototypeOf(receiptA) === null && Reflect.ownKeys(receiptA).length === 0);
+  await focused("copied receipt remains invalid in the issuing module", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[0], clone(receiptA))));
+  await focused("Proxy-wrapped receipt is rejected without inspecting caller properties", async () => {
+    let reads = 0;
+    const proxy = new Proxy(receiptA, { get() { reads += 1; throw new Error("unexpected receipt read"); },
+      ownKeys() { reads += 1; throw new Error("unexpected receipt enumeration"); } });
+    return await expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[0], proxy)) && reads === 0;
+  });
+  await focused("nested read-result arrays and objects cannot change verified relation digest", async () => {
+    const observation = api.isolatedReadResults[0];
+    const relationDigest = hmacSha256Hex(readAliasKey(directory), "fixture-binding-relations", observation);
+    observation.auth.userId = "private-unverified-user";
+    observation.profile.count = 2;
+    observation.baseline[0].count = 9;
+    observation.baseline.push({ table: "private-added-table", count: 1 });
+    const manifest = api.bindVerifiedLiveFixtureAuthority(directory, bindings[0], receiptA).manifest;
+    return manifest.rawAuthorities.fixtureAUserId === state.userA && manifest.bindingVerifications.at(-1).relationDigest === relationDigest;
+  });
+  await focused("successful snapshot capability remains single-use", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[0], receiptA)));
+  await focused("intervening generation invalidates an unused immutable snapshot", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[1], staleB)));
+  await focused("self-test opaque snapshot cannot enter the live registry", async () => {
+    const synthetic = api.createSelfTestFixtureVerification(prepare(G5D4_PROVENANCE.selfTest.runPurpose), bindings[1]);
+    return await expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, bindings[1], synthetic)) &&
+      loadLatestPrivateManifest(directory).generation === 2;
+  });
+  await api.helper.bindVerifiedFixturePreparationAuthority(directory, bindings[1]);
+  for (const binding of bindings.slice(2, 4)) await api.helper.bindVerifiedFixturePreparationAuthority(directory, binding);
+  await focused("caller nested Storage target and getter/Proxy mutations cannot change the snapshot", async () => {
+    const target = clone(bindings[4].target);
+    let reads = 0;
+    const input = { ...bindings[4], target: new Proxy(target, { get(value, field) { reads += 1; return value[field]; } }) };
+    const receipt = await api.verifyLiveFixtureAuthority(directory, input);
+    const before = reads;
+    Object.defineProperty(target, "key", { get: () => "private-unverified-nested-key" });
+    const manifest = api.bindVerifiedLiveFixtureAuthority(directory, bindings[4], receipt).manifest;
+    return canonicalJson(manifest.rawAuthorities.fixtureAStorageTargets[0]) === canonicalJson(bindings[4].target) && reads === before;
+  });
+  for (const binding of bindings.slice(5)) await api.helper.bindVerifiedFixturePreparationAuthority(directory, binding);
+  await focused("complete validates exact immutable snapshot targets and provenance for all bindings", async () => {
+    const manifest = completeFixtureManifest(directory).manifest;
+    return manifest.bindingVerifications.length === bindings.length && manifest.bindingVerifications.every((value, index) =>
+      value.targetDigest === hmacSha256Hex(readAliasKey(directory), "fixture-binding-target", bindings[index]) &&
+      value.verificationProvenance === G5D4_PROVENANCE.live.collector);
+  });
+  await focused("full snapshot-bound fixture seals and preserves all metadata on chain reread", async () => {
+    const sealed = sealPrivateManifest(directory).manifest;
+    return canonicalJson(loadLatestPrivateManifest(directory, { requireSealed: true })) === canonicalJson(sealed);
+  });
+  await focused("complete authority validation rejects all four substituted persisted bindings", async () => {
+    for (const [index, substitute] of replacements) {
+      const changed = clone(loadLatestPrivateManifest(directory));
+      if (index === 0) changed.rawAuthorities.fixtureAUserId = substitute.userId;
+      if (index === 2) changed.rawAuthorities.fixtureAProviderResourceId = substitute.resourceId;
+      if (index === 4) changed.rawAuthorities.fixtureAStorageTargets[0] = substitute.target;
+      if (index === 12) {
+        changed.rawAuthorities.deletionRequestId = substitute.deletionRequestId;
+        changed.rawAuthorities.deletionRequestRef = substitute.deletionRequestRef;
+      }
+      if (!await expectReject(() => assertFixtureManifestComplete(changed, readAliasKey(directory)))) return false;
+    }
+    return true;
+  });
+  await focused("caller-mutated keys complete and seal only the original verified fixture", async () => {
+    const mutableApi = await createIsolatedVerificationModule(state, undefined, true);
+    const attackedRun = prepare();
+    const attacks = [];
+    for (const [index, binding] of bindings.entries()) {
+      const receipt = await mutableApi.verifyLiveFixtureAuthority(attackedRun, binding);
+      const substitute = replacements.find(([targetIndex]) => targetIndex === index)?.[1];
+      if (substitute) {
+        attacks.push(installReceiptSubstitution(receipt, attackedRun, binding, substitute));
+        if (!await expectReject(() => mutableApi.bindVerifiedLiveFixtureAuthority(attackedRun, substitute, receipt))) return false;
+      }
+      mutableApi.bindVerifiedLiveFixtureAuthority(attackedRun, binding, receipt);
+    }
+    completeFixtureManifest(attackedRun);
+    sealPrivateManifest(attackedRun);
+    const manifest = loadLatestPrivateManifest(attackedRun, { requireSealed: true });
+    return attacks.length === 4 && attacks.every((attack) => attack.reads() === 0) &&
+      canonicalJson(manifest.rawAuthorities) === canonicalJson(loadLatestPrivateManifest(directory).rawAuthorities) &&
+      manifest.bindingVerifications.every((value, index) =>
+        value.targetDigest === hmacSha256Hex(readAliasKey(attackedRun), "fixture-binding-target", bindings[index]) &&
+        value.verificationProvenance === G5D4_PROVENANCE.live.collector);
+  });
+  process.stdout.write(`G5D4_IMMUTABLE_SNAPSHOT_FOCUSED_PASS ${number - 145}/${number - 145}\n`);
+}
+
 async function main() {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => {
@@ -481,11 +1216,12 @@ async function main() {
   try {
     const state = makeHarnessState();
     const adapters = makeReadOnlyAdapters(state);
-    createAliasKey(runDirectory);
     const initial = createInitialPrivateManifest(runDirectory, {
       runId: "g5d4_run_11111111111111111111111111111111",
-      ...privateManifestInput(state, G5D4_PROVENANCE.selfTest.runPurpose)
+      ...privateManifestInput(G5D4_PROVENANCE.selfTest.runPurpose)
     });
+    createAliasKey(runDirectory);
+    const complete = populateSyntheticManifest(runDirectory, state);
     const sealed = sealPrivateManifest(runDirectory, { createdAt: INSTANT });
     const manifest = loadLatestPrivateManifest(runDirectory, { requireSealed: true });
     const key = readAliasKey(runDirectory);
@@ -1225,8 +1961,9 @@ async function main() {
 
     await check(44, "manifest is append-only, sealed, and digest chained", async () =>
       initial.manifest.generation === 1 &&
-      sealed.manifest.generation === 2 &&
-      sealed.manifest.previousGenerationDigest === initial.manifest.generationDigest &&
+      sealed.manifest.generation === 16 &&
+      sealed.manifest.previousGenerationDigest === complete.manifest.generationDigest &&
+      loadAndVerifyManifestChain(runDirectory).length === 16 &&
       sealed.manifest.sealed === true
     );
 
@@ -1311,7 +2048,7 @@ async function main() {
     });
 
     const liveRun = trackIsolationRun(
-      createSyntheticPrivateRun(state, G5D4_PROVENANCE.live.runPurpose)
+      await createSyntheticPrivateRun(state, G5D4_PROVENANCE.live.runPurpose)
     );
     const liveIssuedForTty = issueProviderAuthorization(liveRun.runDirectory);
     await check(51, "synthetic TTY cannot be injected into live confirmation", async () => {
@@ -1439,7 +2176,7 @@ async function main() {
 
     await check(59, "unsealed live manifest fails closed", async () => {
       const unsealedRun = trackIsolationRun(
-        createSyntheticPrivateRun(state, G5D4_PROVENANCE.live.runPurpose, { sealed: false })
+        await createSyntheticPrivateRun(state, G5D4_PROVENANCE.live.runPurpose, { sealed: false })
       );
       const result = await runG5d4AuthorizedStep({
         runDirectory: unsealedRun.runDirectory,
@@ -1452,6 +2189,10 @@ async function main() {
     await check(60, "unarmed live-owned collector factory fails before network", async () =>
       expectReject(() => Promise.resolve(createLiveReadOnlyCollector(liveRun.runDirectory)))
     );
+
+    await checkIncrementalManifest(state, trackIsolationRun);
+    await checkVerifiedBindingBoundary(state, trackIsolationRun);
+    await checkImmutableBindingSnapshot(state, trackIsolationRun);
 
     for (const directory of isolationRunDirectories) cleanupPrivateRunDirectory(directory);
     isolationRunDirectories.clear();
@@ -1475,6 +2216,14 @@ async function main() {
 
 if (process.argv[2] === "--consume-worker") {
   await consumeWorker();
+} else if (["--verified-binding-only", "--immutable-snapshot-only"].includes(process.argv[2])) {
+  const directories = new Set();
+  try {
+    const suite = process.argv[2] === "--immutable-snapshot-only" ? checkImmutableBindingSnapshot : checkVerifiedBindingBoundary;
+    await suite(makeHarnessState(), (directory) => { directories.add(directory); return directory; });
+  } finally {
+    for (const directory of directories) if (existsSync(directory)) cleanupPrivateRunDirectory(directory);
+  }
 } else {
   await main();
 }

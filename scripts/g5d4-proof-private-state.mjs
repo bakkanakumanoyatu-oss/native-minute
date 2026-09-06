@@ -21,13 +21,18 @@ import { randomBytes } from "node:crypto";
 import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { z } from "zod";
 import {
+  G5D4_BINDING_VERIFICATION_VERSION,
   G5D4_CANONICAL_STAGING,
+  G5D4_A_PREP_TABLE_CONTRACT,
   G5D4_PROVENANCE,
   G5D4_SCHEMA_VERSIONS,
   canonicalJson,
   g5d4AliasRoleSchema,
   g5d4AuthorizationSchema,
+  g5d4FixtureBindingSchema,
+  g5d4FixtureVerificationSchema,
   g5d4PrivateManifestSchema,
   hmacSha256Hex,
   safeDigestEqual,
@@ -278,51 +283,359 @@ function publishManifest(runDirectory, draft) {
   return { path, manifest };
 }
 
-function createAliasesAndTargets(rawAuthorities, key) {
+function createAliasesAndTargets(raw, key) {
   const registry = createAliasRegistry(key);
-  const fixtureA = registry.alias("fixture_a", rawAuthorities.fixtureAUserId);
-  const fixtureB = registry.alias("fixture_b", rawAuthorities.fixtureBUserId);
-  const providerResource = registry.alias("provider_resource", rawAuthorities.fixtureAProviderResourceId);
-  const storageTargets = rawAuthorities.fixtureAStorageTargets.map(({ bucket, key: objectKey }) =>
-    registry.alias("storage_target", `${bucket}\0${objectKey}`)
-  );
-  const request = registry.alias("request", rawAuthorities.deletionRequestRef);
-  const targetSetRaw = canonicalJson({
-    provider: rawAuthorities.fixtureAProviderResourceId,
-    storage: rawAuthorities.fixtureAStorageTargets
-  });
-  const targetSet = registry.alias("target_set", targetSetRaw);
+  const aliases = {};
+  const stageTargets = {};
+  if (raw.fixtureAUserId) {
+    aliases.fixtureA = registry.alias("fixture_a", raw.fixtureAUserId);
+    stageTargets.auth_cleanup = {
+      alias: aliases.fixtureA,
+      digest: hmacSha256Hex(key, "stage-target:auth", raw.fixtureAUserId),
+      count: 1
+    };
+  }
+  if (raw.fixtureBUserId) aliases.fixtureB = registry.alias("fixture_b", raw.fixtureBUserId);
+  if (raw.fixtureAProviderResourceId) {
+    aliases.providerResource = registry.alias("provider_resource", raw.fixtureAProviderResourceId);
+    stageTargets.provider_cleanup = {
+      alias: aliases.providerResource,
+      digest: hmacSha256Hex(key, "stage-target:provider", raw.fixtureAProviderResourceId),
+      count: 1
+    };
+  }
+  if (raw.fixtureAStorageTargets.length) {
+    aliases.storageTargets = raw.fixtureAStorageTargets.map(({ bucket, key: objectKey }) =>
+      registry.alias("storage_target", `${bucket}\0${objectKey}`)
+    );
+  }
+  if (raw.fixtureAProviderResourceId && raw.fixtureAStorageTargets.length === 4) {
+    aliases.targetSet = registry.alias("target_set", canonicalJson({
+      provider: raw.fixtureAProviderResourceId,
+      storage: raw.fixtureAStorageTargets
+    }));
+    stageTargets.storage_cleanup = {
+      alias: aliases.targetSet,
+      digest: hmacSha256Hex(key, "stage-target:storage", raw.fixtureAStorageTargets),
+      count: 4
+    };
+  }
+  if (raw.deletionRequestId && raw.deletionRequestRef) {
+    aliases.request = registry.alias("request", raw.deletionRequestRef);
+    stageTargets.completion_verification = {
+      alias: aliases.request,
+      digest: hmacSha256Hex(key, "stage-target:completion", raw.deletionRequestId),
+      count: 1
+    };
+  }
+  if (raw.fixtureAUserId && raw.fixtureBUserId && raw.fixtureAProviderResourceId &&
+      raw.fixtureBProviderResourceId && raw.fixtureAStorageTargets.length === 4 &&
+      raw.fixtureBStorageTargets.length === 4 && raw.deletionRequestId && raw.deletionRequestRef) {
+    stageTargets.database_cleanup = {
+      alias: aliases.fixtureA,
+      digest: hmacSha256Hex(key, "stage-target:database", "D15:A1:R6"),
+      count: 15
+    };
+  }
+  return { aliases, stageTargets };
+}
 
+function emptyRawAuthorities() {
   return {
-    aliases: { fixtureA, fixtureB, providerResource, storageTargets, request, targetSet },
-    stageTargets: {
-      provider_cleanup: {
-        alias: providerResource,
-        digest: hmacSha256Hex(key, "stage-target:provider", rawAuthorities.fixtureAProviderResourceId),
-        count: 1
-      },
-      storage_cleanup: {
-        alias: targetSet,
-        digest: hmacSha256Hex(key, "stage-target:storage", rawAuthorities.fixtureAStorageTargets),
-        count: 4
-      },
-      database_cleanup: {
-        alias: fixtureA,
-        digest: hmacSha256Hex(key, "stage-target:database", "D15:A1:R6"),
-        count: 15
-      },
-      auth_cleanup: {
-        alias: fixtureA,
-        digest: hmacSha256Hex(key, "stage-target:auth", rawAuthorities.fixtureAUserId),
-        count: 1
-      },
-      completion_verification: {
-        alias: request,
-        digest: hmacSha256Hex(key, "stage-target:completion", rawAuthorities.deletionRequestId),
-        count: 1
-      }
-    }
+    fixtureAUserId: null,
+    fixtureBUserId: null,
+    fixtureAProviderResourceId: null,
+    fixtureBProviderResourceId: null,
+    fixtureAStorageTargets: [],
+    fixtureBStorageTargets: [],
+    deletionRequestId: null,
+    deletionRequestRef: null
   };
+}
+
+function assertDerivedManifestBindings(manifest, key) {
+  const expected = key ? createAliasesAndTargets(manifest.rawAuthorities, key) : { aliases: {}, stageTargets: {} };
+  if (canonicalJson(manifest.aliases) !== canonicalJson(expected.aliases) ||
+      canonicalJson(manifest.stageTargets) !== canonicalJson(expected.stageTargets)) {
+    throw new Error("manifest aliases/target-set authority mismatch");
+  }
+}
+
+// Validates the full existing sealed authority, including exact bucket universe,
+// A/B isolation, coherent provenance and derived aliases/digests/counts.
+// Self-test provenance stays self-test; validation never promotes it to live.
+export function assertFixtureManifestComplete(manifest, key) {
+  const parsed = assertCanonicalManifestAuthority(manifest);
+  assertDerivedManifestBindings(parsed, key);
+  assertVerifiedManifestBindings(parsed, key);
+  return parsed;
+}
+
+// Returned receipts are opaque identity keys only. Authority and persisted
+// HMAC evidence live exclusively in module-owned immutable snapshots. Keep
+// live/self-test registries separate; neither a copy nor a local-key re-sign
+// can mint a capability. This is not an OS-user signature.
+const liveVerificationCapabilities = new WeakMap();
+const selfTestVerificationCapabilities = new WeakMap();
+
+function verificationCapabilitiesFor(runPurpose) {
+  if (runPurpose === G5D4_PROVENANCE.live.runPurpose) return liveVerificationCapabilities;
+  if (runPurpose === G5D4_PROVENANCE.selfTest.runPurpose) return selfTestVerificationCapabilities;
+  throw new Error("fixture verification run purpose mismatch");
+}
+
+function bindingRole(binding) {
+  return binding.kind === "request" ? "fixture_a" : binding.fixtureRole;
+}
+
+function bindingOwner(manifest, binding) {
+  const owner = binding.kind === "identity" ? binding.userId
+    : manifest.rawAuthorities[bindingRole(binding) === "fixture_a" ? "fixtureAUserId" : "fixtureBUserId"];
+  if (!owner) throw new Error("verified resource requires bound fixture identity");
+  return owner;
+}
+
+function manifestBindings(raw) {
+  const bindings = [];
+  for (const [prefix, fixtureRole] of [["fixtureA", "fixture_a"], ["fixtureB", "fixture_b"]]) {
+    if (raw[`${prefix}UserId`]) bindings.push({ kind: "identity", fixtureRole, userId: raw[`${prefix}UserId`] });
+    if (raw[`${prefix}ProviderResourceId`]) bindings.push({ kind: "provider", fixtureRole, resourceId: raw[`${prefix}ProviderResourceId`] });
+    for (const target of raw[`${prefix}StorageTargets`]) bindings.push({ kind: "storage", fixtureRole, target });
+  }
+  if (raw.deletionRequestId) bindings.push({ kind: "request", deletionRequestId: raw.deletionRequestId, deletionRequestRef: raw.deletionRequestRef });
+  return bindings;
+}
+
+function verificationMac(receipt, key) {
+  return hmacSha256Hex(key, "fixture-binding-verification", withoutFields(receipt, ["integrityMac"]));
+}
+
+function assertVerificationBinding(receipt, manifest, binding, key) {
+  const parsed = g5d4FixtureVerificationSchema.parse(receipt);
+  const provenance = manifest.runPurpose === G5D4_PROVENANCE.live.runPurpose
+    ? G5D4_PROVENANCE.live.collector : G5D4_PROVENANCE.selfTest.collector;
+  if (parsed.runId !== manifest.runId || parsed.runPurpose !== manifest.runPurpose ||
+      parsed.verificationProvenance !== provenance || parsed.kind !== binding.kind ||
+      parsed.fixtureRole !== bindingRole(binding) ||
+      !safeDigestEqual(parsed.targetDigest, hmacSha256Hex(key, "fixture-binding-target", binding)) ||
+      !safeDigestEqual(parsed.ownerDigest, hmacSha256Hex(key, "fixture-binding-owner", bindingOwner(manifest, binding))) ||
+      !safeDigestEqual(parsed.integrityMac, verificationMac(parsed, key))) {
+    throw new Error("verified fixture binding integrity/target/provenance mismatch");
+  }
+  return parsed;
+}
+
+function assertVerifiedManifestBindings(manifest, key) {
+  const bindings = manifestBindings(manifest.rawAuthorities);
+  if (manifest.bindingVerifications.length !== bindings.length) throw new Error("every fixture binding requires verification provenance");
+  const seen = new Set();
+  for (const receipt of manifest.bindingVerifications) {
+    const binding = bindings.find((item) => hmacSha256Hex(key, "fixture-binding-target", item) === receipt.targetDigest);
+    if (!binding || seen.has(receipt.targetDigest) || receipt.generation >= manifest.generation) {
+      throw new Error("fixture verification coverage/generation mismatch");
+    }
+    assertVerificationBinding(receipt, manifest, binding, key);
+    seen.add(receipt.targetDigest);
+  }
+}
+
+function assertPreparingPurpose(runDirectory, runPurpose) {
+  const manifest = loadLatestPrivateManifest(runDirectory);
+  if (manifest.lifecycle !== "preparing" || manifest.runPurpose !== runPurpose) {
+    throw new Error("fixture verification requires exact preparing run purpose");
+  }
+  if (manifest.authority.environment !== G5D4_CANONICAL_STAGING.environment ||
+      manifest.authority.projectRef !== G5D4_CANONICAL_STAGING.projectRef ||
+      manifest.authority.projectLabel !== G5D4_CANONICAL_STAGING.projectLabel) {
+    throw new Error("fixture verification requires canonical staging authority");
+  }
+  return manifest;
+}
+
+function createLiveFixtureVerificationReader() {
+  // Like the existing live collector, deliberately unarmed until the separate
+  // approved live reader wiring unit. No input, adapter, flag or environment
+  // override can turn observations supplied by a caller into live authority.
+  throw new Error("live fixture verification reader is not armed");
+}
+
+// These are read results, never public caller attestations. Exact IDs and DB
+// relations are checked before any capability or MAC is constructed.
+async function inspectFixtureBinding(reader, manifest, binding) {
+  const fixtureRole = bindingRole(binding);
+  const userId = bindingOwner(manifest, binding);
+  const exact = (value) => z.literal(value);
+  const owner = { fixtureRole: exact(fixtureRole), userId: exact(userId) };
+  if (binding.kind === "identity") {
+    const result = await reader.readIdentityBaseline({ fixtureRole, userId });
+    const parsed = z.object({
+      ...owner,
+      auth: z.object({ userId: exact(userId), present: z.literal(true), confirmed: z.literal(true) }).strict(),
+      profile: z.object({ userId: exact(userId), count: z.literal(1) }).strict(),
+      baseline: z.array(z.object({ table: z.string(), count: z.literal(0) }).strict()).length(17)
+    }).strict().parse(result);
+    const expected = G5D4_A_PREP_TABLE_CONTRACT.filter(({ table }) => table !== "profiles").map(({ table }) => table).sort();
+    if (canonicalJson(parsed.baseline.map(({ table }) => table).sort()) !== canonicalJson(expected)) {
+      throw new Error("identity baseline exact table universe mismatch");
+    }
+    return parsed;
+  }
+  if (binding.kind === "provider") {
+    return z.object({
+      ...owner, resourceId: exact(binding.resourceId), present: z.literal(true), count: z.literal(1),
+      dbBinding: z.object({ userId: exact(userId), resourceId: exact(binding.resourceId), count: z.literal(1) }).strict()
+    }).strict().parse(await reader.readProviderBinding({ fixtureRole, userId, resourceId: binding.resourceId }));
+  }
+  if (binding.kind === "storage") {
+    const target = binding.target;
+    const recording = target.bucket === "recordings";
+    return z.object({
+      ...owner, bucket: exact(target.bucket), key: exact(target.key), present: z.literal(true), count: z.literal(1),
+      dbLocator: z.object({ userId: exact(userId), bucket: exact(target.bucket), key: exact(target.key), count: z.literal(1) }).strict(),
+      recordingContract: recording ? z.enum(["consent_gated_web", "consent_gated_mobile"]) : z.null(),
+      directStorageBypassUsed: z.literal(false)
+    }).strict().parse(await reader.readStorageBinding({ fixtureRole, userId, ...target }));
+  }
+  if (!manifest.rawAuthorities.fixtureBUserId) throw new Error("request verification requires B control identity");
+  return z.object({
+    ...owner, deletionRequestId: exact(binding.deletionRequestId), deletionRequestRef: exact(binding.deletionRequestRef),
+    count: z.literal(1), state: z.literal("confirmed"), conflictCount: z.literal(0),
+    fixtureBUserId: exact(manifest.rawAuthorities.fixtureBUserId), fixtureBRequestCount: z.literal(0)
+  }).strict().parse(await reader.readDeletionRequest({
+    fixtureRole, userId, deletionRequestId: binding.deletionRequestId, deletionRequestRef: binding.deletionRequestRef,
+    fixtureBUserId: manifest.rawAuthorities.fixtureBUserId
+  }));
+}
+
+function createFixtureVerificationCapability(runDirectory, manifest, binding, observation) {
+  const key = readAliasKey(runDirectory);
+  const verification = {
+    schemaVersion: G5D4_BINDING_VERIFICATION_VERSION,
+    runId: manifest.runId, runPurpose: manifest.runPurpose,
+    verificationProvenance: manifest.runPurpose === G5D4_PROVENANCE.live.runPurpose
+      ? G5D4_PROVENANCE.live.collector : G5D4_PROVENANCE.selfTest.collector,
+    generation: manifest.generation, generationDigest: manifest.generationDigest,
+    fixtureRole: bindingRole(binding), kind: binding.kind,
+    targetDigest: hmacSha256Hex(key, "fixture-binding-target", binding),
+    ownerDigest: hmacSha256Hex(key, "fixture-binding-owner", bindingOwner(manifest, binding)),
+    relationDigest: hmacSha256Hex(key, "fixture-binding-relations", observation),
+    verifiedState: binding.kind === "identity" ? "fresh_zero_baseline"
+      : binding.kind === "request" ? "confirmed_no_conflict" : "present_owned",
+    verifiedCount: 1, verifiedAt: new Date().toISOString()
+  };
+  verification.integrityMac = verificationMac(verification, key);
+  // Binding and live observation have already been schema-parsed into owned data.
+  // Copy the complete binding and validated metadata; retain no reader result
+  // or caller references. These strict schemas contain only scalar fields,
+  // plus Storage's one nested scalar target, so freeze that exact shape.
+  const snapshot = structuredClone({
+    runDirectory: assertSecureRunDirectory(runDirectory),
+    binding,
+    verification: g5d4FixtureVerificationSchema.parse(verification)
+  });
+  if (snapshot.binding.kind === "storage") Object.freeze(snapshot.binding.target);
+  Object.freeze(snapshot.binding);
+  Object.freeze(snapshot.verification);
+  Object.freeze(snapshot);
+  const receipt = Object.freeze(Object.create(null));
+  verificationCapabilitiesFor(manifest.runPurpose).set(receipt, snapshot);
+  return receipt;
+}
+
+export async function verifyLiveFixtureAuthority(runDirectory, input) {
+  if (arguments.length !== 2) throw new Error("live fixture verification accepts no evidence/reader overrides");
+  assertNoCredentialMaterial(input);
+  const binding = g5d4FixtureBindingSchema.parse(input);
+  const manifest = assertPreparingPurpose(runDirectory, G5D4_PROVENANCE.live.runPurpose);
+  const observation = await inspectFixtureBinding(createLiveFixtureVerificationReader(), manifest, binding);
+  // Any intervening bind makes the observation unusable, even before issuance.
+  if (loadLatestPrivateManifest(runDirectory).generationDigest !== manifest.generationDigest) {
+    throw new Error("fixture verification generation became stale during read");
+  }
+  return createFixtureVerificationCapability(runDirectory, manifest, binding, observation);
+}
+
+export function createSelfTestFixtureVerification(runDirectory, input) {
+  if (arguments.length !== 2) throw new Error("self-test fixture verification accepts no provenance override");
+  assertNoCredentialMaterial(input);
+  const binding = g5d4FixtureBindingSchema.parse(input);
+  const manifest = assertPreparingPurpose(runDirectory, G5D4_PROVENANCE.selfTest.runPurpose);
+  return createFixtureVerificationCapability(runDirectory, manifest, binding, { synthetic: "self_test_v1" });
+}
+
+export function bindVerifiedLiveFixtureAuthority(runDirectory, input, receipt) {
+  if (arguments.length !== 3) throw new Error("verified live bind accepts no overrides");
+  const manifest = assertPreparingPurpose(runDirectory, G5D4_PROVENANCE.live.runPurpose);
+  return bindManifestAuthority(runDirectory, input, receipt, manifest);
+}
+
+function appendManifestGeneration(runDirectory, current, changes, options = {}) {
+  return publishManifest(runDirectory, {
+    ...current,
+    ...changes,
+    generation: current.generation + 1,
+    previousGenerationDigest: current.generationDigest,
+    createdAt: options.createdAt ?? new Date().toISOString()
+  });
+}
+
+export function bindFixtureManifestAuthority(runDirectory, input) {
+  // Backwards-compatible name, now structurally self-test-only.
+  if (arguments.length !== 2) throw new Error("raw fixture bind accepts no overrides");
+  const current = assertPreparingPurpose(runDirectory, G5D4_PROVENANCE.selfTest.runPurpose);
+  return bindManifestAuthority(runDirectory, input, createSelfTestFixtureVerification(runDirectory, input), current);
+}
+
+function bindManifestAuthority(runDirectory, input, receipt, current) {
+  const capabilities = verificationCapabilitiesFor(current.runPurpose);
+  const snapshot = capabilities.get(receipt);
+  if (!snapshot || snapshot.runDirectory !== assertSecureRunDirectory(runDirectory)) {
+    throw new Error("fixture verification capability missing or changed");
+  }
+  // Caller input is only an expected target/kind/role/slot assertion. Never
+  // inspect receipt properties or use caller input as persisted authority.
+  assertNoCredentialMaterial(input);
+  const expectedBinding = g5d4FixtureBindingSchema.parse(input);
+  const { binding, verification: verified } = snapshot;
+  if (canonicalJson(expectedBinding) !== canonicalJson(binding)) throw new Error("verified fixture binding target mismatch");
+  const key = readAliasKey(runDirectory);
+  assertVerificationBinding(verified, current, binding, key);
+  if (verified.generation !== current.generation || verified.generationDigest !== current.generationDigest) {
+    throw new Error("fixture verification generation is stale");
+  }
+  if (current.lifecycle !== "preparing") throw new Error("fixture bindings require preparing manifest");
+  const raw = structuredClone(current.rawAuthorities);
+  const prefix = binding.fixtureRole === "fixture_a" ? "fixtureA" : "fixtureB";
+  const bindOnce = (field, value) => {
+    if (raw[field] !== null) throw new Error("fixture authority already bound");
+    raw[field] = value;
+  };
+  if (binding.kind === "identity") bindOnce(`${prefix}UserId`, binding.userId);
+  if (binding.kind === "provider") bindOnce(`${prefix}ProviderResourceId`, binding.resourceId);
+  if (binding.kind === "storage") {
+    const targets = raw[`${prefix}StorageTargets`];
+    if (targets.some((target) => target.bucket === binding.target.bucket)) {
+      throw new Error("storage bucket authority already bound");
+    }
+    targets.push(binding.target);
+  }
+  if (binding.kind === "request") {
+    bindOnce("deletionRequestId", binding.deletionRequestId);
+    bindOnce("deletionRequestRef", binding.deletionRequestRef);
+  }
+  const derived = createAliasesAndTargets(raw, readAliasKey(runDirectory));
+  const published = appendManifestGeneration(runDirectory, current, {
+    rawAuthorities: raw, ...derived, bindingVerifications: [...current.bindingVerifications, verified]
+  });
+  capabilities.delete(receipt);
+  return published;
+}
+
+export function completeFixtureManifest(runDirectory) {
+  const current = loadLatestPrivateManifest(runDirectory);
+  if (current.lifecycle !== "preparing") throw new Error("fixture completion requires preparing manifest");
+  assertFixtureManifestComplete(current, readAliasKey(runDirectory));
+  return appendManifestGeneration(runDirectory, current, { lifecycle: "fixture_complete" });
 }
 
 export function createInitialPrivateManifest(runDirectory, input) {
@@ -331,7 +644,9 @@ export function createInitialPrivateManifest(runDirectory, input) {
     throw new Error("initial manifest already exists");
   }
   assertNoCredentialMaterial(input);
-  const key = readAliasKey(canonicalRun);
+  if (Object.keys(input).some((field) => !["runId", "runPurpose", "createdAt", "authority"].includes(field))) {
+    throw new Error("initial manifest accepts current run authority only");
+  }
   const runId = input.runId ?? `g5d4_run_${randomBytes(16).toString("hex")}`;
   const provenance =
     input.runPurpose === G5D4_PROVENANCE.live.runPurpose
@@ -340,7 +655,6 @@ export function createInitialPrivateManifest(runDirectory, input) {
         ? G5D4_PROVENANCE.selfTest
         : null;
   if (!provenance) throw new Error("private manifest run purpose required");
-  const { aliases, stageTargets } = createAliasesAndTargets(input.rawAuthorities, key);
   return publishManifest(canonicalRun, {
     schemaVersion: G5D4_SCHEMA_VERSIONS.privateManifest,
     runId,
@@ -351,12 +665,14 @@ export function createInitialPrivateManifest(runDirectory, input) {
     previousGenerationDigest: null,
     generationDigest: "".padStart(64, "0"),
     createdAt: input.createdAt ?? new Date().toISOString(),
+    lifecycle: "preparing",
     sealed: false,
     manifestSealDigest: null,
     authority: input.authority,
-    rawAuthorities: input.rawAuthorities,
-    aliases,
-    stageTargets
+    rawAuthorities: emptyRawAuthorities(),
+    aliases: {},
+    stageTargets: {},
+    bindingVerifications: []
   });
 }
 
@@ -366,6 +682,55 @@ export function listManifestPaths(runDirectory) {
     .filter((name) => /^manifest-\d{6}\.json$/.test(name))
     .sort()
     .map((name) => join(canonicalRun, name));
+}
+
+function assertManifestTransition(previous, current) {
+  if (!previous) {
+    if (current.lifecycle !== "preparing" || current.bindingVerifications.length !== 0 ||
+        canonicalJson(current.rawAuthorities) !== canonicalJson(emptyRawAuthorities())) {
+      throw new Error("manifest must start with unbound preparing authority");
+    }
+    return;
+  }
+  for (const field of ["schemaVersion", "runId", "runPurpose", "confirmationProvenance", "collectorProvenance", "authority"]) {
+    if (canonicalJson(previous[field]) !== canonicalJson(current[field])) {
+      throw new Error("manifest run authority/provenance is immutable");
+    }
+  }
+  if (previous.sealed) throw new Error("sealed manifest cannot have a later generation");
+  if (current.lifecycle !== "preparing") {
+    const expected = previous.lifecycle === "preparing" ? "fixture_complete" : "sealed";
+    if (current.lifecycle !== expected || canonicalJson(previous.rawAuthorities) !== canonicalJson(current.rawAuthorities) ||
+        canonicalJson(previous.bindingVerifications) !== canonicalJson(current.bindingVerifications)) {
+      throw new Error("manifest completion/seal transition mismatch");
+    }
+    return;
+  }
+  if (previous.lifecycle !== "preparing") throw new Error("manifest lifecycle rollback refused");
+  let additions = 0;
+  for (const field of Object.keys(previous.rawAuthorities)) {
+    const before = previous.rawAuthorities[field];
+    const after = current.rawAuthorities[field];
+    if (canonicalJson(before) === canonicalJson(after)) continue;
+    if (Array.isArray(before)) {
+      if (after.length !== before.length + 1 || canonicalJson(before) !== canonicalJson(after.slice(0, -1))) {
+        throw new Error("existing storage bindings are immutable");
+      }
+    } else if (before !== null || after === null) {
+      throw new Error("existing fixture identity/resource bindings are immutable");
+    }
+    // The request ID/ref pair is one indivisible binding.
+    if (field !== "deletionRequestRef") additions += 1;
+  }
+  if (additions !== 1) throw new Error("each preparing generation must append exactly one binding");
+  const receipt = current.bindingVerifications.at(-1);
+  const previousTargets = new Set(previous.bindingVerifications.map((item) => item.targetDigest));
+  if (current.bindingVerifications.length !== previous.bindingVerifications.length + 1 ||
+      canonicalJson(previous.bindingVerifications) !== canonicalJson(current.bindingVerifications.slice(0, -1)) ||
+      receipt.generation !== previous.generation || receipt.generationDigest !== previous.generationDigest ||
+      previousTargets.has(receipt.targetDigest)) {
+    throw new Error("fixture verification must append against exact prior generation");
+  }
 }
 
 export function loadAndVerifyManifestChain(runDirectory) {
@@ -385,7 +750,14 @@ export function loadAndVerifyManifestChain(runDirectory) {
     if (!safeDigestEqual(digest, manifest.generationDigest)) {
       throw new Error("manifest generation digest mismatch");
     }
-    if (previous?.sealed) throw new Error("sealed manifest cannot have a later generation");
+    assertManifestTransition(previous, manifest);
+    const key = manifest.generation === 1 ? null : readAliasKey(runDirectory);
+    assertDerivedManifestBindings(manifest, key);
+    assertVerifiedManifestBindings(manifest, key);
+    if (manifest.lifecycle !== "preparing") assertFixtureManifestComplete(manifest, key);
+    if (manifest.sealed && !safeDigestEqual(computeManifestSealDigest(manifest, key), manifest.manifestSealDigest)) {
+      throw new Error("private manifest seal mismatch");
+    }
     previous = manifest;
     return manifest;
   });
@@ -410,14 +782,16 @@ export function loadLatestPrivateManifest(runDirectory, options = {}) {
 
 export function sealPrivateManifest(runDirectory, options = {}) {
   const current = loadLatestPrivateManifest(runDirectory);
-  if (current.sealed) throw new Error("private manifest is already sealed");
+  if (current.lifecycle !== "fixture_complete") throw new Error("seal requires fixture_complete manifest");
   const key = readAliasKey(runDirectory);
+  assertFixtureManifestComplete(current, key);
   const draft = {
     ...current,
     generation: current.generation + 1,
     previousGenerationDigest: current.generationDigest,
     generationDigest: "".padStart(64, "0"),
     createdAt: options.createdAt ?? new Date().toISOString(),
+    lifecycle: "sealed",
     sealed: true,
     manifestSealDigest: null
   };
@@ -668,6 +1042,11 @@ export function inspectPrivateStatePermissions(runDirectory) {
 
 export function assertCanonicalManifestAuthority(manifest) {
   const parsed = g5d4PrivateManifestSchema.parse(manifest);
+  // Keep the pre-existing collector/operator contract complete even though the
+  // private-state loader can now read preparing generations.
+  g5d4PrivateManifestSchema.parse({
+    ...parsed, lifecycle: "fixture_complete", sealed: false, manifestSealDigest: null
+  });
   if (
     parsed.authority.environment !== G5D4_CANONICAL_STAGING.environment ||
     parsed.authority.projectLabel !== G5D4_CANONICAL_STAGING.projectLabel ||

@@ -1,4 +1,126 @@
-# G5D-4 proof-only tooling final authority closeout result
+# G5D-4 proof-only tooling result
+
+## Final authority closeout — 2026-09-06
+
+Mode: `G5D4_INCREMENTAL_PRIVATE_MANIFEST_FINAL_AUTHORITY_CLOSEOUT_COMMIT_AND_PUSH`
+
+Result: `G5D4_INCREMENTAL_PRIVATE_MANIFEST_VERIFIED_BINDING_CLOSED_COMMITTED_PASS`
+
+Accepted final independent focused re-review authority: `G5D4_VERIFIED_BINDING_IMMUTABLE_SNAPSHOT_INDEPENDENT_READ_ONLY_FOCUSED_RE_REVIEW = PASS`. This supersedes the pending-review findings and next actions in the historical correction sections below; no new implementation or independent audit is part of this closeout.
+
+- Incremental manifest unsupported P1 (`G5D4_PRIVATE_MANIFEST_INCREMENTAL_BINDING_UNSUPPORTED`) was found, corrected, and is now `CLOSED`.
+- Unverified raw bind P1 (`G5D4_INCREMENTAL_PRIVATE_MANIFEST_UNVERIFIED_RAW_BIND_BYPASS`) was found, corrected, and is now `CLOSED`.
+- Mutable receipt TOCTOU P1 (`G5D4_VERIFIED_BINDING_MUTABLE_RECEIPT_TOCTOU`) was found, corrected, and is now `CLOSED`; the final independent re-review could not reproduce it and rejected Identity/Provider/Storage/request substitution.
+
+Accepted authority remains `preparing → incremental verified bindings → fixture_complete → sealed`. Live raw binding is structurally unavailable; live binding requires approved verification bound to the exact run/role/kind/target/generation. The returned receipt supplies opaque object identity only; module-private immutable snapshots supply all authoritative verified state, and bind/persistence never reread caller-controlled receipt fields. Stale generations and self-test capabilities in live manifests are rejected; complete/seal revalidate verified immutable binding provenance. Existing Human authorization and wrapper safety remain unchanged.
+
+Preflight matched Developer root, `codex/g3-mobile-main-loop`, HEAD/upstream `bd53c9ff5d16f52ca489199ff44057212f20516d`, ahead/behind `0/0`, exactly the six existing WIP files, and only allowed untracked `supabase/.temp/`. Closeout changes only this result and `docs/current-state.md`; the four script files retain the reviewed implementation. The six-file correction is the atomic commit scope; this document does not preassign its commit SHA.
+
+Closeout validation: `npm run check:workspace`, current `npm run g5d4:proof-tooling:self-test` **`165/165 PASS`** (including verified-binding `62/62`, immutable snapshot `20/20`, and consume-once), and `git diff --check`: PASS. The self-test ran under OS network deny with Next telemetry disabled. Accepted implementation/re-review authority already includes lint, build, post-build typecheck and diff-check PASS; these full checks were not rerun for this docs-only closeout. No new environment variable, migration, generated DB type or README setup change is needed.
+
+Scope audit: product service/API/UI/account-deletion operator semantics/wrapper/migration/schema/generated DB type diffs=`0`; migration `0028`=`0`. Production/Canonical Staging/real ElevenLabs/Storage/Auth access=`0`; real fixture/account/request creation=`0`; real external/destructive proof=`0`; Human destructive authorization request/creation=`0`; destructive guard enable/execution=`0`; `supabase/.temp/` operation=`0`.
+
+Focused `P0/P1/P2/UNKNOWN=0/0/0/0`; program aggregate `0/0/1/0`. Known Auth P2 `auth_terminal_authority_missing` remains unchanged, nonblocking and deferred. Human prerequisites remain `SATISFIED`; destructive Human authorization remains `NOT GRANTED`; G5D4 remains `NOT AUTHORIZED / NOT STARTED`; G5D-2/Gate 5 remain `OPEN`. Live reader and collector remain intentionally `UNARMED`. This closes only the incremental-manifest / verified-binding correction lane. Its design is finished and is not reopened without a concrete new blocker.
+
+Exact `NEXT_ONE_ACTION`: `G5D4_LIVE_READ_ONLY_COLLECTOR_MINIMUM_ARMING`.
+
+Source basis: `createLiveFixtureVerificationReader()` throws before the live verifier can inspect the identity/zero baseline or issue a binding capability; `bindVerifiedFixturePreparationAuthority()` requires that verifier, and the persisted A-login checkpoint requires the resulting identity binding. `createLiveReadOnlyCollector()` also remains unarmed. Current source therefore does not establish an operational identity/zero-baseline unit before approved module-owned reader/collector wiring. No arming or fixture preparation is performed in this closeout.
+
+## Prior immutable verified snapshot correction (historical, pending-review status superseded)
+
+Mode: `G5D4_VERIFIED_BINDING_IMMUTABLE_INTERNAL_SNAPSHOT_MINIMUM_CORRECTION`
+
+Result: `G5D4_VERIFIED_BINDING_IMMUTABLE_INTERNAL_SNAPSHOT_CORRECTED_PENDING_FOCUSED_RE_REVIEW`
+
+Accepted independent review P1: `G5D4_VERIFIED_BINDING_MUTABLE_RECEIPT_TOCTOU` — mutable verified receipt TOCTOU permits unverified binding. The same receipt identity could return verified A during canonical comparison and caller-re-signed B during reparsing, allowing unverified Identity/Provider/Storage/request authority and subsequent complete/seal. The prior `145/145` passed; the new stateful Identity substitution regression failed against that implementation before this correction. This section supersedes the prior receipt-integrity claim below; **P1 remains open pending independent re-review**.
+
+Preflight matched Developer root, `codex/g3-mobile-main-loop`, HEAD/upstream `bd53c9ff5d16f52ca489199ff44057212f20516d`, ahead/behind `0/0`, the exact existing six-file verified-binding WIP, and only allowed untracked `supabase/.temp/`. Workspace and diff checks passed; no fetch or temp-directory operation occurred.
+
+This unit changes only `scripts/g5d4-proof-private-state.mjs`, `scripts/g5d4-proof-tooling-self-test.mjs`, this result and `docs/current-state.md`. The existing contract/helper WIP is preserved without additional changes; total tracked WIP remains the same six files.
+
+- **Internal authority:** separate module-private live/self-test WeakMaps now map an opaque receipt identity to a full immutable snapshot. It contains canonical run directory, the exact verified binding (including Storage bucket/key or request ID/ref), and validated run ID/purpose/provenance, generation/digest, role/kind, target/owner/relation digests, state/count/time and MAC. Existing schema parsing owns the checked binding/read result; `structuredClone` copies the complete binding and metadata. The snapshot, binding, nested Storage target and flat metadata are frozen. Only the relation digest is retained from nested read observations; no caller object/array/getter/Proxy/Buffer reference is stored.
+- **Opaque key and bind:** the returned receipt is a frozen empty null-prototype object. Binding performs only WeakMap identity lookup on it, never canonicalization, parsing or field reads. The unchanged input argument is an exact expected target/kind/role/slot assertion, not persisted authority. All raw values and verification metadata persisted by bind come exclusively from the immutable snapshot. External freezing is supplementary: isolated tests remove only that freeze and still reject substitutions with receipt getter reads `0`.
+- **Freshness/isolation:** current run/purpose/HMAC/owner and exact generation/digest checks remain. Successful publication consumes the capability; any intervening generation makes unused snapshots stale. Copied/Proxy-wrapped/cross-module/cross-run receipts fail identity lookup; self-test snapshots cannot enter the live registry. The live constructor stays private, raw population stays self-test-only, and production live reader/collector remain intentionally unarmed. No public reader override or shortcut was added.
+- **Complete/seal:** existing verification coverage, HMAC, provenance and generation-chain checks remain. Tests confirm all four substituted raw bindings are refused by completion validation. A full 13-binding fixture subjected to caller-side receipt substitutions completes/seals only with the original verified raw values and matching live-purpose verification metadata. All such positive runs use isolated fake readers, never real fixtures or live-read authority.
+
+Validation: existing `145/145` retained (receipt-mutation expectations updated for opaque keys), new immutable-snapshot focused `20/20`, combined **`165/165 PASS`**. New coverage includes stateful Identity/Provider/Storage/request substitution against both frozen and deliberately mutable test keys, nested read-result arrays/objects, nested Storage getter/Proxy mutation, copied/Proxy-wrapped keys, single-use, stale generation, self-test isolation, exact persisted metadata and full attacked-fixture completion/sealing. Existing verified-binding focused `62/62` also passes separately. The full suite retains the eight-process consume-once race: one winner, seven `EEXIST` refusals; incremental chain/rebind/raw-live-bind/partial complete-seal defenses; A `17 → 22`, D/A/R `15/1/6`, B `16`, two processing consents, five writer intents, obsolete `16/21/14/1/6` rejection and absence of direct `uploadOwnedRecording` bypass.
+
+Workspace check, full self-test, both focused suites, consume-once regression, `npm run lint`, focused ESLint, `npm run build`, post-build `npm run typecheck` and `git diff --check`: PASS. Execution checks ran under OS network deny with Next telemetry disabled. Product bridge suites, E2E expansion and real-device checks were not run because this unit changes proof-only receipt handling. No new environment variable, README setup step, schema or migration is required.
+
+Hard zero: real network; Canonical Staging/Production/Auth/Provider/Storage access; real fixture/account/request creation; Human destructive authorization request/creation; destructive guard enable; account-deletion execution; migration apply; `supabase/.temp/` operation. Wrapper/product/API/UI/adapter/service/operator/migration/schema/generated-type/environment/README changes: `0`. Commit/push: `0/0`.
+
+Human prerequisites remain `SATISFIED`; destructive authorization `NOT GRANTED`; G5D4 `NOT AUTHORIZED / NOT STARTED`; G5D-2/Gate 5 `OPEN`. Pending independent review: focused `P0/P1/P2/UNKNOWN=0/1/0/0`, program `0/1/1/0`; known `auth_terminal_authority_missing` P2 remains deferred and unchanged. No additional finding was identified by local correction checks; no closeout is claimed.
+
+Exact `NEXT_ONE_ACTION`:
+
+`G5D4_VERIFIED_BINDING_IMMUTABLE_SNAPSHOT_INDEPENDENT_READ_ONLY_FOCUSED_RE_REVIEW`
+
+## Prior verified binding correction (historical, mutable receipt boundary superseded)
+
+Mode: `G5D4_INCREMENTAL_PRIVATE_MANIFEST_VERIFIED_BINDING_BOUNDARY_MINIMUM_CORRECTION`
+
+Result: `G5D4_INCREMENTAL_PRIVATE_MANIFEST_VERIFIED_BINDING_BOUNDARY_CORRECTED_PENDING_FOCUSED_RE_REVIEW`
+
+Accepted independent focused re-review finding: `G5D4_INCREMENTAL_PRIVATE_MANIFEST_UNVERIFIED_RAW_BIND_BYPASS` (P1). The prior 83 cases did not reject raw live bindings: both the exported raw bind and caller-supplied helper booleans could populate/complete/seal a live-purpose manifest without an existence check. This correction changes only that boundary; the accepted incremental lifecycle, aliases, target semantics, DAR/consent authority, authorization and wrapper are retained.
+
+Preflight: Developer root, `codex/g3-mobile-main-loop`, HEAD/upstream `bd53c9ff5d16f52ca489199ff44057212f20516d`, ahead/behind `0/0`; exact expected six-file incremental WIP and only allowed untracked `supabase/.temp/`. Workspace/diff checks passed. No temp-directory operation or git fetch was performed.
+
+Changed exactly the same six WIP files: `scripts/g5d4-proof-contract.mjs`, `scripts/g5d4-proof-private-state.mjs`, `scripts/g5d4-fixture-prepare.mjs`, `scripts/g5d4-proof-tooling-self-test.mjs`, this result, and `docs/current-state.md`.
+
+- **Raw-live-bind isolation:** `bindFixtureManifestAuthority()` now requires `g5d4_self_test` before any bind. Its private underlying primitive is not exported. Live callers use `verifyLiveFixtureAuthority()` then `bindVerifiedLiveFixtureAuthority()`. Neither verifier nor helper accepts caller evidence, adapters, provenance overrides or shortcut flags. `createSelfTestFixtureVerification()` can only issue `self_test_v1` capabilities for a self-test run.
+- **Receipt creation/integrity:** only the private checked-read path creates a live capability. A module-private WeakMap records the exact object, payload and canonical run directory; copied, fabricated, re-signed, cross-module and altered objects cannot satisfy live bind. Persisted `g5d4.fixture-verification.v1` metadata uses the existing run key with domain-separated HMAC. It binds run ID/purpose, live/self-test provenance, generation/digest, A/B role, kind, exact raw binding digest, owner digest, checked relation digest, state/count and internally recorded verification time. There is no second key hierarchy, generic attestation service or public raw receipt issuer.
+- **Target/generation:** receipt generation and digest must equal the latest manifest. Verification also rereads latest generation after the asynchronous read, before issuing a receipt. An intervening bind refuses issuance or makes an existing receipt stale. Successful bind publishes exactly the next generation and consumes the in-process capability. Process restart requires re-verification for an unconsumed capability; persisted metadata is audit evidence, not a portable bind credential.
+- **Identity:** the internal reader contract requires exact role/user, present confirmed Auth identity, exactly one matching profile, and the complete 17-table non-profile zero baseline. Missing/nonzero/duplicate baseline coverage, wrong role or target cannot issue a receipt.
+- **Provider/Storage/request:** Provider requires exact presence/count and matching owner/resource DB binding. Each Storage object requires exact bucket/key presence/count and matching owner/DB locator; recordings additionally require the consent-gated Web/Mobile contract and no direct bypass. Request requires exact A owner, ID/ref, one confirmed request, zero conflicts, exact B control identity and zero B requests. Failed checks cannot append a generation.
+- **Complete/seal defense:** every bound authority must have one valid matching HMAC/provenance record. Chain reads verify coverage, target/owner binding, append-only metadata and exact predecessor generation/digest; completion and sealing recheck all final bindings. Missing metadata, legacy/raw live population and self-test provenance fail closed even after the unsealed outer digest chain is recomputed. No legacy metadata is silently promoted.
+- **Fixture helper:** the canonical future sequence remains A baseline → verified A bind → B baseline → verified B bind → verified Provider/Storage objects → verified confirmed request → complete → seal. Human checkpoint observations remain separate; booleans cannot substitute for the binding capability. Existing recording-consent checks and prohibition on direct `uploadOwnedRecording` remain.
+
+**Live readiness limit:** the existing live collector is intentionally unarmed. This correction also leaves the module-owned live fixture reader unarmed: the production verifier fails before any read or receipt issuance. It adds no real Auth/Provider/Storage/DB transport. The positive live-purpose cases run in isolated test module instances that replace only the private reader factory with fixed fake reads; validation, capability creation, binding and chain code run unchanged. A capability from such an instance is rejected by the production bind API. These cases prove the local boundary, not actual fixture existence or readiness for live preparation. Approved module-owned live reader wiring remains a prerequisite for future fixture preparation; no public injection path is provided.
+
+Validation: prior `83/83` plus new verified-binding focused `62/62` = `145/145` PASS, including the eight-process consume-once race (one winner, seven `EEXIST` refusals). Focused negatives cover all five raw live binds, synthetic/cross-run/cross-module receipt rejection, A/B and kind/target substitution, stale and during-read generation changes, receipt/MAC/provenance tampering, legacy completion/seal refusal, malformed Auth/profile/baseline/Provider/Storage/request reads, and verified A/B conflicts. Positive cases cover A/B, both Provider resources, all eight Storage objects, request, complete/seal and self-test population. Preparing/immutability/digest-chain, partial seal/authorization/wrapper, provenance isolation, A `17 → 22`, D/A/R `15/1/6`, B `16`, two processing consents, five writer intents, obsolete `16/21/14/1/6` rejection and consent-gated recording regressions remain PASS.
+
+`npm run check:workspace`, full proof-tooling self-test, focused `--verified-binding-only`, `npm run lint`, focused ESLint, `npm run build`, post-build `npm run typecheck`, and `git diff --check`: PASS. Verification commands used OS network deny and disabled Next telemetry. No product bridge suite or E2E expansion was run because those sources/contracts did not change. Isolated test artifacts, including an intermediate failed module-loader setup artifact, were removed with absence verified.
+
+Hard zero: real network; Canonical Staging/Production access or fixture creation; real Auth/ElevenLabs/Storage reads or writes; request creation; Human destructive authorization request/creation; guard enable; canonical account-deletion execution; migration apply; `supabase/.temp/` operation; wrapper/product/API/UI/adapter/service/operator/migration/schema/generated-type/environment/README changes. Commit/push: `0/0`.
+
+Human prerequisites remain `SATISFIED`; destructive authorization `NOT GRANTED`; G5D4 `NOT AUTHORIZED / NOT STARTED`; G5D-2/Gate 5 `OPEN`. **P1 remains open pending independent focused re-review; no closeout is claimed.** Focused `P0/P1/P2/UNKNOWN=0/1/0/0`; program `0/1/1/0`, with known `auth_terminal_authority_missing` P2 unchanged and deferred. Local checks found no additional finding; they are not independent review authority.
+
+Exact `NEXT_ONE_ACTION`:
+
+`G5D4_INCREMENTAL_PRIVATE_MANIFEST_VERIFIED_BINDING_INDEPENDENT_READ_ONLY_FOCUSED_RE_REVIEW`
+
+## Prior incremental private manifest correction (historical, binding boundary superseded)
+
+Mode: `G5D4_INCREMENTAL_PRIVATE_MANIFEST_MINIMUM_CORRECTION`
+
+Result: `G5D4_INCREMENTAL_PRIVATE_MANIFEST_MINIMUM_CORRECTION_IMPLEMENTED_PENDING_FOCUSED_RE_REVIEW`
+
+Accepted planning authority already specified `created → populated → sealed`: OS-temp run directory → manifest → HMAC key → A baseline/binding → B baseline/binding → verified Provider/Storage resources → actually created/confirmed A request → fixture-complete validation → seal → future Human destructive authorization. This corrects an implementation mismatch, not a new lifecycle authority. Previously `createInitialPrivateManifest()` required the key and all future resources immediately. The accepted authority resolves the previous `UNKNOWN_BLOCKING`; finding `G5D4_PRIVATE_MANIFEST_INCREMENTAL_BINDING_UNSUPPORTED` is a proof-tooling `IMPLEMENTATION_GAP_P1`, not a product P1.
+
+Preflight matched `/Users/karasawatakahiro/Developer/native-minute`, branch `codex/g3-mobile-main-loop`, HEAD/upstream `bd53c9ff5d16f52ca489199ff44057212f20516d`, ahead/behind `0/0`, tracked clean, only allowed untracked `supabase/.temp/`. Workspace and initial diff checks passed; the temp directory was not operated on.
+
+Changed exactly: `scripts/g5d4-proof-contract.mjs`, `scripts/g5d4-proof-private-state.mjs`, `scripts/g5d4-fixture-prepare.mjs`, `scripts/g5d4-proof-tooling-self-test.mjs`, this result and `docs/current-state.md`.
+
+- Private manifest v3 strictly discriminates `preparing → fixture_complete → sealed`. Initial creation accepts only run ID/purpose, creation time and project/ref/region/commit authority. It needs no key or fixture identifier; raw scalar authorities are genuinely null, Storage arrays empty, aliases/targets absent. Full-input creation and unknown fields fail. v2 files are not silently converted into new authority.
+- `bindFixtureManifestAuthority()` permits only identity, Provider, one Storage bucket/object, or the indivisible A request ID/ref pair. A/B are independent; each resource requires its bound identity. A/B identity/Provider/object substitution, same-value rebind, replacement and duplicate bucket conflict fail. A/B each retain exactly one object in each of the four required buckets at completion.
+- Each successful bind verifies the latest chain and exclusively publishes one new generation. Earlier bytes and bindings, run authority and provenance stay immutable. Aliases and stage digests/counts are derived from bound resources with the existing HMAC domains, never caller-supplied. The Storage target-set waits for A Provider plus all four A objects; the DB D15/A1/R6 target waits for all final raw bindings. Chain reads validate single-binding transitions, deterministic derived authority, lifecycle order and any seal MAC.
+- `assertFixtureManifestComplete()` enforces the full former sealed raw/alias/target shape plus exact bucket universe, A/B separation and recomputed alias/digest/count equality. Exact coherent live provenance stays live; self-test provenance stays self-test and cannot be promoted by a transition. `completeFixtureManifest()` persists the validated state; `sealPrivateManifest()` requires that state and revalidates it. Preparing manifests, including fully populated but not completed manifests, cannot seal. Completed/sealed fixture bindings cannot change.
+- `bindVerifiedFixturePreparationAuthority()` connects existing Human/read-only observations to local bindings: identity after Magic Link plus zero-baseline verification; Provider/Storage after presence/ownership verification; recording objects only with the canonical consent-gated Web/Mobile observation; request after actual confirmation. With `{ runDirectory }`, existing preparation checkpoints also require persisted bindings, fixture completion at prep-stop, and a sealed manifest at the target-sealed/Human-ready checkpoints. This adds no resource-creation automation or micro-modes. Verification observations remain observations, not live evidence or Human authorization.
+- Authorization issuance still requires `loadLatestPrivateManifest(..., { requireSealed: true })`. The canonical collector authority retains its complete contract. Wrapper source is unchanged, and its live path still requires a complete sealed manifest and exact live provenance; live collector remains intentionally unarmed. No preparing state is accepted as destructive authority.
+
+Validation: existing fake-only cases `61/61` plus focused incremental cases `22/22`, combined `83/83` PASS. New cases cover empty creation before key, integrity, A/B baseline/binding, rebind/substitution, partial seal/authorization/live-wrapper refusal, incremental Provider/Storage, unbound/confirmed request, each missing final authority, structural/derived authority, completion/seal, helper checkpoints, sealed immutability and generation/provenance tampering. Existing consume-once race (eight processes: one winner, seven EEXIST), live/self-test isolation, wrapper fail-close, obsolete `16/21/14/1/6` rejection, corrected A `17 → 22`, D/A/R `15/1/6`, B `16`, two processing consents, exact five writer intents and recording-consent protections remain PASS.
+
+`npm run check:workspace`, `npm run lint`, focused ESLint, `npm run build`, post-build `npm run typecheck`, and `git diff --check`: PASS. Build and final checks run under OS network deny with Next telemetry disabled. Product Provider/Storage/Database/Auth/Completion bridge suites were not rerun because none of those sources changed; no E2E expansion or real fixture proof was run.
+
+Hard zero: real network, Canonical Staging/Production access, Auth user/fixture/request creation, ElevenLabs call, Storage operation, destructive Human authorization, destructive guard enable, account-deletion execution, migration apply and `supabase/.temp/` operation. Product service/repository/API/UI, canonical operator/wrapper, migration/schema/generated types, environment and README diffs: `0`. Temporary synthetic test artifacts were removed. Commit/push: `0/0`.
+
+Human prerequisites remain `SATISFIED`; no re-request. Destructive Human authorization: `NOT GRANTED`. G5D4: `NOT AUTHORIZED / NOT STARTED`; G5D-2/Gate 5: `OPEN`. Implementation correction is complete, but independent focused re-review is still required: **the P1 is not closed**. Pending-review focused `P0/P1/P2/UNKNOWN=0/1/0/0`; program including unchanged nonblocking deferred `auth_terminal_authority_missing`: `0/1/1/0`. No additional finding was identified by this implementation's local checks.
+
+Exact `NEXT_ONE_ACTION`:
+
+`G5D4_INCREMENTAL_PRIVATE_MANIFEST_INDEPENDENT_READ_ONLY_FOCUSED_RE_REVIEW`
+
+## Prior committed closeout (historical authority)
 
 Recorded: 2026-09-04
 
@@ -165,6 +287,6 @@ No migration/isolated-DB proof was needed because this unit changes no database/
 - Real Canonical Staging/provider/storage/Auth/destructive proof: `NOT PERFORMED`.
 - Proof-only tooling closeout authority: `G5D4_FIXTURE_AND_HUMAN_GATE_PROOF_ONLY_TOOLING_CLOSED_COMMITTED_PASS`.
 
-Exact next one action:
+Prior closeout next action (superseded by the current correction above):
 
 `G5D4_DISPOSABLE_STAGING_FIXTURE_PREPARATION`

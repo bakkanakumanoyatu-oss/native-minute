@@ -2,7 +2,7 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
 export const G5D4_SCHEMA_VERSIONS = Object.freeze({
-  privateManifest: "g5d4.private-manifest.v2",
+  privateManifest: "g5d4.private-manifest.v3",
   collectorSafe: "g5d4.collector-safe.v2",
   authorization: "g5d4.authorization.v2",
   proofBinding: "g5d4.proof-binding.v2",
@@ -22,6 +22,8 @@ export const G5D4_PROVENANCE = Object.freeze({
     collector: "self_test_v1"
   })
 });
+
+export const G5D4_BINDING_VERIFICATION_VERSION = "g5d4.fixture-verification.v1";
 
 export const G5D4_CANONICAL_STAGING = Object.freeze({
   projectLabel: "native-minute-staging",
@@ -387,8 +389,76 @@ const stageTargetSchema = z
   })
   .strict();
 
-export const g5d4PrivateManifestSchema = z
-  .object({
+const rawIdentitySchema = z.string().min(1).max(256);
+const fixtureRoleSchema = z.enum(["fixture_a", "fixture_b"]);
+
+// Only these concrete fixture authorities may be appended; this is not a JSON patch API.
+export const g5d4FixtureBindingSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("identity"), fixtureRole: fixtureRoleSchema, userId: rawIdentitySchema }).strict(),
+  z.object({ kind: z.literal("provider"), fixtureRole: fixtureRoleSchema, resourceId: rawIdentitySchema }).strict(),
+  z.object({ kind: z.literal("storage"), fixtureRole: fixtureRoleSchema, target: rawStorageTargetSchema }).strict(),
+  z.object({ kind: z.literal("request"), deletionRequestId: rawIdentitySchema, deletionRequestRef: rawIdentitySchema }).strict()
+]);
+
+export const g5d4FixtureVerificationSchema = z.object({
+  schemaVersion: z.literal(G5D4_BINDING_VERIFICATION_VERSION),
+  runId: runIdSchema,
+  runPurpose: runPurposeSchema,
+  verificationProvenance: collectorProvenanceSchema,
+  generation: positiveIntSchema,
+  generationDigest: digestSchema,
+  fixtureRole: fixtureRoleSchema,
+  kind: z.enum(["identity", "provider", "storage", "request"]),
+  targetDigest: digestSchema,
+  ownerDigest: digestSchema,
+  relationDigest: digestSchema,
+  verifiedState: z.enum(["fresh_zero_baseline", "present_owned", "confirmed_no_conflict"]),
+  verifiedCount: z.literal(1),
+  verifiedAt: instantSchema,
+  integrityMac: digestSchema
+}).strict().superRefine((value, context) => {
+  const expected = value.runPurpose === G5D4_PROVENANCE.live.runPurpose
+    ? G5D4_PROVENANCE.live.collector : G5D4_PROVENANCE.selfTest.collector;
+  addExactArrayIssue(context, value.verificationProvenance === expected,
+    ["verificationProvenance"], "fixture verification provenance mismatch");
+  const state = value.kind === "identity" ? "fresh_zero_baseline"
+    : value.kind === "request" ? "confirmed_no_conflict" : "present_owned";
+  addExactArrayIssue(context, value.verifiedState === state &&
+    (value.kind !== "request" || value.fixtureRole === "fixture_a"),
+    ["verifiedState"], "fixture verification state/role mismatch");
+});
+
+const completeRawAuthoritiesSchema = z.object({
+  fixtureAUserId: rawIdentitySchema,
+  fixtureBUserId: rawIdentitySchema,
+  fixtureAProviderResourceId: rawIdentitySchema,
+  fixtureBProviderResourceId: rawIdentitySchema,
+  fixtureAStorageTargets: rawStorageTargetsSchema,
+  fixtureBStorageTargets: rawStorageTargetsSchema,
+  deletionRequestId: rawIdentitySchema,
+  deletionRequestRef: rawIdentitySchema
+}).strict();
+
+const preparingRawAuthoritiesSchema = z.object({
+  fixtureAUserId: rawIdentitySchema.nullable(),
+  fixtureBUserId: rawIdentitySchema.nullable(),
+  fixtureAProviderResourceId: rawIdentitySchema.nullable(),
+  fixtureBProviderResourceId: rawIdentitySchema.nullable(),
+  fixtureAStorageTargets: z.array(rawStorageTargetSchema).max(4),
+  fixtureBStorageTargets: z.array(rawStorageTargetSchema).max(4),
+  deletionRequestId: rawIdentitySchema.nullable(),
+  deletionRequestRef: rawIdentitySchema.nullable()
+}).strict();
+
+const stageTargetsSchema = z.object({
+  provider_cleanup: stageTargetSchema,
+  storage_cleanup: stageTargetSchema,
+  database_cleanup: stageTargetSchema,
+  auth_cleanup: stageTargetSchema,
+  completion_verification: stageTargetSchema
+}).strict();
+
+const manifestBaseSchema = z.object({
     schemaVersion: z.literal(G5D4_SCHEMA_VERSIONS.privateManifest),
     runId: runIdSchema,
     runPurpose: runPurposeSchema,
@@ -398,41 +468,46 @@ export const g5d4PrivateManifestSchema = z
     previousGenerationDigest: digestSchema.nullable(),
     generationDigest: digestSchema,
     createdAt: instantSchema,
-    sealed: z.boolean(),
-    manifestSealDigest: digestSchema.nullable(),
+    bindingVerifications: z.array(g5d4FixtureVerificationSchema).max(13),
     authority: z
       .object({
         environment: z.enum(["canonical_staging", "production"]),
         projectLabel: z.string().min(1).max(80),
         projectRef: z.string().regex(/^[a-z]{20}$/),
+        region: z.literal("ap-northeast-1"),
         commit: commitSchema
       })
-      .strict(),
-    rawAuthorities: z
-      .object({
-        fixtureAUserId: z.string().min(1).max(256),
-        fixtureBUserId: z.string().min(1).max(256),
-        fixtureAProviderResourceId: z.string().min(1).max(256),
-        fixtureBProviderResourceId: z.string().min(1).max(256),
-        fixtureAStorageTargets: rawStorageTargetsSchema,
-        fixtureBStorageTargets: rawStorageTargetsSchema,
-        deletionRequestId: z.string().min(1).max(256),
-        deletionRequestRef: z.string().min(1).max(256)
-      })
-      .strict(),
-    aliases: aliasSetSchema,
-    stageTargets: z
-      .object({
-        provider_cleanup: stageTargetSchema,
-        storage_cleanup: stageTargetSchema,
-        database_cleanup: stageTargetSchema,
-        auth_cleanup: stageTargetSchema,
-        completion_verification: stageTargetSchema
-      })
       .strict()
-  })
-  .strict()
-  .superRefine((value, context) => {
+}).strict();
+
+const completeManifestShape = {
+  rawAuthorities: completeRawAuthoritiesSchema,
+  aliases: aliasSetSchema,
+  stageTargets: stageTargetsSchema
+};
+
+export const g5d4PrivateManifestSchema = z.discriminatedUnion("lifecycle", [
+  manifestBaseSchema.extend({
+    lifecycle: z.literal("preparing"),
+    sealed: z.literal(false),
+    manifestSealDigest: z.null(),
+    rawAuthorities: preparingRawAuthoritiesSchema,
+    aliases: aliasSetSchema.partial().extend({ storageTargets: z.array(g5d4AliasSchema).min(1).max(4).optional() }),
+    stageTargets: stageTargetsSchema.partial()
+  }).strict(),
+  manifestBaseSchema.extend({
+    lifecycle: z.literal("fixture_complete"),
+    sealed: z.literal(false),
+    manifestSealDigest: z.null(),
+    ...completeManifestShape
+  }).strict(),
+  manifestBaseSchema.extend({
+    lifecycle: z.literal("sealed"),
+    sealed: z.literal(true),
+    manifestSealDigest: digestSchema,
+    ...completeManifestShape
+  }).strict()
+]).superRefine((value, context) => {
     addProvenanceProfileIssue(value, context);
     if (value.generation === 1 && value.previousGenerationDigest !== null) {
       context.addIssue({
@@ -448,13 +523,24 @@ export const g5d4PrivateManifestSchema = z
         message: "append-only manifest generation requires digest chaining"
       });
     }
-    if (value.sealed !== (value.manifestSealDigest !== null)) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["manifestSealDigest"],
-        message: "manifest seal state mismatch"
-      });
+    const raw = value.rawAuthorities;
+    const isolated =
+      (!raw.fixtureAUserId || raw.fixtureAUserId !== raw.fixtureBUserId) &&
+      (!raw.fixtureAProviderResourceId || raw.fixtureAProviderResourceId !== raw.fixtureBProviderResourceId) &&
+      !raw.fixtureAStorageTargets.some((a) => raw.fixtureBStorageTargets.some((b) => a.bucket === b.bucket && a.key === b.key));
+    addExactArrayIssue(context, isolated, ["rawAuthorities"], "A/B fixture authority substitution refused");
+    for (const role of ["A", "B"]) {
+      const targets = raw[`fixture${role}StorageTargets`];
+      addExactArrayIssue(context, new Set(targets.map((target) => target.bucket)).size === targets.length,
+        ["rawAuthorities"], "duplicate storage bucket binding refused");
+      addExactArrayIssue(context, Boolean(raw[`fixture${role}UserId`]) ||
+        (!raw[`fixture${role}ProviderResourceId`] && targets.length === 0),
+        ["rawAuthorities"], "resource binding requires its fixture identity");
     }
+    addExactArrayIssue(context,
+      (raw.deletionRequestId === null) === (raw.deletionRequestRef === null) &&
+        (!raw.deletionRequestId || Boolean(raw.fixtureAUserId)),
+      ["rawAuthorities"], "request identity/ref must bind together after A identity");
   });
 
 const authorizationCoreSchema = z

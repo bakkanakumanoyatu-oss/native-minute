@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { G5D4_SCHEMA_VERSIONS } from "./g5d4-proof-contract.mjs";
+import { G5D4_SCHEMA_VERSIONS, g5d4FixtureBindingSchema } from "./g5d4-proof-contract.mjs";
+import {
+  bindVerifiedLiveFixtureAuthority,
+  verifyLiveFixtureAuthority,
+  loadLatestPrivateManifest
+} from "./g5d4-proof-private-state.mjs";
 
 export const G5D4_FORBIDDEN_FIXTURE_PATHS = Object.freeze([
   "direct_storage_upload",
@@ -109,6 +114,15 @@ const checkpointEvidenceSchemas = Object.freeze({
 
 const ORDER = G5D4_FIXTURE_PREPARATION_STATES;
 
+// The verifier owns the reads and capability construction. Human checkpoint
+// observations alone never populate a live manifest or create authorization.
+export async function bindVerifiedFixturePreparationAuthority(runDirectory, input) {
+  if (arguments.length !== 2) throw new Error("fixture helper accepts no caller verification evidence");
+  const binding = g5d4FixtureBindingSchema.parse(input);
+  const receipt = await verifyLiveFixtureAuthority(runDirectory, binding);
+  return bindVerifiedLiveFixtureAuthority(runDirectory, binding, receipt);
+}
+
 export function createFixturePreparationState() {
   return preparationStateSchema.parse({
     schemaVersion: G5D4_SCHEMA_VERSIONS.fixturePreparation,
@@ -120,12 +134,32 @@ export function createFixturePreparationState() {
   });
 }
 
-export function advanceFixturePreparation(currentState, checkpoint, evidence) {
+export function advanceFixturePreparation(currentState, checkpoint, evidence, options = {}) {
   const current = preparationStateSchema.parse(currentState);
   if (checkpoint !== current.nextCheckpoint) throw new Error("fixture preparation checkpoint order mismatch");
   const evidenceSchema = checkpointEvidenceSchemas[checkpoint];
   if (!evidenceSchema) throw new Error("fixture preparation checkpoint is not advanceable");
   evidenceSchema.parse(evidence);
+  if (options.runDirectory !== undefined) {
+    const manifest = loadLatestPrivateManifest(options.runDirectory, { requireSealed: checkpoint === "human_gate_ready" });
+    const raw = manifest.rawAuthorities;
+    const bindingPresent = {
+      fixture_a_login_verified: raw.fixtureAUserId !== null,
+      fixture_b_login_verified: raw.fixtureAUserId !== null && raw.fixtureBUserId !== null,
+      consent_sample_material_verified: [raw.fixtureAStorageTargets, raw.fixtureBStorageTargets].every(
+        (targets) => ["voice-consents", "voice-samples"].every((bucket) => targets.some((target) => target.bucket === bucket))
+      ),
+      normal_recordings_verified: [raw.fixtureAStorageTargets, raw.fixtureBStorageTargets].every(
+        (targets) => targets.some((target) => target.bucket === "recordings")
+      ),
+      provider_awareness_verified: raw.fixtureAProviderResourceId !== null && raw.fixtureBProviderResourceId !== null,
+      deletion_request_verified: raw.deletionRequestId !== null && raw.deletionRequestRef !== null,
+      prep_stop_verified: manifest.lifecycle === "fixture_complete",
+      targets_sealed_verified: manifest.lifecycle === "sealed",
+      human_gate_ready: manifest.lifecycle === "sealed"
+    };
+    if (bindingPresent[checkpoint] === false) throw new Error("checkpoint requires persisted fixture binding");
+  }
   if (
     checkpoint === "normal_recordings_verified" &&
     (evidence.directStorageBypassUsed || !evidence.recordingContract.startsWith("consent_gated_"))
@@ -154,12 +188,12 @@ function assertReadOnlyPreparationVerifier(verifier) {
   return verifier;
 }
 
-export async function verifyAndAdvanceFixturePreparation(currentState, verifier) {
+export async function verifyAndAdvanceFixturePreparation(currentState, verifier, options = {}) {
   const current = preparationStateSchema.parse(currentState);
   if (current.nextCheckpoint === null) return current;
   const readOnlyVerifier = assertReadOnlyPreparationVerifier(verifier);
   const evidence = await readOnlyVerifier.inspectCheckpoint({ checkpoint: current.nextCheckpoint });
-  return advanceFixturePreparation(current, current.nextCheckpoint, evidence);
+  return advanceFixturePreparation(current, current.nextCheckpoint, evidence, options);
 }
 
 export function assertFixturePreparationHasNoUnsafeAutomation(sourceText) {
