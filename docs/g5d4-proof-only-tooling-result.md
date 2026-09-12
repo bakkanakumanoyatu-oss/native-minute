@@ -1,5 +1,23 @@
 # G5D-4 proof-only tooling result
 
+## Auth optional `banned_until` semantics — 2026-09-12
+
+MODE: `G5D4_AUTH_BANNED_UNTIL_OPTIONAL_FIELD_SEMANTICS_MINIMUM_CORRECTION_V1`.
+
+Result candidate: `G5D4_AUTH_BANNED_UNTIL_OPTIONAL_FIELD_SEMANTICS_CORRECTED_PENDING_FOCUSED_RE_REVIEW`. Base HEAD/upstream `b0a43f5cbe387841f7abed97b25acd6ca44b2aca` is the accepted, committed evidence rebaseline. Its prior independent PASS and closed material-state omission finding remain historical authority. This correction is not independently closed.
+
+The subsequent User B preparation observed HTTP 200 with exact confirmed Auth identity but no `banned_until` property. The collector's assumption that omission always means unknown stopped preparation. This is a proof-only response-semantics issue, not a product Auth/deletion finding. Accept the supplied Supabase optional/`omitempty` semantics; the installed Auth SDK also declares `banned_until?: string`. No live response was fetched in this correction.
+
+- Only a parsed HTTP **200** Auth user with the existing exact user/identity, single email identity, valid contact and confirmation checks may normalize absent `banned_until` to canonical `bannedUntil: null`. Explicit null is equivalent. A present invalid value, including explicit undefined in synthetic input, still rejects. Existing UTC/offset/fractional timestamp normalization is unchanged.
+- Auth non-200 success codes now fail closed as unexpected responses; network/timeout/401/403, malformed JSON/body, mismatched or ambiguous identity remain unknown. Existing strict canonical not-found observation remains absent, which cannot satisfy B's required presence. Provider projection, wrapper, comparator, HMAC and authorization code are unchanged.
+- Absent/null-to-ban, ban-to-absent/null and changed timestamps still change canonical evidence/digest and reject before dispatch or during immediate post verification. Absent/null representation changes preserve the digest and approved snapshot; unchanged B plus expected A change still passes.
+
+Offline verification: the expanded invocation suite is **135/135 PASS**, including **70 B-control tests** (22 additions; the obsolete missing-ban rejection is replaced by explicit-undefined rejection). Five omission cases failed before the source fix. Coverage includes optional/null equivalence, actual ban drift, authorization invalidation, malformed/ambiguous responses, unexpected HTTP statuses and prior Provider material-state regressions. All test/application commands run with OS network denial; Next telemetry is disabled for application checks. Workspace, lint, initial typecheck, build (**57/57** static pages), post-build typecheck and final diff check **PASS**. Existing 251-test historical suite, five-stage bridge, E2E and live readiness are not rerun by this correction.
+
+Only `g5d4-live-read-only-adapters.mjs`, its invocation self-test and these two status documents change. Product Auth/API/UI, schema/migrations/types, deletion product code, Provider/Storage/Database product code and canonical operator are unchanged. User B's existing voice is retained; script/recording preparation remains paused. Live access/mutation, actual authorization/guard/deletion, old private run changes, stage/commit/push are **0**. Human prerequisites=`SATISFIED`; destructive authorization=`NOT GRANTED`; G5D4=`NOT AUTHORIZED / NOT STARTED`; Gate 5=`OPEN`. Known Auth P2 `auth_terminal_authority_missing` remains nonblocking deferred.
+
+Exact `NEXT_ONE_ACTION`: `G5D4_AUTH_BANNED_UNTIL_OPTIONAL_FIELD_SEMANTICS_INDEPENDENT_READ_ONLY_FOCUSED_RE_REVIEW`.
+
 ## B-control observability P1 minimum correction — 2026-09-12
 
 MODE: `G5D4_LIVE_DELETION_MINIMUM_EVIDENCE_REBASELINE_B_CONTROL_P1_MINIMUM_CORRECTION`.

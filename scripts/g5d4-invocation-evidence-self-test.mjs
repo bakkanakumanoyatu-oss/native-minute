@@ -280,7 +280,7 @@ async function isolatedTransport() {
     return {json:async()=>data};
   }`);
   source += `\nexport const queries=[]; export const responses={provider:{status:404,body:{detail:{type:'not_found',code:'voice_not_found'}}},auth:{status:404,body:{code:'user_not_found'}}};
-    const fetch=async url=>{const r=responses[url.includes('elevenlabs')?'provider':'auth']; if(r.throw) throw new Error('synthetic network'); return {ok:r.status>=200&&r.status<300,status:r.status,json:async()=>r.body};};
+    const fetch=async url=>{const r=responses[url.includes('elevenlabs')?'provider':'auth']; if(r.throw) throw new Error('synthetic network'); if(r.timeout) throw new DOMException('synthetic timeout','TimeoutError'); return {ok:r.status>=200&&r.status<300,status:r.status,json:async()=>{if(r.jsonError) throw new SyntaxError('synthetic malformed JSON'); return r.body;}};};
     export {INVOCATION_FIELDS, invocationRowsQuery};`;
   transportModule = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
   return transportModule;
@@ -338,6 +338,8 @@ async function collectBResponses(responses) {
 const banA = "2099-01-01T00:00:00.000Z";
 const banB = "2099-01-02T00:00:00.000Z";
 const bMaterialChanges = [
+  ["Auth omitted ban to banned", r => { r.auth.body.banned_until = banA; }, r => { delete r.auth.body.banned_until; }],
+  ["Auth banned to omitted ban", r => { delete r.auth.body.banned_until; }, r => { r.auth.body.banned_until = banA; }],
   ["Auth unbanned to banned", r => { r.auth.body.banned_until = banA; }, r => { r.auth.body.banned_until = null; }],
   ["Auth banned to unbanned", r => { r.auth.body.banned_until = null; }, r => { r.auth.body.banned_until = banA; }],
   ["Auth banned-until changes", r => { r.auth.body.banned_until = banB; }, r => { r.auth.body.banned_until = banA; }],
@@ -356,6 +358,7 @@ for (const [label, change, prepare = () => {}] of bMaterialChanges) {
       const result = await runG5d4InvocationSelfTestOnly({ runDirectory: directory, snapshotPath, confirmedAuthorizationPath: authorization.path }, reader, async () => {
         calls++; state.value = externalPost(pre, "provider"); change(responses);
         Object.assign(state.value.b, await collectBResponses(responses));
+        if (label === "Auth banned to omitted ban") assert.equal(state.value.b.auth.evidence.bannedUntil, null);
         assert.deepEqual(state.value.b.database, pre.b.database);
         assert.deepEqual(state.value.b.storage, pre.b.storage);
         assert.deepEqual(state.value.b[label.startsWith("Auth") ? "provider" : "auth"], pre.b[label.startsWith("Auth") ? "provider" : "auth"]);
@@ -372,6 +375,7 @@ for (const [label, change, prepare = () => {}] of bMaterialChanges) {
     await withSnapshot(pre, "provider", async ({ directory, snapshotPath, snapshot, safe, state, reader }) => {
       const authorization = await confirmSelfTestInvocation(directory, snapshotPath);
       change(responses); Object.assign(state.value.b, await collectBResponses(responses));
+      if (label === "Auth banned to omitted ban") assert.equal(state.value.b.auth.evidence.bannedUntil, null);
       const { digest, ...draft } = snapshot;
       assert.equal(hmacSha256Hex(readAliasKey(directory), "actual-invocation-snapshot", draft), digest);
       draft.actual = clone(state.value);
@@ -387,6 +391,9 @@ for (const [label, change, prepare = () => {}] of bMaterialChanges) {
 }
 for (const [label, mutate, prepare = () => {}] of [
   ["all four categories unchanged", () => {}],
+  ["optional Auth ban omitted", () => {}, r => { delete r.auth.body.banned_until; }],
+  ["optional Auth ban omitted to null", r => { r.auth.body.banned_until = null; }, r => { delete r.auth.body.banned_until; }],
+  ["optional Auth ban null to omitted", r => { delete r.auth.body.banned_until; }],
   ["unchanged banned Auth state", () => {}, r => { r.auth.body.banned_until = banA; }],
   ["semantic settings with different key order", r => { r.provider.body.settings = Object.fromEntries(Object.entries(r.provider.body.settings).reverse()); }],
   ["equivalent Auth timestamps", r => { r.auth.body.email_confirmed_at = "2026-09-01T09:00:00+09:00"; r.auth.body.banned_until = "2099-01-01T09:00:00.000000+09:00"; }, r => { r.auth.body.banned_until = banA; }],
@@ -398,11 +405,15 @@ for (const [label, mutate, prepare = () => {}] of [
 ]) test(`B control ${label}: A expected deletion does not false-fail B`, async () => {
   const responses = bResponses(); prepare(responses);
   const pre = actual(); Object.assign(pre.b, await collectBResponses(responses));
-  await withSnapshot(pre, "provider", async ({ directory, snapshotPath, state, reader }) => {
+  await withSnapshot(pre, "provider", async ({ directory, snapshotPath, snapshot, state, reader }) => {
     const authorization = await confirmSelfTestInvocation(directory, snapshotPath);
     // Equivalent canonical state also remains usable after authorization.
     mutate(responses); Object.assign(state.value.b, await collectBResponses(responses));
-    assert.deepEqual(state.value.b, pre.b);
+    assert.deepEqual(state.value.b, snapshot.actual.b);
+    if (label.startsWith("optional Auth ban")) assert.equal(state.value.b.auth.evidence.bannedUntil, null);
+    const { digest, ...draft } = snapshot;
+    draft.actual = clone(state.value);
+    assert.equal(hmacSha256Hex(readAliasKey(directory), "actual-invocation-snapshot", draft), digest);
     const result = await runG5d4InvocationSelfTestOnly({ runDirectory: directory, snapshotPath, confirmedAuthorizationPath: authorization.path }, reader, async () => {
       state.value = externalPost(pre, "provider"); Object.assign(state.value.b, await collectBResponses(responses));
       return { exitCode: 2, stdout: JSON.stringify(progressChild), stderr: "" };
@@ -419,7 +430,16 @@ for (const kind of ["auth", "provider"]) for (const [label, breakResponse] of [
   ["null response", r => { r.body = null; }],
   ["malformed response", r => { r.body = {}; }],
   ...(kind === "auth" ? [
-    ["missing ban state", r => { delete r.body.banned_until; }],
+    ["explicit undefined ban state", r => { r.body.banned_until = undefined; }],
+    ["timeout", r => { r.timeout = true; }],
+    ["malformed JSON", r => { r.jsonError = true; }],
+    ...[201, 202, 204, 206, 301, 401, 500].map(status => [`unexpected HTTP ${status}`, r => { r.status = status; }]),
+    ["missing user object", r => { r.body = undefined; }],
+    ["wrapped user object", r => { r.body = { user: r.body }; }],
+    ["user ID mismatch", r => { r.body.id = context.a.userId; }],
+    ["ambiguous identity", r => { r.body.identities.push(clone(r.body.identities[0])); }],
+    ["identity owner mismatch", r => { r.body.identities[0].user_id = context.a.userId; }],
+    ["invalid contact", r => { r.body.email = "invalid"; }],
     ["invalid ban timestamp", r => { r.body.banned_until = "not-a-time"; }],
     ["numeric ban timestamp", r => { r.body.banned_until = 0; }],
     ["timezone-less ban timestamp", r => { r.body.banned_until = "2099-01-01T00:00:00"; }],
@@ -438,6 +458,8 @@ for (const kind of ["auth", "provider"]) for (const [label, breakResponse] of [
   const responses = bResponses(); const pre = actual(); Object.assign(pre.b, await collectBResponses(responses));
   await withSnapshot(pre, "provider", async ({ directory, snapshotPath, state, reader }) => {
     const authorization = await confirmSelfTestInvocation(directory, snapshotPath);
+    // Optional omission must never rescue an otherwise invalid Auth response.
+    if (kind === "auth") delete responses.auth.body.banned_until;
     breakResponse(responses[kind]); const unknown = await collectBResponses(responses);
     assert.deepEqual(unknown[kind], { state: "unknown", identity: kind === "auth" ? context.b.userId : context.b.providerId, evidence: null });
     const invalid = clone(pre); Object.assign(invalid.b, unknown);

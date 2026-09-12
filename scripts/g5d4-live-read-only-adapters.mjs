@@ -48,8 +48,9 @@ function controlAuthEvidence(body) {
   return { contact: z.string().email().parse(body.email),
     identity: UUID.parse(body.identities[0].identity_id ?? body.identities[0].id),
     confirmedAt: controlInstant(body.email_confirmed_at), provider: "email",
-    // Missing/malformed status is unknown, never inferred to be unbanned.
-    bannedUntil: body.banned_until === null ? null : controlInstant(body.banned_until) };
+    // Supabase omits this optional field for nil; only validated HTTP 200 users reach here.
+    // An explicitly present malformed value still rejects the observation.
+    bannedUntil: !Object.hasOwn(body, "banned_until") || body.banned_until === null ? null : controlInstant(body.banned_until) };
 }
 const sqlId = (value) => `'${UUID.parse(value)}'::uuid`;
 const sqlText = (value) => `'${String(value).replaceAll("'", "''")}'`;
@@ -440,7 +441,7 @@ export function createLiveReadOnlyAdapters() {
         if (body.voice_id !== identity || body.category !== "cloned" || !Number.isSafeInteger(body.created_at_unix) || body.voice_verification?.requires_verification === true) return { state: "unknown", identity, evidence: null };
         return { state: "present", identity, evidence: bControl ? controlProviderEvidence(body) : { category: body.category, createdAt: body.created_at_unix } };
       }
-      if (body.id !== identity || body.deleted_at || !Array.isArray(body.identities) || body.identities.length !== 1 || body.identities[0].user_id !== identity || body.identities[0].provider !== "email" || !body.email_confirmed_at) return { state: "unknown", identity, evidence: null };
+      if (response.status !== 200 || body.id !== identity || body.deleted_at || !Array.isArray(body.identities) || body.identities.length !== 1 || body.identities[0].user_id !== identity || body.identities[0].provider !== "email" || !body.email_confirmed_at) return { state: "unknown", identity, evidence: null };
       return { state: "present", identity, evidence: bControl ? controlAuthEvidence(body) : { contact: body.email, identity: body.identities[0].identity_id ?? body.identities[0].id, confirmedAt: body.email_confirmed_at, provider: "email" } };
     } catch { return { state: "unknown", identity, evidence: null }; }
   };
