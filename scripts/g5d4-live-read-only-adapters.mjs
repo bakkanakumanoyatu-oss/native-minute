@@ -382,6 +382,15 @@ export function createLiveReadOnlyAdapters() {
       deletionStatus: "eligible", transport: { requestId: null, readAt: new Date().toISOString() } };
   };
   const reader = Object.freeze({
+    readCurrentRecordingIdentity: async ({ fixtureRole, userId }) => {
+      z.enum(["fixture_a", "fixture_b"]).parse(fixtureRole); UUID.parse(userId); await gate();
+      // Reuse the accepted strict HTTP 200 / optional banned_until projection.
+      // No owned-table, Storage or Provider baseline read or freshness claim.
+      const identity = await presenceGet(`${STAGING_URL}/auth/v1/admin/users/${userId}`, serviceHeaders, userId, "auth", true);
+      if (identity.state !== "present" || identity.evidence.bannedUntil !== null &&
+          Date.parse(identity.evidence.bannedUntil) > Date.now()) fail("current recording Auth identity unavailable or unknown");
+      return { fixtureRole, userId, auth: identity };
+    },
     readIdentityBaseline: async ({ fixtureRole, userId }) => {
       UUID.parse(userId); await gate();
       const identity = await auth({ userId }); const raw = await owned(userId);

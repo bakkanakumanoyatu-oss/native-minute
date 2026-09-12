@@ -417,6 +417,13 @@ async function createIsolatedVerificationModule(state, mutateObservations = () =
         count: 1, state: "confirmed", conflictCount: 0, fixtureBUserId: state.userB, fixtureBRequestCount: 0 }
     };
   });
+  for (const { fixtureRole, userId } of fixtureBindings(state).slice(0, 2)) observations.push({
+    method: "readCurrentRecordingIdentity", query: { fixtureRole, userId },
+    result: { fixtureRole, userId, auth: { state: "present", identity: userId, evidence: {
+      contact: "synthetic@example.invalid", identity: "00000000-0000-4000-8000-000000000001",
+      confirmedAt: INSTANT, provider: "email", bannedUntil: null
+    } } }
+  });
   mutateObservations(observations);
   const privatePath = join(ROOT, "scripts/g5d4-proof-private-state.mjs");
   let source = readFileSync(privatePath, "utf8");
@@ -424,12 +431,13 @@ async function createIsolatedVerificationModule(state, mutateObservations = () =
   if (!factory.test(source)) throw new Error("isolated reader factory boundary missing");
   source = source.replace(factory, `function createLiveFixtureVerificationReader() {
     const observations = ${canonicalJson(observations)};
-    return Object.fromEntries(["readIdentityBaseline", "readProviderBinding", "readStorageBinding", "readDeletionRequest"].map(method => [method, async query => {
+    return Object.fromEntries(["readIdentityBaseline", "readCurrentRecordingIdentity", "readProviderBinding", "readStorageBinding", "readDeletionRequest"].map(method => [method, async query => {
       isolatedReadCounts[method] = (isolatedReadCounts[method] ?? 0) + 1;
       const observed = observations.find(item => item.method === method && canonicalJson(item.query) === canonicalJson(query));
       if (!observed) throw new Error("isolated fake read target missing");
       const result = structuredClone(observed.result);
       isolatedReadResults.push(result);
+      if (isolatedHumanState.duringRead) await isolatedHumanState.duringRead();
       return result;
     }]));
   }`);
@@ -467,6 +475,12 @@ async function createIsolatedVerificationModule(state, mutateObservations = () =
     export const isolatedHumanPrompts = [];
     export const isolatedHumanState = { phrase: G5D4_RECORDING_CONFIRMATION_PHRASE };
     // isolated instance ${++isolatedModuleSequence}\n`;
+  if (humanOptions.clock) source += `
+    export const isolatedClock = { now: globalThis.Date.now() };
+    const Date = class extends globalThis.Date {
+      constructor(...args) { super(...(args.length ? args : [isolatedClock.now])); }
+      static now() { return isolatedClock.now; }
+    };\n`;
   const moduleUrl = `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
   const isolated = await import(moduleUrl);
   let helper = readFileSync(join(ROOT, "scripts/g5d4-fixture-prepare.mjs"), "utf8");
@@ -1652,6 +1666,208 @@ async function checkRecordingCheckpointAcceptance(state, trackRun, bypassOnly = 
   process.stdout.write(`G5D4_RECORDING_CHECKPOINT_FOCUSED_PASS ${number - 203}/${number - 203}\n`);
 }
 
+async function checkRecordingIdentitySeparation(state, trackRun) {
+  let number = 251;
+  const focused = (label, operation) => check(++number, label, operation);
+  const currentState = "current_recording_identity_v1";
+  const bindings = fixtureBindings(state);
+  const identity = bindings[1]; const recording = bindings[8];
+  const prepare = (purpose = G5D4_PROVENANCE.live.runPurpose) => {
+    const directory = trackRun(createPrivateRunDirectory({ runPurpose: purpose }));
+    createInitialPrivateManifest(directory, privateManifestInput(purpose)); createAliasKey(directory);
+    return directory;
+  };
+  const nonzeroB = (observations) => {
+    for (const row of observations[1].result.baseline) {
+      row.count = ({ scripts: 1, takes: 1, weak_words: 4, coach_feedback: 1, voices: 1 })[row.table] ?? 0;
+    }
+  };
+  const api = await createIsolatedVerificationModule(state, nonzeroB);
+  const directory = prepare();
+  // Separate synthetic historical evidence; no production API consumes it.
+  const historical = { role: "fixture_b", environment: "canonical_staging", profile: 1,
+    otherTables: 0, storage: 0, provider: 0, capturedAt: INSTANT };
+  historical.mac = hmacSha256Hex(readAliasKey(directory), "synthetic-historical-baseline", historical);
+  const bytes = canonicalJson(historical);
+  const historyPath = atomicPublishPrivateFile(directory, "synthetic-historical-baseline.json", bytes);
+  await focused("current nonzero B still rejects fresh-zero fixture verification", async () =>
+    expectReject(() => api.verifyLiveFixtureAuthority(directory, identity)));
+  const receipt = await api.verifyLiveCurrentRecordingIdentity(directory, identity);
+  await focused("current B identity capability is opaque and does not read a current zero baseline", async () =>
+    Object.isFrozen(receipt) && Reflect.ownKeys(receipt).length === 0 &&
+    api.isolatedReadCounts.readCurrentRecordingIdentity === 1 && api.isolatedReadCounts.readIdentityBaseline === 1);
+  await focused("current capability cannot enter fresh-zero bind", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, identity, receipt)));
+  const freshApi = await createIsolatedVerificationModule(state);
+  const freshRun = prepare();
+  const fresh = await freshApi.verifyLiveFixtureAuthority(freshRun, identity);
+  await focused("fresh-zero capability cannot substitute current recording identity", async () =>
+    expectReject(() => freshApi.bindVerifiedLiveRecordingCheckpointIdentity(freshRun, identity, fresh)));
+  for (const [label, expected] of [
+    ["wrong user", { ...identity, userId: state.userA }],
+    ["wrong role", { ...identity, fixtureRole: "fixture_a" }],
+    ["wrong kind", recording]
+  ]) await focused(`${label} current identity bind rejected`, async () =>
+    expectReject(() => api.bindVerifiedLiveRecordingCheckpointIdentity(directory, expected, receipt)));
+  const otherRun = prepare();
+  await focused("wrong run current identity bind rejected", async () =>
+    expectReject(() => api.bindVerifiedLiveRecordingCheckpointIdentity(otherRun, identity, receipt)));
+  const synthetic = prepare(G5D4_PROVENANCE.selfTest.runPurpose);
+  const syntheticReceipt = api.createSelfTestCurrentRecordingIdentity(synthetic, identity);
+  await focused("self-test current identity cannot bind live", async () =>
+    expectReject(() => api.bindVerifiedLiveRecordingCheckpointIdentity(directory, identity, syntheticReceipt)));
+  await focused("self-test issuer cannot mint from live run", async () =>
+    expectReject(() => api.createSelfTestCurrentRecordingIdentity(directory, identity)));
+  const real = await import("./g5d4-proof-private-state.mjs");
+  await focused("source-isolated capability never escapes into actual live module", async () =>
+    expectReject(() => real.bindVerifiedLiveRecordingCheckpointIdentity(directory, identity, receipt)));
+  for (const [label, forged] of [["boolean", true], ["arbitrary JSON", { verified: true, verifiedState: currentState }],
+    ["saved baseline JSON", historical], ["copied opaque capability", { ...receipt }]]) {
+    await focused(`${label} cannot bind current identity`, async () =>
+      expectReject(() => api.bindVerifiedLiveRecordingCheckpointIdentity(directory, identity, forged)));
+  }
+  await focused("saved baseline cannot be injected into verifier/helper/binder", async () =>
+    await expectReject(() => api.verifyLiveCurrentRecordingIdentity(directory, identity, historical)) &&
+    await expectReject(() => api.verifyLiveCurrentRecordingIdentity(directory, { ...identity, baseline: historical })) &&
+    await expectReject(() => api.helper.bindCurrentRecordingCheckpointIdentity(directory, identity, historical)) &&
+    await expectReject(() => api.bindVerifiedLiveRecordingCheckpointIdentity(directory, identity, receipt, historical)));
+  const originalNow = Date.now;
+  await focused("stale and future current identity capabilities reject", async () => {
+    try {
+      Date.now = () => originalNow() + G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS + 1000;
+      const stale = await expectReject(() => api.bindVerifiedLiveRecordingCheckpointIdentity(directory, identity, receipt));
+      Date.now = () => originalNow() - 10000;
+      return stale && await expectReject(() => api.bindVerifiedLiveRecordingCheckpointIdentity(directory, identity, receipt));
+    } finally { Date.now = originalNow; }
+  });
+  for (const [label, mutate] of [
+    ["unknown Auth", (r) => { r.auth.state = "unknown"; r.auth.evidence = null; }],
+    ["absent Auth", (r) => { r.auth.state = "absent"; r.auth.evidence = null; }],
+    ["wrong Auth identity", (r) => { r.auth.identity = state.userA; }],
+    ["wrong observed owner", (r) => { r.userId = state.userA; }],
+    ["wrong observed role", (r) => { r.fixtureRole = "fixture_a"; }],
+    ["missing confirmation", (r) => { r.auth.evidence.confirmedAt = null; }],
+    ["malformed ban", (r) => { r.auth.evidence.bannedUntil = "unknown"; }],
+    ["active ban", (r) => { r.auth.evidence.bannedUntil = "2999-01-01T00:00:00.000Z"; }]
+  ]) await focused(`${label} cannot issue current capability`, async () => {
+    const bad = await createIsolatedVerificationModule(state, (rows) => {
+      nonzeroB(rows); mutate(rows.find(r => r.method === "readCurrentRecordingIdentity" && r.query.fixtureRole === "fixture_b").result);
+    });
+    return expectReject(() => bad.verifyLiveCurrentRecordingIdentity(directory, identity));
+  });
+  const staleRun = prepare();
+  const staleReceipt = await api.verifyLiveCurrentRecordingIdentity(staleRun, identity);
+  await api.helper.bindVerifiedFixturePreparationAuthority(staleRun, bindings[0]);
+  await focused("intervening manifest generation rejects current identity capability", async () =>
+    expectReject(() => api.bindVerifiedLiveRecordingCheckpointIdentity(staleRun, identity, staleReceipt)));
+  const duringReadRun = prepare();
+  api.isolatedHumanState.duringRead = async () => {
+    api.isolatedHumanState.duringRead = null;
+    await api.helper.bindVerifiedFixturePreparationAuthority(duringReadRun, bindings[0]);
+  };
+  await focused("generation change during Auth read rejects issuance", async () =>
+    expectReject(() => api.verifyLiveCurrentRecordingIdentity(duringReadRun, identity)));
+  api.isolatedHumanState.duringRead = () => { Date.now = () => originalNow() + G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS + 1000; };
+  await focused("slow Auth read cannot mint freshly timestamped authority", async () => {
+    try { return await expectReject(() => api.verifyLiveCurrentRecordingIdentity(directory, identity)); }
+    finally { Date.now = originalNow; api.isolatedHumanState.duringRead = null; }
+  });
+  await focused("correct current nonzero B binds checkpoint identity without freshness", async () => {
+    const result = api.bindVerifiedLiveRecordingCheckpointIdentity(directory, identity, receipt).manifest;
+    return result.rawAuthorities.fixtureBUserId === state.userB && result.bindingVerifications.length === 1 &&
+      result.bindingVerifications[0].verifiedState === currentState;
+  });
+  await focused("current identity capability consumed once", async () =>
+    expectReject(() => api.bindVerifiedLiveRecordingCheckpointIdentity(directory, identity, receipt)));
+  await focused("current identity cannot become fresh login checkpoint", async () =>
+    expectReject(() => advanceFixturePreparation({ ...createFixturePreparationState(), nextCheckpoint: "fixture_b_login_verified" },
+      "fixture_b_login_verified", { fixtureRole: "fixture_b", magicLinkLoginObserved: true }, { runDirectory: directory })));
+  for (const index of [3, 9, 10, 11, 12]) await focused(`current identity cannot authorize non-recording binding ${index}`, async () =>
+    expectReject(() => api.helper.bindVerifiedFixturePreparationAuthority(directory, bindings[index])));
+  const machine = await api.verifyLiveFixtureAuthority(directory, recording);
+  await focused("matching machine without actual Human checkpoint remains rejected", async () =>
+    expectReject(() => api.bindVerifiedLiveFixtureAuthority(directory, recording, machine)));
+  for (const [label, input] of [
+    ["wrong recording", { ...recording, target: { ...recording.target, key: "wrong-recording" } }],
+    ["wrong recording owner/role", { ...recording, fixtureRole: "fixture_a" }]
+  ]) await focused(`${label} cannot obtain Human checkpoint`, async () =>
+    expectReject(() => api.confirmLiveRecordingCheckpointFromTty(directory, input, machine)));
+  for (const [label, mutate] of [
+    ["wrong writer owner", r => { r.recordingState.writerOwnerId = state.userA; }],
+    ["wrong script", r => { r.recordingState.writerScriptId = "wrong-script"; }],
+    ["wrong DB locator", r => { r.dbLocator.key = "wrong-recording"; }],
+    ["withdrawn consent", r => { r.recordingState.consentStatus = "withdrawn"; }]
+  ]) await focused(`${label} reconciliation rejects current identity resume`, async () => {
+    const bad = await createIsolatedVerificationModule(state, rows => { nonzeroB(rows); mutate(rows[8].result); });
+    return expectReject(() => bad.verifyLiveFixtureAuthority(directory, recording));
+  });
+  api.isolatedHumanState.duringPrompt = () => { Date.now = () => originalNow() + G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS + 1000; };
+  await focused("identity expiry during Human prompt rejects checkpoint", async () => {
+    try { return await expectReject(() => api.confirmLiveRecordingCheckpointFromTty(directory, recording, machine)); }
+    finally { Date.now = originalNow; api.isolatedHumanState.duringPrompt = null; }
+  });
+  await focused("B resume matching machine plus isolated TTY confirmation accepts recording", async () => {
+    const human = await api.confirmLiveRecordingCheckpointFromTty(directory, recording, machine);
+    const result = api.bindVerifiedLiveFixtureAuthority(directory, recording, machine, human).manifest;
+    return result.bindingVerifications[0].verifiedState === currentState &&
+      result.bindingVerifications[1].humanRecordingCheckpoint.fixtureRole === "fixture_b" &&
+      result.rawAuthorities.fixtureBStorageTargets.length === 1 && result.rawAuthorities.deletionRequestId === null;
+  });
+  await focused("accepted recording machine capability cannot be reused", async () =>
+    expectReject(() => api.confirmLiveRecordingCheckpointFromTty(directory, recording, machine)));
+  await focused("checkpoint-only manifest cannot complete/seal or issue destructive authorization", async () =>
+    await expectReject(() => completeFixtureManifest(directory)) && await expectReject(() => sealPrivateManifest(directory)) &&
+    await expectReject(() => issueAuthorizationRecord(directory, {})));
+  await focused("fully populated forged manifest still cannot upgrade current identity to fresh fixture", async () => {
+    const fullRun = prepare();
+    for (const binding of bindings) await freshApi.helper.bindVerifiedFixturePreparationAuthority(fullRun, binding);
+    const full = loadLatestPrivateManifest(fullRun); const key = readAliasKey(fullRun);
+    full.bindingVerifications[1].verifiedState = currentState;
+    full.bindingVerifications[1].integrityMac = hmacSha256Hex(key, "fixture-binding-verification",
+      Object.fromEntries(Object.entries(full.bindingVerifications[1]).filter(([name]) => name !== "integrityMac")));
+    return await expectReject(() => assertFixtureManifestComplete(full, key)) &&
+      !g5d4PrivateManifestSchema.safeParse({ ...full, lifecycle: "fixture_complete" }).success;
+  });
+  await focused("self-test B resume accepts synthetic Human and machine only as self-test", async () => {
+    api.bindSelfTestRecordingCheckpointIdentity(synthetic, identity, syntheticReceipt);
+    const result = api.bindFixtureManifestAuthority(synthetic, recording).manifest;
+    return result.runPurpose === G5D4_PROVENANCE.selfTest.runPurpose && result.bindingVerifications[0].verifiedState === currentState &&
+      result.bindingVerifications[1].humanRecordingCheckpoint.provenance === "self_test_v1" &&
+      await expectReject(() => api.bindVerifiedLiveRecordingCheckpointIdentity(otherRun, identity, syntheticReceipt));
+  });
+  await focused("resume helper binds current identity without automatic Human acceptance", async () => {
+    const helperRun = prepare(); const prompts = api.isolatedHumanPrompts.length;
+    const result = (await api.helper.bindCurrentRecordingCheckpointIdentity(helperRun, identity)).manifest;
+    return result.bindingVerifications[0].verifiedState === currentState && result.rawAuthorities.fixtureBStorageTargets.length === 0 &&
+      api.isolatedHumanPrompts.length === prompts;
+  });
+  const clockApi = await createIsolatedVerificationModule(state, nonzeroB, false, { clock: true });
+  const clockRun = prepare();
+  await clockApi.helper.bindCurrentRecordingCheckpointIdentity(clockRun, identity);
+  clockApi.isolatedClock.now += G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS + 1;
+  const freshMachine = await clockApi.verifyLiveFixtureAuthority(clockRun, recording);
+  await focused("stale bound identity rejects even when machine reconciliation is brand new", async () =>
+    expectReject(() => clockApi.confirmLiveRecordingCheckpointFromTty(clockRun, recording, freshMachine)));
+  const finalBindRun = prepare();
+  await clockApi.helper.bindCurrentRecordingCheckpointIdentity(finalBindRun, identity);
+  clockApi.isolatedClock.now += G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS - 1000;
+  const timelyMachine = await clockApi.verifyLiveFixtureAuthority(finalBindRun, recording);
+  const timelyHuman = await clockApi.confirmLiveRecordingCheckpointFromTty(finalBindRun, recording, timelyMachine);
+  clockApi.isolatedClock.now += 1001;
+  await focused("identity expiry before final bind rejects still-fresh Human and machine receipts", async () =>
+    expectReject(() => clockApi.bindVerifiedLiveFixtureAuthority(finalBindRun, recording, timelyMachine, timelyHuman)));
+  await focused("accepted historical recording remains readable after current capability expires", async () => {
+    try {
+      Date.now = () => originalNow() + G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS + 1000;
+      return loadLatestPrivateManifest(directory).rawAuthorities.fixtureBStorageTargets.length === 1;
+    } finally { Date.now = originalNow; }
+  });
+  await focused("separate historical baseline bytes and permissions remain unchanged", async () =>
+    readFileSync(historyPath, "utf8") === bytes && inspectPrivateStatePermissions(directory).directoryMode === 0o700 &&
+    loadLatestPrivateManifest(directory).bindingVerifications.every(item => item.verifiedState !== "fresh_zero_baseline"));
+  process.stdout.write(`G5D4_RECORDING_IDENTITY_SEPARATION_FOCUSED_PASS ${number - 251}/${number - 251}\n`);
+}
+
 async function main() {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => {
@@ -2652,6 +2868,7 @@ async function main() {
     await checkImmutableBindingSnapshot(state, trackIsolationRun);
     await checkHumanDecisionAndLiveReaders();
     await checkRecordingCheckpointAcceptance(state, trackIsolationRun);
+    await checkRecordingIdentitySeparation(state, trackIsolationRun);
 
     for (const directory of isolationRunDirectories) cleanupPrivateRunDirectory(directory);
     isolationRunDirectories.clear();
@@ -2675,12 +2892,13 @@ async function main() {
 
 if (process.argv[2] === "--consume-worker") {
   await consumeWorker();
-} else if (["--verified-binding-only", "--immutable-snapshot-only", "--recording-checkpoint-only", "--recording-bypass-only"].includes(process.argv[2])) {
+} else if (["--verified-binding-only", "--immutable-snapshot-only", "--recording-checkpoint-only", "--recording-bypass-only", "--identity-separation-only"].includes(process.argv[2])) {
   const directories = new Set();
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => { throw new Error("unexpected real network access"); };
   try {
-    const suite = process.argv[2].startsWith("--recording-") ? checkRecordingCheckpointAcceptance
+    const suite = process.argv[2] === "--identity-separation-only" ? checkRecordingIdentitySeparation
+      : process.argv[2].startsWith("--recording-") ? checkRecordingCheckpointAcceptance
       : process.argv[2] === "--immutable-snapshot-only" ? checkImmutableBindingSnapshot : checkVerifiedBindingBoundary;
     await suite(makeHarnessState(), (directory) => { directories.add(directory); return directory; }, process.argv[2] === "--recording-bypass-only");
   } finally {

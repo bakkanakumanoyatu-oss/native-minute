@@ -31,6 +31,7 @@ import { z } from "zod";
 import { createLiveReadOnlyAdapters } from "./g5d4-live-read-only-adapters.mjs";
 import {
   G5D4_BINDING_VERIFICATION_VERSION,
+  G5D4_CURRENT_RECORDING_IDENTITY_STATE,
   G5D4_CANONICAL_STAGING,
   G5D4_A_PREP_TABLE_CONTRACT,
   G5D4_PROVENANCE,
@@ -44,6 +45,7 @@ import {
   g5d4FixtureVerificationSchema,
   g5d4PrivateManifestSchema,
   g5d4RecordingCheckpointSchema,
+  g5d4RecordingIdentityBindingSchema,
   hmacSha256Hex,
   safeDigestEqual,
   sha256Hex
@@ -411,6 +413,26 @@ function bindingOwner(manifest, binding) {
   return owner;
 }
 
+function currentOnlyIdentity(manifest, fixtureRole) {
+  return manifest.bindingVerifications.find((item) => item.kind === "identity" &&
+    item.fixtureRole === fixtureRole && item.verifiedState === G5D4_CURRENT_RECORDING_IDENTITY_STATE);
+}
+
+function assertRecordingIdentityScope(manifest, binding) {
+  if (binding.kind === "identity") return;
+  if ((currentOnlyIdentity(manifest, bindingRole(binding)) && !isRecordingBinding(binding)) ||
+      (binding.kind === "request" && currentOnlyIdentity(manifest, "fixture_b"))) {
+    throw new Error("current identity authority is restricted to recording checkpoints");
+  }
+}
+
+function assertCurrentIdentityAge(verified) {
+  const age = Date.now() - Date.parse(verified.verifiedAt);
+  if (age < 0 || age > G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS) {
+    throw new Error("current recording identity verification is stale");
+  }
+}
+
 function manifestBindings(raw) {
   const bindings = [];
   for (const [prefix, fixtureRole] of [["fixtureA", "fixture_a"], ["fixtureB", "fixture_b"]]) {
@@ -460,7 +482,12 @@ function assertRecordingCheckpoint(checkpoint, verified, manifest, binding, key)
 
 function assertAcceptedRecordingVerification(verified, manifest, binding, key) {
   if (isRecordingBinding(binding)) {
-    assertRecordingCheckpoint(verified.humanRecordingCheckpoint, verified, manifest, binding, key);
+    const checkpoint = assertRecordingCheckpoint(verified.humanRecordingCheckpoint, verified, manifest, binding, key);
+    const identity = currentOnlyIdentity(manifest, bindingRole(binding));
+    if (identity && (Date.parse(verified.verifiedAt) < Date.parse(identity.verifiedAt) ||
+        Date.parse(checkpoint.confirmedAt) - Date.parse(identity.verifiedAt) > G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS)) {
+      throw new Error("recording checkpoint does not match timely current identity verification");
+    }
   } else if (verified.humanRecordingCheckpoint !== null || verified.recordingScriptDigest !== null) {
     throw new Error("Human recording checkpoint is restricted to recording bindings");
   }
@@ -491,6 +518,7 @@ function assertVerifiedManifestBindings(manifest, key) {
       throw new Error("fixture verification coverage/generation mismatch");
     }
     assertVerificationBinding(receipt, manifest, binding, key);
+    assertRecordingIdentityScope(manifest, binding);
     // Also runs on every chain reread, complete and seal. Machine coverage
     // alone (including an old full thirteen-binding fixture) is insufficient.
     assertAcceptedRecordingVerification(receipt, manifest, binding, key);
@@ -518,6 +546,7 @@ function createLiveFixtureVerificationReader() {
 // These are read results, never public caller attestations. Exact IDs and DB
 // relations are checked before any capability or MAC is constructed.
 async function inspectFixtureBinding(reader, manifest, binding) {
+  assertRecordingIdentityScope(manifest, binding);
   const fixtureRole = bindingRole(binding);
   const userId = bindingOwner(manifest, binding);
   const exact = (value) => z.literal(value);
@@ -572,7 +601,8 @@ async function inspectFixtureBinding(reader, manifest, binding) {
   }));
 }
 
-function createFixtureVerificationCapability(runDirectory, manifest, binding, observation) {
+function createFixtureVerificationCapability(runDirectory, manifest, binding, observation,
+  identityState = "fresh_zero_baseline", verifiedAt = new Date().toISOString()) {
   const key = readAliasKey(runDirectory);
   const verification = {
     schemaVersion: G5D4_BINDING_VERIFICATION_VERSION,
@@ -587,9 +617,9 @@ function createFixtureVerificationCapability(runDirectory, manifest, binding, ob
     recordingScriptDigest: isRecordingBinding(binding)
       ? hmacSha256Hex(key, "fixture-recording-script", observation.recordingState.scriptId) : null,
     humanRecordingCheckpoint: null,
-    verifiedState: binding.kind === "identity" ? "fresh_zero_baseline"
+    verifiedState: binding.kind === "identity" ? identityState
       : binding.kind === "request" ? "confirmed_no_conflict" : "present_owned",
-    verifiedCount: 1, verifiedAt: new Date().toISOString()
+    verifiedCount: 1, verifiedAt
   };
   verification.integrityMac = verificationMac(verification, key);
   // Binding and live observation have already been schema-parsed into owned data.
@@ -623,6 +653,40 @@ export async function verifyLiveFixtureAuthority(runDirectory, input) {
   return createFixtureVerificationCapability(runDirectory, manifest, binding, observation);
 }
 
+export async function verifyLiveCurrentRecordingIdentity(runDirectory, input) {
+  if (arguments.length !== 2) throw new Error("current identity accepts no evidence/reader overrides");
+  assertNoCredentialMaterial(input);
+  const binding = g5d4RecordingIdentityBindingSchema.parse(input);
+  const manifest = assertPreparingPurpose(runDirectory, G5D4_PROVENANCE.live.runPurpose);
+  // Count the read time, not just the time after a potentially slow response.
+  const verifiedAt = new Date().toISOString();
+  const { fixtureRole, userId } = binding;
+  const observation = z.object({
+    fixtureRole: z.literal(fixtureRole), userId: z.literal(userId),
+    auth: z.object({ state: z.literal("present"), identity: z.literal(userId), evidence: z.object({
+      contact: z.string().email(), identity: z.string().uuid(), confirmedAt: z.string().datetime(),
+      provider: z.literal("email"), bannedUntil: z.string().datetime().nullable()
+    }).strict() }).strict()
+  }).strict().parse(await createLiveFixtureVerificationReader().readCurrentRecordingIdentity({ fixtureRole, userId }));
+  if (observation.auth.evidence.bannedUntil !== null && Date.parse(observation.auth.evidence.bannedUntil) > Date.now()) {
+    throw new Error("current recording identity is banned");
+  }
+  if (loadLatestPrivateManifest(runDirectory).generationDigest !== manifest.generationDigest) {
+    throw new Error("current recording identity generation became stale during read");
+  }
+  assertCurrentIdentityAge({ verifiedAt });
+  return createFixtureVerificationCapability(runDirectory, manifest, binding, observation,
+    G5D4_CURRENT_RECORDING_IDENTITY_STATE, verifiedAt);
+}
+
+export function createSelfTestCurrentRecordingIdentity(runDirectory, input) {
+  if (arguments.length !== 2) throw new Error("self-test current identity accepts no overrides");
+  const binding = g5d4RecordingIdentityBindingSchema.parse(input);
+  const manifest = assertPreparingPurpose(runDirectory, G5D4_PROVENANCE.selfTest.runPurpose);
+  return createFixtureVerificationCapability(runDirectory, manifest, binding, { synthetic: "self_test_v1" },
+    G5D4_CURRENT_RECORDING_IDENTITY_STATE);
+}
+
 export function createSelfTestFixtureVerification(runDirectory, input) {
   if (arguments.length !== 2) throw new Error("self-test fixture verification accepts no provenance override");
   assertNoCredentialMaterial(input);
@@ -643,6 +707,8 @@ function currentRecordingSnapshot(runDirectory, input, receipt, runPurpose) {
   }
   const { verification: verified } = snapshot;
   assertVerificationBinding(verified, manifest, snapshot.binding, readAliasKey(runDirectory));
+  const identity = currentOnlyIdentity(manifest, bindingRole(binding));
+  if (identity) assertCurrentIdentityAge(identity);
   const age = Date.now() - Date.parse(verified.verifiedAt);
   if (verified.generation !== manifest.generation || verified.generationDigest !== manifest.generationDigest ||
       age < 0 || age > G5D4_RECORDING_CHECKPOINT_MAX_AGE_MS) {
@@ -724,6 +790,20 @@ export function bindVerifiedLiveFixtureAuthority(runDirectory, input, receipt, c
   return bindManifestAuthority(runDirectory, input, receipt, manifest, checkpoint);
 }
 
+export function bindVerifiedLiveRecordingCheckpointIdentity(runDirectory, input, receipt) {
+  if (arguments.length !== 3) throw new Error("current identity bind accepts no evidence overrides");
+  const manifest = assertPreparingPurpose(runDirectory, G5D4_PROVENANCE.live.runPurpose);
+  return bindManifestAuthority(runDirectory, g5d4RecordingIdentityBindingSchema.parse(input), receipt,
+    manifest, undefined, G5D4_CURRENT_RECORDING_IDENTITY_STATE);
+}
+
+export function bindSelfTestRecordingCheckpointIdentity(runDirectory, input, receipt) {
+  if (arguments.length !== 3) throw new Error("self-test current identity bind accepts no overrides");
+  const manifest = assertPreparingPurpose(runDirectory, G5D4_PROVENANCE.selfTest.runPurpose);
+  return bindManifestAuthority(runDirectory, g5d4RecordingIdentityBindingSchema.parse(input), receipt,
+    manifest, undefined, G5D4_CURRENT_RECORDING_IDENTITY_STATE);
+}
+
 function appendManifestGeneration(runDirectory, current, changes, options = {}) {
   return publishManifest(runDirectory, {
     ...current,
@@ -744,7 +824,7 @@ export function bindFixtureManifestAuthority(runDirectory, input) {
   return bindManifestAuthority(runDirectory, binding, receipt, current, checkpoint);
 }
 
-function bindManifestAuthority(runDirectory, input, receipt, current, checkpoint) {
+function bindManifestAuthority(runDirectory, input, receipt, current, checkpoint, identityState = "fresh_zero_baseline") {
   const capabilities = verificationCapabilitiesFor(current.runPurpose);
   const snapshot = capabilities.get(receipt);
   if (!snapshot || snapshot.runDirectory !== assertSecureRunDirectory(runDirectory)) {
@@ -758,6 +838,11 @@ function bindManifestAuthority(runDirectory, input, receipt, current, checkpoint
   if (canonicalJson(expectedBinding) !== canonicalJson(binding)) throw new Error("verified fixture binding target mismatch");
   const key = readAliasKey(runDirectory);
   assertVerificationBinding(verified, current, binding, key);
+  assertRecordingIdentityScope(current, binding);
+  if (binding.kind === "identity" && verified.verifiedState !== identityState) {
+    throw new Error("fresh fixture and current recording identity authorities are not interchangeable");
+  }
+  if (verified.verifiedState === G5D4_CURRENT_RECORDING_IDENTITY_STATE) assertCurrentIdentityAge(verified);
   if (verified.generation !== current.generation || verified.generationDigest !== current.generationDigest) {
     throw new Error("fixture verification generation is stale");
   }

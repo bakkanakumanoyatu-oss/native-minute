@@ -335,6 +335,50 @@ async function collectBResponses(responses) {
     return { auth: observed.b.auth, provider: observed.b.provider };
   } finally { Object.assign(module.responses, saved); }
 }
+
+// Same module-owned current-identity entry as live; only HTTP is source-isolated.
+for (const [label, mutate, accepted] of [
+  ["omitted ban", r => { delete r.body.banned_until; }, true],
+  ["null ban", () => {}, true],
+  ["expired ban", r => { r.body.banned_until = "2000-01-01T09:00:00+09:00"; }, true],
+  ["active ban", r => { r.body.banned_until = "2999-01-01T00:00:00Z"; }, false],
+  ["invalid ban", r => { r.body.banned_until = "invalid"; }, false],
+  ["explicit undefined ban", r => { r.body.banned_until = undefined; }, false],
+  ["wrong exact user", r => { r.body.id = context.a.userId; }, false],
+  ["wrong identity owner", r => { r.body.identities[0].user_id = context.a.userId; }, false],
+  ["ambiguous identity", r => { r.body.identities.push(clone(r.body.identities[0])); }, false],
+  ["unconfirmed", r => { r.body.email_confirmed_at = null; }, false],
+  ["malformed confirmation", r => { r.body.email_confirmed_at = "invalid"; }, false],
+  ["malformed contact", r => { r.body.email = "invalid"; }, false],
+  ["malformed identity", r => { r.body.identities[0].identity_id = "invalid"; }, false],
+  ["deleted", r => { r.body.deleted_at = stamp; }, false],
+  ["wrong identity provider", r => { r.body.identities[0].provider = "other"; }, false],
+  ["HTTP 201", r => { r.status = 201; }, false],
+  ["HTTP 401", r => { r.status = 401; }, false],
+  ["HTTP 403", r => { r.status = 403; }, false],
+  ["canonical absent", r => { r.status = 404; r.body = { code: "user_not_found" }; }, false],
+  ["generic 404", r => { r.status = 404; r.body = {}; }, false],
+  ["network failure", r => { r.throw = true; }, false],
+  ["timeout", r => { r.timeout = true; }, false],
+  ["malformed JSON", r => { r.jsonError = true; }, false]
+]) test(`current recording identity Auth transport ${label}`, async () => {
+  const module = await isolatedTransport(); const original = module.responses.auth;
+  const response = bResponses().auth; mutate(response); module.responses.auth = response;
+  const before = module.queries.length;
+  try {
+    const read = () => module.createLiveReadOnlyAdapters().reader.readCurrentRecordingIdentity({ fixtureRole: "fixture_b", userId: context.b.userId });
+    if (accepted) {
+      const result = await read();
+      assert.equal(result.userId, context.b.userId); assert.equal(result.fixtureRole, "fixture_b");
+      assert.equal(result.auth.state, "present");
+      assert.deepEqual(Object.keys(result).sort(), ["auth", "fixtureRole", "userId"]);
+      assert.equal(result.auth.evidence.bannedUntil, label === "expired ban" ? "2000-01-01T00:00:00.000Z" : null);
+    } else await assert.rejects(read);
+    // Gate SELECT only; no baseline/product/Storage reads and no Provider request.
+    assert.deepEqual(module.queries.slice(before), ["select version from supabase_migrations.schema_migrations order by version"]);
+  } finally { module.responses.auth = original; }
+});
+
 const banA = "2099-01-01T00:00:00.000Z";
 const banB = "2099-01-02T00:00:00.000Z";
 const bMaterialChanges = [

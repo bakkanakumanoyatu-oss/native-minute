@@ -396,6 +396,10 @@ const stageTargetSchema = z
 
 const rawIdentitySchema = z.string().min(1).max(256);
 const fixtureRoleSchema = z.enum(["fixture_a", "fixture_b"]);
+export const G5D4_CURRENT_RECORDING_IDENTITY_STATE = "current_recording_identity_v1";
+export const g5d4RecordingIdentityBindingSchema = z.object({
+  kind: z.literal("identity"), fixtureRole: fixtureRoleSchema, userId: rawIdentitySchema
+}).strict();
 
 // Only these concrete fixture authorities may be appended; this is not a JSON patch API.
 export const g5d4FixtureBindingSchema = z.discriminatedUnion("kind", [
@@ -440,7 +444,7 @@ export const g5d4FixtureVerificationSchema = z.object({
   relationDigest: digestSchema,
   recordingScriptDigest: digestSchema.nullable(),
   humanRecordingCheckpoint: g5d4RecordingCheckpointSchema.nullable(),
-  verifiedState: z.enum(["fresh_zero_baseline", "present_owned", "confirmed_no_conflict"]),
+  verifiedState: z.enum(["fresh_zero_baseline", G5D4_CURRENT_RECORDING_IDENTITY_STATE, "present_owned", "confirmed_no_conflict"]),
   verifiedCount: z.literal(1),
   verifiedAt: instantSchema,
   integrityMac: digestSchema
@@ -451,7 +455,8 @@ export const g5d4FixtureVerificationSchema = z.object({
     ["verificationProvenance"], "fixture verification provenance mismatch");
   const state = value.kind === "identity" ? "fresh_zero_baseline"
     : value.kind === "request" ? "confirmed_no_conflict" : "present_owned";
-  addExactArrayIssue(context, value.verifiedState === state &&
+  addExactArrayIssue(context, (value.verifiedState === state ||
+    value.kind === "identity" && value.verifiedState === G5D4_CURRENT_RECORDING_IDENTITY_STATE) &&
     (value.kind !== "request" || value.fixtureRole === "fixture_a"),
     ["verifiedState"], "fixture verification state/role mismatch");
 });
@@ -537,6 +542,9 @@ export const g5d4PrivateManifestSchema = z.discriminatedUnion("lifecycle", [
   }).strict()
 ]).superRefine((value, context) => {
     addProvenanceProfileIssue(value, context);
+    addExactArrayIssue(context, value.lifecycle === "preparing" ||
+      !value.bindingVerifications.some((item) => item.verifiedState === G5D4_CURRENT_RECORDING_IDENTITY_STATE),
+      ["bindingVerifications"], "current recording identity cannot establish fresh fixture completion/seal");
     if (value.generation === 1 && value.previousGenerationDigest !== null) {
       context.addIssue({
         code: z.ZodIssueCode.custom,

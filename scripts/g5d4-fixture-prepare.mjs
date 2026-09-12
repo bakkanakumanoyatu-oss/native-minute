@@ -1,9 +1,11 @@
 import { z } from "zod";
-import { G5D4_SCHEMA_VERSIONS, g5d4FixtureBindingSchema } from "./g5d4-proof-contract.mjs";
+import { G5D4_SCHEMA_VERSIONS, G5D4_CURRENT_RECORDING_IDENTITY_STATE, g5d4FixtureBindingSchema } from "./g5d4-proof-contract.mjs";
 import {
   bindVerifiedLiveFixtureAuthority,
+  bindVerifiedLiveRecordingCheckpointIdentity,
   confirmLiveRecordingCheckpointFromTty,
   verifyLiveFixtureAuthority,
+  verifyLiveCurrentRecordingIdentity,
   loadLatestPrivateManifest
 } from "./g5d4-proof-private-state.mjs";
 
@@ -135,6 +137,14 @@ export async function bindVerifiedFixturePreparationAuthority(runDirectory, inpu
   return bindVerifiedLiveFixtureAuthority(runDirectory, binding, receipt);
 }
 
+// Resume only the checkpoint owner binding. Historical freshness stays outside
+// this manifest; neither saved baseline JSON nor Human booleans are inputs.
+export async function bindCurrentRecordingCheckpointIdentity(runDirectory, input) {
+  if (arguments.length !== 2) throw new Error("recording identity helper accepts no caller evidence");
+  const receipt = await verifyLiveCurrentRecordingIdentity(runDirectory, input);
+  return bindVerifiedLiveRecordingCheckpointIdentity(runDirectory, input, receipt);
+}
+
 export function createFixturePreparationState() {
   return preparationStateSchema.parse({
     schemaVersion: G5D4_SCHEMA_VERSIONS.fixturePreparation,
@@ -155,6 +165,10 @@ export function advanceFixturePreparation(currentState, checkpoint, evidence, op
   if (options.runDirectory !== undefined) {
     const manifest = loadLatestPrivateManifest(options.runDirectory, { requireSealed: checkpoint === "human_gate_ready" });
     const raw = manifest.rawAuthorities;
+    if (["fixture_a_login_verified", "fixture_b_login_verified"].includes(checkpoint) &&
+        manifest.bindingVerifications.some((item) => item.verifiedState === G5D4_CURRENT_RECORDING_IDENTITY_STATE)) {
+      throw new Error("fresh fixture start requires fresh zero baseline identity authority");
+    }
     const bindingPresent = {
       fixture_a_login_verified: raw.fixtureAUserId !== null,
       fixture_b_login_verified: raw.fixtureAUserId !== null && raw.fixtureBUserId !== null,
