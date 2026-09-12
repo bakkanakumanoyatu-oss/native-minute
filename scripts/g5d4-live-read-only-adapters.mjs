@@ -26,6 +26,31 @@ const instant = (value) => {
   if (value === null || value === undefined || value === "") fail("required timestamp missing");
   return z.string().datetime().parse(new Date(value).toISOString());
 };
+// B-control allowlist only: preserve timestamp precision and normalize offsets
+// without hashing raw Auth/Provider responses or their volatile metadata.
+const controlInstant = (value) => {
+  const parsed = z.string().datetime({ offset: true }).parse(value);
+  const fraction = (parsed.match(/\.(\d+)/)?.[1] ?? "").replace(/0+$/, "").padEnd(3, "0");
+  return new Date(parsed).toISOString().replace(/\.\d{3}Z$/, `.${fraction}Z`);
+};
+const controlVoiceSettings = z.object({
+  stability: z.number().finite().min(0).max(1),
+  similarity_boost: z.number().finite().min(0).max(1),
+  style: z.number().finite().min(0).max(1),
+  speed: z.number().finite().positive(),
+  use_speaker_boost: z.boolean()
+}); // Strip unrelated fields; these five settings affect generated speech.
+function controlProviderEvidence(body) {
+  return { category: body.category, createdAt: body.created_at_unix,
+    name: z.string().min(1).parse(body.name), settings: controlVoiceSettings.parse(body.settings) };
+}
+function controlAuthEvidence(body) {
+  return { contact: z.string().email().parse(body.email),
+    identity: UUID.parse(body.identities[0].identity_id ?? body.identities[0].id),
+    confirmedAt: controlInstant(body.email_confirmed_at), provider: "email",
+    // Missing/malformed status is unknown, never inferred to be unbanned.
+    bannedUntil: body.banned_until === null ? null : controlInstant(body.banned_until) };
+}
 const sqlId = (value) => `'${UUID.parse(value)}'::uuid`;
 const sqlText = (value) => `'${String(value).replaceAll("'", "''")}'`;
 
@@ -80,7 +105,7 @@ function json(response) {
 function inspectGit() {
   const git = (...args) => execFileSync("git", args, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
   return { commit: git("rev-parse", "HEAD"), branch: git("branch", "--show-current"),
-    trackedClean: git("status", "--porcelain", "--untracked-files=no") === "" };
+    trackedClean: git("status", "--porcelain", "--untracked-files=normal").split("\n").every(line => !line || line === "?? .env.local.save" || line === "?? supabase/.temp/") };
 }
 
 // Static projections exclude script/transcript/audio bodies, provider payloads,
@@ -100,6 +125,42 @@ const FIELDS = Object.freeze({
   quota_events: ["event_type", "category", "billing_status", "subject_id", "target_resource_id", "completed_at", "identifier_scrubbed_at", "retention_expires_at"],
   account_deletion_storage_targets: ["deletion_request_id", "target_kind", "storage_bucket", "storage_object_key", "target_fingerprint", "delete_outcome", "verification_status"]
 });
+
+// Additional private projections for invocation/post evidence. No product contract changes.
+const INVOCATION_FIELDS = {
+  ...FIELDS,
+  voice_deletion_operations: ["audit_expires_at", "completed_at"],
+  voice_deletion_targets: ["operation_id", "locator_scrubbed_at", "source_row_id", "provider_name", "provider_resource_id", "storage_bucket", "storage_object_key", "target_fingerprint"],
+  account_deletion_requests: [...FIELDS.account_deletion_requests,
+    "provider_cleanup_status", "provider_sub_finalized_at", "provider_snapshot_sealed_at", "provider_snapshot_seal_version",
+    "storage_cleanup_status", "storage_sub_finalized_at", "storage_snapshot_sealed_at", "storage_snapshot_seal_version",
+    "db_cleanup_status", "db_inventory_version", "db_sub_finalized_at", "db_observed_row_count", "db_deleted_row_count", "db_anonymized_row_count", "db_retained_row_count",
+    "auth_cleanup_status", "auth_sub_finalized_at", "auth_delete_generation", "auth_delete_target_user_id", "auth_verification_result", "auth_verified_absent_at",
+    "last_attempted_at", "completed_at", "failure_stage", "failure_reason_code"],
+  account_deletion_provider_targets: [...FIELDS.account_deletion_provider_targets, "delete_attempt_count", "next_retry_at", "locator_scrubbed_at"],
+  account_deletion_storage_targets: [...FIELDS.account_deletion_storage_targets, "delete_attempt_count", "next_retry_at", "locator_scrubbed_at", "source_refs"],
+  quota_events: [...FIELDS.quota_events, "idempotency_key", "dedupe_key", "request_fingerprint", "provider_request_id"]
+};
+
+function invocationRowsQuery(userId, identities, requestId) {
+  return "select jsonb_build_object(" + Object.keys(INVOCATION_FIELDS).map(table => {
+    const scope = ownerScope(table, userId);
+    const noUpdated = ["script_audios", "takes", "weak_words", "coach_feedback", "voices", "voice_consents"].includes(table);
+    const noStatus = ["profiles", "scripts", "script_audios", "weak_words", "coach_feedback", "script_saved_model_audios", "script_saved_best_takes", "voices", "voice_consents"].includes(table);
+    const fields = ["id", "created_at", "updated_at", "status", ...INVOCATION_FIELDS[table]];
+    const projection = fields.map(f => `${sqlText(f)},${f === "updated_at" && noUpdated || f === "status" && noStatus ? "null" : `t.${f}`}`).join(",");
+    let where = scope.where;
+    if (identities) {
+      const ids = identities[table];
+      if (!Array.isArray(ids) || ids.length >= 64) fail("identity lookup bound");
+      where = ids.length ? `t.id in (${ids.map(sqlId).join(",")})` : "false";
+    } else if (requestId) where = table === "account_deletion_requests" ? `t.id=${sqlId(requestId)}` :
+      table.startsWith("account_deletion_") ? `t.deletion_request_id=${sqlId(requestId)}` : "false";
+    // LEFT JOIN retains a pre-snapshot child identity even if its parent drifted.
+    const join = (scope.join ?? "").replace(" join ", " left join ");
+    return `${sqlText(table)},(select coalesce(jsonb_agg(v), '[]'::jsonb) from (select jsonb_build_object(${projection},'owner_id',${scope.owner},'user_id',${scope.owner},'row_content_digest',md5(to_jsonb(t)::text)${table === "quota_events" ? ",'metadata',case when t.metadata='{}'::jsonb then '{}'::jsonb else jsonb_build_object('nonempty',true) end" : ""}) v from public.${table} t${join} where ${where} order by t.id limit 64) bounded)`;
+  }).join(",") + ") as owned";
+}
 
 function ownerScope(table, userId) {
   const id = sqlId(userId);
@@ -364,7 +425,57 @@ export function createLiveReadOnlyAdapters() {
     environment: Object.freeze({ inspectProject: async () => { await gate(); return environment; }, inspectMigrations: async () => { await gate(); return migrations; } }),
     git: Object.freeze({ inspect: async () => inspectGit() })
   });
-  return Object.freeze({ adapters, reader, smoke: async () => {
+  const presenceGet = async (url, headers, identity, kind, bControl = false) => {
+    let response;
+    try { response = await fetch(url, { method: "GET", headers, redirect: "error", signal: AbortSignal.timeout(20000) }); }
+    catch { return { state: "unknown", identity, evidence: null }; }
+    let body;
+    try { body = await response.json(); } catch { return { state: "unknown", identity, evidence: null }; }
+    const absent = response.status === 404 && (kind === "provider" ?
+      body?.detail?.type === "not_found" && body?.detail?.code === "voice_not_found" : body?.code === "user_not_found" || body?.error_code === "user_not_found");
+    if (absent) return { state: "absent", identity, evidence: null };
+    if (!response.ok) return { state: "unknown", identity, evidence: null };
+    try {
+      if (kind === "provider") {
+        if (body.voice_id !== identity || body.category !== "cloned" || !Number.isSafeInteger(body.created_at_unix) || body.voice_verification?.requires_verification === true) return { state: "unknown", identity, evidence: null };
+        return { state: "present", identity, evidence: bControl ? controlProviderEvidence(body) : { category: body.category, createdAt: body.created_at_unix } };
+      }
+      if (body.id !== identity || body.deleted_at || !Array.isArray(body.identities) || body.identities.length !== 1 || body.identities[0].user_id !== identity || body.identities[0].provider !== "email" || !body.email_confirmed_at) return { state: "unknown", identity, evidence: null };
+      return { state: "present", identity, evidence: bControl ? controlAuthEvidence(body) : { contact: body.email, identity: body.identities[0].identity_id ?? body.identities[0].id, confirmedAt: body.email_confirmed_at, provider: "email" } };
+    } catch { return { state: "unknown", identity, evidence: null }; }
+  };
+  const invocation = Object.freeze({
+    inspect: async () => { await gate(); return { environment, migrations, git: inspectGit() }; },
+    read: async ({ context, preIdentities }) => {
+      await gate();
+      const readRows = async (userId, identities, requestId) => {
+        const rows = one(await select(invocationRowsQuery(userId, identities, requestId)), "actual DB snapshot").owned;
+        exact(Object.keys(rows).sort(), Object.keys(FIELDS).sort(), "actual DB universe");
+        if (Object.values(rows).some(x => !Array.isArray(x) || x.length >= 64)) fail("actual DB unknown/truncated universe");
+        return rows;
+      };
+      const readParty = async (p, bControl = false) => {
+        UUID.parse(p.userId);
+        if (!/^[A-Za-z0-9]{20}$/.test(p.providerId)) fail("exact Provider locator");
+        let database; let storage;
+        try { database = { state: "present", evidence: await readRows(p.userId) }; }
+        catch { database = { state: "unknown", evidence: null }; }
+        try {
+          const stored = (await objects(p.userId)).map(x => ({ bucket: x.bucket_id, key: x.name, identity: x.id, size: x.size, contentType: x.content_type, version: x.version, etag: x.etag, createdAt: x.created_at, updatedAt: x.updated_at }));
+          storage = { state: stored.length ? "present" : "absent", evidence: stored };
+        } catch { storage = { state: "unknown", evidence: null }; }
+        const providerState = await presenceGet(`https://api.elevenlabs.io/v1/voices/${p.providerId}`, { "xi-api-key": secrets.provider }, p.providerId, "provider", bControl);
+        const authState = await presenceGet(`${STAGING_URL}/auth/v1/admin/users/${p.userId}`, serviceHeaders, p.userId, "auth", bControl);
+        return { database, storage, provider: providerState, auth: authState };
+      };
+      const a = await readParty(context.a); const b = await readParty(context.b, true);
+      const exactRequest = await readRows(context.a.userId, null, context.requestId);
+      return { a, b, request: one(exactRequest.account_deletion_requests, "exact request"),
+        providerTargets: exactRequest.account_deletion_provider_targets, storageTargets: exactRequest.account_deletion_storage_targets,
+        ...(preIdentities ? { byIdentity: await readRows(context.a.userId, preIdentities) } : {}) };
+    }
+  });
+  return Object.freeze({ adapters, reader, invocation, smoke: async () => {
     await gate();
     const permission = one(await select("select has_table_privilege(current_user,'public.voice_asset_write_intents','SELECT') as writer_select, current_user as reader_role"), "DB reader permission");
     if (permission.writer_select !== true || permission.reader_role !== "supabase_read_only_user") fail("HUMAN_ACTION_REQUIRED: read-only DB SELECT public.voice_asset_write_intents");

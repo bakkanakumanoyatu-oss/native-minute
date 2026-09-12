@@ -1,3 +1,6 @@
+import { INVOCATION_VERSION, invocationContextSchema, invocationSpecSchema, exactEvidence,
+  assertInvocationEnvironment, validateActualState, plannedInvocation, invocationSafeSummary,
+  assertFreshInvocation } from "./g5d4-invocation-evidence.mjs";
 import {
   closeSync,
   constants as fsConstants,
@@ -10,6 +13,7 @@ import {
   mkdtempSync,
   openSync,
   readFileSync,
+  readSync,
   readdirSync,
   realpathSync,
   rmSync,
@@ -1232,4 +1236,88 @@ export function cleanupPrivateRunDirectory(runDirectory) {
   rmSync(canonicalRun, { recursive: true, force: false });
   if (existsSync(canonicalRun)) throw new Error("private temp cleanup incomplete");
   return true;
+}
+
+// Invocation-scoped authority is independent of historical manifest generations.
+export function createInvocationPrivateRun(context) {
+  const parsed = invocationContextSchema.parse(context);
+  const runDirectory = createPrivateRunDirectory({ runPurpose: parsed.purpose === "live" ? G5D4_PROVENANCE.live.runPurpose : G5D4_PROVENANCE.selfTest.runPurpose });
+  createAliasKey(runDirectory);
+  atomicPublishPrivateFile(runDirectory, "invocation-context.json", `${canonicalJson(parsed)}\n`);
+  return runDirectory;
+}
+export function readInvocationContext(runDirectory, purpose) {
+  assertSecureRunDirectory(runDirectory);
+  const context = invocationContextSchema.parse(readPrivateJson(runDirectory, join(runDirectory, "invocation-context.json")));
+  if (context.purpose !== purpose || basename(runDirectory).startsWith(SELF_TEST_RUN_PREFIX) !== (purpose === "self_test")) throw new Error("invocation provenance mismatch");
+  return context;
+}
+export function readInvocationSnapshot(runDirectory, snapshotPath, purpose) {
+  const snapshot = readPrivateJson(runDirectory, snapshotPath);
+  if (snapshot.version !== INVOCATION_VERSION) throw new Error("historical evidence cannot authorize an invocation");
+  const context = readInvocationContext(runDirectory, purpose);
+  exactEvidence(snapshot.context, context, "snapshot context");
+  invocationSpecSchema.parse(snapshot.spec);
+  const expected = hmacSha256Hex(readAliasKey(runDirectory), "actual-invocation-snapshot", withoutFields(snapshot, ["digest"]));
+  if (!safeDigestEqual(snapshot.digest, expected)) throw new Error("invocation snapshot integrity mismatch");
+  assertInvocationEnvironment(snapshot.environment, snapshot.migrations, snapshot.git);
+  validateActualState(snapshot.actual, context);
+  exactEvidence(plannedInvocation(snapshot.actual, context, snapshot.spec.stage), snapshot.spec, "snapshot action");
+  return snapshot;
+}
+function invocationAuthorizationMac(runDirectory, value) {
+  return hmacSha256Hex(readAliasKey(runDirectory), "invocation-authorization", withoutFields(value, ["mac"]));
+}
+export function invocationAuthorizationBinding(snapshot, key) {
+  const summary = invocationSafeSummary(snapshot, key);
+  return { version: INVOCATION_VERSION, purpose: snapshot.context.purpose, fixtureA: summary.fixtureA, fixtureB: summary.fixtureB,
+    request: summary.request, target: summary.target, stage: summary.stage, action: summary.action, maxCalls: summary.maxCalls,
+    snapshotDigest: snapshot.digest, commit: snapshot.git.commit };
+}
+export function readInvocationAuthorization(runDirectory, path, snapshot, state) {
+  const record = readPrivateJson(runDirectory, path);
+  const expected = invocationAuthorizationBinding(snapshot, readAliasKey(runDirectory));
+  exactEvidence(record.binding, expected, "Human exact invocation authorization");
+  if (!/^g5d4_invocation_auth_[0-9a-f]{32}$/.test(record.id) || record.state !== state ||
+    !safeDigestEqual(record.mac, invocationAuthorizationMac(runDirectory, record)) || !Number.isFinite(Date.parse(record.confirmedAt))) throw new Error("invocation authorization invalid");
+  return record;
+}
+async function confirmInvocation(runDirectory, snapshotPath, purpose) {
+  const snapshot = readInvocationSnapshot(runDirectory, snapshotPath, purpose);
+  assertFreshInvocation(snapshot);
+  const binding = invocationAuthorizationBinding(snapshot, readAliasKey(runDirectory));
+  if (purpose === "live") {
+    // Real controlling terminal, not caller-supplied streams or isTTY flags.
+    const fd = openSync("/dev/tty", fsConstants.O_RDWR | NO_FOLLOW);
+    try {
+      if (!isatty(fd)) throw new Error("Human authorization requires controlling TTY");
+      const phrase = `AUTHORIZE ${snapshot.digest}`;
+      writeFileSync(fd, `${canonicalJson(invocationSafeSummary(snapshot, readAliasKey(runDirectory)))}\nType ${phrase}\n`);
+      const bytes = Buffer.alloc(256); const length = readSync(fd, bytes, 0, bytes.length, null);
+      if (bytes.subarray(0, length).toString("utf8").trim() !== phrase) throw new Error("Human invocation confirmation mismatch");
+    } finally { closeSync(fd); }
+  }
+  assertFreshInvocation(snapshot);
+  atomicPublishPrivateFile(runDirectory, `invocation-${snapshot.digest}-authorization-issued.json`, "{}\n");
+  const draft = { id: `g5d4_invocation_auth_${randomBytes(16).toString("hex")}`, binding, state: "confirmed", confirmedAt: new Date().toISOString() };
+  const record = { ...draft, mac: invocationAuthorizationMac(runDirectory, draft) };
+  const path = atomicPublishPrivateFile(runDirectory, `${record.id}-confirmed.json`, `${canonicalJson(record)}\n`);
+  return { path, binding };
+}
+export async function confirmLiveInvocationFromTty(runDirectory, snapshotPath) {
+  if (arguments.length !== 2) throw new Error("live confirmation accepts no injection");
+  return confirmInvocation(runDirectory, snapshotPath, "live");
+}
+export async function confirmSelfTestInvocation(runDirectory, snapshotPath) {
+  return confirmInvocation(runDirectory, snapshotPath, "self_test");
+}
+export function consumeInvocationAuthorization(runDirectory, path, snapshot) {
+  assertFreshInvocation(snapshot);
+  const record = readInvocationAuthorization(runDirectory, path, snapshot, "confirmed");
+  atomicPublishPrivateFile(runDirectory, `invocation-${snapshot.digest}-consumed.json`, "{}\n");
+  const draft = { ...record, state: "consumed", consumedAt: new Date().toISOString() };
+  const consumed = { ...draft, mac: invocationAuthorizationMac(runDirectory, draft) };
+  const consumedPath = atomicPublishPrivateFile(runDirectory, `${record.id}-consumed.json`, `${canonicalJson(consumed)}\n`);
+  readInvocationAuthorization(runDirectory, consumedPath, snapshot, "consumed");
+  return { path: consumedPath, record: consumed };
 }

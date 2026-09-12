@@ -461,6 +461,7 @@ async function createIsolatedVerificationModule(state, mutateObservations = () =
   source = source.replace('const MODULE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");', `const MODULE_ROOT = ${JSON.stringify(ROOT)};`)
     .replaceAll('"zod"', JSON.stringify(import.meta.resolve("zod")))
     .replaceAll('"./g5d4-proof-contract.mjs"', JSON.stringify(new URL("./g5d4-proof-contract.mjs", import.meta.url).href))
+    .replaceAll('"./g5d4-invocation-evidence.mjs"', JSON.stringify(new URL("./g5d4-invocation-evidence.mjs", import.meta.url).href))
     .replaceAll('"./g5d4-live-read-only-adapters.mjs"', JSON.stringify(new URL("./g5d4-live-read-only-adapters.mjs", import.meta.url).href));
   source += `\nexport const isolatedReadCounts = {};\nexport const isolatedReadResults = [];
     export const isolatedHumanPrompts = [];
@@ -2688,4 +2689,5 @@ if (process.argv[2] === "--consume-worker") {
   }
 } else {
   await main();
+  await import("./g5d4-invocation-evidence-self-test.mjs");
 }

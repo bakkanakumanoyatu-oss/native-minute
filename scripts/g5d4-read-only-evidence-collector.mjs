@@ -1,3 +1,5 @@
+import { INVOCATION_VERSION, invocationSpecSchema, assertInvocationEnvironment,
+  validateActualState, plannedInvocation, exactEvidence, invocationSafeSummary } from "./g5d4-invocation-evidence.mjs";
 import { createLiveReadOnlyAdapters } from "./g5d4-live-read-only-adapters.mjs";
 import {
   G5D4_A_PREP_TABLE_CONTRACT,
@@ -26,6 +28,8 @@ import {
   validateExactTableContract
 } from "./g5d4-proof-contract.mjs";
 import {
+  readInvocationContext,
+  atomicPublishPrivateFile,
   assertCanonicalManifestAuthority,
   getPrivateRawSentinels,
   loadLatestPrivateManifest,
@@ -600,4 +604,30 @@ export function createLiveReadOnlyCollector(runDirectory) {
     collectReadiness: (value) => collectReadOnlyEvidence(options(value), true),
     collectBControl: (value) => collectBControlFingerprint(options(value), true)
   });
+}
+
+// This path deliberately never calls the historical fixture contract/manifest collector.
+async function collectInvocationSnapshot(runDirectory, spec, reader, purpose) {
+  const context = readInvocationContext(runDirectory, purpose);
+  const parsed = invocationSpecSchema.parse(spec);
+  const inspected = await reader.inspect();
+  assertInvocationEnvironment(inspected.environment, inspected.migrations, inspected.git);
+  const actual = validateActualState(await reader.read({ context }), context);
+  exactEvidence(plannedInvocation(actual, context, parsed.stage), parsed, "current canonical action");
+  const finalInspection = await reader.inspect();
+  exactEvidence(finalInspection, inspected, "source/environment during collection");
+  const draft = { version: INVOCATION_VERSION, context, spec: parsed, ...inspected, actual, collectedAt: new Date().toISOString() };
+  const key = readAliasKey(runDirectory);
+  const snapshot = { ...draft, digest: hmacSha256Hex(key, "actual-invocation-snapshot", draft) };
+  const path = atomicPublishPrivateFile(runDirectory, `invocation-${snapshot.digest}.json`, `${canonicalJson(snapshot)}\n`);
+  return { path, safe: invocationSafeSummary(snapshot, key) };
+}
+export async function collectLiveInvocationSnapshot(runDirectory, spec) {
+  if (arguments.length !== 2) throw new Error("live invocation collector accepts no injection");
+  readInvocationContext(runDirectory, "live");
+  return collectInvocationSnapshot(runDirectory, spec, createLiveReadOnlyAdapters().invocation, "live");
+}
+export async function collectSelfTestInvocationSnapshot(runDirectory, spec, reader) {
+  readInvocationContext(runDirectory, "self_test");
+  return collectInvocationSnapshot(runDirectory, spec, reader, "self_test");
 }

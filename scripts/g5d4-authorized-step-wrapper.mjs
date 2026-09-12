@@ -1,21 +1,23 @@
 #!/usr/bin/env node
+import { INVOCATION_VERSION, TABLES, assertInvocationEnvironment, assertFreshInvocation,
+  validateActualState, exactEvidence, stableActualState, verifyInvocationPost, invocationSafeSummary } from "./g5d4-invocation-evidence.mjs";
+import { createLiveReadOnlyAdapters } from "./g5d4-live-read-only-adapters.mjs";
 
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { closeSync, constants as fsConstants, existsSync, openSync, readFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import dotenv from "dotenv";
 import {
   G5D4_CANONICAL_STAGING,
   G5D4_EVIDENCE_SAFE_ENUMS,
-  G5D4_OPERATOR_MICRO_STEPS,
   G5D4_PROVENANCE,
   G5D4_PROHIBITED_OUTPUT_KEYS,
   G5D4_REQUIRED_MIGRATIONS,
   G5D4_SCHEMA_VERSIONS,
   buildReviewerSafeDto,
   canonicalJson,
-  g5d4AuthorizationSchema,
   g5d4CollectorSafeDtoSchema,
   g5d4EnvironmentInspectionSchema,
   g5d4GitInspectionSchema,
@@ -28,6 +30,10 @@ import {
   sha256Hex
 } from "./g5d4-proof-contract.mjs";
 import {
+  readInvocationSnapshot,
+  readInvocationAuthorization,
+  consumeInvocationAuthorization,
+  readInvocationContext,
   assertCanonicalManifestAuthority,
   assertSecurePrivateFile,
   assertSecureRunDirectory,
@@ -39,11 +45,9 @@ import {
   readAliasKey,
   readAuthorizationRecord,
   readPrivateJson,
-  verifyAuthorizationRecord,
   writePrivateCapture,
   writePrivateProofArtifact
 } from "./g5d4-proof-private-state.mjs";
-import { createLiveReadOnlyCollector } from "./g5d4-read-only-evidence-collector.mjs";
 
 const MODULE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const WRAPPER_SCRIPT = fileURLToPath(import.meta.url);
@@ -78,13 +82,6 @@ const childSummarySchema = z
   })
   .passthrough();
 
-const liveEntryInputSchema = z
-  .object({
-    runDirectory: z.string().min(1),
-    confirmedAuthorizationPath: z.string().min(1),
-    microStep: g5d4OperatorMicroStepSchema
-  })
-  .strict();
 
 function withoutFields(value, fields) {
   return Object.fromEntries(Object.entries(value).filter(([key]) => !fields.includes(key)));
@@ -584,48 +581,11 @@ async function launchCanonicalOperatorChild({ capsulePath, spawnOptions }) {
   }
 }
 
-function assertLiveAuthorizationBeforeCollection(input, manifest) {
-  const record = readAuthorizationRecord(input.runDirectory, input.confirmedAuthorizationPath);
-  const target = manifest.stageTargets[input.microStep];
-  assertExactProvenance(record, G5D4_PROVENANCE.live, "authorization");
-  if (
-    record.state !== "confirmed" ||
-    record.runId !== manifest.runId ||
-    record.microStep !== input.microStep ||
-    record.fixtureAlias !== manifest.aliases.fixtureA ||
-    !target ||
-    record.targetAlias !== target.alias ||
-    record.targetDigest !== target.digest ||
-    record.targetCount !== target.count ||
-    record.commit !== manifest.authority.commit ||
-    record.projectRef !== manifest.authority.projectRef ||
-    existsSync(consumedAuthorizationPath(input.runDirectory, record.authorizationId))
-  ) {
-    throw new Error("live authorization binding mismatch");
-  }
-  return record;
-}
-
 export async function runG5d4AuthorizedStep(input) {
   try {
-    const parsed = liveEntryInputSchema.parse(input);
-    const manifest = assertCanonicalManifestAuthority(
-      loadLatestPrivateManifest(parsed.runDirectory, { requireSealed: true })
-    );
-    assertExactProvenance(manifest, G5D4_PROVENANCE.live, "live manifest");
-    assertLiveAuthorizationBeforeCollection(parsed, manifest);
-    const liveCollector = createLiveReadOnlyCollector(parsed.runDirectory);
-    const now = new Date();
-    const collectorEvidence = await liveCollector.collectReadiness({
-      phase: "sealed",
-      collectedAt: now.toISOString()
-    });
-    const collector = Object.freeze({ collectBControl: liveCollector.collectBControl });
-    return runAuthorizedStepCore(
-      { ...parsed, collector, collectorEvidence, now },
-      launchCanonicalOperatorChild,
-      G5D4_PROVENANCE.live
-    );
+    const parsed = invocationEntrySchema.parse(input);
+    readInvocationContext(parsed.runDirectory, "live");
+    return await runInvocationCore(parsed, createLiveReadOnlyAdapters().invocation, launchCanonicalOperatorChild, "live");
   } catch {
     return buildReviewerSafeDto(g5d4WrapperSafeResultSchema, safeResultCandidate());
   }
@@ -696,102 +656,93 @@ async function runInternalCanonicalChild(capsuleFd) {
   if (process.env.G5D4_INTERNAL_CHILD !== "1" || process.env[DESTRUCTIVE_GUARD_ENV] !== "1") {
     throw new Error("internal canonical child guard missing");
   }
-  const capsule = capsuleSchema.parse(JSON.parse(readFileSync(capsuleFd, "utf8")));
-  const runDirectory = assertSecureRunDirectory(capsule.runDirectory);
-  const key = readAliasKey(runDirectory);
-  const expectedMac = hmacSha256Hex(
-    key,
-    "operator-capsule",
-    withoutFields(capsule, ["capsuleMac"])
-  );
-  if (!safeDigestEqual(expectedMac, capsule.capsuleMac)) throw new Error("operator capsule integrity mismatch");
-  const manifest = assertCanonicalManifestAuthority(
-    loadLatestPrivateManifest(runDirectory, { requireSealed: true })
-  );
-  assertExactProvenance(manifest, G5D4_PROVENANCE.live, "internal child manifest");
-  const consumed = verifyAuthorizationRecord(
-    g5d4AuthorizationSchema.parse(readPrivateJson(runDirectory, capsule.consumedAuthorizationPath)),
-    key
-  );
-  if (
-    consumed.state !== "consumed" ||
-    consumed.runPurpose !== G5D4_PROVENANCE.live.runPurpose ||
-    consumed.confirmationProvenance !== G5D4_PROVENANCE.live.confirmation ||
-    consumed.collectorProvenance !== G5D4_PROVENANCE.live.collector ||
-    consumed.runId !== manifest.runId ||
-    consumed.microStep !== capsule.microStep ||
-    consumed.fixtureAlias !== manifest.aliases.fixtureA
-  ) {
-    throw new Error("consumed authorization child binding mismatch");
-  }
-  verifyProofArtifact(runDirectory, capsule.proofArtifactPath, {
-    authorizationDigest: consumed.recordDigest,
-    collectorDigest: consumed.collectorDigest,
-    manifestSealDigest: manifest.manifestSealDigest,
-    runId: manifest.runId,
-    runPurpose: manifest.runPurpose,
-    confirmationProvenance: manifest.confirmationProvenance,
-    collectorProvenance: manifest.collectorProvenance,
-    microStep: capsule.microStep,
-    commit: manifest.authority.commit,
-    projectRef: manifest.authority.projectRef,
-    fixtureAlias: manifest.aliases.fixtureA,
-    targetAlias: consumed.targetAlias,
-    targetDigest: consumed.targetDigest,
-    targetCount: consumed.targetCount
-  });
+  const rawCapsule = JSON.parse(readFileSync(capsuleFd, "utf8"));
+  if (rawCapsule.version === INVOCATION_VERSION) return runInvocationChild(rawCapsule);
+  // Historical capsules cannot enter a live destructive launcher after rebaseline.
+  throw new Error("historical manifest execution authority retired");
+}
 
-  const [{ parseArgs, runAccountDeletionOperator }, providerModule, storageModule, databaseModule, authModule, completionModule] =
-    await Promise.all([
-      import("./account-deletion-operator-runner.mjs"),
-      import("../services/account-deletion/account-deletion-provider-operator.service.ts"),
-      import("../services/account-deletion/account-deletion-storage-operator.service.ts"),
-      import("../services/account-deletion/account-deletion-database-operator.service.ts"),
-      import("../services/account-deletion/account-deletion-auth-operator.service.ts"),
-      import("../services/account-deletion/account-deletion-completion-operator.service.ts")
-    ]);
-  const providerBridge = providerModule.createAccountDeletionProviderOperatorBridge({ env: process.env });
-  const storageBridge = storageModule.createAccountDeletionStorageOperatorBridge({ env: process.env });
-  const databaseBridge = databaseModule.createAccountDeletionDatabaseOperatorBridge({ env: process.env });
-  const authBridge = authModule.createAccountDeletionAuthOperatorBridge({ env: process.env });
-  const completionBridge = completionModule.createAccountDeletionCompletionOperatorBridge({ env: process.env });
-  const stageServices = {
-    ...providerBridge.stageServices,
-    ...storageBridge.stageServices,
-    ...databaseBridge.stageServices,
-    ...authBridge.stageServices,
-    ...completionBridge.stageServices
-  };
-  const stage = G5D4_OPERATOR_MICRO_STEPS[capsule.microStep];
-  const args = [
-    "--stage",
-    stage,
-    "--request",
-    capsule.requestRef,
-    "--execute",
-    "--proof",
-    capsule.proofArtifactPath,
-    "--env-label",
-    manifest.authority.projectLabel,
-    "--latest-dry-run-runnable",
-    "--acknowledge-irreversible",
-    "I_UNDERSTAND_ACCOUNT_DELETION_IS_IRREVERSIBLE"
-  ];
-  if (stage !== "provider") args.push("--prior-stage-satisfied");
-  const parsed = parseArgs(args);
-  const summary = await runAccountDeletionOperator(parsed, {
-    env: process.env,
-    requestResolver: (resolverInput) => {
-      if (stage === "provider") return providerBridge.requestResolver(resolverInput);
-      if (stage === "storage") return storageBridge.requestResolver(resolverInput);
-      if (stage === "database") return databaseBridge.requestResolver(resolverInput);
-      if (stage === "auth") return authBridge.requestResolver(resolverInput);
-      return completionBridge.requestResolver(resolverInput);
-    },
-    stageServices
-  });
-  process.stdout.write(`${JSON.stringify(summary)}\n`);
-  if (["blocked", "failed", "manual_required"].includes(summary.status)) process.exitCode = 2;
+const invocationEntrySchema = z.object({
+  runDirectory: z.string().min(1), snapshotPath: z.string().min(1), confirmedAuthorizationPath: z.string().min(1)
+}).strict();
+const invocationCapsuleSchema = z.object({
+  version: z.literal(INVOCATION_VERSION), runDirectory: z.string(), snapshotPath: z.string(), consumedAuthorizationPath: z.string(), capsuleMac: z.string().regex(/^[0-9a-f]{64}$/)
+}).strict();
+async function runInvocationCore(input, reader, launcher, purpose) {
+  let snapshot; let consumed; let attempted = false; let post; let postDigest;
+  try {
+    snapshot = readInvocationSnapshot(input.runDirectory, input.snapshotPath, purpose);
+    assertFreshInvocation(snapshot);
+    readInvocationAuthorization(input.runDirectory, input.confirmedAuthorizationPath, snapshot, "confirmed");
+    const inspection = await reader.inspect();
+    assertInvocationEnvironment(inspection.environment, inspection.migrations, inspection.git, snapshot.git.commit);
+    if (process.env[DESTRUCTIVE_GUARD_ENV] === "1") throw new Error("parent guard enabled");
+    const fresh = validateActualState(await reader.read({ context: snapshot.context }), snapshot.context);
+    exactEvidence(stableActualState(fresh), stableActualState(snapshot.actual), "authorized pre-state drift");
+    assertFreshInvocation(snapshot);
+    consumed = consumeInvocationAuthorization(input.runDirectory, input.confirmedAuthorizationPath, snapshot);
+    const unsigned = { version: INVOCATION_VERSION, runDirectory: input.runDirectory, snapshotPath: input.snapshotPath, consumedAuthorizationPath: consumed.path };
+    const capsule = { ...unsigned, capsuleMac: hmacSha256Hex(readAliasKey(input.runDirectory), "invocation-capsule", unsigned) };
+    const capsulePath = atomicPublishPrivateFile(input.runDirectory, `${consumed.record.id}-capsule.json`, `${canonicalJson(capsule)}\n`);
+    let launched; let launchFailed = false;
+    attempted = true;
+    try { launched = await launcher({ capsulePath, spawnOptions: { shell: false, retryCount: 0, chainingCount: 0 } }); }
+    catch { launchFailed = true; }
+    // Reconciliation happens even on spawn/response/output loss, before interpreting success.
+    let postFailed = false;
+    try {
+      post = await reader.read({ context: snapshot.context, preIdentities: Object.fromEntries(TABLES.map(t => [t, snapshot.actual.a.database.evidence[t].map(r => r.id)])) });
+      const inspectedAfter = await reader.inspect();
+      assertInvocationEnvironment(inspectedAfter.environment, inspectedAfter.migrations, inspectedAfter.git, snapshot.git.commit);
+      const postEvidence = { snapshotDigest: snapshot.digest, collectedAt: new Date().toISOString(), actual: post };
+      postDigest = hmacSha256Hex(readAliasKey(input.runDirectory), "invocation-post-evidence", postEvidence);
+      writePrivateProofArtifact(input.runDirectory, `${consumed.record.id}-post.json`, { ...postEvidence, digest: postDigest });
+    } catch { postFailed = true; }
+    if (launched) {
+      writePrivateCapture(input.runDirectory, `${consumed.record.id}-stdout.capture`, launched.stdout ?? "");
+      writePrivateCapture(input.runDirectory, `${consumed.record.id}-stderr.capture`, launched.stderr ?? "");
+    }
+    if (launchFailed || postFailed) throw new Error("post-action read-only reconciliation required");
+    const sentinels = [snapshot.context.a.userId, snapshot.context.b.userId, snapshot.context.requestId,
+      snapshot.context.a.providerId, snapshot.context.b.providerId, ...snapshot.context.a.storage.map(x => x.key), ...snapshot.context.b.storage.map(x => x.key)];
+    const parsed = parseStrictChildResult(launched, sentinels);
+    const verification = verifyInvocationPost(snapshot, post, parsed.summary);
+    if (process.env[DESTRUCTIVE_GUARD_ENV] === "1") throw new Error("parent guard escaped");
+    const safe = { ...invocationSafeSummary(snapshot, readAliasKey(input.runDirectory)), ...verification, postDigest, status: "STOP", invocationCount: 1, retryCount: 0, chainingCount: 0 };
+    writePrivateProofArtifact(input.runDirectory, `${consumed.record.id}-verification.json`, safe);
+    return safe;
+  } catch {
+    return { version: INVOCATION_VERSION, status: "STOP", verdict: "REJECT", mandatoryStop: true,
+      bUnchanged: false, invocationCount: attempted ? 1 : 0, retryCount: 0, chainingCount: 0, reconciliation: attempted ? "READ_ONLY_RECONCILIATION_REQUIRED" : "PRECONDITION_REJECTED" };
+  }
+}
+export async function runG5d4InvocationSelfTestOnly(input, reader, launcher) {
+  const parsed = invocationEntrySchema.parse(input);
+  readInvocationContext(parsed.runDirectory, "self_test");
+  return runInvocationCore(parsed, reader, launcher, "self_test");
+}
+async function runInvocationChild(raw) {
+  const capsule = invocationCapsuleSchema.parse(raw);
+  const directory = assertSecureRunDirectory(capsule.runDirectory);
+  const key = readAliasKey(directory);
+  if (!safeDigestEqual(capsule.capsuleMac, hmacSha256Hex(key, "invocation-capsule", withoutFields(capsule, ["capsuleMac"])))) throw new Error("invocation capsule integrity");
+  const snapshot = readInvocationSnapshot(directory, capsule.snapshotPath, "live");
+  assertFreshInvocation(snapshot);
+  const consumed = readInvocationAuthorization(directory, capsule.consumedAuthorizationPath, snapshot, "consumed");
+  const git = (...args) => execFileSync("git", args, { cwd: MODULE_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  if (git("rev-parse", "HEAD") !== snapshot.git.commit || !git("status", "--porcelain", "--untracked-files=normal").split("\n").every(line => !line || line === "?? .env.local.save" || line === "?? supabase/.temp/")) throw new Error("execution source changed");
+  const localEnv = join(MODULE_ROOT, ".env.local");
+  const configured = { ...(existsSync(localEnv) ? dotenv.parse(readFileSync(localEnv)) : {}), ...process.env };
+  if (configured.NEXT_PUBLIC_SUPABASE_URL !== `https://${G5D4_CANONICAL_STAGING.projectRef}.supabase.co` || configured.NODE_ENV === "production" || configured.VERCEL_ENV === "production" || configured.NATIVE_MINUTE_PRODUCTION_GUARD && !["0", "false"].includes(configured.NATIVE_MINUTE_PRODUCTION_GUARD)) throw new Error("child environment changed");
+  for (const name of ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "ELEVENLABS_API_KEY"]) {
+    if (!configured[name]) throw new Error("child credential unavailable");
+    process.env[name] = configured[name];
+  }
+  atomicPublishPrivateFile(directory, `${consumed.id}-child-started.json`, `${canonicalJson({ snapshotDigest: snapshot.digest })}\n`);
+  const { executeInvocationCanonicalOperator } = await import("./g5d4-invocation-operator.mjs");
+  const result = await executeInvocationCanonicalOperator(directory, capsule.snapshotPath, capsule.consumedAuthorizationPath);
+  process.stdout.write(`${JSON.stringify(result)}\n`);
+  if (["blocked", "failed", "manual_required", "retryable"].includes(result.status)) process.exitCode = 2;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
