@@ -540,10 +540,10 @@ async function launchCanonicalOperatorChild({ capsulePath, spawnOptions }) {
     throw new Error("canonical child launch options rejected");
   }
   const capsuleFd = openSync(capsulePath, fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0));
-  const tsxPath = join(MODULE_ROOT, "node_modules", ".bin", "tsx");
   try {
     return await new Promise((resolvePromise, rejectPromise) => {
-      const child = spawn(tsxPath, [WRAPPER_SCRIPT, "--internal-child-fd", "3"], {
+      // The tsx CLI respawns Node without FD 3; load tsx in the final child instead.
+      const child = spawn(process.execPath, ["--import", "tsx", WRAPPER_SCRIPT, "--internal-child-fd", "3"], {
         cwd: MODULE_ROOT,
         env: {
           ...process.env,

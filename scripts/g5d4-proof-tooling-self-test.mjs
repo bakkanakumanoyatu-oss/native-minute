@@ -2908,4 +2908,5 @@ if (process.argv[2] === "--consume-worker") {
 } else {
   await main();
   await import("./g5d4-invocation-evidence-self-test.mjs");
+  await import("./g5d4-fd-transport-self-test.mjs");
 }

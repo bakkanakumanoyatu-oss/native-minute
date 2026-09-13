@@ -1,5 +1,29 @@
 # G5D-4 proof-only tooling result
 
+## Provider/seal authorization FD transport — 2026-09-13
+
+MODE: `G5D4_PROVIDER_SEAL_AUTHORIZATION_CHILD_PROCESS_FD_TRANSPORT_PROOF_ONLY_MINIMUM_CORRECTION`.
+
+Result candidate: `G5D4_PROVIDER_SEAL_AUTHORIZATION_CHILD_PROCESS_FD_TRANSPORT_CORRECTED_PENDING_FOCUSED_RE_REVIEW`. **Accepted CASE 2: proof-tooling transport bug; focused P1 remains OPEN until independent review.** Preflight: Developer cwd/git root, branch `codex/g3-mobile-main-loop`, HEAD/local upstream `5fbfcb06eddf3bd2252e6d6d79b79525d6f7604d`, ahead/behind `0/0`, workspace PASS, no fetch. Existing untracked `.env.local.save` and `supabase/.temp/` are untouched.
+
+The prior Provider/seal attempt failed at child `readFileSync(3, "utf8")` with `read / ENXIO` before canonical operator entry. The accepted reconciliation establishes that repo, parent/child cwd and private paths were correct; early cleanup was not the cause. Authorization was already consumed and remains permanently non-reusable. Prior operator/seal RPC/Provider delete/target counts were 0, A voice present and B unchanged. These are saved historical evidence, not a new live observation.
+
+The runtime diff changes only `launchCanonicalOperatorChild`: `tsx CLI -> internal Node respawn` becomes `process.execPath --import tsx -> wrapper` in the final Node process. The CLI respawn dropped FD 3; direct Node preserves `stdio[3]`. Absolute wrapper path, Developer cwd, `O_RDONLY | O_NOFOLLOW`, private capsule/HMAC contract, FD lifetime, child-only guard, shell=false, retry=0 and chaining=0 remain unchanged. Authorization content/private paths are not added to argv, env, stdin or public output. Ordering remains `consume -> capsule publish/open -> spawn -> child read -> operator`; neither spawn nor transport failure rolls consumption back.
+
+New `scripts/g5d4-fd-transport-self-test.mjs` is included in the existing proof-suite command. On installed **Node v25.8.1 / tsx 4.23.13**, real OS spawn preserves the dummy private file as FD 3, reads/parses it, verifies its synthetic bindings, reports the Developer cwd and imports a disposable typed `.ts` module. The installed CLI's source-isolated respawn still loses the same payload's FD and reproduces **ENXIO**; the corrected launcher reads it successfully.
+
+Test boundary: the current launcher body uses real spawn/open/close with a test entry; its real guard flags are removed before OS spawn. The child runs the actual read/parse and pre-operator validation source in an isolated VM with a synthetic process object and self-test provenance. It stops before git/env loading, child-start publication or operator import. The unmodified real wrapper entry is separately spawned with guards OFF and rejects. This is transport and isolated authorization regression evidence, **not a guarded live operator execution**. No live injection seam or generic transport framework was added.
+
+Focused **18/18 PASS** covers valid/absent/wrong/closed FD, malformed capsule, separately re-signed binding substitution, bad capsule MAC, re-signed authorization binding substitution, unsafe file permissions, symlink refusal, consumed/reused authorization, argv/env/stdin injection, self-test-to-live refusal, real-entry guard refusal, current-core consume-before-actual-spawn-failure and permanent retry rejection, and old/new spawn comparison. Existing proof suite **305/305** and invocation/Auth/B-control **158/158 PASS**; combined Node test-runner portion **176/176 PASS**. An initial test-only failure came from omitting `TMPDIR` in the sanitized child environment; retaining the parent's nonsecret temp root restored existing containment checks without changing production validation.
+
+All tests run under OS network denial. Workspace/lint/initial typecheck/build (**57/57** static pages)/post-build typecheck/final `git diff --check`: **PASS**. Next telemetry is disabled. E2E/device/live readiness/independent review are not run in this unit.
+
+Product/canonical operator/Provider adapter/seal/delete/Storage/Database/Auth/Completion/schema/migrations/generated types are unchanged. Old failed-launch private evidence is read-only; no old authorization is reused. Real authorization/guard/operator/Provider target/seal/delete/live access or mutation/User A/B change/Production access/migration apply/stage/commit/push are all **0**. Only disposable synthetic self-test state is created/consumed and cleaned up.
+
+Focused `P0/P1/P2/UNKNOWN=0/1/0/0`; program `0/1/1/0` with the known deferred Auth P2 unchanged. Human prerequisites=`SATISFIED` (retained authority), previous authorization=`CONSUMED / NOT REUSABLE`, destructive authorization=`NOT GRANTED`, G5D4=`INCOMPLETE_STOP`, Gate 5=`OPEN`.
+
+Exact `NEXT_ONE_ACTION`: `G5D4_PROVIDER_SEAL_AUTHORIZATION_CHILD_PROCESS_FD_TRANSPORT_INDEPENDENT_READ_ONLY_FOCUSED_RE_REVIEW`. No fresh authorization or seal retry is requested or performed here.
+
 ## Recording checkpoint identity / freshness separation B — 2026-09-12
 
 MODE: `G5D4_RECORDING_CHECKPOINT_IDENTITY_FRESHNESS_SEPARATION_B_MINIMUM_CORRECTION_V1`.
