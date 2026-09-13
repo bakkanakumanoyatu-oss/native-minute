@@ -543,7 +543,7 @@ async function launchCanonicalOperatorChild({ capsulePath, spawnOptions }) {
   try {
     return await new Promise((resolvePromise, rejectPromise) => {
       // The tsx CLI respawns Node without FD 3; load tsx in the final child instead.
-      const child = spawn(process.execPath, ["--import", "tsx", WRAPPER_SCRIPT, "--internal-child-fd", "3"], {
+      const child = spawn(process.execPath, ["--conditions=react-server", "--import", "tsx", WRAPPER_SCRIPT, "--internal-child-fd", "3"], {
         cwd: MODULE_ROOT,
         env: {
           ...process.env,

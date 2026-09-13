@@ -1,5 +1,29 @@
 # G5D-4 proof-only tooling result
 
+## Provider/seal server-only runtime condition — 2026-09-13
+
+MODE: `G5D4_PROVIDER_SEAL_SERVER_ONLY_RUNTIME_CONDITION_PROOF_ONLY_MINIMUM_CORRECTION`.
+
+Result candidate: `G5D4_PROVIDER_SEAL_SERVER_ONLY_RUNTIME_CONDITION_CORRECTED_PENDING_FOCUSED_RE_REVIEW`. **Accepted CASE 1: proof launcher runtime-condition gap; the new focused P1 remains OPEN until independent review.** Preflight: Developer cwd/git root, branch `codex/g3-mobile-main-loop`, HEAD/local upstream `d0bc2e6756fc33fe9a879ce3d41acbae933fa170`, ahead/behind `0/0`, clean tracked/staged tree, workspace/diff check PASS. Allowed `.env.local.save` and `supabase/.temp/` were not read, hashed, changed or staged.
+
+Accepted prior evidence: FD transport passed and the proof operator entry was reached, but importing the Provider bridge failed in `providers/voice-deletion/elevenlabs.ts:1` at `server-only/index.js`, before the canonical runner. Authorization was consumed and is NOT REUSABLE; seal/delete/target counts were 0 and A/B unchanged. These are historical facts, not fresh live observations in this unit. The FD correction is CLOSED / COMMITTED / PASS; the older section below records its implementation-time status.
+
+Installed `server-only@0.0.1` selects throwing `index.js` by default and empty `empty.js` for `react-server`. The existing canonical operator npm command already sets this condition. Neither old tsx CLI nor direct Node supplied it automatically: the FD correction exposed the missing condition rather than removing it. The Provider handles the API key and deletion requests, so its marker remains correct and unchanged.
+
+**Runtime diff: one child argv flag only**, `process.execPath --conditions=react-server --import tsx ...`. Wrapper path/cwd, FD 3, `O_RDONLY | O_NOFOLLOW`, capsule/HMAC, child-only guard, consume-before-dispatch, shell=false, retry=0 and chaining=0 are unchanged. Authorization contents are not placed in argv/env/stdin. Product/Provider/canonical operator/Storage/Database/Auth/Completion/schema/migrations/generated types are unchanged.
+
+The existing FD self-test now checks actual launcher arguments and adds three cases: conditioned Provider + bridge import under OS network denial, the same marker failure with that condition removed, and write-only FD refusal. The real-entry negative test locates its wrapper argument by value after the added flag. No generic runtime framework or live injection seam was added; existing suite integration is reused.
+
+On installed **Node v25.8.1 / tsx 4.23.13**, focused **21/21 PASS** (18 existing + 3 new). The conditioned child imports the actual TypeScript Provider/bridge modules without constructing adapters or executing a runner; `server-only` resolves to `empty.js` with `react-server` observed in the resolver conditions. A disposable typed fixture also imports. Dummy FD 3 device/inode/payload hash match the parent and writes reject with `EBADF`; cwd is the Developer root. Credentials and real guards are stripped before OS spawn. Validation-source guards exist only in an isolated VM with synthetic self-test authority and stop before live git/env/operator entry. No test result claims a guarded live execution.
+
+OS network denial applies to all validation commands and both import-test children. A loopback connection probe is denied with `EPERM`; imports make zero fetch calls. All required negative categories PASS: condition absent, absent/wrong/closed/write-only FD, malformed capsule, binding/MAC substitution, consume-once/reuse, argv/env/stdin injection, self-test-to-live refusal and consumption retained after actual spawn failure. Existing proof tooling **305/305 PASS**, standalone invocation/Auth/B-control **158/158 PASS**, integrated Node test portion **179/179 PASS**.
+
+Workspace/lint/initial typecheck/build (**57/57** static pages)/post-build typecheck/final diff review: **PASS**. Next telemetry is disabled. E2E/device/live readiness/independent review are not run. Ship-check review confirms no new environment variables, schema/migrations, DB types or user-facing flow changes; README setup remains applicable.
+
+Real Human authorization/consume/guard enable/live operator/canonical runner/Provider target/seal/delete/Storage/DB/Auth/Completion mutation/Production access/migration apply/stage/commit/push are all **0**. Only disposable synthetic self-test state is created/consumed and cleaned up; no old private evidence is modified. Focused `P0/P1/P2/UNKNOWN=0/1/0/0`; program `0/1/1/0`, known deferred Auth P2 unchanged. Destructive authorization=`NOT GRANTED`, G5D4=`INCOMPLETE_STOP`, Gate 5=`OPEN`.
+
+Exact `NEXT_ONE_ACTION`: `G5D4_PROVIDER_SEAL_SERVER_ONLY_RUNTIME_CONDITION_INDEPENDENT_READ_ONLY_FOCUSED_RE_REVIEW`. No fresh authorization or seal retry is requested or performed.
+
 ## Provider/seal authorization FD transport — 2026-09-13
 
 MODE: `G5D4_PROVIDER_SEAL_AUTHORIZATION_CHILD_PROCESS_FD_TRANSPORT_PROOF_ONLY_MINIMUM_CORRECTION`.
