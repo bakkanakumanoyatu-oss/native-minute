@@ -10,7 +10,8 @@ import {
 import { G5D4_CANONICAL_STAGING, G5D4_REQUIRED_MIGRATIONS, G5D4_STORAGE_BUCKETS, canonicalJson, hmacSha256Hex } from "./g5d4-proof-contract.mjs";
 import { collectSelfTestInvocationSnapshot, collectLiveInvocationSnapshot } from "./g5d4-read-only-evidence-collector.mjs";
 import { createInvocationPrivateRun, readInvocationSnapshot, confirmSelfTestInvocation, confirmLiveInvocationFromTty,
-  consumeInvocationAuthorization, readInvocationAuthorization, readAliasKey, cleanupPrivateRunDirectory } from "./g5d4-proof-private-state.mjs";
+  consumeInvocationAuthorization, readInvocationAuthorization, readAliasKey, cleanupPrivateRunDirectory,
+  writePrivateProofArtifact, readPrivateJson } from "./g5d4-proof-private-state.mjs";
 import { runG5d4InvocationSelfTestOnly, runG5d4AuthorizedStep } from "./g5d4-authorized-step-wrapper.mjs";
 import { guardInvocationExternal, guardInvocationRepository } from "./g5d4-invocation-operator.mjs";
 const clone = value => structuredClone(value);
@@ -308,6 +309,107 @@ for (const kind of ["provider", "auth"]) for (const scenario of ["strict_absent"
     assert.equal(state.a[kind].state, scenario === "strict_absent" ? "absent" : "unknown");
     assert.ok(module.queries.every(q => q.startsWith("select ")));
   } finally { module.responses[kind] = original; }
+});
+
+// Run the real shared product adapter against the same synthetic responses as
+// the existing source-isolated proof transport. No live factory is armed here.
+let productAdapterModule;
+async function isolatedProductAdapter() {
+  if (!productAdapterModule) {
+    const { default: ts } = await import("typescript");
+    const source = readFileSync(new URL("../providers/voice-deletion/elevenlabs.ts", import.meta.url), "utf8")
+      .replace('import "server-only";', ''); // Test runtime only; production marker stays intact.
+    const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } });
+    productAdapterModule = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`);
+  }
+  return productAdapterModule;
+}
+const exactNotFound = { detail: { type: "not_found", code: "voice_not_found" } };
+const presentVoice = { voice_id: context.a.providerId, category: "cloned", created_at_unix: 1788220800, is_owner: true };
+const absenceMatrix = [
+  ...[400, 404].map(status => ({ name: `${status} exact not-found`, status, body: exactNotFound, expected: "absent" })),
+  ...[400, 404].flatMap(status => [
+    { name: "generic", body: { error: "synthetic rejection" } },
+    { name: "wrong code", body: { detail: { type: "not_found", code: "wrong" } } },
+    { name: "wrong type", body: { detail: { type: "wrong", code: "voice_not_found" } } },
+    { name: "missing detail", body: {} },
+    { name: "nonobject detail", body: { detail: "not_found" } },
+    { name: "whitespace type", body: { detail: { type: " not_found", code: "voice_not_found" } } },
+    { name: "whitespace code", body: { detail: { type: "not_found", code: "voice_not_found " } } },
+    { name: "invalid JSON", body: null, jsonError: true }
+  ].map(value => ({ ...value, name: `${status} ${value.name}`, status, expected: "unknown" }))),
+  ...[401, 403, 409, 418, 422, 429, 500, 503, 200, 201, 302].map(status => ({ name: `${status} exact tokens cannot grant absence`, status, body: exactNotFound, expected: "unknown" })),
+  { name: "network failure", status: 404, body: exactNotFound, throw: true, expected: "unknown" },
+  { name: "timeout", status: 404, body: exactNotFound, timeout: true, expected: "unknown" },
+  { name: "matching voice", status: 200, body: presentVoice, expected: "present" },
+  { name: "wrong voice identity", status: 200, body: { ...presentVoice, voice_id: context.b.providerId }, expected: "unknown" },
+  { name: "extraneous metadata preserves present", status: 200, body: { ...presentVoice, extra: "synthetic metadata" }, expected: "present" },
+  { name: "missing voice identity", status: 200, body: { category: "cloned" }, expected: "unknown" }
+];
+for (const entry of absenceMatrix) test(`Provider product/proof semantic parity: ${entry.name}`, async () => {
+  const proof = await isolatedTransport(); const original = clone(proof.responses.provider);
+  try {
+    Object.keys(proof.responses.provider).forEach(key => delete proof.responses.provider[key]);
+    Object.assign(proof.responses.provider, clone(entry));
+    const { createElevenLabsVoiceDeletionProviderAdapter } = await isolatedProductAdapter();
+    let calls = 0;
+    const fetchImpl = async (url, init) => {
+      calls++;
+      assert.equal(url, `https://api.elevenlabs.io/v1/voices/${context.a.providerId}`);
+      assert.equal(init.method, "GET");
+      if (entry.throw) throw new Error("synthetic network");
+      if (entry.timeout) return new Promise((resolve, reject) => init.signal.addEventListener("abort", () => reject(new Error("synthetic timeout")), { once: true }));
+      return { status: entry.status, json: async () => { if (entry.jsonError) throw new SyntaxError("synthetic JSON"); return clone(entry.body); } };
+    };
+    const adapter = createElevenLabsVoiceDeletionProviderAdapter({ env: { ELEVENLABS_API_KEY: "synthetic" }, fetchImpl, timeoutMs: 10 });
+    const result = await adapter.reconcileVoiceAbsenceWithSafeEvidence({ providerResourceId: context.a.providerId });
+    const productState = result.result.kind === "verified_absent" ? "absent" : result.result.kind === "present" ? "present" : "unknown";
+    const proofState = (await proof.createLiveReadOnlyAdapters().invocation.read({ context })).a.provider.state;
+    assert.equal(productState, entry.expected);
+    assert.equal(proofState, entry.expected);
+    assert.equal(productState, proofState);
+    assert.equal(calls, 1);
+    if (entry.timeout) assert.equal(result.result.kind, "timeout");
+    if (entry.expected === "absent") {
+      assert.equal(result.evidence.mapperBranch, "strict_voice_not_found");
+      assert.equal(result.evidence.httpStatusCategory, "not_found");
+    }
+  } finally {
+    Object.keys(proof.responses.provider).forEach(key => delete proof.responses.provider[key]);
+    Object.assign(proof.responses.provider, original);
+  }
+});
+
+test("Provider 400 acceptance does not broaden Auth absence", async () => {
+  const proof = await isolatedTransport(); const original = clone(proof.responses.auth);
+  try {
+    Object.assign(proof.responses.auth, { status: 400, body: { code: "user_not_found" } });
+    const observed = await proof.createLiveReadOnlyAdapters().invocation.read({ context });
+    assert.equal(observed.a.auth.state, "unknown");
+  } finally { Object.assign(proof.responses.auth, original); }
+});
+
+test("new Provider signal acceptance cannot promote a saved historical UNKNOWN post", async () => {
+  await withSnapshot(actual(), "provider", async ({ directory, snapshot }) => {
+    const after = clone(snapshot.actual);
+    Object.assign(after.providerTargets[0], { status: "deleted", delete_outcome: "succeeded", delete_attempt_count: 1 });
+    Object.assign(after.a.provider, { state: "unknown", evidence: null });
+    const draft = { snapshotDigest: snapshot.digest, collectedAt: stamp, actual: after };
+    const post = { ...draft, digest: hmacSha256Hex(readAliasKey(directory), "invocation-post-evidence", draft) };
+    const path = writePrivateProofArtifact(directory, "historical-unknown-post.json", post);
+    const bytes = readFileSync(path);
+    const proof = await isolatedTransport(); const original = clone(proof.responses.provider);
+    try {
+      Object.assign(proof.responses.provider, { status: 400, body: exactNotFound });
+      assert.equal((await proof.createLiveReadOnlyAdapters().invocation.read({ context })).a.provider.state, "absent");
+      const saved = readPrivateJson(directory, path);
+      assert.throws(() => verifyInvocationPost(snapshot, saved.actual, {
+        status: "blocked", progress: { marker: "progressed", terminal: false, manualReviewRequired: false }
+      }), /unknown resource state/);
+      assert.equal(saved.digest, post.digest);
+      assert.deepEqual(readFileSync(path), bytes);
+    } finally { Object.assign(proof.responses.provider, original); }
+  });
 });
 
 test("inconsistent owned/exact request reads reject snapshot authority", () => {

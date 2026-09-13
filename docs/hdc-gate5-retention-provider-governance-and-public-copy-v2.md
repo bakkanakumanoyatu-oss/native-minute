@@ -61,7 +61,7 @@ The public promise is bounded as follows:
 - Enable the applicable model-improvement opt-out before Production use.
 - Delete the user-specific cloned voice during Voice-only deletion and Account deletion.
 - Do not describe voice cloning samples as having a guaranteed zero-retention-mode complete deletion unless the actual plan, configuration, provider contract, and runtime evidence support that statement.
-- Preserve the strict automatic absence contract for deletion verification.
+- Preserve the strict automatic GET absence contract: following the 2026-09-13 Human Decision, accept only HTTP **400 or 404** with exact `detail.type=not_found` AND `detail.code=voice_not_found` for the exact requested voice. This replaces the previous 404-only rule in the shared Account/Voice-only product adapter and Provider proof classifier; all other failures stay fail-closed. DELETE semantics and retry boundaries are unchanged. Historical UNKNOWN evidence is not retroactively promoted; fresh canonical verification needs separate execution authority. Implementation/review status is recorded in `g5d4-proof-only-tooling-result.md`.
 - The G5C-B7 Human Option D is historical, target-specific evidence and must not be generalized.
 
 #### OpenAI

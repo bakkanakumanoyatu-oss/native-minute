@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import type { VoiceDeletionProviderAdapter } from "@/providers/voice-deletion";
+import { createElevenLabsVoiceDeletionProviderAdapter, type VoiceDeletionProviderAdapter } from "@/providers/voice-deletion";
 import { runVoiceDeletionProviderStep } from "@/services/voice-deletion/voice-deletion-provider-runner";
 import type { VoiceDeletionRepository } from "@/services/voice-deletion/voice-deletion.repository";
 
@@ -172,6 +172,19 @@ function dependencies(repository: VoiceDeletionRepository, providerAdapter: Voic
 }
 
 describe("G5C-B2b lease-aware provider voice runner", () => {
+  it.each([400, 404])("reconciles HTTP %i exact not-found through the shared adapter without another DELETE", async (status) => {
+    const { repository, target } = createFixture();
+    Object.assign(target, { status: "deleted", delete_outcome: "succeeded", delete_attempt_count: 1, reconciliation_status: "pending" });
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ detail: { type: "not_found", code: "voice_not_found" } }), { status }));
+    const adapter = createElevenLabsVoiceDeletionProviderAdapter({ env: { ELEVENLABS_API_KEY: "synthetic" }, fetchImpl });
+    await expect(runVoiceDeletionProviderStep(
+      { operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter)
+    )).resolves.toEqual({ kind: "provider_stage_complete" });
+    expect(target).toMatchObject({ status: "verified_absent", reconciliation_status: "verified_absent", delete_attempt_count: 1 });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledWith("https://api.elevenlabs.io/v1/voices/provider-voice-a", expect.objectContaining({ method: "GET" }));
+  });
+
   it("durably begins DELETE, then reconciles verified absence in a later single-call step", async () => {
     const { repository, target } = createFixture();
     const adapter = createAdapter();

@@ -441,8 +441,10 @@ export function createLiveReadOnlyAdapters() {
     catch { return { state: "unknown", identity, evidence: null }; }
     let body;
     try { body = await response.json(); } catch { return { state: "unknown", identity, evidence: null }; }
-    const absent = response.status === 404 && (kind === "provider" ?
-      body?.detail?.type === "not_found" && body?.detail?.code === "voice_not_found" : body?.code === "user_not_found" || body?.error_code === "user_not_found");
+    // Match the shared product GET contract; Auth absence remains 404-only.
+    const absent = kind === "provider" ?
+      (response.status === 400 || response.status === 404) && body?.detail?.type === "not_found" && body?.detail?.code === "voice_not_found" :
+      response.status === 404 && (body?.code === "user_not_found" || body?.error_code === "user_not_found");
     if (absent) return { state: "absent", identity, evidence: null };
     if (!response.ok) return { state: "unknown", identity, evidence: null };
     try {

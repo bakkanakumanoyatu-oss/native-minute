@@ -11,7 +11,7 @@ vi.mock("@/lib/supabase/config", () => ({
 }));
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { VoiceDeletionProviderAdapter } from "@/providers/voice-deletion";
+import { createElevenLabsVoiceDeletionProviderAdapter, type VoiceDeletionProviderAdapter } from "@/providers/voice-deletion";
 import {
   runAccountDeletionProviderDurableStep
 } from "@/services/account-deletion/account-deletion-provider-durable-runner";
@@ -691,6 +691,20 @@ describe("G5D-2A legacy Provider execution bridge", () => {
 });
 
 describe("G5D-2A durable provider runner fake recovery proof", () => {
+  it.each([400, 404])("reconciles HTTP %i exact not-found through the shared adapter without another DELETE", async (status) => {
+    const fixture = createFixture();
+    Object.assign(fixture.targets[0], { status: "deleted", delete_outcome: "succeeded", delete_attempt_count: 1, reconciliation_status: "pending" });
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ detail: { type: "not_found", code: "voice_not_found" } }), { status }));
+    const adapter = createElevenLabsVoiceDeletionProviderAdapter({ env: { ELEVENLABS_API_KEY: "synthetic" }, fetchImpl });
+    await expect(runAccountDeletionProviderDurableStep(
+      { deletionRequestId: REQUEST_ID, userId: USER_A }, dependencies(fixture.repository, adapter)
+    )).resolves.toEqual({ kind: "target_verified" });
+    expect(fixture.targets[0]).toMatchObject({ status: "verified_absent", reconciliation_status: "verified_absent", delete_attempt_count: 1 });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledWith("https://api.elevenlabs.io/v1/voices/provider-voice-1", expect.objectContaining({ method: "GET" }));
+    expect(fixture.request.provider_sub_finalized_at).toBeNull();
+  });
+
   it("persists DELETE intent before the provider call and uses GET first after process loss", async () => {
     const fixture = createFixture();
     const adapter = createAdapter(fixture.events);

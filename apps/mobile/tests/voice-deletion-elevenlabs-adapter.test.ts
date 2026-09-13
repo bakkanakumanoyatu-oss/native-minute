@@ -58,6 +58,7 @@ describe("G5C-B2a ElevenLabs voice deletion adapter", () => {
   });
 
   it.each([
+    [400, officialError("not_found", "voice_not_found"), "provider_rejected"],
     [404, officialError("not_found", "voice_not_found"), "not_found"],
     [404, officialError("not_found", "other_not_found"), "protocol_error"],
     [401, officialError("unauthorized", "invalid_api_key"), "auth_failed"],
@@ -161,6 +162,7 @@ describe("G5C-B2a ElevenLabs voice deletion adapter", () => {
   });
 
   it.each([
+    [400, officialError("not_found", "voice_not_found"), "verified_absent"],
     [404, officialError("not_found", "voice_not_found"), "verified_absent"],
     [404, officialError("not_found", "other_not_found"), "protocol_error"],
     [404, officialError(" not_found", "voice_not_found"), "protocol_error"],

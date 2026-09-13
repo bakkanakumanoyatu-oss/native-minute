@@ -103,12 +103,21 @@ function classifyErrorResponse(input: {
   detail: OfficialErrorDetail | null;
   allowVerifiedAbsence: boolean;
 }): VoiceDeletionProviderFailureKind | "verified_absent" {
+  // Human-approved GET absence contract: exact structured 400 or 404 only.
+  // DELETE keeps its existing 404/not_found and 400/provider_rejected semantics.
+  if (
+    input.allowVerifiedAbsence && (input.status === 400 || input.status === 404) &&
+    input.detail?.type === "not_found" && input.detail?.code === "voice_not_found"
+  ) {
+    return "verified_absent";
+  }
+
   if (input.status === 404) {
     if (input.detail?.type !== "not_found" || input.detail?.code !== "voice_not_found") {
       return "protocol_error";
     }
 
-    return input.allowVerifiedAbsence ? "verified_absent" : "not_found";
+    return "not_found";
   }
 
   if (input.status === 401) {
@@ -356,7 +365,7 @@ export class ElevenLabsVoiceDeletionProviderAdapter implements VoiceDeletionProv
     });
     const result = classification === "not_found" ? "protocol_error" : classification;
     const httpStatusCategory =
-      request.response.status === 404
+      classification === "verified_absent" || request.response.status === 404
         ? "not_found"
         : request.response.status === 401
           ? "authentication_rejected"

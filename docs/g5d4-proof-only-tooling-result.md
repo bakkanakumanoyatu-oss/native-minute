@@ -1,5 +1,27 @@
 # G5D-4 proof-only tooling result
 
+## Provider HTTP 400/404 structured absence — 2026-09-13
+
+MODE: `G5D4_PROVIDER_NON404_NOT_FOUND_ABSENCE_PRODUCT_PROOF_MINIMUM_CORRECTION_V1`.
+
+Result candidate: `G5D4_PROVIDER_NON404_NOT_FOUND_ABSENCE_PRODUCT_PROOF_CORRECTED_PENDING_FOCUSED_RE_REVIEW`. The focused P1 remains **OPEN until independent review**. Preflight: Developer cwd/git root, branch `codex/g3-mobile-main-loop`, HEAD/upstream `1b53b197b2943893938380ace6c4a506e42bfa49`, ahead/behind `0/0`, clean tracked/staged tree, workspace/diff check PASS. Allowed `.env.local.save` and `supabase/.temp/` were not read, hashed, changed or staged.
+
+**Accepted new Human Decision:** the exact voice GET may establish absence only for HTTP **400 OR 404**, with parsed `detail.type === "not_found"` **AND** `detail.code === "voice_not_found"`. This supersedes the previous 404-only automatic GET rule for both Account deletion and Voice-only deletion, and their product/proof classification. It does not reuse G5C-B7's individual authorization or manual acceptance. Historical records retain their original authority and outcomes.
+
+The existing shared `providers/voice-deletion/elevenlabs.ts` classifier applies the new condition only when `allowVerifiedAbsence` is true. Diagnostic `strict_voice_not_found` / `not_found` now describe either accepted status; they are semantic labels, not proof of an exact HTTP number. `scripts/g5d4-live-read-only-adapters.mjs` applies the same Provider condition, keeping Auth absence 404-only. PRESENT checks and other error classifications remain unchanged. DELETE still accepts only HTTP 200 plus `status=ok` as success; DELETE 400 with the exact not-found body remains `provider_rejected`. No retries, target transitions, maxCalls, seal, FD 3, react-server, authorization, runner, repository, schema, migration or generated type changes.
+
+Both real product runners are tested with the shared adapter and synthetic 400/404 responses: one GET verifies the existing deleted target, with delete attempts fixed at 1 and no second DELETE. The existing proof source-isolation harness and the transpiled actual product adapter receive one common response matrix; production `server-only` remains intact. The matrix checks 400/404 positives, generic/wrong/missing/nonobject/whitespace/malformed bodies, 401/403/409/418/422/429/500/503 even with exact tokens, network/timeout, and matching/wrong/missing voice identity plus unrelated success metadata. It asserts the expected normalized result, product/proof agreement and one product GET. The pre-existing different PRESENT metadata requirements are retained; this does not claim equivalence for arbitrary malformed success shapes. An Auth 400 regression remains UNKNOWN. A saved synthetic UNKNOWN post stays byte-for-byte unchanged and rejected even after a separate fresh synthetic 400 signal is accepted.
+
+Before correction, the new 400 parity case and all three product 400 cases (adapter/Account/Voice-only) failed; 404 remained accepted. Final validation: shared adapter + both product runners **98/98 PASS** (6 new cases); Account/Voice-only/G5C-B7 regression selection **450/450 PASS across 30 files**, including those 98. The full proof-tooling command **PASS**, with its Node portion **216/216 PASS**: existing invocation/Auth/B-control 158, new parity 35 + Auth-boundary 1 + saved-UNKNOWN 1, and FD/runtime 21. Initial integration exposed the FD suite's fixture-source slicing of the new top-level TypeScript import; moving that test-only dependency into the parity helper fixed it. Product runtime did not change for that harness correction.
+
+Workspace/lint/initial typecheck/build (**57/57** pages)/post-build typecheck/diff check: **PASS**. Validation ran under OS network denial; a loopback probe was rejected with `EPERM`. The unrelated browser component suite's 12 cases could not start its local Vite listener under this policy and were excluded from the final 30-file selection; no UI change, E2E/device check or live readiness claim. No network policy was relaxed. No real private run was opened or changed by this implementation unit; historical-preservation tests use disposable synthetic runs only. Ship-check: no new dependencies, environment variables, setup, schema/types, user-facing UI or error flow changes; README remains applicable.
+
+The existing live facts (A DELETE exactly 1, target deleted/succeeded, reconciliation pending, prior external UNKNOWN, B unchanged) are accepted history, **not fresh observations**. Old UNKNOWN evidence is not rewritten, reinterpreted, re-signed or promoted to PASS. A fresh canonical `provider / verify` requires a separate mode and authority after correction/review; this source change does not execute it or make a terminal claim.
+
+Additional live Provider GET/DELETE, canonical verify/finalize, Storage/DB/Auth/Completion mutation, real Human destructive authorization/consume, Production access, migration apply and stage/commit/push are all **0**. Focused `P0/P1/P2/UNKNOWN=0/1/0/0`; program `0/1/1/0`, known Auth P2 unchanged/nonblocking deferred. Destructive authorization=`NOT GRANTED`, G5D4=`INCOMPLETE_STOP`, Gate 5=`OPEN`.
+
+Exact `NEXT_ONE_ACTION`: `G5D4_PROVIDER_NON404_NOT_FOUND_ABSENCE_PRODUCT_PROOF_INDEPENDENT_READ_ONLY_FOCUSED_RE_REVIEW`.
+
 ## Provider/seal server-only runtime condition — 2026-09-13
 
 MODE: `G5D4_PROVIDER_SEAL_SERVER_ONLY_RUNTIME_CONDITION_PROOF_ONLY_MINIMUM_CORRECTION`.
