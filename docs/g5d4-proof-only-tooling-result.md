@@ -1,5 +1,27 @@
 # G5D-4 proof-only tooling result
 
+## Human TTY single-invocation CLI — 2026-09-13
+
+MODE: `G5D4_REPOSITORY_MANAGED_HUMAN_TTY_SINGLE_INVOCATION_CLI_MINIMUM_IMPLEMENTATION_V1`.
+
+Status: `G5D4_REPOSITORY_MANAGED_HUMAN_TTY_SINGLE_INVOCATION_CLI_CORRECTED_PENDING_FOCUSED_RE_REVIEW`. Self-verification is separate from independent review; focused P1 remains OPEN. Preflight matched Developer root, `codex/g3-mobile-main-loop`, HEAD/upstream `785ffd3dd3ea1d2406724450134c193d67333cc6`, ahead/behind `0/0`, clean tracked state and workspace/diff checks. Allowed `.env.local.save` and `supabase/.temp/` were not read, hashed or changed.
+
+The new `scripts/g5d4-human-tty-invocation.mjs` is a thin Human entry, exposed as `npm run g5d4:human-tty`. It requires exactly `--context-directory <existing-secure-invocation-directory> --expected-stage <stage> --expected-action <action>`. The directory supplies the existing private A/B/request context only; no raw target selectors, credentials, snapshot or authorization arguments are accepted. The caller must already know the reviewed context directory; there is no automatic run discovery. Both expected values are mandatory and restrict, rather than select, the canonical next action.
+
+Local Terminal use, after independent review and a clean committed/synchronized source: enter the Developer repo, invoke that npm entry with the three options, type exact `READY` when prompted, then type the exact digest-bearing phrase printed by the existing authorization function. This implementation unit does **not** provide a live-ready command or request either input. The initial current expectation remains `storage / verify`, reference audio, `maxCalls=1`, from the user's historical facts; no fresh live state was read here.
+
+The CLI requires actual TTY stdin/stdout plus a controlling `/dev/tty`. Wrong/missing READY, non-TTY, wrong root/branch, unsynchronized or dirty source stop before live reads, private-run creation, snapshot or authorization. READY wait has no snapshot TTL. After READY it rechecks source, validates current A/B, derives the first unfinished canonical stage and its `plannedInvocation()`, checks both expected values, and creates a new private context/key and exactly one fresh snapshot. It compares state across derivation/collection; the wrapper then independently revalidates the authorized snapshot before dispatch. Historical B baseline attestation is not newly added: existing current A/B validation and in-flow drift comparison remain the contract. Old snapshots/authorizations are never opened or reused.
+
+The safe summary shows aliases, category, stage/action/maxCalls, expected effect, explicitly excluded stages/actions, digest and expiry. It immediately calls existing `confirmLiveInvocationFromTty()`, checks freshness again, and calls existing `runG5d4AuthorizedStep()` once. The wrapper retains HMAC/private evidence, FD 3, react-server, consume-before-dispatch, exact target/maxCalls guards and immediate reconciliation, including failure reconciliation. Success and failure both STOP; no automatic retry/finalize/next-stage/replay. Every subsequent action needs another run, READY and fresh authorization. Errors are reduced to a fixed message; private paths/response details are not printed. No new environment variables or dependencies.
+
+Validation: focused CLI **36/36 PASS** under OS network deny (loopback rejected with EPERM). The actual CLI child was exercised only with non-TTY input and no live context. Positive orchestration uses the unchanged CLI function bodies in an isolated VM with synthetic TTY syscalls and self-test-only existing collectors/authorization/wrapper; no live injection export was added. Cases cover READY ordering/CRLF/exact rejection, missing controlling TTY, source drift, mandatory expectation mismatch, unknown state/already-verified STOP, collection drift, authorization rejection/expiry/reuse, one reference verification, post/failure reconciliation, unchanged DELETE attempts, B drift, no auto-finalize and secret/ID-safe output. Existing full proof suite **305/305 + 280/280 PASS**, including authorized-step, consume-once, FD transport and react-server regressions.
+
+Final validation under OS network deny: workspace, lint, initial typecheck, build (57/57 pages), post-build typecheck and diff check **PASS**. Direct ESLint for both new files **PASS**. Focused command: `node --test scripts/g5d4-human-tty-invocation-self-test.mjs` (requires OS network deny; the suite verifies EPERM). No product/operator/wrapper/adapter/state-machine/schema/migration changes. README application setup remains applicable; this paragraph documents the new operator-only entry. No E2E/device/Human usability or real TTY positive acceptance was run.
+
+Live network/Storage GET/verify/DELETE/mutation, real READY/authorization/guard consumption and stage/commit/push: **0**. Only disposable synthetic private runs were created and cleaned up. Historical private evidence was not opened or modified in this implementation unit. Focused `P0/P1/P2/UNKNOWN=0/1/0/0`; program `0/1/1/0`, retaining known deferred Auth P2. Destructive authorization=`NOT GRANTED`; G5D4=`INCOMPLETE_STOP`; Gate 5=`OPEN`.
+
+Exact `NEXT_ONE_ACTION`: `G5D4_REPOSITORY_MANAGED_HUMAN_TTY_SINGLE_INVOCATION_CLI_INDEPENDENT_READ_ONLY_FOCUSED_RE_REVIEW`.
+
 ## Account Storage exact not-found absence — 2026-09-13
 
 MODE: `G5D4_STORAGE_EXACT_NOT_FOUND_ABSENCE_PRODUCT_PROOF_MINIMUM_CORRECTION_V1`.
