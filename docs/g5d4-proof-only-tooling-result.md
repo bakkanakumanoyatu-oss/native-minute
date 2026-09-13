@@ -1,5 +1,32 @@
 # G5D-4 proof-only tooling result
 
+## Account Storage exact not-found absence — 2026-09-13
+
+MODE: `G5D4_STORAGE_EXACT_NOT_FOUND_ABSENCE_PRODUCT_PROOF_MINIMUM_CORRECTION_V1`.
+
+Result candidate: `G5D4_STORAGE_EXACT_NOT_FOUND_ABSENCE_PRODUCT_PROOF_CORRECTED_PENDING_FOCUSED_RE_REVIEW`. Self-verification PASS; focused P1 remains OPEN until independent focused re-review. Preflight: Developer root, branch `codex/g3-mobile-main-loop`, HEAD/upstream `0f1de09303d2874f59c6839387f006fc669f6db2`, ahead/behind `0/0`, clean tracked/staged tree, workspace/diff check PASS. Allowed `.env.local.save` and `supabase/.temp/` were not read, hashed, modified or staged.
+
+Human Decision: Account deletion exact-owned-object info GET establishes ABSENT only from actual HTTP **404**, or actual HTTP **400** with parsed JSON containing all four exact strings: `statusCode="404"`, `error="not_found"`, `code="NoSuchKey"`, `message="Object not found"`. HTTP status precedes body status; there is no numeric coercion or body-only absence fallback. HTTP 401/403/429/5xx/other 4xx cannot grant absence even with that exact body. HTTP 404 retains its body-independent contract; malformed JSON on HTTP 400 is not absence.
+
+The mandatory regression first reproduced HTTP 401 + numeric body `statusCode=404` incorrectly returning ABSENT. The Account adapter now uses actual status first, and checks the complete raw info body only for HTTP 400. Installed Storage SDK `handleError` retains transport status but folds body statusCode/code into one field and discards separate error/code evidence. A narrow Account-only GET transport therefore preserves the parsed JSON in memory for classification, uses the same exact info endpoint, encodes path segments, denies redirects, disables caching and bounds the request to 20 seconds. Existing SDK list/remove paths, success id check, and non-absence diagnostic precedence are retained. No credentials, raw object paths or response bodies are logged or returned in the safe result.
+
+The G5D4 invocation reader now corroborates each SQL-inventory omission with an exact external info GET under the same absence rule. SQL absence alone is insufficient; unaccepted or conflicting external responses leave the observation UNKNOWN. Existing SQL PRESENT metadata and B comparison remain intact. This does not change fixture-reader/Voice-only Storage contracts, saved-evidence validators, authorization, second-DELETE prevention, runner persistence, target transitions or later-stage boundaries. No schema, migration or generated DB type changes.
+
+Validation under OS network deny (loopback probe rejected with EPERM):
+
+- Focused Storage product/proof tests: **66/66 PASS** (64 new cases plus 2 existing). The shared response matrix exercises the actual default product transport/classifier and source-isolated proof reader with synthetic responses. It covers the required positives, each wrong/missing/type-mismatched field, partial/generic/malformed bodies, status precedence, other status classes, network/timeout and retained diagnostic categories. Additional checks distinguish external PRESENT from SQL absence, preserve the other three A objects and B, and keep a saved synthetic UNKNOWN post byte-for-byte unchanged and rejected.
+- Account/Voice-only Storage and writer regressions: **83/83 PASS across 8 files**. Four new product cases cover the mandatory 401 regression, body-only refusal and 400/404 real-runner verification with delete attempts fixed at 1, zero second DELETE, unchanged other targets and no finalize.
+- Full proof tooling: existing fake-only **305/305 PASS** plus integrated Node tests **280/280 PASS** (including Provider/Auth/B-control and FD/runtime regressions). Storage cleanup self-test and canonical Storage bridge fake proof: PASS. The npm bridge launcher initially hit OS-denied tsx IPC; direct `node --conditions=react-server --import tsx` ran the same bridge successfully without relaxing network denial.
+- Workspace, `npm run lint`, initial typecheck, build (57/57 pages), post-build typecheck, mobile test typecheck and final diff check: PASS. Additional direct ESLint passes for product adapter, proof runtime and product tests. Direct ESLint on the existing invocation self-test reports six baseline errors (two unused imports and four existing `module` variable names); identical errors were verified against HEAD and left outside this correction.
+
+Ship-check: no new dependency, environment variable, setup step, UI flow or schema work; README remains applicable. E2E, devices, live readiness, fresh Storage verification and independent review were not run. Tests construct only synthetic disposable state; no real private run was opened or modified.
+
+Retained live facts are user-provided history, not fresh observations: A sealed Storage targets=4; consent recording=`delete_requested / verification pending`; DELETE attempts=exactly 1; SQL inventory absence; latest external HTTP 400 with the four exact strings; other three A objects PRESENT; B unchanged. Historical UNKNOWN is not reinterpreted, rewritten, re-signed or promoted to PASS. Fresh canonical `storage / verify` remains a separate mode and authority after independent review.
+
+Real DELETE/retry/storage-verify/finalize/next-target operation = **0/0/0/0/0**. Live Storage access, real authorization/guard consumption, other-stage mutations and stage/commit/push = **0**. Focused `0/1/0/0`; program `0/1/1/0`; destructive authorization=`NOT GRANTED`; G5D4=`INCOMPLETE_STOP`; Gate 5=`OPEN`.
+
+Exact `NEXT_ONE_ACTION`: `G5D4_STORAGE_EXACT_NOT_FOUND_ABSENCE_PRODUCT_PROOF_INDEPENDENT_READ_ONLY_FOCUSED_RE_REVIEW`.
+
 ## Provider HTTP 400/404 structured absence — 2026-09-13
 
 MODE: `G5D4_PROVIDER_NON404_NOT_FOUND_ABSENCE_PRODUCT_PROOF_MINIMUM_CORRECTION_V1`.

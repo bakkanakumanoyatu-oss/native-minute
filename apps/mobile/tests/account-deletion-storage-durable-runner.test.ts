@@ -443,7 +443,42 @@ describe("G5D-2E Storage seal and writer fence", () => {
 });
 
 describe("G5D-2E one-step execution, recovery, lease/CAS, and finalizer", () => {
-  it("uses one-key DELETE and treats only exact-object 404 as verified absence", async () => {
+  it("fails closed for actual HTTP 401 even when body statusCode is numeric 404", async () => {
+    const adapter = createAccountDeletionStorageAdapter({ storage: { from: () => ({
+      info: async () => ({ data: null, error: { status: 401, statusCode: 404 } }),
+      remove: vi.fn(), list: vi.fn()
+    }) } });
+    await expect(adapter.verifyObjectAbsence({ userId: USER_A, targetKind: "recording", objectKey: `${USER_A}/test.wav` }))
+      .resolves.toEqual({ kind: "auth_failed" });
+  });
+
+  it.each([404, 400])("uses HTTP %s absence in the real runner without a second DELETE or next target", async (status) => {
+    const fixture = createRunnerFixture({ targetCount: 4 });
+    Object.assign(fixture.targets[0], { status: "delete_requested", delete_outcome: "succeeded", delete_attempt_count: 1, verification_status: "pending" });
+    const unchanged = structuredClone(fixture.targets.slice(1));
+    const remove = vi.fn(); const list = vi.fn();
+    const info = vi.fn(async () => ({ data: null, error: { status, infoBody: {
+      statusCode: "404", error: "not_found", code: "NoSuchKey", message: "Object not found"
+    } } }));
+    Object.assign(fixture.adapter, createAccountDeletionStorageAdapter({ storage: { from: () => ({ info, remove, list }) } }));
+    expect(await fixture.step()).toEqual({ kind: "target_verified" });
+    expect(fixture.targets[0].verification_status).toBe("verified_absent");
+    expect(fixture.targets[0].delete_attempt_count).toBe(1);
+    expect(fixture.targets.slice(1)).toEqual(unchanged);
+    expect(info).toHaveBeenCalledTimes(1);
+    expect(remove).not.toHaveBeenCalled(); expect(list).not.toHaveBeenCalled();
+    expect(fixture.repository.finalizeStorageStage).not.toHaveBeenCalled();
+  });
+
+  it("never grants absence from body statusCode without transport status", async () => {
+    const adapter = createAccountDeletionStorageAdapter({ storage: { from: () => ({
+      info: async () => ({ data: null, error: { statusCode: 404 } }), remove: vi.fn(), list: vi.fn()
+    }) } });
+    expect((await adapter.verifyObjectAbsence({ userId: USER_A, targetKind: "recording", objectKey: `${USER_A}/test.wav` })).kind)
+      .not.toBe("absent");
+  });
+
+  it("preserves one-key DELETE, HTTP 404 absence, generic 400 rejection and success presence", async () => {
     const remove = vi.fn(async () => ({ data: [], error: null }));
     const info = vi.fn()
       .mockResolvedValueOnce({ data: null, error: { status: 404, message: "not found" } })

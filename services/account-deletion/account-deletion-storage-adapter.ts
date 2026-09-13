@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getSupabaseServiceRoleKey, getSupabaseUrl } from "@/lib/supabase/config";
 
 export const ACCOUNT_DELETION_STORAGE_BUCKET_BY_TARGET_KIND = {
   recording: "recordings",
@@ -18,7 +19,9 @@ type StorageErrorLike = {
   message?: string;
   name?: string;
   status?: number;
-  statusCode?: number;
+  statusCode?: unknown;
+  // Unmodified parsed info GET error body; SDK errors omit error/code fields.
+  infoBody?: unknown;
 };
 type StorageListItem = { name?: unknown; id?: unknown; metadata?: unknown };
 type StorageInfo = { id?: unknown; name?: unknown; bucketId?: unknown };
@@ -99,7 +102,7 @@ function isExactOwnedObjectKey(userId: string, objectKey: string) {
 }
 
 function normalizeStorageError(error: StorageErrorLike | null | undefined) {
-  const status = typeof error?.statusCode === "number" ? error.statusCode : error?.status;
+  const status = error?.status ?? (typeof error?.statusCode === "number" ? error.statusCode : undefined);
   const message = `${error?.name ?? ""} ${error?.message ?? ""}`.toLowerCase();
 
   if (message.includes("timeout") || message.includes("abort")) return "timed_out" as const;
@@ -120,8 +123,52 @@ function normalizeStorageError(error: StorageErrorLike | null | undefined) {
   return "protocol_error" as const;
 }
 
-function getErrorStatus(error: StorageErrorLike | null | undefined) {
-  return typeof error?.statusCode === "number" ? error.statusCode : error?.status;
+function isExactInfoAbsence(error: StorageErrorLike) {
+  // Transport status is authority. Never coerce or fall back to body statusCode.
+  if (error.status === 404) return true;
+  if (error.status !== 400) return false;
+  const body = error.infoBody;
+  if (!body || typeof body !== "object" || Array.isArray(body)) return false;
+  const fields = body as Record<string, unknown>;
+  return fields.statusCode === "404" && fields.error === "not_found" &&
+    fields.code === "NoSuchKey" && fields.message === "Object not found";
+}
+
+function createAccountDeletionStorageClient(): StorageClient {
+  const client = createSupabaseAdminClient();
+  const url = getSupabaseUrl().replace(/\/$/, "");
+  const key = getSupabaseServiceRoleKey();
+  return { storage: { from(bucket) {
+    const storage = client.storage.from(bucket);
+    return {
+      remove: (paths) => storage.remove(paths),
+      list: (path, options) => storage.list(path, options),
+      // Only Account deletion exact-owned info uses this narrow transport.
+      // Keep the raw JSON instead of the SDK's lossy StorageApiError projection.
+      async info(path) {
+        const response = await fetch(`${url}/storage/v1/object/info/${bucket}/${path.split("/").map(encodeURIComponent).join("/")}`, {
+          method: "GET", headers: { apikey: key, Authorization: `Bearer ${key}` },
+          redirect: "error", signal: AbortSignal.timeout(20_000), cache: "no-store"
+        });
+        if (response.status === 404) return { data: null, error: { status: response.status } };
+        let body: unknown;
+        try { body = await response.json(); } catch (error) {
+          if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) throw error;
+          body = null;
+        }
+        if (!response.ok) {
+          const fields = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : null;
+          const nestedError = fields?.error && typeof fields.error === "object" ? fields.error as Record<string, unknown> : null;
+          // Preserve the SDK's diagnostic message precedence for other failures.
+          const message = fields?.msg || fields?.message || fields?.error_description ||
+            (typeof fields?.error === "string" ? fields.error : nestedError?.message) || JSON.stringify(body);
+          return { data: null, error: { status: response.status, infoBody: body,
+            message: typeof message === "string" ? message : undefined } };
+        }
+        return { data: body && typeof body === "object" && !Array.isArray(body) ? body as StorageInfo : null, error: null };
+      }
+    };
+  } } };
 }
 
 function resolveTarget(input: {
@@ -137,7 +184,7 @@ function resolveTarget(input: {
 }
 
 export function createAccountDeletionStorageAdapter(
-  client: StorageClient = createSupabaseAdminClient() as unknown as StorageClient
+  client: StorageClient = createAccountDeletionStorageClient()
 ): AccountDeletionStorageAdapter {
   async function listBucket(bucket: AccountDeletionStorageBucket, userId: string) {
     const keys = new Set<string>();
@@ -227,10 +274,10 @@ export function createAccountDeletionStorageAdapter(
     try {
       const { data, error } = await client.storage.from(target.bucket).info(target.objectKey);
 
-      // Only an exact-object 404 is absence authority. A prefix listing omission,
-      // DELETE success, 400, or malformed response never proves absence.
+      // HTTP 404, or HTTP 400 with all four exact JSON strings, is authority.
+      // A listing omission, DELETE success or body status alone never is.
       if (error) {
-        return getErrorStatus(error) === 404
+        return isExactInfoAbsence(error)
           ? { kind: "absent" }
           : { kind: normalizeStorageError(error) };
       }

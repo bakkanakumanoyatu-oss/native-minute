@@ -275,13 +275,13 @@ async function isolatedTransport() {
     if(url.endsWith('/database/query/read-only')) {
       queries.push(body.query);
       if(body.query.includes('schema_migrations')) data=${JSON.stringify(G5D4_REQUIRED_MIGRATIONS.map(version => ({ version })))};
-      else if(body.query.includes('storage.objects')) data=[];
+      else if(body.query.includes('storage.objects')) data=syntheticStorageRows.filter(row=>body.query.includes(row.owner_id));
       else data=[{owned: Object.fromEntries(${JSON.stringify(TABLES)}.map(t => [t, t === 'account_deletion_requests' ? [{id:${JSON.stringify(context.requestId)}}] : []]))}];
     } else data={id:${JSON.stringify(G5D4_CANONICAL_STAGING.projectRef)},name:'native-minute-staging',region:'ap-northeast-1',status:'ACTIVE_HEALTHY'};
     return {json:async()=>data};
   }`);
-  source += `\nexport const queries=[]; export const responses={provider:{status:404,body:{detail:{type:'not_found',code:'voice_not_found'}}},auth:{status:404,body:{code:'user_not_found'}}};
-    const fetch=async url=>{const r=responses[url.includes('elevenlabs')?'provider':'auth']; if(r.throw) throw new Error('synthetic network'); if(r.timeout) throw new DOMException('synthetic timeout','TimeoutError'); return {ok:r.status>=200&&r.status<300,status:r.status,json:async()=>{if(r.jsonError) throw new SyntaxError('synthetic malformed JSON'); return r.body;}};};
+  source += `\nexport const queries=[]; export const syntheticStorageRows=[]; export const fetchCalls=[]; export const responses={provider:{status:404,body:{detail:{type:'not_found',code:'voice_not_found'}}},auth:{status:404,body:{code:'user_not_found'}},storage:{status:404,body:{}}};
+    const fetch=async (url,init)=>{fetchCalls.push({url,method:init.method}); const r=responses[url.includes('/storage/v1/object/info/')?'storage':url.includes('elevenlabs')?'provider':'auth']; if(r.throw) throw new Error('synthetic network'); if(r.timeout) throw new DOMException('synthetic timeout','TimeoutError'); return {ok:r.status>=200&&r.status<300,status:r.status,json:async()=>{if(r.jsonError) throw new SyntaxError('synthetic malformed JSON'); return r.body;}};};
     export {INVOCATION_FIELDS, invocationRowsQuery};`;
   transportModule = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
   return transportModule;
@@ -387,6 +387,147 @@ test("Provider 400 acceptance does not broaden Auth absence", async () => {
     const observed = await proof.createLiveReadOnlyAdapters().invocation.read({ context });
     assert.equal(observed.a.auth.state, "unknown");
   } finally { Object.assign(proof.responses.auth, original); }
+});
+
+// Exercise the default Account Storage info transport and classifier together.
+// Only imports/credentials/fetch are replaced in this test module, never live code.
+let storageProductModule;
+async function isolatedStorageProduct() {
+  if (!storageProductModule) {
+    const { default: ts } = await import("typescript");
+    const source = readFileSync(new URL("../services/account-deletion/account-deletion-storage-adapter.ts", import.meta.url), "utf8")
+      .replace('import "server-only";', '')
+      .replace('import { createSupabaseAdminClient } from "@/lib/supabase/admin";', `
+        const createSupabaseAdminClient = () => ({storage:{from:()=>({
+          remove:()=>{throw new Error("unexpected DELETE")},list:()=>{throw new Error("unexpected list")}
+        })}});`)
+      .replace('import { getSupabaseServiceRoleKey, getSupabaseUrl } from "@/lib/supabase/config";', `
+        const getSupabaseServiceRoleKey=()=>"synthetic"; const getSupabaseUrl=()=>"https://storage.example.invalid";
+        export const testTransport = { entry: null, calls: [] };
+        const fetch = async (url, init) => {
+          testTransport.calls.push({url, method:init.method, redirect:init.redirect, cache:init.cache, signal:init.signal});
+          const r=testTransport.entry;
+          if(r.throw) throw new TypeError("fetch failed");
+          if(r.timeout) throw new DOMException("synthetic timeout", "TimeoutError");
+          return {status:r.status,ok:r.status>=200&&r.status<300,json:async()=>{
+            if(r.jsonError) throw new SyntaxError("synthetic malformed JSON"); return structuredClone(r.body);
+          }};
+        };`);
+    const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } });
+    storageProductModule = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`);
+  }
+  return storageProductModule;
+}
+const exactStorageNotFound = { statusCode: "404", error: "not_found", code: "NoSuchKey", message: "Object not found" };
+const storageAbsenceMatrix = [
+  { name: "HTTP 404", status: 404, body: {}, expected: "absent" },
+  { name: "HTTP 404 malformed body still has transport authority", status: 404, jsonError: true, expected: "absent" },
+  { name: "HTTP 400 exact four strings", status: 400, body: exactStorageNotFound, expected: "absent" },
+  { name: "HTTP 400 exact with unrelated metadata", status: 400, body: { ...exactStorageNotFound, extra: true }, expected: "absent" },
+  { name: "HTTP 400 statusCode only", status: 400, body: { statusCode: "404" }, expected: "unknown" },
+  ...Object.keys(exactStorageNotFound).flatMap(field => [
+    { name: `${field} wrong`, body: { ...exactStorageNotFound, [field]: "wrong" } },
+    { name: `${field} whitespace`, body: { ...exactStorageNotFound, [field]: `${exactStorageNotFound[field]} ` } },
+    { name: `${field} missing`, body: Object.fromEntries(Object.entries(exactStorageNotFound).filter(([key]) => key !== field)) },
+    ...[404, null, true, [exactStorageNotFound[field]], {}].map(value => ({ name: `${field} wrong type ${JSON.stringify(value)}`, body: { ...exactStorageNotFound, [field]: value } }))
+  ].map(entry => ({ ...entry, status: 400, expected: "unknown" }))),
+  ...[{}, null, [], "Object not found"].map(body => ({ name: `generic 400 ${JSON.stringify(body)}`, status: 400, body, expected: "unknown" })),
+  { name: "HTTP 401 numeric body 404 mandatory regression", status: 401, body: { statusCode: 404 }, expected: "unknown", failure: "auth_failed" },
+  ...[401, 403, 402, 409, 418, 422, 429, 500, 503, 200, 302].map(status => ({ name: `HTTP ${status} exact body cannot authorize absence`, status, body: exactStorageNotFound, expected: "unknown",
+    failure: status === 401 ? "auth_failed" : status === 403 ? "permission_denied" : status === 429 ? "rate_limited" : status >= 500 ? "unavailable" : undefined })),
+  { name: "HTTP 400 malformed JSON", status: 400, jsonError: true, expected: "unknown" },
+  ...[
+    { body: { error: "unauthorized" }, failure: "auth_failed" },
+    { body: { error: { message: "permission denied" } }, failure: "permission_denied" },
+    { body: { error_description: "rate limited" }, failure: "rate_limited" },
+    { body: { msg: "service unavailable" }, failure: "unavailable" }
+  ].map(entry => ({ ...entry, name: `legacy SDK diagnostic ${entry.failure}`, status: 400, expected: "unknown" })),
+  { name: "network failure", throw: true, expected: "unknown", failure: "network_error" },
+  { name: "timeout", timeout: true, expected: "unknown", failure: "timed_out" }
+];
+for (const entry of storageAbsenceMatrix) test(`Storage product/proof absence parity: ${entry.name}`, async () => {
+  const proof = await isolatedTransport(); const saved = proof.responses.storage;
+  const product = await isolatedStorageProduct();
+  try {
+    proof.responses.storage = clone(entry);
+    product.testTransport.entry = clone(entry); product.testTransport.calls.length = 0;
+    const target = context.a.storage[0];
+    const result = await product.createAccountDeletionStorageAdapter().verifyObjectAbsence({
+      userId: context.a.userId, targetKind: "recording", objectKey: target.key
+    });
+    const normalized = result.kind === "absent" ? "absent" : result.kind === "present" ? "present" : "unknown";
+    const observed = (await proof.createLiveReadOnlyAdapters().invocation.read({ context })).a.storage;
+    assert.equal(normalized, entry.expected);
+    assert.equal(observed.state, entry.expected); // SQL fixture is empty in every case.
+    if (entry.failure) assert.equal(result.kind, entry.failure);
+    assert.equal(product.testTransport.calls.length, 1);
+    const [call] = product.testTransport.calls;
+    assert.equal(call.url, `https://storage.example.invalid/storage/v1/object/info/recordings/${target.key}`);
+    assert.equal(call.method, "GET"); assert.equal(call.redirect, "error"); assert.equal(call.cache, "no-store");
+    assert.ok(call.signal instanceof AbortSignal);
+  } finally { proof.responses.storage = saved; }
+});
+
+test("Storage success stays PRESENT; SQL omission plus external PRESENT stays UNKNOWN", async () => {
+  const proof = await isolatedTransport(); const saved = proof.responses.storage;
+  const product = await isolatedStorageProduct();
+  try {
+    const entry = { status: 200, body: { id: id(900), bucket_id: "recordings", name: context.a.storage[0].key } };
+    proof.responses.storage = entry; product.testTransport.entry = entry;
+    assert.equal((await product.createAccountDeletionStorageAdapter().verifyObjectAbsence({
+      userId: context.a.userId, targetKind: "recording", objectKey: context.a.storage[0].key
+    })).kind, "present");
+    assert.equal((await proof.createLiveReadOnlyAdapters().invocation.read({ context })).a.storage.state, "unknown");
+  } finally { proof.responses.storage = saved; }
+});
+
+for (const accepted of [true, false]) test(`Storage partial SQL inventory requires exact external absence; accepted=${accepted}, B unchanged`, async () => {
+  const proof = await isolatedTransport(); const saved = proof.responses.storage;
+  const missing = context.a.storage[3];
+  const rows = p => p.storage.map((target, i) => ({ id: id(900 + i), owner_id: p.userId,
+    bucket_id: target.bucket, name: target.key, size: "100", content_type: "audio/wav", version: "synthetic", etag: "synthetic", created_at: stamp, updated_at: null }));
+  try {
+    proof.syntheticStorageRows.push(...rows(context.a), ...rows(context.b));
+    const before = await proof.createLiveReadOnlyAdapters().invocation.read({ context });
+    proof.syntheticStorageRows.splice(3, 1); proof.fetchCalls.length = 0;
+    proof.responses.storage = { status: 400, body: accepted ? exactStorageNotFound : { statusCode: "404" } };
+    const after = await proof.createLiveReadOnlyAdapters().invocation.read({ context });
+    assert.equal(after.a.storage.state, accepted ? "present" : "unknown");
+    if (accepted) assert.deepEqual(after.a.storage.evidence, before.a.storage.evidence.filter(x => x.key !== missing.key));
+    assert.deepEqual(after.b, before.b);
+    const calls = proof.fetchCalls.filter(x => x.url.includes('/storage/v1/'));
+    assert.equal(calls.length, 1);
+    assert.ok(calls[0].url.endsWith(`/object/info/${missing.bucket}/${missing.key}`));
+    assert.equal(calls[0].method, "GET");
+  } finally { proof.responses.storage = saved; proof.syntheticStorageRows.length = 0; }
+});
+
+test("new Storage signal never promotes a saved historical UNKNOWN post", async () => {
+  const pre = actual(); const prior = priorTerminal(clone(pre));
+  pre.request.provider_cleanup_status = "succeeded"; pre.request.provider_sub_finalized_at = stamp;
+  pre.a.provider = prior.a.provider; pre.providerTargets = prior.providerTargets;
+  pre.a.database.evidence.account_deletion_provider_targets = pre.providerTargets;
+  await withSnapshot(pre, "storage", async ({ directory, snapshot }) => {
+    const after = clone(snapshot.actual);
+    Object.assign(after.storageTargets[0], { status: "delete_requested", delete_outcome: "succeeded", delete_attempt_count: 1, verification_status: "pending" });
+    after.a.storage = { state: "unknown", evidence: null };
+    const draft = { snapshotDigest: snapshot.digest, collectedAt: stamp, actual: after };
+    const post = { ...draft, digest: hmacSha256Hex(readAliasKey(directory), "invocation-post-evidence", draft) };
+    const path = writePrivateProofArtifact(directory, "historical-storage-unknown-post.json", post);
+    const bytes = readFileSync(path);
+    const proof = await isolatedTransport(); const saved = proof.responses.storage;
+    try {
+      proof.responses.storage = { status: 400, body: exactStorageNotFound };
+      assert.equal((await proof.createLiveReadOnlyAdapters().invocation.read({ context })).a.storage.state, "absent");
+      const old = readPrivateJson(directory, path);
+      assert.throws(() => verifyInvocationPost(snapshot, old.actual, {
+        status: "blocked", progress: { marker: "progressed", terminal: false, manualReviewRequired: false }
+      }), /unknown resource state/);
+      assert.deepEqual(readFileSync(path), bytes);
+      assert.equal(old.actual.storageTargets[0].delete_attempt_count, 1);
+      assert.equal(old.actual.storageTargets[0].verification_status, "pending");
+    } finally { proof.responses.storage = saved; }
+  });
 });
 
 test("new Provider signal acceptance cannot promote a saved historical UNKNOWN post", async () => {

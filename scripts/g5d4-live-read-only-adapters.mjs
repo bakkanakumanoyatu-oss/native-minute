@@ -435,6 +435,21 @@ export function createLiveReadOnlyAdapters() {
     environment: Object.freeze({ inspectProject: async () => { await gate(); return environment; }, inspectMigrations: async () => { await gate(); return migrations; } }),
     git: Object.freeze({ inspect: async () => inspectGit() })
   });
+  const storageAbsenceGet = async (input) => {
+    storageTarget(input);
+    try {
+      const response = await fetch(`${STAGING_URL}/storage/v1/object/info/${input.bucket}/${input.key.split("/").map(encodeURIComponent).join("/")}`, {
+        method: "GET", headers: serviceHeaders, redirect: "error", signal: AbortSignal.timeout(20000), cache: "no-store"
+      });
+      // Account deletion only: actual HTTP status precedes any body semantics.
+      if (response.status === 404) return true;
+      if (response.status !== 400) return false;
+      const body = await response.json();
+      return body !== null && typeof body === "object" && !Array.isArray(body) &&
+        body.statusCode === "404" && body.error === "not_found" &&
+        body.code === "NoSuchKey" && body.message === "Object not found";
+    } catch { return false; }
+  };
   const presenceGet = async (url, headers, identity, kind, bControl = false) => {
     let response;
     try { response = await fetch(url, { method: "GET", headers, redirect: "error", signal: AbortSignal.timeout(20000) }); }
@@ -474,6 +489,12 @@ export function createLiveReadOnlyAdapters() {
         catch { database = { state: "unknown", evidence: null }; }
         try {
           const stored = (await objects(p.userId)).map(x => ({ bucket: x.bucket_id, key: x.name, identity: x.id, size: x.size, contentType: x.content_type, version: x.version, etag: x.etag, createdAt: x.created_at, updatedAt: x.updated_at }));
+          // SQL omission is inventory evidence, not external verified absence.
+          // Corroborate every omitted owned target; ambiguous or conflicting GET
+          // results keep this observation UNKNOWN without rewriting old evidence.
+          for (const target of p.storage.filter(x => !stored.some(y => y.bucket === x.bucket && y.key === x.key))) {
+            if (!await storageAbsenceGet(target)) fail("Storage external absence unknown");
+          }
           storage = { state: stored.length ? "present" : "absent", evidence: stored };
         } catch { storage = { state: "unknown", evidence: null }; }
         const providerState = await presenceGet(`https://api.elevenlabs.io/v1/voices/${p.providerId}`, { "xi-api-key": secrets.provider }, p.providerId, "provider", bControl);
