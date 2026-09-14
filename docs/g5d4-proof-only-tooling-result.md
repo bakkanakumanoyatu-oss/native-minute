@@ -1,5 +1,59 @@
 # G5D-4 proof-only tooling result
 
+## G5D4 final live proof closeout preparation — 2026-09-14
+
+MODE: `G5D4_LIVE_DELETION_PROOF_FINAL_CLOSEOUT_PREPARATION`.
+
+Status: `G5D4_LIVE_DELETION_PROOF_FINAL_CLOSEOUT_PREPARED_PENDING_INDEPENDENT_REVIEW`. Accepted authority: `G5D4_LIVE_DELETION_PROOF_FINAL_READ_ONLY_CLOSEOUT_RECONCILIATION`, verdict **`G5D4 LIVE DELETION PROOF CLOSEABLE`**. G5D4=`LIVE DELETION PROOF CLOSEABLE`; destructive execution=`COMPLETE`; all five stages are terminal; next destructive action=`NONE / terminal`. This section records the accepted reconciliation, not a new live observation or an independent closeout review. Earlier sections remain implementation-time history; their pending findings, incomplete states and next actions do not override this latest G5D4 authority. Closed P1 findings are not reopened.
+
+### Exact fixture and evidence authority
+
+The accepted reconciliation binds the same Canonical Staging, exact User A, exact User B control and exact account deletion request across 32 saved snapshots. Snapshot/authorization/consume/capsule/post HMAC and exact bindings were checked. No raw user/request/resource identifiers, locators or private keys are copied here.
+
+A and B recording authority includes machine reconciliation, actual TTY Human checkpoints and recording acceptance. A uses the previously verified Human authority and the remaining manifest's exact identity/storage binding; its old key and some generations were unavailable at final reconciliation, so a fresh complete A manifest-chain verification is not claimed. B's checkpoint chain was reverified. The accepted Human Decision does not require old-manifest cryptographic inheritance to a new tooling commit or new historical route-origin machine attestation.
+
+**`B UNCHANGED = YES`**: the original control baseline, all invocation snapshots, each saved post and the final current read agree on the accepted material state. Auth and Provider material, all four Storage objects, and the DB row sets across 18 tables remain unchanged; B deletion artifacts are absent.
+
+### Final execution chain
+
+| Stage | Accepted invocation counts and final result |
+| --- | --- |
+| Provider | seal RPC=1; DELETE=1; second DELETE=0; verify=1; finalize=1. External voice ABSENT; target `verified_absent`; cleanup `succeeded`; sub-finalized; locator scrubbed. |
+| Storage | seal=1; exact targets=4: consent recording, voice sample, practice recording, reference audio. Each DELETE=exactly 1, each second DELETE=0, each verify succeeded; finalize=1. External objects ABSENT, `4/4 verified_absent`; cleanup `succeeded`; sub-finalized; locators scrubbed. |
+| Database | finalize=1; terminal; observed/deleted/anonymized/retained=`25 / 18 / 1 / 6`. DELETE-target residual rows=0; one quota event anonymized with owner/identifying data scrubbed and allowed operational retention preserved. Accepted atomic transaction, rollback and writer-fence contracts remain unchanged. |
+| Auth | Total DELETE dispatch=1. Initial malformed DELETE outcome remains historical; generation-1 recovery DELETE=0. External A Auth ABSENT; verification attempts=2; cleanup `succeeded`; sub-finalized; request `user_id` and Auth target NULL; failure fields NULL. |
+| Completion | invocation=1; request `completed`; `completed_at` non-null; `notification_status=not_needed`; failure fields NULL. Historical request `retry_count=1` retained; automatic retry/chaining=`0/0`. Completion reruns of Provider/Storage/Database/Auth=0. |
+
+Each executed action had exact-scope Human authorization, consume-once and maxCalls=1. The accepted inventory contains 20 unique consumed authorizations, including two failed launches that are not stage-execution authority; 18 invocations reached a captured canonical result. Expired/cancelled/unconsumed snapshots are not executions. No authorization reuse, duplicate destructive execution, automatic retry or chaining occurred. Auth recovery was a separately authorized no-delete invocation, not a second DELETE. No new authorization is granted by this document.
+
+Retained evidence **6/6** remains: request=1, Provider evidence=1, Storage evidence=4, with exact request relations and expected scrubbed owner/locator state. Completion caused no immediate purge. `completed_at=2026-09-14 13:34:35.176021+00`; `expires_at=2026-12-13 13:34:35.176021+00`, exactly `completed_at + 2160 hours` (7,776,000 seconds): the accepted 90-day audit retention. The anonymized quota row is separate from these six evidence rows. Guaranteed/instant physical backup purge or physical backup purge completion is **not claimed**.
+
+The internal planner may return `replay` for the completed request, but the Human TTY CLI's completed-request gate rejects before snapshot creation, authorization or wrapper dispatch. The accepted final reconciliation's offline source-isolated checks rejected all five stage entries with those calls=0. Current next destructive action remains **`NONE / terminal`**.
+
+### Historical failures and committed source lineage
+
+Preserved historical events: FD transport ENXIO; server-only runtime-condition gap; Provider non-404 not-found UNKNOWN; Storage HTTP400/body404 UNKNOWN; session-only counter STOP UNKNOWN; expired snapshots/cancelled authorizations; first Auth DELETE malformed outcome; and subsequent generation-1 no-delete recovery. Failed launches and UNKNOWN results are not rewritten, re-signed or promoted to PASS. Fresh successful evidence supplies final terminal authority; the history does not say every earlier attempt passed.
+
+| Correction / entry | Committed source |
+| --- | --- |
+| FD transport | `d0bc2e6756fc33fe9a879ce3d41acbae933fa170` |
+| react-server condition | `1b53b197b2943893938380ace6c4a506e42bfa49` |
+| Provider absence semantics | `0f1de09303d2874f59c6839387f006fc669f6db2` |
+| Storage absence semantics | `785ffd3dd3ea1d2406724450134c193d67333cc6` |
+| Human TTY CLI / final execution HEAD | `18dbc4c023df713fa44b2471f4a9ea40beb6a311` |
+
+Each correction was committed before the successful invocation using it; later fixes are not attributed to earlier failed attempts. Successful live execution did not depend on uncommitted source. Final reconciliation also confirmed the six relevant deployed Database finalizer/writer-fence/Completion function bodies matched repository authority.
+
+### Preparation boundary and review handoff
+
+Focused `P0/P1/P2/UNKNOWN=0/0/0/0`; program `0/0/1/0`. Known Auth P2 `auth_terminal_authority_missing` remains **nonblocking deferred**, does not invalidate this successful chain or block the completed request, and is not resolved here. **Gate 5 remains `OPEN`**. This records Canonical Staging G5D4 proof only; no Production deletion proof, App Store readiness, iPhone device acceptance or broader Gate 5 closeout is claimed.
+
+Preparation preflight: Developer root, branch `codex/g3-mobile-main-loop`, HEAD/upstream `18dbc4c023df713fa44b2471f4a9ea40beb6a311`, ahead/behind `0/0`, no tracked WIP. Only this existing result and `docs/current-state.md` are updated; no new document/framework, runtime/product/operator/schema change or private live evidence regeneration. Human authorization, consume, Provider/Storage/Database/Auth/Completion mutations, migration apply and Production access are all **0** in this preparation. Stage/commit/push=`0/0/0`; independent final closeout review precedes any commit. Allowed `.env.local.save` and `supabase/.temp/` remain unread, unhashed, unchanged and unstaged.
+
+Preparation validation: workspace and diff checks, commit SHA/count/status/current-state consistency, exact modified-path scope, unchanged historical bodies, and `npm run lint` **PASS** (no warnings/errors). Full tests/build/typecheck are not rerun for these documentation-only changes; prior reconciliation/live/offline results above are accepted history, not new executions in this preparation.
+
+Exact `NEXT_ONE_ACTION`: **`G5D4_LIVE_DELETION_PROOF_FINAL_CLOSEOUT_INDEPENDENT_READ_ONLY_REVIEW`**. No new destructive execution is needed.
+
 ## Human TTY single-invocation CLI — 2026-09-13
 
 MODE: `G5D4_REPOSITORY_MANAGED_HUMAN_TTY_SINGLE_INVOCATION_CLI_MINIMUM_IMPLEMENTATION_V1`.
