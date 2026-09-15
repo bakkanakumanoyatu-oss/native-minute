@@ -486,6 +486,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string | null;
+          retention_account_deletion_request_id: string | null;
           status: VoiceDeletionOperationStatus;
           current_stage: VoiceDeletionStage | null;
           snapshot_version: string;
@@ -519,6 +520,7 @@ export interface Database {
           updated_at: string;
         };
         Insert: {
+          retention_account_deletion_request_id?: string | null;
           id?: string;
           user_id?: string | null;
           status?: VoiceDeletionOperationStatus;
@@ -554,6 +556,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
+          retention_account_deletion_request_id?: string | null;
           id?: string;
           user_id?: string | null;
           status?: VoiceDeletionOperationStatus;
@@ -997,6 +1000,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string | null;
+          retention_account_deletion_request_id: string | null;
           event_type: QuotaEventType;
           category: QuotaEventCategory;
           status: QuotaEventStatus;
@@ -1022,6 +1026,7 @@ export interface Database {
           updated_at: string;
         };
         Insert: {
+          retention_account_deletion_request_id?: string | null;
           id?: string;
           user_id: string | null;
           event_type: QuotaEventType;
@@ -1049,6 +1054,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
+          retention_account_deletion_request_id?: string | null;
           id?: string;
           user_id?: string | null;
           event_type?: QuotaEventType;
@@ -1206,6 +1212,22 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      routine_purge_retained_evidence: {
+        Args: { p_resource: string; p_after_id?: string | null };
+        Returns: {
+          examined: number; purged: number; skipped_hold: number;
+          skipped_not_expired: number; skipped_unsafe: number;
+          legacy_hold_linkage_unresolved: number; next_after_id: string | null;
+        }[];
+      };
+      apply_retained_evidence_legal_hold: {
+        Args: {
+          p_deletion_request_id: string; p_quota_ids: string[]; p_voice_ids: string[];
+          p_authority_ref: string; p_expected_set_authority_ref?: string | null;
+        };
+        Returns: string;
+      };
+
       persist_review_bundle: {
         Args: {
           p_take_id?: string | null;
