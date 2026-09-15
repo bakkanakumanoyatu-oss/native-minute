@@ -118,7 +118,7 @@ function createServerWriter(input: { reservationError?: { message: string } } = 
     created_at: "2026-08-22T00:00:00.000Z"
   };
   const rpc = vi.fn(async (name: string, args: Record<string, unknown>) => {
-    if (name === "reserve_voice_asset_write_intent") {
+    if (name === "reserve_voice_source_registration") {
       if (input.reservationError) {
         return { data: null, error: input.reservationError };
       }
@@ -139,6 +139,7 @@ function createServerWriter(input: { reservationError?: { message: string } } = 
       return { data: inserted, error: null };
     }
 
+    if (name === "begin_voice_source_registration") return { data: true, error: null };
     throw new Error(`unexpected server RPC: ${name}`);
   });
   const writer = {
@@ -187,11 +188,11 @@ describe("G5C-A server-owned voice binding provenance", () => {
     expect(assertCurrentProcessingConsent).toHaveBeenCalledWith(client, USER_A, "voice_cloning");
     expect(createVoice).toHaveBeenCalledWith(expect.objectContaining({ userId: USER_A, consentId: CONSENT_A }));
     expect(createSupabaseAdminClient).toHaveBeenCalledTimes(1);
-    expect(rpc).toHaveBeenNthCalledWith(1, "reserve_voice_asset_write_intent", expect.objectContaining({
+    expect(rpc).toHaveBeenNthCalledWith(1, "reserve_voice_source_registration", expect.objectContaining({
       p_user_id: USER_A,
       p_kind: "voice_create"
     }));
-    expect(rpc).toHaveBeenNthCalledWith(2, "finalize_voice_create_write_intent", expect.objectContaining({
+    expect(rpc).toHaveBeenNthCalledWith(3, "finalize_voice_create_write_intent", expect.objectContaining({
       p_user_id: USER_A,
       p_consent_id: CONSENT_A,
       p_provider_voice_id: "provider-returned-voice-id"

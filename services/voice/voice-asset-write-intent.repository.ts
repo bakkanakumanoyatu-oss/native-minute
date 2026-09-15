@@ -29,6 +29,10 @@ function mapIntentError(error: RpcError) {
     return new AppError(409, "削除処理または別の音声保存処理が進行中です。完了後にもう一度お試しください。");
   }
 
+  if (["source_reupload_required", "unsafe_locator_or_ownership", "malformed_canonical_state"].some(code => message.includes(code))) {
+    return new AppError(409, "この音声は登録に再利用できません。新しい音声をアップロードしてください。");
+  }
+
   return new AppError(500, "voice asset の安全な保存予約に失敗しました。");
 }
 
@@ -76,6 +80,53 @@ export function createVoiceAssetWriteIntentRepository(
     }
 
     return assertIntent(result.data, input.leaseToken);
+  }
+
+  async function reserveRegistration(input: {
+    userId: string; kind: "voice_create" | "voice_consent_create"; leaseToken: string;
+    consentId: string; provider: string; samplePath?: string | null; recordingPath?: string | null;
+  }) {
+    const result = asRpcResult<IntentRow>(await client.rpc("reserve_voice_source_registration", {
+      p_user_id: input.userId, p_kind: input.kind, p_lease_token: input.leaseToken,
+      p_consent_id: input.consentId, p_provider: input.provider,
+      p_sample_path: input.samplePath ?? null, p_recording_path: input.recordingPath ?? null
+    }));
+    if (result.error) throw mapIntentError(result.error);
+    return assertIntent(result.data, input.leaseToken);
+  }
+
+  async function beginRegistration(input: VoiceAssetWriteReservation & { userId: string }) {
+    const result = await client.rpc("begin_voice_source_registration", {
+      p_intent_id: input.intentId, p_user_id: input.userId, p_lease_token: input.leaseToken
+    });
+    if (result.error || result.data !== true) {
+      throw new AppError(409, "音声登録を安全に開始できませんでした。登録状態を確認してください。");
+    }
+  }
+
+  async function finishConsentSourceRead(input: VoiceAssetWriteReservation & {
+    userId: string; readSucceeded: boolean;
+  }) {
+    const result = await client.rpc("finish_voice_consent_source_read", {
+      p_intent_id: input.intentId, p_user_id: input.userId, p_lease_token: input.leaseToken,
+      p_read_succeeded: input.readSucceeded
+    });
+    if (result.error || result.data !== true) {
+      throw new AppError(409, "同意録音の読込完了を安全に確定できませんでした。登録状態を確認してください。");
+    }
+  }
+
+  async function finalizeConsent(input: VoiceAssetWriteReservation & {
+    userId: string; consentedAt: string; metadata: Json;
+  }) {
+    const result = await client.rpc("finalize_voice_consent_write_intent", {
+      p_intent_id: input.intentId, p_user_id: input.userId, p_lease_token: input.leaseToken,
+      p_consented_at: input.consentedAt, p_metadata: input.metadata
+    });
+    if (result.error || !result.data?.id) {
+      throw new AppError(500, "同意記録の保存完了を確認できませんでした。登録状態の確認が必要です。");
+    }
+    return result.data;
   }
 
   async function cancelKnownNoSideEffect(input: VoiceAssetWriteReservation & { userId: string }) {
@@ -190,6 +241,10 @@ export function createVoiceAssetWriteIntentRepository(
 
   return {
     reserve,
+    reserveRegistration,
+    beginRegistration,
+    finishConsentSourceRead,
+    finalizeConsent,
     cancelKnownNoSideEffect,
     finalizeUpload,
     finalizeRecordingUpload,

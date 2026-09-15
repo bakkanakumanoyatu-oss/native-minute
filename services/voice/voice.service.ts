@@ -407,23 +407,37 @@ export async function createVoiceConsent(client: AppSupabaseClient, userId: stri
     throw new AppError(503, providerStatus.message ?? `VOICE_PROVIDER=${providerStatus.provider} は current repo では利用できません。`);
   }
 
-  const resolvedRecording = await resolveOwnedVoiceConsentRecordingInput(client, userId, input.recording ?? null);
   const trimmedName = input.name?.trim() || undefined;
   const trimmedLanguage = input.language?.trim() || undefined;
-
   assertProviderConsentRequirements({
-    requirements: providerStatus.requirements,
-    name: trimmedName,
-    language: trimmedLanguage,
-    recording: resolvedRecording
+    requirements: providerStatus.requirements, name: trimmedName, language: trimmedLanguage,
+    recording: input.recording ?? null
   });
-
+  await assertAuthenticatedVoiceMutationUser(client, userId);
+  const writeIntents = createVoiceAssetWriteIntentRepository();
+  const reservation = await writeIntents.reserveRegistration({
+    userId, kind: "voice_consent_create", leaseToken: randomUUID(),
+    consentId: randomUUID(), provider: providerStatus.provider,
+    recordingPath: input.recording?.audioPath ?? null
+  });
+  // Durable admission and single-reader fencing precede the resolver's download.
+  await writeIntents.beginRegistration({ ...reservation, userId });
+  let resolvedRecording;
+  try {
+    resolvedRecording = await resolveOwnedVoiceConsentRecordingInput(client, userId, input.recording ?? null);
+  } catch (error) {
+    // The awaited read has settled; no Provider call or dispatch CAS has begun.
+    // Never use this terminalization for a Provider or dispatch-response failure.
+    await writeIntents.finishConsentSourceRead({ ...reservation, userId, readSucceeded: false });
+    throw error;
+  }
   const provider = createConfiguredVoiceProvider();
   const termsAcceptedAt = new Date().toISOString();
   // Fixed boundary:
   // - service re-validates owned recording references first
   // - provider adapter may call an external consent endpoint
   // - canonical consent state still persists in voice_consents
+  await writeIntents.finishConsentSourceRead({ ...reservation, userId, readSucceeded: true });
   const providerConsent = await provider.createConsent({
     userId,
     provider: providerStatus.provider,
@@ -433,30 +447,13 @@ export async function createVoiceConsent(client: AppSupabaseClient, userId: stri
     recording: resolvedRecording ?? undefined
   });
 
-  const voiceConsents = client.from("voice_consents") as unknown as InsertSingleBuilder<
-    Database["public"]["Tables"]["voice_consents"]["Insert"],
-    VoiceConsentRow
-  >;
-
-  const { data, error } = await voiceConsents
-    .insert({
-      user_id: userId,
-      provider: providerStatus.provider,
-      consented_at: providerConsent.consentedAt,
-      metadata: {
-        providerConsentId: providerConsent.providerConsentId,
-        termsAcceptedAt,
-        name: trimmedName,
-        language: trimmedLanguage,
-        recording: resolvedRecording
-      }
-    })
-    .select("*")
-    .single();
-
-  if (error) {
-    throw mapVoiceError("同意記録の保存", error);
-  }
+  const data = await writeIntents.finalizeConsent({
+    ...reservation, userId, consentedAt: providerConsent.consentedAt,
+    metadata: {
+      providerConsentId: providerConsent.providerConsentId,
+      termsAcceptedAt, name: trimmedName, language: trimmedLanguage, recording: resolvedRecording
+    }
+  });
 
   // Legacy voice_consents keeps provider-specific workflow history. The separate
   // record below is the versioned product consent used by new clone creation.
@@ -528,14 +525,14 @@ export async function createUserVoice(client: AppSupabaseClient, userId: string,
     throw new AppError(400, `${providerStatus.requirements.voiceLabel} では、見本音声 path に app-owned な storage://voice-samples/... 参照が必要です。`);
   }
 
+  if (trimmedSampleAudioPath && !parseVoiceSampleAudioReference({ audioPath: trimmedSampleAudioPath })) {
+    throw new AppError(400, "見本音声を新しくアップロードしてください。");
+  }
+
   const resolvedSampleAudio =
     (await resolveOwnedVoiceSampleInput(client, userId, consent.id, input.sampleAudio ?? null)) ??
     (resolvedFallbackSampleAudio ??
-      (trimmedSampleAudioPath
-        ? {
-            audioPath: trimmedSampleAudioPath
-          }
-        : null));
+      null);
 
   if (providerStatus.requirements.requiresSampleAudio && !resolvedSampleAudio) {
     throw new AppError(400, `${providerStatus.requirements.voiceLabel} では見本音声 sample が必要です。先に upload 済み sample を用意してください。`);
@@ -543,12 +540,11 @@ export async function createUserVoice(client: AppSupabaseClient, userId: string,
 
   const provider = createConfiguredVoiceProvider();
   const writeIntents = createVoiceAssetWriteIntentRepository();
-  const reservation = await writeIntents.reserve({
-    userId,
-    kind: "voice_create",
-    leaseToken: randomUUID(),
-    leaseSeconds: 900
+  const reservation = await writeIntents.reserveRegistration({
+    userId, kind: "voice_create", leaseToken: randomUUID(), consentId: consent.id,
+    provider: providerStatus.provider, samplePath: resolvedSampleAudio?.audioPath ?? null
   });
+  await writeIntents.beginRegistration({ ...reservation, userId });
   // Fixed boundary:
   // - service resolves owned sample references before provider calls
   // - provider adapter handles multipart/provider-specific createVoice details
@@ -559,7 +555,7 @@ export async function createUserVoice(client: AppSupabaseClient, userId: string,
     providerConsentId: providerConsentId || undefined,
     label: input.label,
     sampleAudio: resolvedSampleAudio ?? undefined,
-    sampleAudioPath: trimmedSampleAudioPath || undefined
+    sampleAudioPath: resolvedSampleAudio?.audioPath
   });
 
   return writeIntents.finalizeVoice({
@@ -568,7 +564,7 @@ export async function createUserVoice(client: AppSupabaseClient, userId: string,
     consentId: consent.id,
     providerVoiceId: created.providerVoiceId,
     label: input.label,
-    sampleAudioPath: resolvedSampleAudio?.audioPath ?? (trimmedSampleAudioPath || null)
+    sampleAudioPath: resolvedSampleAudio?.audioPath ?? null
   });
 }
 

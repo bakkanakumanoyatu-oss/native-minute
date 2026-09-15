@@ -142,6 +142,7 @@ export type VoiceDeletionTargetVerificationStatus =
   | "unavailable"
   | "manual_required";
 export type VoiceAssetWriteIntentKind =
+  | "voice_consent_create"
   | "voice_create"
   | "script_audio_create"
   | "voice_sample_upload"
@@ -593,8 +594,31 @@ export interface Database {
         };
         Relationships: [];
       };
+      voice_source_uses: {
+        Row: { source_upload_intent_id: string; registration_intent_id: string; user_id: string; requires_audio: boolean };
+        Insert: { source_upload_intent_id: string; registration_intent_id: string; user_id: string; requires_audio: boolean };
+        Update: never;
+        Relationships: [];
+      };
       voice_asset_write_intents: {
         Row: {
+          source_lifecycle_known: boolean;
+          first_registered_at: string | null;
+          first_registration_intent_id: string | null;
+          cleanup_due_at: string | null;
+          cleanup_state: "available" | "claimed" | "completed" | "manual_required" | null;
+          cleanup_authorized_at: string | null;
+          cleanup_completed_at: string | null;
+          cleanup_lease_token: string | null;
+          cleanup_lease_expires_at: string | null;
+          cleanup_attempt_count: number;
+          cleanup_failure: string | null;
+          registration_consent_id: string | null;
+          registration_provider: string | null;
+          registration_source_read_started_at: string | null;
+          registration_dispatched_at: string | null;
+          registration_voice_id: string | null;
+
           id: string;
           user_id: string;
           kind: VoiceAssetWriteIntentKind;
@@ -610,6 +634,23 @@ export interface Database {
           updated_at: string;
         };
         Insert: {
+          source_lifecycle_known?: boolean;
+          first_registered_at?: string | null;
+          first_registration_intent_id?: string | null;
+          cleanup_due_at?: string | null;
+          cleanup_state?: "available" | "claimed" | "completed" | "manual_required" | null;
+          cleanup_authorized_at?: string | null;
+          cleanup_completed_at?: string | null;
+          cleanup_lease_token?: string | null;
+          cleanup_lease_expires_at?: string | null;
+          cleanup_attempt_count?: number;
+          cleanup_failure?: string | null;
+          registration_consent_id?: string | null;
+          registration_provider?: string | null;
+          registration_source_read_started_at?: string | null;
+          registration_dispatched_at?: string | null;
+          registration_voice_id?: string | null;
+
           id?: string;
           user_id: string;
           kind: VoiceAssetWriteIntentKind;
@@ -1543,6 +1584,26 @@ export interface Database {
         };
         Returns: Database["public"]["Tables"]["voice_deletion_operations"]["Row"];
       };
+      reserve_voice_source_registration: {
+        Args: { p_user_id: string; p_kind: string; p_lease_token: string; p_consent_id: string; p_provider: string; p_sample_path?: string | null; p_recording_path?: string | null };
+        Returns: Database["public"]["Tables"]["voice_asset_write_intents"]["Row"];
+      };
+      begin_voice_source_registration: {
+        Args: { p_intent_id: string; p_user_id: string; p_lease_token: string };
+        Returns: boolean;
+      };
+      finish_voice_consent_source_read: {
+        Args: { p_intent_id: string; p_user_id: string; p_lease_token: string; p_read_succeeded: boolean };
+        Returns: boolean;
+      };
+      finalize_voice_consent_write_intent: {
+        Args: { p_intent_id: string; p_user_id: string; p_lease_token: string; p_consented_at: string; p_metadata: Json };
+        Returns: Database["public"]["Tables"]["voice_consents"]["Row"];
+      };
+      select_voice_source_cleanup: { Args: { p_after_id?: string | null }; Returns: string | null };
+      claim_voice_source_cleanup: { Args: { p_source_id: string; p_token: string }; Returns: Json };
+      check_voice_source_cleanup: { Args: { p_source_id: string; p_token: string }; Returns: boolean };
+      finish_voice_source_cleanup: { Args: { p_source_id: string; p_token: string; p_result: string }; Returns: boolean };
       reserve_voice_asset_write_intent: {
         Args: {
           p_user_id: string;

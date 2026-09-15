@@ -69,7 +69,10 @@
     "home:css-smoke": "node scripts/home-css-smoke.mjs",
     "e2e:auth-guard": "npx playwright test tests/e2e/auth-guard.spec.ts",
     "e2e:smoke": "npx playwright test tests/e2e/auth-guard.spec.ts tests/e2e/smoke.spec.ts",
-    "e2e:setup-voice": "npx playwright test tests/e2e/smoke.spec.ts --grep \"minimal setup voice UI flow|setup voice|mock voice\""
+    "e2e:setup-voice": "npx playwright test tests/e2e/smoke.spec.ts --grep \"minimal setup voice UI flow|setup voice|mock voice\"",
+    "voice:source-cleanup": "node --conditions=react-server --import tsx scripts/voice-source-cleanup-operator.mjs",
+    "voice:source-cleanup:isolated-test": "python3 scripts/gate5-source-cleanup-isolated-test.py",
+    "voice:source-cleanup:self-test": "node --conditions=react-server --import tsx scripts/voice-source-cleanup-operator-self-test.mjs"
   },
   "dependencies": {
     "@capacitor/browser": "^8.0.4",

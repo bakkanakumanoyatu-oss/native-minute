@@ -19,6 +19,22 @@ The corresponding Privacy Policy, Account Deletion, and Support release candidat
 - The 24-hour target must not become a public guarantee until enforcement, retry, failure handling, and physical cleanup have runtime proof for the production configuration.
 - Consent withdrawal stops future processing that depends on that consent. Voice Data deletion and Account deletion remain separate user actions with separate scopes.
 
+#### R1 shared-source cleanup eligibility decision — 2026-09-15
+
+Decision ID: `HDC_GATE5_R1_SHARED_SOURCE_CLEANUP_ELIGIBILITY_V1`; status: `APPROVED_BY_HUMAN`. This clarification controls R1 shared-source eligibility; the exact future implementation authority is in the [R1 matrix contract](g5d-2d-current-schema-delete-anonymize-retain-cascade-matrix-authority.md#r1-shared-source-cleanup-authority--2026-09-15).
+
+1. For each app-owned source material reused by multiple Provider registrations, fix the cleanup anchor at its **first durable Provider registration success**. Later registration successes never extend or restart it.
+2. Cleanup due is that anchor + **24 elapsed hours**, an internal target, not a public SLA or absolute deletion guarantee.
+3. A registration / retry already started and nonterminal when due arrives may block cleanup to avoid breaking active use. This includes registrations started concurrently **before the first durable success**. Blocking does not start another retention period; after safe terminality, a separate routine cleanup invocation may collect the already-due source.
+4. New registration is prohibited once due arrives, even if cleanup has not run. It is also prohibited after cleanup authority acquisition or cleanup start. Future possible reuse alone never justifies retention.
+5. Retry means continuation of the **same previously started registration attempt / operation**, started before cleanup authority acquisition; a newly created registration cannot be relabeled retry to evade cleanup.
+6. After cleanup starts, registration requiring source audio needs a **fresh upload with a new source identity**. After cleanup succeeds, a leftover source path / locator never authorizes reuse: consult canonical cleanup state and fail closed.
+7. App-owned source audio cleanup is separate from retention of required consent/audit evidence. This decision does not change consent records, versions, timestamps or purpose evidence; Provider-side voice retention/deletion or consent authority; practice-recording or Account-deletion retention; legal-hold scope; or R2/R3 authority.
+
+Authority resolution only: R1=`OPEN / AUTHORITY_RESOLVED / NOT_IMPLEMENTED`. No migration, product source/types/tests/operator changes, DELETE, Staging/Production access, or external Provider operation is authorized by this documentation task. Next: `GATE5_R1_REGISTERED_SOURCE_MATERIAL_ROUTINE_CLEANUP_FOCUSED_IMPLEMENTATION_V2`.
+
+Implementation update (2026-09-15): R1=`CODE CLOSED`; authoritative verdict `GATE5_R1_REGISTERED_SOURCE_MATERIAL_ROUTINE_CLEANUP_INDEPENDENT_REREVIEW_PASS`, R1-P1-01 independent rereview PASS / CLOSED, focused `P0/P1/P2/UNKNOWN=0/0/0/0`. See [R1 code closeout](g5d-2d-current-schema-delete-anonymize-retain-cascade-matrix-authority.md#r1-independent-rereview-code-closeout--2026-09-15). Production-like runtime proof=`PENDING`; this is not R1 FINAL CLOSED. 0030 is a repository migration, unapplied to Staging/Production. R2/R3=`CODE CLOSED / COMMITTED / PUSHED`; R4=`WAITING_ON_TECHNICAL_CONTROLS`; Gate5=`OPEN`; G5D4=`LIVE DELETION PROOF CLOSED`; known Auth P2 remains nonblocking deferred. No Human Decision, public-copy or retention-policy change. Next: R1 Production-like runtime proof under existing authority and minimum scope; define execution after the commit/push response, without starting it in this unit.
+
 ### 2. Learning data
 
 Practice recordings, takes, transcripts, pronunciation results, weak words, coaching feedback, latest/best selections, saved progress, and related learning history are retained while needed to provide the service. They remain until the user deletes the relevant data or completes Account deletion, subject to a valid legal hold.
