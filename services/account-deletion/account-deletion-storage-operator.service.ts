@@ -1,3 +1,4 @@
+import { accountDeletionLegalHoldBlocks } from "./account-deletion-legal-hold";
 import type { Database } from "@/types/database";
 import { ACCOUNT_DELETION_DESTRUCTIVE_GUARD_ENV } from "./account-deletion.service";
 import {
@@ -264,7 +265,7 @@ async function lookupAccountDeletionStorageOperatorRequest(input: {
   const { data, error } = await admin
     .from("account_deletion_requests")
     .select(
-      "id,user_id,anonymized_user_ref,status,provider_cleanup_status,provider_sub_finalized_at,storage_cleanup_status,storage_snapshot_version,storage_snapshot_status,storage_snapshot_seal_version,storage_snapshot_collection_token,storage_snapshot_collection_started_at,storage_snapshot_sealed_at,storage_snapshot_fingerprint,storage_snapshot_target_count,storage_verified_absent_count,storage_runner_lease_token,storage_runner_lease_expires_at,storage_sub_finalized_at,storage_locator_scrubbed_at"
+      "legal_hold_active,legal_hold_scope,id,user_id,anonymized_user_ref,status,provider_cleanup_status,provider_sub_finalized_at,storage_cleanup_status,storage_snapshot_version,storage_snapshot_status,storage_snapshot_seal_version,storage_snapshot_collection_token,storage_snapshot_collection_started_at,storage_snapshot_sealed_at,storage_snapshot_fingerprint,storage_snapshot_target_count,storage_verified_absent_count,storage_runner_lease_token,storage_runner_lease_expires_at,storage_sub_finalized_at,storage_locator_scrubbed_at"
     )
     .eq(input.field, input.value)
     .limit(2);
@@ -301,6 +302,7 @@ export async function resolveAccountDeletionStorageOperatorRequest(
     if (result.rows.length !== 1) return { ok: false, safeReasonCode: "request_target_ambiguous" };
 
     const row = result.rows[0];
+    if (accountDeletionLegalHoldBlocks(row, "storage")) return { ok: false, safeReasonCode: "legal_hold_active" };
     const targetMatches = lookupField === "id"
       ? row.id.toLowerCase() === requestRef.toLowerCase()
       : row.anonymized_user_ref.toLowerCase() === requestRef.toLowerCase();
@@ -479,7 +481,7 @@ export async function runAccountDeletionStorageOperatorStage(
   try {
     const repository = options.repository ?? (options.createRepository ?? createAccountDeletionStorageDurableRepository)();
     const request = await repository.getRequestForOwner(deletionRequestId, userId);
-    if (!request || !STORAGE_OPERATOR_REQUEST_STATUSES.has(request.status)) {
+    if (!request || accountDeletionLegalHoldBlocks(request, "storage") || !STORAGE_OPERATOR_REQUEST_STATUSES.has(request.status)) {
       return stageResult({ status: "blocked", safeReasonCode: "storage_cleanup_not_runnable", marker: "not_runnable" });
     }
     if (!hasPersistedProviderTerminal(request)) {

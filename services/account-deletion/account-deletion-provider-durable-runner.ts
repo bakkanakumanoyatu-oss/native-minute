@@ -1,3 +1,4 @@
+import { accountDeletionLegalHoldBlocks } from "./account-deletion-legal-hold";
 import "server-only";
 
 import { randomUUID } from "node:crypto";
@@ -173,6 +174,8 @@ export async function runAccountDeletionProviderDurableStep(
   ) {
     return { kind: "not_runnable" };
   }
+
+  if (accountDeletionLegalHoldBlocks(request, "provider")) return { kind: "not_runnable" };
 
   const leaseToken = (dependencies.createLeaseToken ?? randomUUID)();
   const now = dependencies.now ?? (() => new Date());

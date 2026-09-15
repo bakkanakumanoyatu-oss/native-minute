@@ -1,6 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import type { ReconcileVoiceAbsenceResult, VoiceDeletionProviderAdapter } from "@/providers/voice-deletion";
+import { VoiceDeletionLegalHoldError } from "./voice-deletion.repository";
 import type {
   ProviderVoiceDeleteResult,
   ProviderVoiceReconciliationResult,
@@ -19,6 +20,7 @@ type ProviderStepInput = {
 };
 
 type ProviderStepResult =
+  | { kind: "blocked"; safeReasonCode: "legal_hold_active" }
   | { kind: "progressed" }
   | { kind: "retry_later" }
   | { kind: "manual_required" }
@@ -289,6 +291,11 @@ export async function runVoiceDeletionProviderStep(
       : isTransient(providerResult)
         ? { kind: "retry_later" }
         : { kind: "progressed" };
+  } catch (error) {
+    if (error instanceof VoiceDeletionLegalHoldError) {
+      return { kind: "blocked", safeReasonCode: error.safeReasonCode };
+    }
+    throw error;
   } finally {
     await dependencies.repository.releaseLease({ operationId: input.operationId, userId: input.userId, leaseToken });
   }

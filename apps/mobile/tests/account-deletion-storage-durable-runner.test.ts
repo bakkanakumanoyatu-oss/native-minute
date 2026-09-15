@@ -62,6 +62,8 @@ function createSealFixture(options: {
   const request = {
     id: REQUEST_ID,
     user_id: USER_A,
+    legal_hold_active: false,
+    legal_hold_scope: null,
     provider_cleanup_status: "succeeded",
     provider_sub_finalized_at: NOW.toISOString(),
     storage_cleanup_status: "pending",
@@ -163,6 +165,8 @@ function createRunnerFixture(options: RunnerOptions = {}) {
     id: REQUEST_ID,
     user_id: USER_A,
     status: "confirmed",
+    legal_hold_active: false,
+    legal_hold_scope: null,
     provider_cleanup_status: "succeeded",
     provider_sub_finalized_at: NOW.toISOString(),
     storage_cleanup_status: "pending",

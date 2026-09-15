@@ -1,3 +1,4 @@
+import { accountDeletionLegalHoldBlocks, selectAccountDeletionResumeStage, type AccountDeletionLegalHoldState } from "./account-deletion-legal-hold";
 import { randomBytes } from "node:crypto";
 import { AppError } from "@/lib/errors";
 import { getCostGuardIssue } from "@/lib/cost-guard";
@@ -854,7 +855,8 @@ export function planAccountDeletionStages(
   providerCleanup?: ElevenLabsProviderCleanupDryRun,
   storageCleanup?: StorageCleanupDryRun,
   databaseCleanup?: DatabaseCleanupDryRun,
-  authDeletion?: SupabaseAuthDeletionDryRun
+  authDeletion?: SupabaseAuthDeletionDryRun,
+  legalHold?: AccountDeletionLegalHoldState
 ): AccountDeletionJobStageDryRun[] {
   const runGuard = validateDeletionRequestCanRun(deletionRequest);
 
@@ -900,7 +902,7 @@ export function planAccountDeletionStages(
     {
       name: "provider_cleanup",
       order: 1,
-      status: providerStatus,
+      status: providerStatus === "ready" && accountDeletionLegalHoldBlocks(legalHold ?? {}, "provider") ? "blocked" : providerStatus,
       count: providerCleanup?.cleanup.required ?? inventory.provider.elevenLabsVoiceCandidates,
       guard: "Provider cleanup must run before storage, DB, and Auth cleanup.",
       notes: [
@@ -913,7 +915,7 @@ export function planAccountDeletionStages(
     {
       name: "storage_cleanup",
       order: 2,
-      status: storageStatus,
+      status: storageStatus === "ready" && accountDeletionLegalHoldBlocks(legalHold ?? {}, "storage") ? "blocked" : storageStatus,
       count: getStorageCleanupRequiredCount(storageCleanup) ?? getStorageInventoryCount(inventory),
       guard: "Storage cleanup can run only after provider cleanup is succeeded or not_needed.",
       notes: [
@@ -928,7 +930,7 @@ export function planAccountDeletionStages(
     {
       name: "db_cleanup",
       order: 3,
-      status: dbStatus,
+      status: dbStatus === "ready" && accountDeletionLegalHoldBlocks(legalHold ?? {}, "database") ? "blocked" : dbStatus,
       count: getDatabaseCleanupRequiredCount(databaseCleanup) ?? getDatabaseInventoryCount(inventory),
       guard: "DB cleanup can run only after storage cleanup is succeeded or not_needed.",
       notes: [
@@ -942,7 +944,7 @@ export function planAccountDeletionStages(
     {
       name: "auth_cleanup",
       order: 4,
-      status: authStatus,
+      status: authStatus === "ready" && accountDeletionLegalHoldBlocks(legalHold ?? {}, "auth") ? "blocked" : authStatus,
       count: authDeletion?.candidateCount ?? 1,
       guard: "Supabase Auth deletion can run only after DB cleanup is succeeded or not_needed.",
       notes: [
@@ -956,7 +958,7 @@ export function planAccountDeletionStages(
     {
       name: "completion",
       order: 5,
-      status: completionStatus,
+      status: completionStatus === "ready" && accountDeletionLegalHoldBlocks(legalHold ?? {}, "completion") ? "blocked" : completionStatus,
       count: null,
       guard: "Completion can be recorded only after Auth cleanup is succeeded or not_needed.",
       notes: [
@@ -4037,7 +4039,14 @@ export async function runAccountDeletionJobDryRun(userId: string): Promise<Accou
   const authDeletion = await planSupabaseAuthDeletionDryRun(userId);
   const deletionRequest = inventory.deletionRequest;
   const runGuard = validateDeletionRequestCanRun(deletionRequest);
-  const stages = planAccountDeletionStages(deletionRequest, inventory, providerCleanup, storageCleanup, databaseCleanup, authDeletion);
+  const current = await getActiveAccountDeletionRequest(userId);
+  const legalHold = current?.id === deletionRequest.id ? current : undefined;
+  const nextStage = legalHold ? selectAccountDeletionResumeStage(legalHold) : null;
+  const stageNames = { provider: "provider_cleanup", storage: "storage_cleanup", database: "db_cleanup", auth: "auth_cleanup", completion: "completion" };
+  const stages = planAccountDeletionStages(legalHold ? toView(legalHold) : deletionRequest, inventory, providerCleanup, storageCleanup, databaseCleanup, authDeletion, legalHold)
+    .map(stage => stage.status === "ready" && (nextStage === null || stage.name !== stageNames[nextStage])
+      ? { ...stage, status: "blocked" as const }
+      : stage);
 
   return {
     deletionRequest,

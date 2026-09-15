@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: vi.fn() }));
 
 import { createElevenLabsVoiceDeletionProviderAdapter, type VoiceDeletionProviderAdapter } from "@/providers/voice-deletion";
 import { runVoiceDeletionProviderStep } from "@/services/voice-deletion/voice-deletion-provider-runner";
-import type { VoiceDeletionRepository } from "@/services/voice-deletion/voice-deletion.repository";
+import { createVoiceDeletionRepository, type VoiceDeletionRepository } from "@/services/voice-deletion/voice-deletion.repository";
 
 type Operation = {
   id: string;
@@ -172,6 +173,62 @@ function dependencies(repository: VoiceDeletionRepository, providerAdapter: Voic
 }
 
 describe("G5C-B2b lease-aware provider voice runner", () => {
+  it.each([0, 1, 3])("R3 blocks DB hold rejection before DELETE at attempt count %i and releases the coordination lease", async (count) => {
+    const { repository, target, operation } = createFixture();
+    if (count > 0) Object.assign(target, { status: "delete_requested", reconciliation_status: "present", delete_attempt_count: count });
+    const before = structuredClone({ target, operation });
+    // Exercise production SQL-error mapping as well as the production runner.
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: { code: "23514", message: "legal_hold_active" } });
+    repository.beginProviderVoiceDeleteAttempt = createVoiceDeletionRepository(
+      { rpc } as unknown as Parameters<typeof createVoiceDeletionRepository>[0]
+    ).beginProviderVoiceDeleteAttempt;
+    const adapter = createAdapter();
+    await expect(runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter)))
+      .resolves.toEqual({ kind: "blocked", safeReasonCode: "legal_hold_active" });
+    expect(rpc).toHaveBeenCalledWith("begin_provider_voice_delete_attempt", expect.objectContaining({ p_expected_delete_attempt_count: count }));
+    expect(adapter.deleteVoice).not.toHaveBeenCalled();
+    expect(adapter.reconcileVoiceAbsence).not.toHaveBeenCalled();
+    expect(repository.recordProviderVoiceDeleteResult).not.toHaveBeenCalled();
+    expect(repository.releaseLease).toHaveBeenCalledOnce();
+    expect({ target, operation }).toEqual(before);
+  });
+
+  it("R3 release allows a later invocation of the same operation without a blind retry or chaining", async () => {
+    const { repository, target } = createFixture();
+    const begin = repository.beginProviderVoiceDeleteAttempt;
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: { code: "23514", message: "legal_hold_active" } });
+    repository.beginProviderVoiceDeleteAttempt = createVoiceDeletionRepository(
+      { rpc } as unknown as Parameters<typeof createVoiceDeletionRepository>[0]
+    ).beginProviderVoiceDeleteAttempt;
+    const adapter = createAdapter();
+    await expect(runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter)))
+      .resolves.toEqual({ kind: "blocked", safeReasonCode: "legal_hold_active" });
+    expect(target.delete_attempt_count).toBe(0);
+    expect(adapter.deleteVoice).not.toHaveBeenCalled();
+    repository.beginProviderVoiceDeleteAttempt = begin;
+    adapter.deleteVoice.mockResolvedValue({ kind: "deleted" });
+    await expect(runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter)))
+      .resolves.toEqual({ kind: "progressed" });
+    expect(target.delete_attempt_count).toBe(1);
+    expect(adapter.deleteVoice).toHaveBeenCalledOnce();
+    expect(adapter.reconcileVoiceAbsence).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { code: "23514", message: "unrelated_failure" },
+    { code: "40001", message: "legal_hold_active" }
+  ])("does not misclassify other DB failures as a hold: %j", async (error) => {
+    const { repository } = createFixture();
+    repository.beginProviderVoiceDeleteAttempt = createVoiceDeletionRepository(
+      { rpc: vi.fn().mockResolvedValue({ data: null, error }) } as unknown as Parameters<typeof createVoiceDeletionRepository>[0]
+    ).beginProviderVoiceDeleteAttempt;
+    const adapter = createAdapter();
+    await expect(runVoiceDeletionProviderStep({ operationId: "operation-a", userId: "user-a" }, dependencies(repository, adapter)))
+      .rejects.toMatchObject({ status: 500 });
+    expect(adapter.deleteVoice).not.toHaveBeenCalled();
+    expect(repository.releaseLease).toHaveBeenCalledOnce();
+  });
+
   it.each([400, 404])("reconciles HTTP %i exact not-found through the shared adapter without another DELETE", async (status) => {
     const { repository, target } = createFixture();
     Object.assign(target, { status: "deleted", delete_outcome: "succeeded", delete_attempt_count: 1, reconciliation_status: "pending" });

@@ -15,6 +15,15 @@ type CreateOrGetOperationResult = { operation_id: string; created: boolean };
 
 const ACTIVE_OPERATION_STATUSES = ["pending", "processing", "partial_failure", "manual_required"] as const;
 
+export class VoiceDeletionLegalHoldError extends AppError {
+  readonly safeReasonCode = "legal_hold_active";
+
+  constructor() {
+    super(409, "legal_hold_active");
+    this.name = "VoiceDeletionLegalHoldError";
+  }
+}
+
 export type VoiceDeletionSnapshotTarget = {
   targetKind: VoiceDeletionTargetKind;
   targetFingerprint: string;
@@ -428,6 +437,9 @@ export function createVoiceDeletionRepository(client: ServiceRoleClient = create
     );
 
     if (result.error) {
+      if (result.error.code === "23514" && result.error.message === "legal_hold_active") {
+        throw new VoiceDeletionLegalHoldError();
+      }
       throw mapRepositoryError("provider voice delete attempt の開始", result.error);
     }
 

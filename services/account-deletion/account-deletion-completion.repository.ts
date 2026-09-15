@@ -14,6 +14,8 @@ export type AccountDeletionCompletionAuthority = {
 
 export type AccountDeletionCompletionRequestRow = Pick<
   RequestRow,
+  | "legal_hold_active"
+  | "legal_hold_scope"
   | "id"
   | "user_id"
   | "status"
@@ -56,6 +58,7 @@ export type AccountDeletionCompletionRepository = {
 
 const AUTHORITY_SELECT = "id,anonymized_user_ref";
 const REQUEST_SELECT = [
+  "legal_hold_active", "legal_hold_scope",
   "id",
   "user_id",
   "status",

@@ -30,6 +30,7 @@ const IRREVERSIBLE_ACKNOWLEDGEMENTS = new Set([
 const AUTH_OPERATOR_SAFE_REASON_CODES = new Set([
   "auth_stage_reason_unknown",
   "auth_request_not_found",
+  "legal_hold_active",
   "auth_intent_owner_unavailable",
   "auth_intent_owner_mismatch",
   "auth_prior_stages_not_terminal",

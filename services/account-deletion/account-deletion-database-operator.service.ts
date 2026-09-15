@@ -1,3 +1,4 @@
+import { accountDeletionLegalHoldBlocks } from "./account-deletion-legal-hold";
 import type { Database } from "@/types/database";
 import { ACCOUNT_DELETION_DESTRUCTIVE_GUARD_ENV } from "./account-deletion.service";
 import { ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION } from "./account-deletion-database-contract";
@@ -190,7 +191,7 @@ async function lookupAccountDeletionDatabaseOperatorRequest(input: {
   const { data, error } = await admin
     .from("account_deletion_requests")
     .select(
-      "id,user_id,anonymized_user_ref,status,failure_stage,failure_reason_code,provider_cleanup_status,provider_sub_finalized_at,storage_cleanup_status,storage_sub_finalized_at,db_cleanup_status,db_inventory_version,db_observed_row_count,db_deleted_row_count,db_anonymized_row_count,db_retained_row_count,db_sub_finalized_at,last_attempted_at,metadata"
+      "legal_hold_active,legal_hold_scope,id,user_id,anonymized_user_ref,status,failure_stage,failure_reason_code,provider_cleanup_status,provider_sub_finalized_at,storage_cleanup_status,storage_sub_finalized_at,db_cleanup_status,db_inventory_version,db_observed_row_count,db_deleted_row_count,db_anonymized_row_count,db_retained_row_count,db_sub_finalized_at,last_attempted_at,metadata"
     )
     .eq(input.field, input.value)
     .limit(2);
@@ -227,6 +228,7 @@ export async function resolveAccountDeletionDatabaseOperatorRequest(
     if (result.rows.length !== 1) return { ok: false, safeReasonCode: "request_target_ambiguous" };
 
     const row = result.rows[0];
+    if (accountDeletionLegalHoldBlocks(row, "database")) return { ok: false, safeReasonCode: "legal_hold_active" };
     const targetMatches = lookupField === "id"
       ? row.id.toLowerCase() === requestRef.toLowerCase()
       : row.anonymized_user_ref.toLowerCase() === requestRef.toLowerCase();
@@ -320,7 +322,7 @@ export async function runAccountDeletionDatabaseOperatorStage(
     const repository = options.repository ??
       (options.createRepository ?? createAccountDeletionDatabaseFinalizerRepository)();
     const request = await repository.getRequestForOwner(deletionRequestId, userId);
-    if (!request || classifyDatabaseRequest(request) === null) {
+    if (!request || accountDeletionLegalHoldBlocks(request, "database") || classifyDatabaseRequest(request) === null) {
       return stageResult({
         status: "blocked",
         safeReasonCode: "database_cleanup_not_runnable",

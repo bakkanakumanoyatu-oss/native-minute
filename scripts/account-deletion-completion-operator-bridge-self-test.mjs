@@ -81,6 +81,8 @@ function authArgs() {
 
 function requestRow(overrides = {}) {
   return {
+    legal_hold_active: false,
+    legal_hold_scope: null,
     id: REQUEST_ID,
     user_id: null,
     status: "confirmed",

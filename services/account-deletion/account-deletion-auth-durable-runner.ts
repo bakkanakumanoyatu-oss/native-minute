@@ -1,3 +1,4 @@
+import { accountDeletionLegalHoldBlocks } from "./account-deletion-legal-hold";
 import "server-only";
 
 import type {
@@ -20,6 +21,7 @@ const AUTH_SAFE_REASON_FALLBACK = "auth_stage_reason_unknown" as const;
 const AUTH_SAFE_REASON_CODES = new Set([
   AUTH_SAFE_REASON_FALLBACK,
   "auth_request_not_found",
+  "legal_hold_active",
   "auth_intent_owner_unavailable",
   "auth_intent_owner_mismatch",
   "auth_prior_stages_not_terminal",
@@ -274,6 +276,7 @@ export function classifyAccountDeletionAuthDurableRequest(
   row: AccountDeletionAuthRequestRow
 ): AccountDeletionAuthDurableRequestClassification | null {
   if (hasAccountDeletionAuthTerminalAuthority(row)) return "terminal";
+  if (accountDeletionLegalHoldBlocks(row, "auth")) return null;
   if (validNoIntent(row)) return "no_intent_runnable";
   if (validManualIntent(row)) return "manual_nonterminal";
   if (!validNonterminalIntent(row) || !validNonterminalStatusAuthority(row)) return null;
@@ -346,6 +349,7 @@ export async function runAccountDeletionAuthDurableStep(
         row: request
       });
     }
+    if (accountDeletionLegalHoldBlocks(request, "auth")) return blocked("legal_hold_active", request);
     if (request.auth_cleanup_status === "manual_required") {
       return result({ status: "manual_required", safeReasonCode: request.failure_reason_code, marker: "manual_required", row: request });
     }

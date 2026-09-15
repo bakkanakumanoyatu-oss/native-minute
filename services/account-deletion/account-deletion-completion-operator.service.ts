@@ -1,3 +1,4 @@
+import { accountDeletionLegalHoldBlocks } from "./account-deletion-legal-hold";
 import { ACCOUNT_DELETION_DESTRUCTIVE_GUARD_ENV } from "./account-deletion.service";
 import {
   ACCOUNT_DELETION_COMPLETION_EXPIRY_MS,
@@ -66,6 +67,7 @@ function classifyCompletionPrecheck(
   deletionRequestId: string
 ): CompletionPrecheck | null {
   if (
+    accountDeletionLegalHoldBlocks(row, "completion") ||
     !sameUuid(row.id, deletionRequestId) ||
     (row.status !== "confirmed" && row.status !== "completed") ||
     row.user_id !== null ||

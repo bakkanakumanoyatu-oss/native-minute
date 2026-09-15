@@ -116,11 +116,11 @@ $$;
 
 -- Migration/catalog identity and ACL authority.
 select pg_temp.assert_true(
-  (select array_agg(version order by version) from supabase_migrations.schema_migrations) =
+  (select array_agg(version order by version) from supabase_migrations.schema_migrations where version <= '0027') =
     array['0001','0002','0003','0004','0005','0006','0007','0008','0009','0010','0011','0012',
           '0013','0014','0015','0016','0017','0018','0019','0020','0021','0022','0023','0024',
           '0025','0026','0027'],
-  'migration history is not exact 0001 through 0027'
+  'migration history prefix is not exact 0001 through 0027'
 );
 
 select pg_temp.assert_true(

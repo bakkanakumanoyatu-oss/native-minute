@@ -1,3 +1,4 @@
+import { accountDeletionLegalHoldBlocks } from "./account-deletion-legal-hold";
 import { createElevenLabsVoiceDeletionProviderAdapter, type VoiceDeletionProviderAdapter } from "@/providers/voice-deletion";
 import { ACCOUNT_DELETION_DESTRUCTIVE_GUARD_ENV } from "./account-deletion.service";
 import {
@@ -10,6 +11,8 @@ import {
 } from "./account-deletion-provider-durable.repository";
 
 type ProviderOperatorRequestRow = {
+  legal_hold_active: boolean;
+  legal_hold_scope: string[] | null;
   id: string;
   user_id: string | null;
   anonymized_user_ref?: string;
@@ -177,7 +180,7 @@ async function lookupAccountDeletionProviderOperatorRequest(input: {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin
     .from("account_deletion_requests")
-    .select("id,user_id,anonymized_user_ref,status,provider_cleanup_status")
+    .select("id,user_id,anonymized_user_ref,status,provider_cleanup_status,legal_hold_active,legal_hold_scope")
     .eq(input.field, input.value)
     .limit(2);
 
@@ -225,6 +228,7 @@ export async function resolveAccountDeletionProviderOperatorRequest(
     }
 
     const row = result.rows[0];
+    if (accountDeletionLegalHoldBlocks(row, "provider")) return { ok: false, safeReasonCode: "legal_hold_active" };
     const targetMatches =
       lookupField === "id"
         ? row.id.toLowerCase() === requestRef.toLowerCase()
@@ -392,7 +396,7 @@ export async function runAccountDeletionProviderOperatorStage(
   try {
     const repository = options.repository ?? (options.createRepository ?? createAccountDeletionProviderDurableRepository)();
     const request = await repository.getRequestForOwner(deletionRequestId, userId);
-    if (!request) {
+    if (!request || accountDeletionLegalHoldBlocks(request, "provider")) {
       return stageResult({ status: "blocked", safeReasonCode: "provider_cleanup_not_runnable", marker: "not_runnable" });
     }
 

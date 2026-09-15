@@ -56,6 +56,8 @@ type FakeRequest = {
   id: string;
   user_id: string;
   status: "confirmed" | "provider_cleanup_failed";
+  legal_hold_active: boolean;
+  legal_hold_scope: string[] | null;
   provider_cleanup_status: "pending" | "failed" | "manual_required" | "succeeded" | "not_needed";
   provider_snapshot_version: "g5d-2a.account-provider.v1";
   provider_snapshot_status: "sealed";
@@ -105,6 +107,8 @@ function createFixture(options: FakeOptions = {}) {
     id: REQUEST_ID,
     user_id: USER_A,
     status: "confirmed",
+    legal_hold_active: false,
+    legal_hold_scope: null,
     provider_cleanup_status: "pending",
     provider_snapshot_version: "g5d-2a.account-provider.v1",
     provider_snapshot_status: "sealed",
@@ -391,6 +395,8 @@ function legacyAccountDeletionRequestRow(): Database["public"]["Tables"]["accoun
     status: "confirmed",
     failure_stage: null,
     failure_reason_code: null,
+    legal_hold_active: false,
+    legal_hold_scope: null,
     provider_cleanup_status: "pending",
     provider_snapshot_version: "g5d-2a.account-provider.v1",
     provider_snapshot_status: "pending",
@@ -793,6 +799,8 @@ describe("G5D-2A durable provider runner fake recovery proof", () => {
     expect(adapter.deleteVoice).not.toHaveBeenCalled();
     expect(adapter.reconcileVoiceAbsence).not.toHaveBeenCalled();
     expect(fixture.request).toMatchObject({
+      legal_hold_active: false,
+      legal_hold_scope: null,
       provider_cleanup_status: "succeeded",
       provider_verified_absent_count: 2,
       provider_sub_finalized_at: NOW.toISOString(),

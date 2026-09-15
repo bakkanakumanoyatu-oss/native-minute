@@ -58,6 +58,8 @@ function requestLookup(events, row = {}) {
         user_id: USER_ID,
         anonymized_user_ref: ANONYMIZED_REF,
         status: "confirmed",
+        legal_hold_active: false,
+        legal_hold_scope: null,
         provider_cleanup_status: "pending",
         ...row
       }],
@@ -71,6 +73,8 @@ function requestRow(snapshotStatus = "sealed") {
     id: REQUEST_ID,
     user_id: USER_ID,
     status: "confirmed",
+    legal_hold_active: false,
+    legal_hold_scope: null,
     provider_cleanup_status: "pending",
     provider_snapshot_version: "g5d-2a.account-provider.v1",
     provider_snapshot_status: snapshotStatus,

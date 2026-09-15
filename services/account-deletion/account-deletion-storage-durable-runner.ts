@@ -1,3 +1,4 @@
+import { accountDeletionLegalHoldBlocks } from "./account-deletion-legal-hold";
 import "server-only";
 
 import { randomUUID } from "node:crypto";
@@ -185,6 +186,8 @@ export async function runAccountDeletionStorageDurableStep(
   ) return { kind: "not_runnable" };
 
   const leaseToken = (dependencies.createLeaseToken ?? randomUUID)();
+  if (accountDeletionLegalHoldBlocks(request, "storage")) return { kind: "not_runnable" };
+
   const lease = await dependencies.repository.claimStorageLease({
     deletionRequestId: input.deletionRequestId,
     userId: input.userId,

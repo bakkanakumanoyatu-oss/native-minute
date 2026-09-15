@@ -79,6 +79,8 @@ function requestRow(overrides = {}) {
     user_id: USER_A,
     anonymized_user_ref: ANONYMIZED_REF,
     status: "confirmed",
+    legal_hold_active: false,
+    legal_hold_scope: null,
     provider_cleanup_status: "succeeded",
     provider_sub_finalized_at: NOW,
     storage_cleanup_status: "pending",
@@ -387,6 +389,8 @@ console.log("- real Storage / Staging / Production calls: 0");
   const events = [];
   const row = requestRow({
     storage_snapshot_status: "pending",
+    legal_hold_active: false,
+    legal_hold_scope: null,
     provider_cleanup_status: "pending",
     provider_sub_finalized_at: null
   });

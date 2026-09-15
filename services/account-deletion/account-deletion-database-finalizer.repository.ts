@@ -9,6 +9,8 @@ type ServiceRoleClient = ReturnType<typeof createSupabaseAdminClient>;
 
 export type AccountDeletionDatabaseOperatorRequestRow = Pick<
   RequestRow,
+  | "legal_hold_active"
+  | "legal_hold_scope"
   | "id"
   | "user_id"
   | "anonymized_user_ref"
@@ -62,6 +64,7 @@ export type AccountDeletionDatabaseFinalizerRepository = {
 };
 
 const REQUEST_SELECT = [
+  "legal_hold_active", "legal_hold_scope",
   "id",
   "user_id",
   "anonymized_user_ref",

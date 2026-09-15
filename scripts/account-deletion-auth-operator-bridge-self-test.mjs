@@ -57,6 +57,8 @@ function requestRow(overrides = {}) {
     status: "confirmed",
     failure_stage: null,
     failure_reason_code: null,
+    legal_hold_active: false,
+    legal_hold_scope: null,
     provider_cleanup_status: "not_needed",
     provider_snapshot_version: "g5d-2a.account-provider.v1",
     provider_snapshot_status: "sealed",

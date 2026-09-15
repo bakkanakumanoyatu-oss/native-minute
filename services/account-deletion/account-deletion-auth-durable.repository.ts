@@ -11,6 +11,8 @@ type ErrorLike = { message?: string; code?: string };
 
 export type AccountDeletionAuthRequestRow = Pick<
   RequestRow,
+  | "legal_hold_active"
+  | "legal_hold_scope"
   | "id"
   | "user_id"
   | "anonymized_user_ref"
@@ -127,6 +129,7 @@ export type AccountDeletionAuthDurableRepository = {
 };
 
 const REQUEST_SELECT = [
+  "legal_hold_active", "legal_hold_scope",
   "id", "user_id", "anonymized_user_ref", "status", "failure_stage", "failure_reason_code",
   "provider_cleanup_status", "provider_snapshot_version", "provider_snapshot_status",
   "provider_snapshot_seal_version", "provider_snapshot_sealed_at", "provider_snapshot_target_count",

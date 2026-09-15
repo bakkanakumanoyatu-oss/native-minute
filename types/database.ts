@@ -207,6 +207,12 @@ export interface Database {
           auth_verification_result_attempt_count: number | null;
           auth_verified_absent_at: string | null;
           auth_sub_finalized_at: string | null;
+          legal_hold_active: boolean;
+          legal_hold_scope: string[] | null;
+          legal_hold_set_at: string | null;
+          legal_hold_set_authority_ref: string | null;
+          legal_hold_released_at: string | null;
+          legal_hold_release_authority_ref: string | null;
           notification_status: AccountDeletionCleanupStatus;
           retry_count: number;
           requested_at: string;
@@ -274,6 +280,12 @@ export interface Database {
           auth_verification_result_attempt_count?: number | null;
           auth_verified_absent_at?: string | null;
           auth_sub_finalized_at?: string | null;
+          legal_hold_active?: boolean;
+          legal_hold_scope?: string[] | null;
+          legal_hold_set_at?: string | null;
+          legal_hold_set_authority_ref?: string | null;
+          legal_hold_released_at?: string | null;
+          legal_hold_release_authority_ref?: string | null;
           notification_status?: AccountDeletionCleanupStatus;
           retry_count?: number;
           requested_at?: string;
@@ -341,6 +353,12 @@ export interface Database {
           auth_verification_result_attempt_count?: number | null;
           auth_verified_absent_at?: string | null;
           auth_sub_finalized_at?: string | null;
+          legal_hold_active?: boolean;
+          legal_hold_scope?: string[] | null;
+          legal_hold_set_at?: string | null;
+          legal_hold_set_authority_ref?: string | null;
+          legal_hold_released_at?: string | null;
+          legal_hold_release_authority_ref?: string | null;
           notification_status?: AccountDeletionCleanupStatus;
           retry_count?: number;
           requested_at?: string;
@@ -1374,6 +1392,14 @@ export interface Database {
           p_expected_verification_attempt_count: number;
         };
         Returns: Database["public"]["Tables"]["account_deletion_requests"]["Row"];
+      };
+      apply_account_deletion_legal_hold: {
+        Args: { p_deletion_request_id: string; p_scope: string[]; p_authority_ref: string; p_expected_set_authority_ref?: string | null };
+        Returns: string;
+      };
+      release_account_deletion_legal_hold: {
+        Args: { p_deletion_request_id: string; p_expected_set_authority_ref: string; p_authority_ref: string };
+        Returns: string;
       };
       finalize_account_deletion_completion: {
         Args: {

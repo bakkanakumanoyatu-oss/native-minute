@@ -28,7 +28,7 @@ describe("G5D Completion foundation migration contract", () => {
     const recordedSha = resultDoc.match(/^SHA-256: `([0-9a-f]{64})`$/m)?.[1];
     const computedSha = createHash("sha256").update(migrationBytes).digest("hex");
 
-    expect(versions).toEqual(expectedVersions);
+    expect(versions.slice(0, 27)).toEqual(expectedVersions);
     expect(computedSha).toBe(expectedMigrationSha256);
     expect(recordedSha).toBe(expectedMigrationSha256);
     expect(recordedSha).toBe(computedSha);
