@@ -8,7 +8,7 @@ import { createVoiceSourceCleanupRepository, parseSourceCleanupClaim, type Sourc
 
 /** Explicit invocation, one source, no scheduler or terminal/release chaining. */
 export async function runVoiceSourceCleanup(
-  input: { mode?: string; afterId?: string },
+  input: { mode?: string; afterId?: string; sourceId?: string },
   options: { env?: NodeJS.ProcessEnv; repository?: VoiceSourceCleanupRepository; storage?: AccountDeletionStorageAdapter } = {}
 ) {
   const env = options.env ?? process.env;
@@ -18,18 +18,21 @@ export async function runVoiceSourceCleanup(
   let verificationCalls = 0;
   const output = (status: "succeeded" | "skipped" | "blocked" | "retryable_failure" | "unknown", safeReasonCode: string) =>
     ({ status, safeReasonCode, safeCounts: { examined, deleteCalls, verificationCalls }, nextAfterId });
-  if (input.mode !== "execute" || (input.afterId !== undefined && !isRetentionCursor(input.afterId))) {
+  if (input.mode !== "execute" || (input.afterId !== undefined && !isRetentionCursor(input.afterId))
+    || (input.sourceId !== undefined && (!isRetentionCursor(input.sourceId) || input.afterId !== undefined))) {
     return output("blocked", "source_cleanup_input_invalid");
   }
   if (env[ACCOUNT_DELETION_DESTRUCTIVE_GUARD_ENV] !== "1") return output("blocked", "destructive_guard_missing");
   try {
     const repository = options.repository ?? createVoiceSourceCleanupRepository();
-    const sourceId = await repository.select(input.afterId ?? null);
+    // Exact targeting bypasses discovery only. The same DB claim owns eligibility;
+    // an ineligible target must never fall through to the candidate sweep.
+    const sourceId = input.sourceId ?? await repository.select(input.afterId ?? null);
     if (!sourceId) return output("succeeded", "sweep_complete");
     if (!isRetentionCursor(sourceId) || (input.afterId && sourceId <= input.afterId)) {
       return output("unknown", "malformed_canonical_state");
     }
-    nextAfterId = sourceId;
+    nextAfterId = input.sourceId === undefined ? sourceId : null;
     examined = 1;
     const token = randomUUID();
     const claim = parseSourceCleanupClaim(await repository.claim(sourceId, token), sourceId);

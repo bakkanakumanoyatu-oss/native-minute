@@ -102,6 +102,21 @@ describe("R1 explicit bounded operator", () => {
     expect((await runVoiceSourceCleanup({ mode: "execute", afterId: sourceId }, f)).status).toBe("unknown");
     expect(f.repository.claim).not.toHaveBeenCalled();
   });
+  it("normal sweep advances past a held source to the next candidate on a separate invocation", async () => {
+    const f = fixture();
+    const nextId = "10000000-0000-4000-8000-000000000002";
+    f.repository.select.mockResolvedValueOnce(sourceId).mockResolvedValueOnce(nextId).mockResolvedValue(null);
+    f.repository.claim.mockResolvedValueOnce({ reason: "legal_hold" } as never).mockResolvedValue({ ...f.target, sourceId: nextId });
+    const held = await runVoiceSourceCleanup({ mode: "execute" }, f);
+    expect(held).toMatchObject({ safeReasonCode: "legal_hold", nextAfterId: sourceId, safeCounts: { deleteCalls: 0 } });
+    expect(f.repository.select).toHaveBeenCalledTimes(1);
+    const next = await runVoiceSourceCleanup({ mode: "execute", afterId: held.nextAfterId! }, f);
+    expect(next).toMatchObject({ safeReasonCode: "cleanup_succeeded", nextAfterId: nextId });
+    expect(f.repository.select).toHaveBeenNthCalledWith(2, sourceId);
+    expect((await runVoiceSourceCleanup({ mode: "execute", afterId: next.nextAfterId! }, f)).safeReasonCode).toBe("sweep_complete");
+    expect(f.repository.select).toHaveBeenNthCalledWith(3, nextId);
+    expect(f.storage.deleteObject).toHaveBeenCalledTimes(1);
+  });
   it("exceptions cannot leak raw paths/provider diagnostics", async () => {
     const f = fixture(); f.repository.claim.mockRejectedValue(new Error(`SECRET ${userId} ${f.target.objectKey}`));
     expect(JSON.stringify(await runVoiceSourceCleanup({ mode: "execute" }, f))).not.toContain("SECRET");
@@ -120,6 +135,73 @@ describe("R1 explicit bounded operator", () => {
     const r = createVoiceSourceCleanupRepository({ rpc } as never);
     await expect(r.select(null)).rejects.toThrow("source_cleanup_state_unknown");
     expect(await r.finish(sourceId, userId, "cleanup_succeeded")).toBe(false);
+  });
+});
+describe("R1 exact source targeting", () => {
+  it.each(["voice-samples", "voice-consents"] as const)("claims only the exact %s and verifies absence", async bucket => {
+    const f = fixture(bucket);
+    const otherId = "10000000-0000-4000-8000-000000000002";
+    f.repository.select.mockResolvedValue(otherId);
+    const result = await runVoiceSourceCleanup({ mode: "execute", sourceId }, f);
+    expect(result).toMatchObject({ status: "succeeded", safeCounts: { examined: 1, deleteCalls: 1, verificationCalls: 2 }, nextAfterId: null });
+    expect(f.repository.select).not.toHaveBeenCalled();
+    expect(f.repository.claim).toHaveBeenCalledExactlyOnceWith(sourceId, expect.any(String));
+    expect(f.repository.finish).toHaveBeenCalledExactlyOnceWith(sourceId, expect.any(String), "cleanup_succeeded");
+    expect(f.repository.check).toHaveBeenCalledTimes(3);
+    expect(JSON.stringify(result)).not.toContain(f.target.objectKey);
+    expect(JSON.stringify(result)).not.toContain(userId);
+  });
+  it.each(SOURCE_CLEANUP_REASONS)("%s never scans or falls back to another candidate", async reason => {
+    const f = fixture(); f.repository.claim.mockResolvedValue({ reason } as never);
+    expect(await runVoiceSourceCleanup({ mode: "execute", sourceId }, f)).toMatchObject({
+      status: "skipped", safeReasonCode: reason, nextAfterId: null,
+      safeCounts: { examined: 1, deleteCalls: 0, verificationCalls: 0 }
+    });
+    expect(f.repository.claim).toHaveBeenCalledExactlyOnceWith(sourceId, expect.any(String));
+    expect(f.repository.select).not.toHaveBeenCalled();
+    expect(f.storage.deleteObject).not.toHaveBeenCalled();
+    expect(f.repository.finish).not.toHaveBeenCalled();
+  });
+  it.each(["", "bad", `${sourceId},${sourceId}`, ` ${sourceId}`])("rejects malformed target %s before authority", async invalid => {
+    const f = fixture();
+    expect((await runVoiceSourceCleanup({ mode: "execute", sourceId: invalid }, f)).safeReasonCode).toBe("source_cleanup_input_invalid");
+    expect(f.repository.claim).not.toHaveBeenCalled(); expect(f.repository.select).not.toHaveBeenCalled();
+    expect(f.storage.deleteObject).not.toHaveBeenCalled();
+  });
+  it.each([{ mode: "execute", afterId: sourceId }, {}, { mode: "dry-run" }])("rejects cursor combination or missing execute: %s", async input => {
+    const f = fixture();
+    expect((await runVoiceSourceCleanup({ ...input, sourceId }, f)).safeReasonCode).toBe("source_cleanup_input_invalid");
+    expect(f.repository.claim).not.toHaveBeenCalled(); expect(f.repository.select).not.toHaveBeenCalled();
+    expect(f.storage.deleteObject).not.toHaveBeenCalled();
+  });
+  it("exact targeting grants no destructive authority without the guard", async () => {
+    const f = fixture();
+    expect((await runVoiceSourceCleanup({ mode: "execute", sourceId }, { ...f, env: {} })).safeReasonCode).toBe("destructive_guard_missing");
+    expect(f.repository.claim).not.toHaveBeenCalled(); expect(f.storage.deleteObject).not.toHaveBeenCalled();
+  });
+  it.each([
+    { sourceId: "10000000-0000-4000-8000-000000000002" },
+    { bucket: "recordings" }, { objectKey: "foreign/consent/sample.wav" }
+  ])("rejects mismatched or unsafe canonical target: %s", async overrides => {
+    const f = fixture(); Object.assign(f.target, overrides);
+    expect((await runVoiceSourceCleanup({ mode: "execute", sourceId }, f)).status).toBe("skipped");
+    expect(f.repository.select).not.toHaveBeenCalled(); expect(f.storage.verifyObjectAbsence).not.toHaveBeenCalled();
+    expect(f.storage.deleteObject).not.toHaveBeenCalled();
+  });
+  it("claim failure has no fallback and redacts diagnostics", async () => {
+    const f = fixture(); f.repository.claim.mockRejectedValue(new Error(`SECRET ${f.target.objectKey}`));
+    const result = await runVoiceSourceCleanup({ mode: "execute", sourceId }, f);
+    expect(result.safeReasonCode).toBe("source_cleanup_state_unknown");
+    expect(JSON.stringify(result)).not.toContain("SECRET");
+    expect(f.repository.select).not.toHaveBeenCalled(); expect(f.storage.deleteObject).not.toHaveBeenCalled();
+  });
+  it("exact mode retains CAS before DELETE and exact absence after DELETE", async () => {
+    const stale = fixture(); stale.repository.check.mockResolvedValueOnce(true).mockResolvedValue(false);
+    expect((await runVoiceSourceCleanup({ mode: "execute", sourceId }, stale)).safeReasonCode).toBe("claim_conflict");
+    expect(stale.storage.deleteObject).not.toHaveBeenCalled();
+    const present = fixture(); present.storage.verifyObjectAbsence.mockReset().mockResolvedValue({ kind: "present" });
+    expect((await runVoiceSourceCleanup({ mode: "execute", sourceId }, present)).safeReasonCode).toBe("verification_failure");
+    expect(present.repository.finish).toHaveBeenCalledWith(sourceId, expect.any(String), "verification_failure");
   });
 });
 describe("R1 reuses the Account exact absence adapter", () => {

@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runVoiceSourceCleanup } from "../services/voice/voice-source-cleanup.service.ts";
 const env = { NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE: "1" };
 const userId = "10000000-0000-4000-8000-000000000001";
@@ -38,3 +43,31 @@ assert.deepEqual(states, ["completed", "completed"]);
 assert.equal((await runVoiceSourceCleanup({ mode: "execute" }, options)).safeCounts.deleteCalls, 0);
 assert.ok(!JSON.stringify(partial).includes(userId));
 console.log("R1_OPERATOR_FAKE_PARTIAL_RETRY_CURSOR_IDEMPOTENCY_PASS");
+
+// Exercise the real CLI parser without loading the workspace's env file.
+// Guard=0 and a fatal fetch trap make every subprocess non-destructive.
+const cwd = mkdtempSync(join(tmpdir(), "r1-exact-cli-"));
+try {
+  const entry = fileURLToPath(new URL("./voice-source-cleanup-operator.mjs", import.meta.url));
+  const tsx = import.meta.resolve("tsx");
+  const trap = "data:text/javascript," + encodeURIComponent("globalThis.fetch = () => { process.exit(99); };");
+  for (const [args, reason] of [
+    [["--mode", "execute", "--source-id", ids[0]], "destructive_guard_missing"],
+    [["--source-id", ids[0]], "source_cleanup_input_invalid"],
+    [["--mode", "execute", "--source-id", ids[0], "--after-id", ids[1]], "source_cleanup_input_invalid"],
+    [["--mode", "execute", "--source-id", ids[0], "--source-id", ids[1]], "source_cleanup_input_invalid"],
+    [["--mode", "execute", `--source-id=${ids[0]}`, `--source-id=${ids[0]}`], "source_cleanup_input_invalid"],
+    [["--mode", "execute", "--source-id", "malformed"], "source_cleanup_input_invalid"],
+    [["--mode", "execute", "--source-id"], "source_cleanup_input_invalid"]
+  ]) {
+    const result = spawnSync(process.execPath, ["--conditions=react-server", "--import", tsx, "--import", trap, entry, ...args], {
+      cwd, encoding: "utf8", timeout: 20000,
+      env: { ...process.env, NODE_OPTIONS: "", NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE: "0",
+        TSX_TSCONFIG_PATH: fileURLToPath(new URL("../tsconfig.json", import.meta.url)) }
+    });
+    assert.equal(result.status, 2, result.stderr);
+    assert.equal(JSON.parse(result.stdout).safeReasonCode, reason);
+    assert.ok(!result.stdout.includes(userId));
+  }
+} finally { rmSync(cwd, { recursive: true, force: true }); }
+console.log("R1_EXACT_CLI_SINGLE_TARGET_REJECTION_GUARD_NO_NETWORK_PASS");

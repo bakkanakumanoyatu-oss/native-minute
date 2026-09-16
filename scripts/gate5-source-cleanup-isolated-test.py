@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Disposable offline PostgreSQL proof. Never reads env files or remote DB URLs."""
 from pathlib import Path
+import argparse
 import json
 import os
 import subprocess
@@ -10,6 +11,9 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 NAME = 'native-minute-r1-proof-' + uuid.uuid4().hex[:10]
 IMAGE = 'postgres:17-alpine'
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--cleanup-only', action='store_true', help='Only operator/repository cleanup regressions; reuse fixture helpers without registration re-audit')
+args = parser.parse_args()
 
 
 def command(args, **kwargs):
@@ -68,22 +72,24 @@ try:
     foundation = (ROOT / 'scripts/g5d-2j-isolated-postgres-runtime-proof.sql').read_text()
     helpers = foundation[foundation.index('create or replace function pg_temp.assert_true'):foundation.index('-- Clean migration history')]
     # Helper-only reuse, not a G5D4 replay or a broad R2/R3 re-audit.
-    sql(helpers + suite.read_text() + (ROOT / 'scripts/gate5-source-cleanup-account-test.sql').read_text())
-
-
-    import runpy
-    concurrency = runpy.run_path(str(ROOT / 'scripts/gate5-source-cleanup-concurrency-test.py'))
-    concurrency['run_concurrency'](NAME, sql)
+    if args.cleanup_only:
+        sql(suite.read_text().split('select r1_test.seed(n) from generate_series(1,18) n;')[0])
+    else:
+        sql(helpers + suite.read_text() + (ROOT / 'scripts/gate5-source-cleanup-account-test.sql').read_text())
+        import runpy
+        concurrency = runpy.run_path(str(ROOT / 'scripts/gate5-source-cleanup-concurrency-test.py'))
+        concurrency['run_concurrency'](NAME, sql)
     connected = command(['node', '--conditions=react-server', '--import', 'tsx', str(ROOT / 'scripts/voice-source-cleanup-connected-isolated-test.mjs'), NAME], cwd=ROOT)
     print(connected.stdout.strip(), flush=True)
-    consent = subprocess.run([str(ROOT / 'node_modules/.bin/vitest'), 'run', '--config',
+    if not args.cleanup_only:
+        consent = subprocess.run([str(ROOT / 'node_modules/.bin/vitest'), 'run', '--config',
                        str(ROOT / 'apps/mobile/vitest.config.ts'), '--root', str(ROOT / 'apps/mobile'),
                        'tests/voice-consent-read-isolated.test.ts'], cwd=ROOT,
                       env={**os.environ, 'R1_READ_TEST_CONTAINER': NAME}, text=True, capture_output=True)
-    print(consent.stdout.strip(), flush=True)
-    if consent.returncode:
-        print(consent.stderr.strip(), flush=True)
-        consent.check_returncode()
+        print(consent.stdout.strip(), flush=True)
+        if consent.returncode:
+            print(consent.stderr.strip(), flush=True)
+            consent.check_returncode()
 
 finally:
     subprocess.run(['docker', 'rm', '-f', '-v', NAME], check=True, capture_output=True)
