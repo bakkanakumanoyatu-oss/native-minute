@@ -5,9 +5,9 @@
 - Accepted input: `G5D_2D_CURRENT_SCHEMA_DELETE_ANONYMIZE_RETAIN_CASCADE_MATRIX_AUTHORITY_PASS`
 - Result: `G5D_2D_CURRENT_SCHEMA_DELETE_ANONYMIZE_RETAIN_CASCADE_MATRIX_REPOSITORY_AUTHORITY_DOCS_ONLY_PASS`
 - Unit status after the docs closeout: `G5D-2D = CLOSED_COMMITTED_PASS`
-- Overall status: `G5D-2 = OPEN`, `Gate 5 = OPEN`
+- Overall status at original matrix recording: `G5D-2 = OPEN`, `Gate 5 = OPEN`
 
-Current R1 status (2026-09-16): **FINAL CLOSED / PRODUCTION_LIKE_RUNTIME_PROOF_PASS**; see the [runtime closeout](#r1-staging-natural-due-runtime-closeout--2026-09-16). Earlier implementation/deployment statuses below are historical. R4=`READY_FOR_FINAL_HUMAN_LEGAL_APPROVAL`; Gate 5 remains `OPEN`.
+Current status (2026-09-16): R1=**FINAL CLOSED / PRODUCTION_LIKE_RUNTIME_PROOF_PASS**; see the [runtime closeout](#r1-staging-natural-due-runtime-closeout--2026-09-16). R2/R3=`CODE CLOSED / COMMITTED / PUSHED`; G5D4=`LIVE DELETION PROOF CLOSED`; R4=`HUMAN_APPROVED`; **Gate5=`CLOSED`** under explicit [`HUMAN_DECISION_GATE5_FINAL_APPROVAL`](hdc-gate5-retention-provider-governance-and-public-copy-v2.md#gate-5-final-human-approval-and-formal-closeout--2026-09-16). `TECHNICAL_BLOCKERS_FOR_R4=0`; technical work is not reopened. Earlier implementation/deployment statuses and next actions below are historical. Known Auth P2 and legacy linkage limitations remain; public-copy correction, final legal/publication prerequisites and release readiness remain separate and pending. No Production execution or publication is authorized by this closeout.
 
 ## Scope and authority
 

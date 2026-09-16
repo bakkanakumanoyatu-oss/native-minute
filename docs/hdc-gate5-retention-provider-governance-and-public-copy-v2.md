@@ -10,6 +10,42 @@ This document is the canonical repository record of the Gate 5 Human Decision. I
 
 The corresponding Privacy Policy, Account Deletion, and Support release candidate is [Gate 5 public copy release candidate V2](./gate5-public-copy-release-candidate-v2.md). That copy remains `RELEASE_CANDIDATE / DO_NOT_PUBLISH_YET` until every listed publication prerequisite passes.
 
+## Gate 5 final Human approval and formal closeout — 2026-09-16
+
+Decision: `HUMAN_DECISION_GATE5_FINAL_APPROVAL`; status: `APPROVED_BY_HUMAN`. Authority is the Human's explicit approval in this conversation of the Final Human/Legal Approval Packet A–J and permission to proceed to Gate 5 formal closeout. This records final **Human approval**, not an independently established legal-review sign-off or approval of Production publication text.
+
+Approval-packet base: `codex/g3-mobile-main-loop`, HEAD/upstream `43d373a069cc7e93f836723b74c8c31f7051498c`, ahead/behind `0/0`, tracked clean, no staged changes or unknown WIP. `TECHNICAL_BLOCKERS_FOR_R4=0` uses the accepted closeouts; no R1/R2/R3/G5D4 re-audit or new runtime proof is performed.
+
+### Approved scope
+
+1. App-owned voice samples / consent recordings use first durable Provider registration success + 24 hours as the internal cleanup target, not an unconditional deletion guarantee or public SLA. The existing shared-source eligibility contract below remains unchanged.
+2. Practice recordings / learning history, personalized reference audio, Quota / operational metadata / deletion audit and operational logs follow the already-approved retention/deletion authority. No new retention period is added.
+3. Account deletion follows Provider → Storage → Database → Auth → Completion; unknown is never completion. Valid legal-hold and other lawful exceptions remain. Immediate or complete physical backup erasure is not guaranteed.
+4. Consent withdrawal, Voice Data deletion and Account deletion remain distinct, with existing Provider-specific contracts unchanged.
+5. Limited legal hold retains its persisted scopes, authority and release/resume contract. It authorizes neither indefinite retention nor false preservation claims for unavailable resources.
+6. Routine expiry purge rechecks expiry, terminal state, linkage and hold. Expiry, anonymization, inaccessibility and physical purge remain distinct.
+7. `legacy_hold_linkage_unresolved` remains fail-closed: neither purged, resolved nor approved for indefinite retention. Existing separately reviewed/authorized operator reconciliation requirements remain.
+8. Third-party disclosures must match the established Provider roles and actual processing. Production contracts, settings, regions and publication conditions remain for subsequent release readiness.
+9. `auth_terminal_authority_missing` remains the known nonblocking deferred Program P2. This approval is not a release-wide GO.
+10. Before publication, replace the over-restrictive Account deletion statement that only minimal support information remains with the approved wording below.
+
+### Approved public-copy correction — pending implementation before publication
+
+Location: [`app/support/account-deletion/page.tsx`](../app/support/account-deletion/page.tsx), the statement ending `サポート対応に必要な最小情報だけです。` The Human approved this replacement meaning:
+
+> 削除完了後も、匿名化した利用量情報、限定的な削除証跡、セキュリティログ、バックアップが、該当する保持期間または有効なlegal holdの間、一時的に残る場合があります。すべてのバックアップからの即時消去は約束しません。
+
+The application copy is unchanged in this docs-only closeout; correction remains a pre-publication item. The release candidate remains `RELEASE_CANDIDATE / DO_NOT_PUBLISH_YET` under the existing publication prerequisites.
+
+### Formal closeout and remaining boundaries
+
+- R1=`FINAL CLOSED / PRODUCTION_LIKE_RUNTIME_PROOF_PASS`; [accepted Staging evidence](gate5-r1-staging-natural-due-evidence.json) and [runtime closeout](g5d-2d-current-schema-delete-anonymize-retain-cascade-matrix-authority.md#r1-staging-natural-due-runtime-closeout--2026-09-16) are unchanged.
+- R2/R3=`CODE CLOSED / COMMITTED / PUSHED`; G5D4=`LIVE DELETION PROOF CLOSED`. Existing matrix, hold/purge controls and live-deletion evidence remain accepted without reopening technical work.
+- R4=`HUMAN_APPROVED`; **Gate5=`CLOSED`**, on explicit Human authority. Earlier Gate5/R4 statuses and next actions below are historical.
+- This does **not** approve App Store publication, Production migration/destructive operations, final Production Provider configuration, or final App Privacy / Data Safety answers; it does not establish Production log/backup lifecycle verification or B1D2B / release-readiness completion. Existing final legal/publication review prerequisites remain separate.
+- Docs-only recording: source/migrations/tests/public UI unchanged; no live access, Provider/Storage/Auth operation, deployment or publication. Protected `.env.local.save` / `supabase/.temp/` remain unread, unhashed and unchanged. Stage/commit/push=`0/0/0` for this recording.
+- Handoff is to existing release readiness with the public-copy correction and publication prerequisites still pending. This closeout does not start another Gate or grant new execution authority.
+
 ## Decision summary
 
 ### 1. Voice samples and consent recordings
