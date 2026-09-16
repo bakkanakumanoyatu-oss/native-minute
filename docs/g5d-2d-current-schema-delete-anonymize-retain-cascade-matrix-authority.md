@@ -7,6 +7,8 @@
 - Unit status after the docs closeout: `G5D-2D = CLOSED_COMMITTED_PASS`
 - Overall status: `G5D-2 = OPEN`, `Gate 5 = OPEN`
 
+Current R1 status (2026-09-16): **FINAL CLOSED / PRODUCTION_LIKE_RUNTIME_PROOF_PASS**; see the [runtime closeout](#r1-staging-natural-due-runtime-closeout--2026-09-16). Earlier implementation/deployment statuses below are historical. R4=`READY_FOR_FINAL_HUMAN_LEGAL_APPROVAL`; Gate 5 remains `OPEN`.
+
 ## Scope and authority
 
 This document is the canonical repository authority for the current-schema account-deletion resource matrix. It fixes the required `DELETE`, `ANONYMIZE`, `RETAIN`, `CASCADE`, `BLOCK`, verification, retention, and purge semantics that later Storage, DB/anonymization, Auth/completion, and retention work must implement.
@@ -429,3 +431,20 @@ Authoritative verdict: `GATE5_R1_REGISTERED_SOURCE_MATERIAL_ROUTINE_CLEANUP_INDE
 - R2/R3=`CODE CLOSED / COMMITTED / PUSHED`; R4=`WAITING_ON_TECHNICAL_CONTROLS`; Gate5=`OPEN`; G5D4=`LIVE DELETION PROOF CLOSED`. Focused `P0/P1/P2/UNKNOWN=0/0/0/0`; known Program P2 `auth_terminal_authority_missing` remains nonblocking deferred. No runtime proof, Staging/Production access, real Storage/Provider DELETE, R2/R3 reopen, G5D4 rerun or R4 work in this unit.
 
 NEXT_ONE_ACTION: perform R1 Production-like runtime proof under existing authority in the minimum scope. Define its execution after the commit/push response; do not start it in this unit.
+
+## R1 Staging natural-due runtime closeout — 2026-09-16
+
+Mode: `GATE5_R1_STAGING_RUNTIME_PROOF_NATURAL_DUE_EXECUTION`. Verdict: **R1 FINAL CLOSED / PRODUCTION_LIKE_RUNTIME_PROOF_PASS**. [Safe runtime evidence](gate5-r1-staging-natural-due-evidence.json) retains the original preparation identity and opaque target references.
+
+- Preflight: Developer root, `codex/g3-mobile-main-loop`, local/upstream/remote `51ecd1e74b01c9949b68b99634f40217037d64c2`, ahead/behind 0/0, tracked clean. Canonical `native-minute-staging` / `ztlliqishddrrvqqrrlu` / `ap-northeast-1` / `ACTIVE_HEALTHY`; management read-only ledger exactly 0001–0030. No migration applied in this unit.
+- Fixed disposable account metadata and SHA-256 source refs matched exactly. Both sources were present/available with durable mock-registration success, active/in-flight use=0 and relevant hold=0. T0=`2026-09-15T10:49:08.381570Z`, natural due=`2026-09-16T10:49:08.381570Z`; no timestamp changes or new account/source/registration.
+- Saved safe pre-destructive snapshot, then invoked the committed CLI sequentially for sample and consent with `--mode execute --source-id <exact UUID>`; no `--after-id`, candidate scan or fallback. Each returned `succeeded / cleanup_succeeded`, examined=1, actual Staging Storage DELETE=1, exact verifications=2, nextAfterId=null. Sample completed at `2026-09-16T11:48:19.895124Z`; consent completed at `2026-09-16T11:48:40.735099Z`.
+- Independent post-operation exact Storage info checks: both absent. Both canonical cleanup states completed, attempt_count=1, failure=null, claim/lease cleared. Consent record/version/timestamp/purpose, processing consent, both completed registration audit intents and all three durable source-use bindings remain.
+- Non-destructive canonical `r1_bind_source(requires_audio=true)` checks on each fixed source rejected with SQLSTATE 23514 / `source_reupload_required`. Explicit rollback transactions permit the helper's row lock; the expected exception aborts the transaction before insertion. No new registration or Provider dispatch.
+- Second exact-target invocation for each same ID returned `skipped / cleanup_succeeded`, examined=1, DELETE=0, verification=0, nextAfterId=null. Canonical terminal fields stayed byte-equivalent in safe snapshots; no other candidate was used.
+- Before/after aggregate full-row fingerprints and counts matched across all 19 public relations, auth.users and storage.objects, excluding only the two fixed source rows and their exact Storage object rows. Consent remained unchanged after sample cleanup. Unrelated source changes, unrelated Storage DELETE, other-user changes, Provider DELETE, Production operations and unexpected destructive operations all 0.
+- Docs/evidence only; source/tests/migration unchanged. Protected `.env.local.save` and repository `supabase/.temp/` were not read, hashed or changed. Workspace/diff checks and lint PASS. Build/typecheck/tests were not rerun because this unit changed no application code, UI, routes, types or migrations; no new implementation/review or R2/R3/G5D4 retest.
+
+R1=`FINAL CLOSED / PRODUCTION_LIKE_RUNTIME_PROOF_PASS`; R2/R3=`CODE CLOSED / COMMITTED / PUSHED`; R4=`READY_FOR_FINAL_HUMAN_LEGAL_APPROVAL`; Gate5=`OPEN`; G5D4=`LIVE DELETION PROOF CLOSED`. Known Auth P2 remains nonblocking deferred. This closes the authorized Staging runtime proof; no Production execution or public-copy publication is implied.
+
+NEXT_ONE_ACTION: `GATE5_R4_FINAL_HUMAN_LEGAL_APPROVAL`.

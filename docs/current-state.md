@@ -29,7 +29,7 @@
 - `npm run check:workspace` を追加し、cwd / git root / Desktop 側 checkout の存在を検査して、混線時は non-zero で停止する。
 
 ## Store release mainline
-- R1 latest: `CODE REMEDIATED / RUNTIME_PROOF_PENDING` — runtime proofを停止したexact-target operator gapを修正。正式 `voice:source-cleanup --mode execute --source-id UUID` は1 source限定、既存DB claimでeligibilityを再検証し、candidate scan / fallbackなし。通常cursor sweep・destructive guard・CAS・exact absence verificationは維持。Staging 0001–0030 applied済み（Human申告）；本remediationでStaging / Production / Provider DELETEは実行しない。R2/R3=`CODE CLOSED / COMMITTED / PUSHED`、R4=`WAITING_ON_TECHNICAL_CONTROLS`、Gate5=`OPEN`、G5D4=`LIVE DELETION PROOF CLOSED`、known Auth P2は継続。NEXT_ONE_ACTION: `GATE5_R1_SOURCE_CLEANUP_EXACT_TARGET_INDEPENDENT_READ_ONLY_REREVIEW`。
+- R1 latest: `FINAL CLOSED / PRODUCTION_LIKE_RUNTIME_PROOF_PASS` — 2026-09-16、固定disposable Staging accountのsynthetic source 2件だけを、committed `--source-id` operatorで個別cleanup。自然due（T0＋24h）・各Storage DELETE 1回・exact absence・canonical success・lease解放・同意/audit証跡保持・reuse fail closed・同一ID再実行PASS。対象外変更/DELETE・Provider DELETE・Production操作=0。Staging ledger 0001–0030をread-only確認。R2/R3=`CODE CLOSED / COMMITTED / PUSHED`、R4=`READY_FOR_FINAL_HUMAN_LEGAL_APPROVAL`、Gate5=`OPEN`、G5D4=`LIVE DELETION PROOF CLOSED`、known Auth P2継続。[Safe evidence](gate5-r1-staging-natural-due-evidence.json) / [runtime closeout](g5d-2d-current-schema-delete-anonymize-retain-cascade-matrix-authority.md#r1-staging-natural-due-runtime-closeout--2026-09-16)。NEXT_ONE_ACTION: `GATE5_R4_FINAL_HUMAN_LEGAL_APPROVAL`。
 
 The following R1 authority-resolution / R2 / R3 entries are historical closeout records. Current statuses and NEXT_ONE_ACTION are defined by R1 latest above.
 

@@ -1,0 +1,334 @@
+{
+  "staging_identity": {
+    "project_name": "native-minute-staging",
+    "project_ref": "ztlliqishddrrvqqrrlu",
+    "supabase_origin": "https://ztlliqishddrrvqqrrlu.supabase.co",
+    "runtime_origin": "http://127.0.0.1:3321",
+    "voice_provider": "mock",
+    "local_head": "d70c458f7d8d1fca6a90737b5c730d5747c75efc"
+  },
+  "account_ref": "r1a_f1bed679f4204a40802a1ae5cdd33cda",
+  "source_refs": [
+    {
+      "kind": "voice_consent_upload",
+      "opaque_ref": "r1s_11094f0bcd77fe7c5da5947da2f7fff7cefc1cf07d687f3ecb21deef5e1a56a2"
+    },
+    {
+      "kind": "voice_sample_upload",
+      "opaque_ref": "r1s_87558f4e0acb741c897d9b26c1057c8f80974ac2da30fa63c2d957393ef93427"
+    }
+  ],
+  "T0": "2026-09-15T10:49:08.381570Z",
+  "cleanup_due_at": "2026-09-16T10:49:08.381570Z",
+  "runtime_proof": {
+    "mode": "GATE5_R1_STAGING_RUNTIME_PROOF_NATURAL_DUE_EXECUTION",
+    "verdict": "PRODUCTION_LIKE_RUNTIME_PROOF_PASS",
+    "operator_head": "51ecd1e74b01c9949b68b99634f40217037d64c2",
+    "staging_identity_verified": true,
+    "migration_ledger": "0001–0030; contiguous, no extra versions",
+    "opaque_ref_contract": {
+      "account": "auth.users.raw_app_meta_data.r1_natural_due_account_ref; disposable_staging_test=true",
+      "source": "r1s_ + SHA-256(source UUID text)"
+    },
+    "natural_due_reached": true,
+    "pre_destructive_snapshot": {
+      "checks": {
+        "checked_at": "2026-09-16 11:47:41.867984+00",
+        "source_count": 2,
+        "natural_due_and_fixed_clocks_match": true,
+        "storage_rows_present": 2,
+        "durable_success_sources": 2,
+        "active_in_flight_intents": 0,
+        "active_source_uses": 0,
+        "relevant_holds": 0,
+        "account_deletion_requests": 0,
+        "voice_deletion_operations": 0,
+        "canonical_consent_evidence": 1,
+        "processing_version_purpose_evidence": 1,
+        "durable_registration_audit_evidence": 2,
+        "durable_use_bindings": 3
+      },
+      "sources": [
+        {
+          "kind": "voice_consent_upload",
+          "status": "completed",
+          "source_lifecycle_known": true,
+          "first_registered_at": "2026-09-15 10:49:08.38157+00",
+          "cleanup_due_at": "2026-09-16 10:49:08.38157+00",
+          "cleanup_state": "available",
+          "cleanup_authorized_at": null,
+          "cleanup_completed_at": null,
+          "cleanup_attempt_count": 0,
+          "cleanup_failure": null,
+          "opaque_ref": "r1s_11094f0bcd77fe7c5da5947da2f7fff7cefc1cf07d687f3ecb21deef5e1a56a2",
+          "lease_clear": true
+        },
+        {
+          "kind": "voice_sample_upload",
+          "status": "completed",
+          "source_lifecycle_known": true,
+          "first_registered_at": "2026-09-15 10:49:08.38157+00",
+          "cleanup_due_at": "2026-09-16 10:49:08.38157+00",
+          "cleanup_state": "available",
+          "cleanup_authorized_at": null,
+          "cleanup_completed_at": null,
+          "cleanup_attempt_count": 0,
+          "cleanup_failure": null,
+          "opaque_ref": "r1s_87558f4e0acb741c897d9b26c1057c8f80974ac2da30fa63c2d957393ef93427",
+          "lease_clear": true
+        }
+      ],
+      "exact_storage_info": [
+        {
+          "kind": "voice_consent_upload",
+          "result": {
+            "kind": "present"
+          }
+        },
+        {
+          "kind": "voice_sample_upload",
+          "result": {
+            "kind": "present"
+          }
+        }
+      ]
+    },
+    "exact_target_executions": [
+      {
+        "kind": "voice_sample_upload",
+        "opaque_ref": "r1s_87558f4e0acb741c897d9b26c1057c8f80974ac2da30fa63c2d957393ef93427",
+        "phase": "first",
+        "started_at": "2026-09-16T11:48:17.771701+00:00",
+        "finished_at": "2026-09-16T11:48:19.932155+00:00",
+        "entrypoint": "scripts/voice-source-cleanup-operator.mjs",
+        "mode": "execute",
+        "target_flag": "--source-id",
+        "after_id_used": false,
+        "exit_code": 0,
+        "result": {
+          "status": "succeeded",
+          "safeReasonCode": "cleanup_succeeded",
+          "safeCounts": {
+            "examined": 1,
+            "deleteCalls": 1,
+            "verificationCalls": 2
+          },
+          "nextAfterId": null
+        }
+      },
+      {
+        "kind": "voice_consent_upload",
+        "opaque_ref": "r1s_11094f0bcd77fe7c5da5947da2f7fff7cefc1cf07d687f3ecb21deef5e1a56a2",
+        "phase": "first",
+        "started_at": "2026-09-16T11:48:39.083003+00:00",
+        "finished_at": "2026-09-16T11:48:40.766813+00:00",
+        "entrypoint": "scripts/voice-source-cleanup-operator.mjs",
+        "mode": "execute",
+        "target_flag": "--source-id",
+        "after_id_used": false,
+        "exit_code": 0,
+        "result": {
+          "status": "succeeded",
+          "safeReasonCode": "cleanup_succeeded",
+          "safeCounts": {
+            "examined": 1,
+            "deleteCalls": 1,
+            "verificationCalls": 2
+          },
+          "nextAfterId": null
+        }
+      },
+      {
+        "kind": "voice_sample_upload",
+        "opaque_ref": "r1s_87558f4e0acb741c897d9b26c1057c8f80974ac2da30fa63c2d957393ef93427",
+        "phase": "second",
+        "started_at": "2026-09-16T11:49:36.411529+00:00",
+        "finished_at": "2026-09-16T11:49:37.157410+00:00",
+        "entrypoint": "scripts/voice-source-cleanup-operator.mjs",
+        "mode": "execute",
+        "target_flag": "--source-id",
+        "after_id_used": false,
+        "exit_code": 0,
+        "result": {
+          "status": "skipped",
+          "safeReasonCode": "cleanup_succeeded",
+          "safeCounts": {
+            "examined": 1,
+            "deleteCalls": 0,
+            "verificationCalls": 0
+          },
+          "nextAfterId": null
+        }
+      },
+      {
+        "kind": "voice_consent_upload",
+        "opaque_ref": "r1s_11094f0bcd77fe7c5da5947da2f7fff7cefc1cf07d687f3ecb21deef5e1a56a2",
+        "phase": "second",
+        "started_at": "2026-09-16T11:49:39.299239+00:00",
+        "finished_at": "2026-09-16T11:49:39.686998+00:00",
+        "entrypoint": "scripts/voice-source-cleanup-operator.mjs",
+        "mode": "execute",
+        "target_flag": "--source-id",
+        "after_id_used": false,
+        "exit_code": 0,
+        "result": {
+          "status": "skipped",
+          "safeReasonCode": "cleanup_succeeded",
+          "safeCounts": {
+            "examined": 1,
+            "deleteCalls": 0,
+            "verificationCalls": 0
+          },
+          "nextAfterId": null
+        }
+      }
+    ],
+    "post_cleanup": {
+      "checks": {
+        "checked_at": "2026-09-16 11:49:43.003117+00",
+        "source_count": 2,
+        "natural_due_and_fixed_clocks_match": true,
+        "storage_rows_present": 0,
+        "durable_success_sources": 2,
+        "active_in_flight_intents": 0,
+        "active_source_uses": 0,
+        "relevant_holds": 0,
+        "account_deletion_requests": 0,
+        "voice_deletion_operations": 0,
+        "canonical_consent_evidence": 1,
+        "processing_version_purpose_evidence": 1,
+        "durable_registration_audit_evidence": 2,
+        "durable_use_bindings": 3
+      },
+      "sources": [
+        {
+          "kind": "voice_consent_upload",
+          "status": "completed",
+          "source_lifecycle_known": true,
+          "first_registered_at": "2026-09-15 10:49:08.38157+00",
+          "cleanup_due_at": "2026-09-16 10:49:08.38157+00",
+          "cleanup_state": "completed",
+          "cleanup_authorized_at": "2026-09-16 11:48:39.513815+00",
+          "cleanup_completed_at": "2026-09-16 11:48:40.735099+00",
+          "cleanup_attempt_count": 1,
+          "cleanup_failure": null,
+          "opaque_ref": "r1s_11094f0bcd77fe7c5da5947da2f7fff7cefc1cf07d687f3ecb21deef5e1a56a2",
+          "lease_clear": true
+        },
+        {
+          "kind": "voice_sample_upload",
+          "status": "completed",
+          "source_lifecycle_known": true,
+          "first_registered_at": "2026-09-15 10:49:08.38157+00",
+          "cleanup_due_at": "2026-09-16 10:49:08.38157+00",
+          "cleanup_state": "completed",
+          "cleanup_authorized_at": "2026-09-16 11:48:18.585054+00",
+          "cleanup_completed_at": "2026-09-16 11:48:19.895124+00",
+          "cleanup_attempt_count": 1,
+          "cleanup_failure": null,
+          "opaque_ref": "r1s_87558f4e0acb741c897d9b26c1057c8f80974ac2da30fa63c2d957393ef93427",
+          "lease_clear": true
+        }
+      ],
+      "exact_storage_info": [
+        {
+          "kind": "voice_consent_upload",
+          "result": {
+            "kind": "absent"
+          }
+        },
+        {
+          "kind": "voice_sample_upload",
+          "result": {
+            "kind": "absent"
+          }
+        }
+      ]
+    },
+    "reuse_fail_closed": [
+      {
+        "kind": "voice_consent_upload",
+        "opaque_ref": "r1s_11094f0bcd77fe7c5da5947da2f7fff7cefc1cf07d687f3ecb21deef5e1a56a2",
+        "canonical_check": "r1_bind_source(requires_audio=true)",
+        "transaction": "explicit rollback; expected exception aborts transaction",
+        "safe_reason": "source_reupload_required",
+        "sqlstate": "23514",
+        "registration_created": 0,
+        "provider_dispatch": 0,
+        "pass": true
+      },
+      {
+        "kind": "voice_sample_upload",
+        "opaque_ref": "r1s_87558f4e0acb741c897d9b26c1057c8f80974ac2da30fa63c2d957393ef93427",
+        "canonical_check": "r1_bind_source(requires_audio=true)",
+        "transaction": "explicit rollback; expected exception aborts transaction",
+        "safe_reason": "source_reupload_required",
+        "sqlstate": "23514",
+        "registration_created": 0,
+        "provider_dispatch": 0,
+        "pass": true
+      }
+    ],
+    "idempotency": {
+      "pass": true,
+      "canonical_terminal_state_unchanged": true,
+      "additional_delete_calls": 0,
+      "fallback": false
+    },
+    "preservation": {
+      "pass": true,
+      "comparison": "Pre / after sample / after consent / after idempotency: equal row counts and sorted full-row digest aggregates. Excludes only the two fixed source rows and their two Storage object rows.",
+      "relation_count": 21,
+      "relations": [
+        "public.account_deletion_provider_targets",
+        "public.account_deletion_requests",
+        "public.account_deletion_storage_targets",
+        "public.coach_feedback",
+        "public.processing_consents",
+        "public.profiles",
+        "public.quota_events",
+        "public.script_audios",
+        "public.script_saved_best_takes",
+        "public.script_saved_model_audios",
+        "public.scripts",
+        "public.takes",
+        "public.voice_asset_write_intents",
+        "public.voice_consents",
+        "public.voice_deletion_operations",
+        "public.voice_deletion_targets",
+        "public.voice_source_uses",
+        "public.voices",
+        "public.weak_words",
+        "auth.users",
+        "storage.objects"
+      ],
+      "aggregate_sha256": "483b0a655686f23c3c434b036e47d3c211a22a1399aeccdb1431afe55244245e",
+      "consent_record_version_timestamp_purpose": true,
+      "processing_audit_registration_evidence": true,
+      "unrelated_source_changes": 0,
+      "unrelated_storage_deletes": 0,
+      "other_user_changes": 0
+    },
+    "operation_counts": {
+      "fixed_storage_deletes": 2,
+      "provider_dispatch": 0,
+      "provider_deletes": 0,
+      "production_operations": 0,
+      "unexpected_destructive_operations": 0,
+      "new_accounts": 0,
+      "new_sources": 0,
+      "new_registrations": 0,
+      "timestamp_changes": 0,
+      "normal_candidate_scans": 0
+    },
+    "statuses": {
+      "R1": "FINAL CLOSED / PRODUCTION_LIKE_RUNTIME_PROOF_PASS",
+      "R2": "CODE CLOSED / COMMITTED / PUSHED",
+      "R3": "CODE CLOSED / COMMITTED / PUSHED",
+      "R4": "READY_FOR_FINAL_HUMAN_LEGAL_APPROVAL",
+      "Gate5": "OPEN",
+      "G5D4": "LIVE DELETION PROOF CLOSED"
+    },
+    "next_one_action": "GATE5_R4_FINAL_HUMAN_LEGAL_APPROVAL"
+  }
+}
