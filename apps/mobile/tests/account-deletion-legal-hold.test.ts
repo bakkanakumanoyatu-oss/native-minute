@@ -86,15 +86,46 @@ describe("R3 scoped legal hold", () => {
     const row = fixture({ legal_hold_active: true, legal_hold_scope: [stage],
       ...(stage === "storage" ? { provider_cleanup_status: "succeeded", provider_sub_finalized_at: "2026-09-15T00:00:00Z" } : {}) });
     const calls: string[] = [];
-    const repository = new Proxy({ getRequestForOwner: async () => row }, {
-      get(target, key) { if (key in target) return target[key as keyof typeof target]; return () => { calls.push(String(key)); throw Error("unexpected mutation"); }; }
-    });
-    const adapter = new Proxy({}, { get: () => () => { calls.push("adapter"); throw Error("unexpected external action"); } });
+    const unexpectedMutation = (method: string) => (): never => {
+      calls.push(method);
+      throw Error("unexpected mutation");
+    };
+    const repository = {
+      getRequestForOwner: async () => row,
+      sealProviderSnapshot: unexpectedMutation("sealProviderSnapshot"),
+      listProviderTargets: unexpectedMutation("listProviderTargets"),
+      claimProviderLease: unexpectedMutation("claimProviderLease"),
+      releaseProviderLease: unexpectedMutation("releaseProviderLease"),
+      beginDeleteAttempt: unexpectedMutation("beginDeleteAttempt"),
+      recordDeleteResult: unexpectedMutation("recordDeleteResult"),
+      beginReconciliationAttempt: unexpectedMutation("beginReconciliationAttempt"),
+      recordReconciliationResult: unexpectedMutation("recordReconciliationResult"),
+      finalizeProviderStage: unexpectedMutation("finalizeProviderStage"),
+      beginStorageSnapshot: unexpectedMutation("beginStorageSnapshot"),
+      sealStorageSnapshot: unexpectedMutation("sealStorageSnapshot"),
+      listStorageTargets: unexpectedMutation("listStorageTargets"),
+      claimStorageLease: unexpectedMutation("claimStorageLease"),
+      releaseStorageLease: unexpectedMutation("releaseStorageLease"),
+      beginVerificationAttempt: unexpectedMutation("beginVerificationAttempt"),
+      recordVerificationResult: unexpectedMutation("recordVerificationResult"),
+      finalizeStorageStage: unexpectedMutation("finalizeStorageStage")
+    };
+    const unexpectedExternalAction = (): never => {
+      calls.push("adapter");
+      throw Error("unexpected external action");
+    };
+    const adapter = {
+      deleteVoice: unexpectedExternalAction,
+      reconcileVoiceAbsence: unexpectedExternalAction,
+      listOwnedInventory: unexpectedExternalAction,
+      deleteObject: unexpectedExternalAction,
+      verifyObjectAbsence: unexpectedExternalAction
+    };
     const runner = stage === "provider" ? runAccountDeletionProviderDurableStep : runAccountDeletionStorageDurableStep;
     const before = structuredClone(row);
     const result = await runner({ deletionRequestId: id, userId: owner }, {
       repository, providerAdapter: adapter, storageAdapter: adapter
-    } as unknown as Parameters<typeof runner>[1]);
+    });
     expect(result.kind).toBe("not_runnable");
     expect(calls).toEqual([]);
     expect(row).toEqual(before);

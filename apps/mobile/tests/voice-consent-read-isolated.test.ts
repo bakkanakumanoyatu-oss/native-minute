@@ -16,7 +16,7 @@ import { runVoiceSourceCleanup } from "@/services/voice/voice-source-cleanup.ser
 // Only the network-none disposable runner supplies this name. No env-file reads.
 const container = process.env.R1_READ_TEST_CONTAINER;
 const literal = (value: unknown): string => value == null ? "null" : typeof value === "boolean" ? String(value)
-  : `'${(typeof value === "object" ? JSON.stringify(value) : String(value)).replaceAll("'", "''")}'`;
+  : `'${(typeof value === "object" ? JSON.stringify(value) : String(value)).replace(/'/g, "''")}'`;
 function sql(statement: string) {
   expect(container).toMatch(/^native-minute-r1-proof-[0-9a-f]{10}$/);
   return execFileSync("docker", ["exec", "-i", container!, "psql", "-X", "-At", "-U", "postgres", "-v", "ON_ERROR_STOP=1"],
@@ -108,7 +108,7 @@ describe.skipIf(!container)("R1-P1-01 actual consent service + repository + isol
     expect(noRead).not.toHaveBeenCalled();
     let present = true;
     const remove = vi.fn(async () => { present = false; return { kind: "request_succeeded" as const }; });
-    const hex = (BigInt(`0x${fixture.r.replaceAll("-", "")}`) - 1n).toString(16).padStart(32, "0");
+    const hex = (BigInt(`0x${fixture.r.replace(/-/g, "")}`) - 1n).toString(16).padStart(32, "0");
     const afterId = `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
     const result = await runVoiceSourceCleanup({ mode: "execute", afterId }, {
       env: { NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE: "1" },
