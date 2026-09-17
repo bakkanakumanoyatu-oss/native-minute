@@ -1,7 +1,7 @@
 # 現在の状態
 
 ## 現在の main flow
-1. login する。
+1. login する。mobileは `/` のHomeから台本や前回の練習へ進む。
 2. 必要なときだけ `/setup/voice` で同意と既定の voice を整える。
 3. `/scripts` で固定1分台本を作る。必要なら `/scripts/new?from=<scriptId>` で複製する。
 4. `/scripts/[id]/listen` でお手本ボイスを生成または再利用し、英文を見ながら聞いてまねる。
@@ -12,6 +12,11 @@
 
 
 ## Mobile UI/UX implementation
+- Personal Space P1（2026-09-17）: mobile `/` をHome、通常navをHome / 台本 / 成長へ変更。Home / NavigationはHuman Approved、visual baselineをfreeze（追加visual roundなし）：初回は短い説明＋CTA＋所有台本最大3件preview。保存済みProgress由来のContinue / 台本名を主とした前回結果 / 同一台本best / 練習済みdistinct台本数 / 評価保存済みTake数 / 最近練習した最大3台本を表示。保存済みTake最大2件を「自分の録音」に表示。取得失敗を0件へ変換しない。closeout唯一のUI修正として、お気に入り未実装metricも非表示。Favoriteのproduct表示はP2まで追加しない。
+- Listen / Record / Reviewはfocused practiceでbottom navなし。Backは意味のある前step、終了は明示保持した安全な開始route（不明ならHome）。Recordは未保存退出確認、本文scroll / 下端dock / stable Take / upload再利用を維持。ScriptsはListenへの「練習する」1 CTA、Record deep link維持。`/takes`は既存保存Take→Reviewの録音履歴shell（再生 / Favorite / Rename / Share追加なし）。
+- P1は `HUMAN_APPROVED / CLOSED / VISUAL_FROZEN`。root/mobile lint・typecheck・build、関連204 tests、Home直接回帰40条件、Navigation/dock直接回帰36条件、diff check PASS。実装componentを直接使うQAと検証記録は `outputs/qss-personal-space-p1/`。実アカウント / 実iPhoneの追加確認は未実施、Gate5はCLOSED維持・再監査なし。次は `QSS_PERSONAL_SPACE_P2_FAVORITE_RENAME_MY_TAKES_IMPLEMENTATION`。[P1 closeout](qss-personal-space-p1-checkpoint.md)。
+以下のunit記録はP1以前の検証履歴。現在のHome / navigation / CTA仕様は上記P1を優先する。
+
 - Recordのoffline中に停止／キャンセルが消えるP1を修正。録音中の操作と読込済み台本をnetwork / consent取得stateから独立させ、新規録音・upload / evaluateの既存gateは維持。追加12件を含む関連138 tests、local mock browser 22条件はPASS。Human確認・commit / push前、実機は `DEVICE_ACCEPTANCE_PENDING=YES`。
 - Progress unitは `FRONTEND_IMPLEMENTED=YES / BROWSER_VERIFIED=YES`（local mockのみ）、Human確認・commit / push前。台本title → latestのnextStep全文 → 保存順のfocus先頭最大3語 → 同じRecord → serverのLatest / Best → 保存順のhistory / Review → Scripts。ID一致だけでsame-take注記を出し、全体Progress・scriptId絞り込みを維持。複数台本は等価なtext再開操作、shell調整はProgress表示時のみ。BFF / DTO / service契約は変更なし。
 - Progressは `DEVICE_ACCEPTANCE_PENDING=YES`。428 / 320px・文字100 / 200%の76表示条件、操作・回復17条件、既存4画面のCSS・画像回帰16条件をlocalで確認。実iPhone / Dynamic Type / VoiceOver / Human usability / 長いnextStep＋拡大時のCTA距離 / 複数台本実データの使用感はP2継続。Library / Gate 5へ自動展開しない。

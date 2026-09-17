@@ -1,4 +1,6 @@
 export type PracticeRoute =
+  | { name: "home" }
+  | { name: "takes"; scriptId?: string }
   | { name: "scripts" }
   | { name: "settings" }
   | { name: "account_deletion" }
@@ -26,6 +28,12 @@ function safeSegment(value: string | undefined) {
 
 export function parsePracticeRoute(location: Pick<Location, "pathname" | "search">): PracticeRoute {
   const segments = location.pathname.split("/").filter(Boolean);
+
+  if (segments.length === 0) return { name: "home" };
+  if (segments.length === 1 && segments[0] === "takes") {
+    const scriptId = safeSegment(new URLSearchParams(location.search).get("scriptId") ?? undefined);
+    return scriptId ? { name: "takes", scriptId } : { name: "takes" };
+  }
 
   if (segments.length === 1 && segments[0] === "scripts") {
     return { name: "scripts" };
@@ -73,11 +81,15 @@ export function parsePracticeRoute(location: Pick<Location, "pathname" | "search
     return scriptId ? { name: "progress", scriptId } : { name: "progress" };
   }
 
-  return { name: "scripts" };
+  return { name: "home" };
 }
 
 export function practiceRoutePath(route: PracticeRoute) {
   switch (route.name) {
+    case "home":
+      return "/";
+    case "takes":
+      return route.scriptId ? `/takes?scriptId=${encodeURIComponent(route.scriptId)}` : "/takes";
     case "scripts":
       return "/scripts";
     case "settings":
@@ -104,10 +116,25 @@ export function practiceRoutePath(route: PracticeRoute) {
 }
 
 export function isPracticePath(pathname: string) {
-  if (pathname === "/scripts" || pathname === "/progress" || pathname === "/setup/voice" || pathname === "/settings" || pathname === "/settings/account-deletion" || pathname === "/settings/voice-data") {
+  if (pathname === "/" || pathname === "/takes" || pathname === "/scripts" || pathname === "/progress" || pathname === "/setup/voice" || pathname === "/settings" || pathname === "/settings/account-deletion" || pathname === "/settings/voice-data") {
     return true;
   }
 
   const route = parsePracticeRoute({ pathname, search: "" });
-  return route.name !== "scripts";
+  return isFocusedPractice(route);
+}
+
+export function isFocusedPractice(route: PracticeRoute) {
+  return route.name === "listen" || route.name === "record" || route.name === "review";
+}
+
+// Only explicit app destinations can become the practice origin; never a URL or browser history.
+export function safePracticeOrigin(route: PracticeRoute): PracticeRoute {
+  return ["home", "scripts", "progress", "takes"].includes(route.name) ? route : { name: "home" };
+}
+
+export function practiceBackRoute(route: PracticeRoute, origin: PracticeRoute): PracticeRoute {
+  if (route.name === "record") return { name: "listen", scriptId: route.scriptId };
+  if (route.name === "review") return { name: "record", scriptId: route.scriptId };
+  return safePracticeOrigin(origin);
 }

@@ -383,11 +383,11 @@ export function App({ authController }: AppProps = {}) {
   useEffect(() => {
     if (authState.kind === "authenticated" && authenticatedUserId) {
       if (!isPracticePath(window.location.pathname)) {
-        window.history.replaceState(null, "", "/scripts");
+        window.history.replaceState(null, "", "/");
       }
     } else if (authState.kind === "refreshing") {
       if (practiceOwnerUserId && !isPracticePath(window.location.pathname)) {
-        window.history.replaceState(null, "", "/scripts");
+        window.history.replaceState(null, "", "/");
       }
     } else if (authState.kind !== "restoring" && authState.kind !== "exchanging_code") {
       window.history.replaceState(null, "", "/login");

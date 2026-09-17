@@ -1,0 +1,242 @@
+[
+  {
+    "fixture": "first",
+    "width": 320,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "no-result",
+    "width": 320,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "empty",
+    "width": 320,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "first-long",
+    "width": 320,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "one",
+    "width": 320,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "populated",
+    "width": 320,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "long",
+    "width": 320,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "error",
+    "width": 320,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "takes-long-title",
+    "width": 320,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "new-preview-navigation",
+    "width": 320,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "first",
+    "width": 320,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "no-result",
+    "width": 320,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "empty",
+    "width": 320,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "first-long",
+    "width": 320,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "one",
+    "width": 320,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "populated",
+    "width": 320,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "long",
+    "width": 320,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "error",
+    "width": 320,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "takes-long-title",
+    "width": 320,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "new-preview-navigation",
+    "width": 320,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "first",
+    "width": 428,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "no-result",
+    "width": 428,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "empty",
+    "width": 428,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "first-long",
+    "width": 428,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "one",
+    "width": 428,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "populated",
+    "width": 428,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "long",
+    "width": 428,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "error",
+    "width": 428,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "takes-long-title",
+    "width": 428,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "new-preview-navigation",
+    "width": 428,
+    "fontSize": 16,
+    "status": "PASS"
+  },
+  {
+    "fixture": "first",
+    "width": 428,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "no-result",
+    "width": 428,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "empty",
+    "width": 428,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "first-long",
+    "width": 428,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "one",
+    "width": 428,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "populated",
+    "width": 428,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "long",
+    "width": 428,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "error",
+    "width": 428,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "takes-long-title",
+    "width": 428,
+    "fontSize": 32,
+    "status": "PASS"
+  },
+  {
+    "fixture": "new-preview-navigation",
+    "width": 428,
+    "fontSize": 32,
+    "status": "PASS"
+  }
+]

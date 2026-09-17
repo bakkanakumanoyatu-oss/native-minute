@@ -49,14 +49,7 @@ export function ScriptsList({
             >
               <span>練習する</span><span aria-hidden="true">→</span>
             </button>
-            <button
-              type="button"
-              className="scripts-text-action scripts-record-action"
-              aria-label={`${script.title}を録音する`}
-              onClick={() => onNavigate({ name: "record", scriptId: script.id })}
-            >
-              録音する
-            </button>
+
           </div>
         </li>
       ))}

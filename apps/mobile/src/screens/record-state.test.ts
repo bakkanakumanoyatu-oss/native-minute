@@ -57,7 +57,7 @@ describe("active recording remains stoppable across connectivity changes", () =>
           import { encodeMonoPcm16Wav } from '../../../lib/browser-pcm-wav';
           const qa = window.__recordQA = {
             captureStarts: 0, trackStops: 0, liveTracks: 0, recorderStarts: 0, uploads: [], evaluations: [],
-            consent: 'accepted', consentCalls: 0, offline: location.search === '?offline',
+            consent: 'accepted', consentCalls: 0, evaluationSuccess: false, offline: location.search === '?offline',
             unexpected: []
           };
           Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => !qa.offline });
@@ -65,9 +65,14 @@ describe("active recording remains stoppable across connectivity changes", () =>
             content: Array(16).fill('I take a quiet moment to practice speaking clearly.').join('\\n\\n'),
             locale: 'en-US', targetSeconds: 60, createdAt: '2026-09-05T00:00:00Z', updatedAt: '2026-09-05T00:00:00Z' };
           const ok = data => new Response(JSON.stringify({ok: true, data}), {headers: {'Content-Type': 'application/json'}});
+          const review = () => ({ takeId: qa.evaluations[0].takeId, scriptId: script.id, createdAt: script.createdAt, reviewedAt: script.createdAt, transcriptText: 'A quiet morning.',
+            evaluation: { score: 82, accuracyScore: 80, fluencyScore: 80, rhythmScore: 80, summaryJa: '結果', strengthsJa: [], weakWords: [], scriptWordCount: 10, transcriptWordCount: 10 },
+            coach: { titleJa: '助言', summaryJa: '続けよう', nextStepJa: 'ゆっくり', bulletPointsJa: [], focusWords: [] } });
           window.fetch = async (input, init = {}) => {
             const path = new URL(String(input), location.origin).pathname;
             if (path === '/api/mobile/health') return ok({status: 'ok', service: 'local-test', timestamp: '2026-09-05T00:00:00Z'});
+            if (path === '/api/mobile/progress') return ok({progress: {scripts: [], totalScripts: 0, totalReviewedTakes: 0, bestTakeCount: 0}});
+            if (path === '/api/mobile/scripts') return ok({scripts: [script]});
             if (path === '/api/mobile/scripts/test-script') return ok({script});
             if (path === '/api/mobile/consents/pronunciation_processing') {
               qa.consentCalls++;
@@ -82,8 +87,10 @@ describe("active recording remains stoppable across connectivity changes", () =>
             }
             if (path === '/api/mobile/evaluate') {
               qa.evaluations.push(JSON.parse(init.body));
+              if (qa.evaluationSuccess) return ok({review: review()});
               return new Response('{}', {status: 503});
             }
+            if (path.startsWith('/api/mobile/scripts/test-script/reviews/')) return ok({review: review()});
             qa.unexpected.push(path);
             throw Error('Unexpected mock request');
           };
@@ -168,7 +175,7 @@ describe("active recording remains stoppable across connectivity changes", () =>
 
   const start = (page: Page) => page.getByRole("button", { name: "録音する", exact: true }).click();
   const stop = (page: Page) => page.getByRole("button", { name: "停止", exact: true });
-  const cancel = (page: Page) => page.getByRole("button", { name: "キャンセル", exact: true });
+  const cancel = (page: Page) => page.getByRole("button", { name: "この録音を破棄して、録り直す", exact: true });
   const stats = (page: Page) => page.evaluate(() => window.__recordQA);
 
   it.each([[428, 16], [428, 32], [320, 16], [320, 32]])("keeps stop in its dock and actually stops offline at %i/%i", async (width, fontSize) => {
@@ -203,6 +210,51 @@ describe("active recording remains stoppable across connectivity changes", () =>
     await stop(page).click();
     await browserExpect.poll(async () => (await stats(page)).trackStops, { timeout: 1_500 }).toBe(1);
     expect(await stats(page)).toMatchObject({ liveTracks: 0, uploads: [], evaluations: [], unexpected: [] });
+  });
+
+  it("confirms before exiting active capture and keeps recording when declined", async () => {
+    const page = await mount(); await start(page);
+    page.once("dialog", dialog => dialog.dismiss());
+    await page.getByRole("button", { name: "練習を終了", exact: true }).click();
+    await browserExpect(stop(page)).toBeVisible();
+    expect(await stats(page)).toMatchObject({ liveTracks: 1, trackStops: 0 });
+    page.once("dialog", dialog => dialog.accept());
+    await page.getByRole("button", { name: "練習を終了", exact: true }).click();
+    await browserExpect(page).toHaveURL(origin + "/");
+    expect(await stats(page)).toMatchObject({ liveTracks: 0, trackStops: 1, uploads: [], evaluations: [] });
+  });
+
+  it("protects a prepared take on Back and browser history and uses Listen for accepted Back", async () => {
+    const page = await mount(); await start(page); await stop(page).click();
+    await browserExpect(page.locator("audio")).toHaveCount(1);
+    page.once("dialog", dialog => dialog.dismiss());
+    await page.getByRole("button", { name: "← 戻る", exact: true }).click();
+    await browserExpect(page.locator("audio")).toHaveCount(1);
+    await page.evaluate(() => {
+      history.pushState(null, "", "/scripts");
+      dispatchEvent(new PopStateEvent("popstate"));
+    }).then(() => undefined);
+    // With no dialog listener, Playwright declines the confirmation automatically.
+    await browserExpect(page).toHaveURL(origin + "/scripts/test-script/record");
+    await browserExpect(page.locator("audio")).toHaveCount(1);
+    page.once("dialog", dialog => dialog.accept());
+    await page.getByRole("button", { name: "← 戻る", exact: true }).click();
+    await browserExpect(page).toHaveURL(origin + "/scripts/test-script/listen");
+    expect(await stats(page)).toMatchObject({ uploads: [], evaluations: [] });
+  });
+
+  it("opens the saved Review without a discard confirmation after evaluation succeeds", async () => {
+    const page = await mount(); await start(page); await stop(page).click();
+    await browserExpect(page.locator("audio")).toHaveCount(1);
+    await page.getByRole("checkbox").check();
+    await page.evaluate(() => { window.__recordQA.evaluationSuccess = true; });
+    let dialogs = 0;
+    page.on("dialog", dialog => { dialogs++; void dialog.dismiss(); });
+    await page.getByRole("button", { name: "この録音で評価する", exact: true }).click();
+    await browserExpect(page.getByRole("heading", { name: "Review", exact: true })).toBeVisible();
+    expect(dialogs).toBe(0);
+    expect((await stats(page)).uploads).toHaveLength(1);
+    expect((await stats(page)).evaluations).toHaveLength(1);
   });
 
   it("cancels offline without waiting for reconnection or preserving a take", async () => {
@@ -267,6 +319,7 @@ declare global {
   interface Window {
     __recordQA: {
       offline: boolean;
+      evaluationSuccess: boolean;
       consent: "accepted" | "pending" | "error" | "withdrawn" | "required";
       consentCalls: number;
       captureStarts: number;

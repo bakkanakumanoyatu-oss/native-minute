@@ -78,7 +78,7 @@ describe("mobile practice static screens", () => {
     const html = renderToStaticMarkup(<ScriptsList scripts={[script]} onNavigate={() => undefined} />);
     expect(html).toContain("Morning update");
     expect(html).toContain("練習する");
-    expect(html).toContain("録音する");
+    expect(html).not.toContain("録音する");
   });
 
   it("makes a display excerpt without changing the practice content", () => {

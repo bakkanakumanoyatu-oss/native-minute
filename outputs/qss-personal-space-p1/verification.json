@@ -1,0 +1,218 @@
+[
+  {
+    "name": "first",
+    "width": 320,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "error",
+    "width": 320,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "home",
+    "width": 320,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "scripts",
+    "width": 320,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "takes",
+    "width": 320,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "review",
+    "width": 320,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "record",
+    "width": 320,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "listen",
+    "width": 320,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "navigation + direct dock/scroll",
+    "width": 320,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "first",
+    "width": 320,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "error",
+    "width": 320,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "home",
+    "width": 320,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "scripts",
+    "width": 320,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "takes",
+    "width": 320,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "review",
+    "width": 320,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "record",
+    "width": 320,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "listen",
+    "width": 320,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "navigation + direct dock/scroll",
+    "width": 320,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "first",
+    "width": 428,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "error",
+    "width": 428,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "home",
+    "width": 428,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "scripts",
+    "width": 428,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "takes",
+    "width": 428,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "review",
+    "width": 428,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "record",
+    "width": 428,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "listen",
+    "width": 428,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "navigation + direct dock/scroll",
+    "width": 428,
+    "textSize": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "first",
+    "width": 428,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "error",
+    "width": 428,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "home",
+    "width": 428,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "scripts",
+    "width": 428,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "takes",
+    "width": 428,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "review",
+    "width": 428,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "record",
+    "width": 428,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "listen",
+    "width": 428,
+    "textSize": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "navigation + direct dock/scroll",
+    "width": 428,
+    "textSize": 32,
+    "status": "PASS"
+  }
+]

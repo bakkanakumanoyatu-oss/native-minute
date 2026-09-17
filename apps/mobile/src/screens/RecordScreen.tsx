@@ -136,12 +136,14 @@ export function RecordScreen({
   api,
   scriptId,
   isOnline,
-  onNavigate
+  onNavigate,
+  registerLeaveGuard
 }: {
   api: PracticeApi;
   scriptId: string;
   isOnline: boolean;
   onNavigate: (route: PracticeRoute) => void;
+  registerLeaveGuard?: (guard: (() => boolean) | null) => void;
 }) {
   const [scriptState, setScriptState] = useState<ScriptState>({ kind: "loading" });
   const [scriptReloadKey, setScriptReloadKey] = useState(0);
@@ -472,6 +474,7 @@ export function RecordScreen({
     }
 
     if (evaluation.kind === "success") {
+      savedTake.current = true;
       onNavigate({ name: "review", scriptId, takeId: evaluation.review.takeId });
       return;
     }
@@ -482,6 +485,7 @@ export function RecordScreen({
         return;
       }
       if (persisted.kind === "success") {
+        savedTake.current = true;
         onNavigate({ name: "review", scriptId, takeId: persisted.review.takeId });
         return;
       }
@@ -507,6 +511,17 @@ export function RecordScreen({
   const isRecording = recorderState.kind === "recording";
   const busy = recorderState.kind === "requesting-permission" || isRecording || recorderState.kind === "stopping" || normalizing;
   const submitting = submitState.kind === "uploading" || submitState.kind === "evaluating";
+  const savedTake = useRef(false);
+  const hasUnsavedTake = busy || Boolean(preparedTake) || submitting;
+  useEffect(() => {
+    const guard = () => savedTake.current || !hasUnsavedTake || window.confirm("未保存の録音を破棄して、この画面を離れますか？");
+    registerLeaveGuard?.(guard);
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (hasUnsavedTake && !savedTake.current) { event.preventDefault(); event.returnValue = ""; }
+    };
+    window.addEventListener("beforeunload", beforeUnload);
+    return () => { registerLeaveGuard?.(null); window.removeEventListener("beforeunload", beforeUnload); };
+  }, [hasUnsavedTake, registerLeaveGuard]);
   const shortPrompt = scriptState.kind === "ready" && preparedTake
     ? getShortRecordingPrompt(preparedTake.durationSeconds, scriptState.script.targetSeconds)
     : null;
@@ -584,7 +599,7 @@ export function RecordScreen({
               <span className="record-clock" aria-live="off">{formatSeconds(elapsedSeconds)} <span> / 最大 {formatSeconds(MOBILE_RECORDING_MAX_SECONDS)}</span></span>
             </div>
             <button type="button" className="record-primary" onClick={() => recorder.current?.stop()}><span className="record-stop-icon" aria-hidden="true" />停止</button>
-            <button type="button" className="record-text-action" onClick={cancelRecording}>キャンセル</button>
+            <button type="button" className="record-text-action" onClick={cancelRecording}>この録音を破棄して、録り直す</button>
           </>
         ) : null}
         {!isRecording && pronunciationConsentState.kind === "loading" ? <LoadingState label="録音と発音評価への同意を確認しています…" /> : null}

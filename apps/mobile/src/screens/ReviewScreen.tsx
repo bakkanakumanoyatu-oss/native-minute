@@ -182,8 +182,8 @@ export function ReviewScreen({
         </button>
       )}
       <div className="review-progress">
-        <button type="button" className="review-text-action" onClick={() => onNavigate({ name: "progress", scriptId })}>
-          成長を見る
+        <button type="button" className="review-text-action" onClick={() => onNavigate({ name: "takes", scriptId })}>
+          録音履歴を見る
         </button>
       </div>
     </section>
