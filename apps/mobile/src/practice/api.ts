@@ -8,6 +8,8 @@ import {
   createMobileScript,
   createMobileVoiceFromSample,
   downloadMobileScriptAudio,
+  downloadMobileTakeAudio,
+  type MobileTakeAudioDownloadState,
   evaluateMobileRecording,
   fetchMobileVoiceSetup,
   fetchMobilePronunciationConsent,
@@ -88,6 +90,7 @@ export interface PracticeApi {
   acceptVoiceConsent(): Promise<MobileVoiceSetupRequestState>;
   createVoiceFromSample(sample: File): Promise<MobileVoiceSetupRequestState>;
   downloadAudio(audioId: string): Promise<MobileAudioDownloadState>;
+  downloadTakeAudio(takeId: string): Promise<MobileTakeAudioDownloadState>;
   uploadRecording(input: UploadMobileRecordingInput): Promise<MobileRecordingUploadState>;
   evaluateRecording(input: EvaluateMobileRecordingInput): Promise<MobileReviewRequestState>;
   getReview(scriptId: string, takeId: string): Promise<MobileReviewRequestState>;
@@ -314,6 +317,7 @@ export function createPracticeApi({
     acceptVoiceConsent: () => request((token) => acceptMobileVoiceConsent(bffBaseUrl, token, { onTiming })),
     createVoiceFromSample: (sample) => request((token) => createMobileVoiceFromSample(bffBaseUrl, token, sample, { onTiming })),
     downloadAudio: (audioId) => request((token) => downloadMobileScriptAudio(bffBaseUrl, token, audioId, { onTiming })),
+    downloadTakeAudio: (takeId) => afterMetadataWrites(() => request((token) => downloadMobileTakeAudio(bffBaseUrl, token, takeId, { onTiming }))),
     uploadRecording: (input) => request((token) => uploadMobileRecording(bffBaseUrl, token, input, { onTiming })),
     evaluateRecording: (input) => request((token) => evaluateMobileRecording(bffBaseUrl, token, input, { onTiming })),
     getReview: (scriptId, takeId) => afterMetadataWrites(() => request((token) => fetchMobileReview(bffBaseUrl, token, scriptId, takeId, { onTiming }))),

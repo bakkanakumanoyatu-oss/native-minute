@@ -16,6 +16,8 @@ const selectedProfile = profileConfig[profile];
 
 const config: CapacitorConfig = {
   appName: 'Native Minutes',
+  // Filesystem calls contain private audio bytes and cache URIs. Do not log the bridge payload.
+  loggingBehavior: 'none',
   ...selectedProfile
 };
 

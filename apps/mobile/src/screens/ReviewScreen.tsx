@@ -6,7 +6,8 @@ import type {
 } from "../practice/api";
 import type { PracticeRoute } from "../practice/routes";
 import { TakeMetadataEditor } from "./TakeMetadataEditor";
-import { LoadingState, RequestError, ScreenHeading, formatReviewDate } from "./ScreenParts";
+import { SavedTakeAudio } from "./SavedTakeAudio";
+import { LoadingState, RequestError, formatReviewDate } from "./ScreenParts";
 
 type ReviewState =
   | { kind: "loading" }
@@ -173,18 +174,23 @@ export function ReviewScreen({
 
   return (
     <section className="review-screen" aria-live="polite">
-      <ScreenHeading title="Review" />
+      <p className="review-kicker">結果</p>
       {visibleState.kind === "loading" ? <LoadingState label="Reviewを読み込んでいます…" /> : null}
       {visibleState.kind === "error" ? <RequestError error={visibleState.error} onRetry={reload} /> : null}
       {visibleState.kind === "ready" ? (
         <>
           <div className="take-identity">
-            {visibleState.review.displayName ? <h2>{visibleState.review.displayName}</h2> : null}
-            <p className="review-meta">台本: <span lang="en">{visibleState.scriptTitle}</span></p>
+            <h1 className={visibleState.review.displayName ? "take-name" : "take-script-title"}>{visibleState.review.displayName ?? visibleState.scriptTitle}</h1>
+            {visibleState.review.displayName ? <p className="review-meta">台本: <span lang="en">{visibleState.scriptTitle}</span></p> : null}
           </div>
           <ReviewContent review={visibleState.review} onNavigate={onNavigate} metadataActions={<TakeMetadataEditor key={takeId} api={api} review={visibleState.review} onReload={reload}
             onSaved={metadata => setState(current => current.kind === "ready" && current.review.takeId === metadata.takeId
-              ? { ...current, review: { ...current.review, ...metadata } } : current)} />} />
+              ? { ...current, review: { ...current.review, ...metadata } } : current)}>
+              <p className="saved-take-name">{visibleState.review.displayName ?? visibleState.scriptTitle}</p>
+              {visibleState.review.displayName ? <p className="review-meta">台本: {visibleState.scriptTitle}</p> : null}
+              <p className="review-meta">{formatReviewDate(visibleState.review.reviewedAt ?? visibleState.review.createdAt)} · スコア {visibleState.review.evaluation.score}</p>
+              <SavedTakeAudio key={takeId} api={api} takeId={takeId} isOnline={isOnline} />
+            </TakeMetadataEditor>} />
         </>
       ) : (
         <button type="button" className="review-primary" disabled>

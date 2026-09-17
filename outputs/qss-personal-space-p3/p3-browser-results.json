@@ -1,0 +1,266 @@
+[
+  {
+    "name": "count-targets",
+    "width": 320,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "playback",
+    "width": 320,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "share-cancel-state",
+    "width": 320,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "rename-focus",
+    "width": 320,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "long-recording-name",
+    "width": 320,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "my-takes-share",
+    "width": 320,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "long-script-title",
+    "width": 320,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "missing-audio",
+    "width": 320,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "audio-error",
+    "width": 320,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "audio-retry",
+    "width": 320,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "record-no-share",
+    "width": 320,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "count-targets",
+    "width": 320,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "playback",
+    "width": 320,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "share-cancel-state",
+    "width": 320,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "rename-focus",
+    "width": 320,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "long-recording-name",
+    "width": 320,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "my-takes-share",
+    "width": 320,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "long-script-title",
+    "width": 320,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "missing-audio",
+    "width": 320,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "audio-error",
+    "width": 320,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "audio-retry",
+    "width": 320,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "record-no-share",
+    "width": 320,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "count-targets",
+    "width": 428,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "playback",
+    "width": 428,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "share-cancel-state",
+    "width": 428,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "rename-focus",
+    "width": 428,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "long-recording-name",
+    "width": 428,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "my-takes-share",
+    "width": 428,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "long-script-title",
+    "width": 428,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "missing-audio",
+    "width": 428,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "audio-error",
+    "width": 428,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "audio-retry",
+    "width": 428,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "record-no-share",
+    "width": 428,
+    "size": 16,
+    "status": "PASS"
+  },
+  {
+    "name": "count-targets",
+    "width": 428,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "playback",
+    "width": 428,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "share-cancel-state",
+    "width": 428,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "rename-focus",
+    "width": 428,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "long-recording-name",
+    "width": 428,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "my-takes-share",
+    "width": 428,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "long-script-title",
+    "width": 428,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "missing-audio",
+    "width": 428,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "audio-error",
+    "width": 428,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "audio-retry",
+    "width": 428,
+    "size": 32,
+    "status": "PASS"
+  },
+  {
+    "name": "record-no-share",
+    "width": 428,
+    "size": 32,
+    "status": "PASS"
+  }
+]

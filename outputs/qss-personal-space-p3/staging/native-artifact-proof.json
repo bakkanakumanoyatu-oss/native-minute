@@ -1,0 +1,27 @@
+{
+  "bundleId": "com.nativeminutes.app.staging",
+  "version": "1.0",
+  "build": "1",
+  "configuration": "Staging",
+  "bffOrigin": "https://native-minute-staging.vercel.app",
+  "authConfigured": true,
+  "authTargetFingerprint": "cfdbf57f7a1d3226019079df30e06c61276cb528f31779581fb6ae92592096b3",
+  "sourceRevision": "af36179fd8e720e6b9fa8dcc11138dc43473db0b",
+  "sourceDirty": true,
+  "signature": "strict PASS",
+  "provisionedDevice": "iPhone 14 Plus included",
+  "associatedDomains": [
+    "applinks:native-minute-staging.vercel.app"
+  ],
+  "plugins": [
+    "CAPBrowserPlugin",
+    "FilesystemPlugin",
+    "SharePlugin",
+    "MobileAuthLifecyclePlugin",
+    "MobileAuthSessionStorePlugin"
+  ],
+  "privacyManifest": "FileTimestamp C617.1",
+  "loggingBehavior": "none",
+  "executableSha256": "9911e5a624745b1907244583b9ec3ee3e73e255512552cec98867dfbe8e6de9a",
+  "releaseGuard": "EXPECTED BLOCK: clean-source checks, approved uncommitted WIP; not marked PASS"
+}

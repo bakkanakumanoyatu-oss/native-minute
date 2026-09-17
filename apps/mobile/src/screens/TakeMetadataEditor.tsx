@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { MobileTakeMetadata, TakeMetadataPatch } from "../lib/api";
 import type { MobileReview, PracticeApi, PracticeRequestFailure } from "../practice/api";
 import { RequestError } from "./ScreenParts";
 
-export function TakeMetadataEditor({ api, review, onSaved, onReload }: {
+export function TakeMetadataEditor({ api, review, onSaved, onReload, children }: {
+  children?: ReactNode;
   api: PracticeApi; review: MobileReview;
   onSaved: (metadata: MobileTakeMetadata) => void; onReload: () => void;
 }) {
@@ -44,6 +45,7 @@ export function TakeMetadataEditor({ api, review, onSaved, onReload }: {
 
   return <section className="review-section take-metadata" aria-labelledby="take-metadata-title" aria-busy={saving}>
     <h2 id="take-metadata-title">自分の録音</h2>
+    {children}
     <div className="take-metadata-actions">
       <button type="button" className="review-text-action" aria-pressed={review.favorite} disabled={saving || error !== null}
         onClick={() => void save({ favorite: !review.favorite })}>{review.favorite ? "♥ お気に入り" : "♡ お気に入り"}</button>

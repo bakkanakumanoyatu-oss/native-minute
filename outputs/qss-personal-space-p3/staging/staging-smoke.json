@@ -1,0 +1,70 @@
+{
+  "live": [
+    {
+      "name": "health",
+      "status": 200,
+      "cacheControl": "no-store, max-age=0",
+      "allowOrigin": "capacitor://localhost",
+      "result": "PASS"
+    },
+    {
+      "name": "owned-audio-auth-gate",
+      "status": 401,
+      "cacheControl": "private, no-store, max-age=0",
+      "allowOrigin": "capacitor://localhost",
+      "result": "PASS"
+    },
+    {
+      "name": "metadata-auth-gate",
+      "status": 401,
+      "cacheControl": "private, no-store, max-age=0",
+      "allowOrigin": "capacitor://localhost",
+      "result": "PASS"
+    },
+    {
+      "name": "progress-auth-gate",
+      "status": 401,
+      "cacheControl": "private, no-store, max-age=0",
+      "allowOrigin": "capacitor://localhost",
+      "result": "PASS"
+    },
+    {
+      "name": "audio-invalid-bearer",
+      "status": 401,
+      "cacheControl": "private, no-store, max-age=0",
+      "allowOrigin": "capacitor://localhost",
+      "result": "PASS"
+    },
+    {
+      "name": "audio-disallowed-origin",
+      "status": 403,
+      "cacheControl": "private, no-store, max-age=0",
+      "allowOrigin": null,
+      "result": "PASS"
+    },
+    {
+      "name": "audio-preflight",
+      "status": 204,
+      "cacheControl": "private, no-store, max-age=0",
+      "allowOrigin": "capacitor://localhost",
+      "result": "PASS"
+    },
+    {
+      "name": "metadata-preflight",
+      "status": 204,
+      "cacheControl": "private, no-store, max-age=0",
+      "allowOrigin": "capacitor://localhost",
+      "result": "PASS"
+    }
+  ],
+  "authenticatedCurrentUserTake": "NOT_EXECUTED: no accessible Bearer session; handed to Human actual-device acceptance",
+  "wrongOwner": "direct route/service contract tested locally; authenticated cross-user live check not executed",
+  "userDataMutations": 0,
+  "authenticatedWebRead": {
+    "result": "PASS",
+    "surface": "existing logged-in Staging Web /progress",
+    "ownedScripts": 1,
+    "visibleSavedTakes": 0,
+    "limitation": "Web cookie session; not a mobile Bearer audio proof"
+  }
+}

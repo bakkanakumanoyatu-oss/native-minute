@@ -1,0 +1,2 @@
+import {defineConfig} from 'vite';
+export default defineConfig({ define:{__MOBILE_PROFILE__:JSON.stringify('local-spike'),__BFF_BASE_URL__:JSON.stringify('https://fixture.test'),__SUPABASE_URL__:JSON.stringify(''),__SUPABASE_PUBLISHABLE_KEY__:JSON.stringify(''),__AUTH_CALLBACK_URI__:JSON.stringify('com.nativeminutes.app.debug://auth/callback')}, root: 'outputs/qss-personal-space-p3', server:{host:'127.0.0.1',port:5198,strictPort:true,fs:{allow:[process.cwd()]}}, esbuild:{jsx:'automatic'}, css:{postcss:{plugins:[]}} });

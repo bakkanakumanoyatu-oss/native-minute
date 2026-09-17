@@ -151,3 +151,43 @@ it("waits for an in-flight metadata save before refetch on another screen", asyn
     expect(calls[1]).toContain("/progress");
   } finally { vi.unstubAllGlobals(); }
 });
+
+it.each(['signing_out', 'different-owner'])('discards a saved Take download after %s without exposing its Blob', async change => {
+  let state = { kind: 'authenticated', userId: 'user-a' };
+  let resolveFetch!: (response: Response) => void;
+  const fetchImpl = vi.fn(() => new Promise<Response>(resolve => { resolveFetch = resolve; }));
+  const auth = { getState: () => state, getAccessToken: async () => 'token' } as unknown as MobileAuthController;
+  vi.stubGlobal('fetch', fetchImpl);
+  try {
+    const api = createPracticeApi({ auth, bffBaseUrl: 'https://fixture.test', ownerUserId: 'user-a', onTiming: () => undefined });
+    const read = api.downloadTakeAudio('take-a');
+    await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(1));
+    state = change === 'signing_out' ? { kind: 'signing_out', userId: 'user-a' } : { kind: 'authenticated', userId: 'user-b' };
+    resolveFetch(new Response('synthetic audio', { headers: { 'content-type': 'audio/wav', 'content-disposition': "attachment; filename*=UTF-8''Practice.wav" } }));
+    await expect(read).resolves.toMatchObject({ kind: 'unauthorized', reasonCode: 'session_owner_changed' });
+    await expect(api.downloadTakeAudio('take-a')).resolves.toMatchObject({ kind: 'unauthorized', reasonCode: 'session_owner_changed' });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  } finally { vi.unstubAllGlobals(); }
+});
+
+it('waits for metadata persistence before exporting the newly named exact Take', async () => {
+  let resolveWrite!: (response: Response) => void;
+  const calls: string[] = [];
+  const auth = { getState: () => ({ kind: 'authenticated', userId: 'user-a' }), getAccessToken: async () => 'token' } as unknown as MobileAuthController;
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+    calls.push(url);
+    if (url.endsWith('/metadata')) return new Promise<Response>(resolve => { resolveWrite = resolve; });
+    return new Response('synthetic audio', { headers: { 'content-type': 'audio/wav', 'content-disposition': "attachment; filename*=UTF-8''New%20name.wav" } });
+  }));
+  try {
+    const api = createPracticeApi({ auth, bffBaseUrl: 'https://fixture.test', ownerUserId: 'user-a', onTiming: () => undefined });
+    const write = api.updateTakeMetadata('take-a', { displayName: 'New name' });
+    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    const read = api.downloadTakeAudio('take-a');
+    await Promise.resolve(); expect(calls).toHaveLength(1);
+    resolveWrite(new Response(JSON.stringify({ ok: true, data: { metadata: { takeId: 'take-a', favorite: false, displayName: 'New name' } } })));
+    expect((await write).kind).toBe('success');
+    await expect(read).resolves.toMatchObject({ kind: 'success', filename: 'New name.wav' });
+    expect(calls[1]).toBe('https://fixture.test/api/mobile/takes/take-a/audio');
+  } finally { vi.unstubAllGlobals(); }
+});

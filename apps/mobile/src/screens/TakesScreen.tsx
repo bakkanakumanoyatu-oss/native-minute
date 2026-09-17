@@ -9,7 +9,7 @@ export function TakesScreen({ api, isOnline, scriptId, favorites = false, onNavi
   const { state, retry } = useSavedProgress(api, isOnline);
   const rows = state.kind === "ready" ? recentPractice(state.progress).filter(row => (!scriptId || row.item.script.id === scriptId) && (!favoriteOnly || row.take.favorite)) : [];
   return <section className="takes-screen personal-space" lang="ja">
-    <button className="space-text" onClick={onBack}>← 戻る</button><h1>自分の録音</h1><p className="space-meta">評価して保存したTakeの結果を振り返れます。</p>
+    <button className="space-text" onClick={onBack}>← 戻る</button><h1>自分の録音</h1><p className="space-meta">録音を選ぶと、結果の確認・再生・共有ができます。</p>
     <div className="take-filters" role="group" aria-label="録音の絞り込み">
       <button type="button" className="space-text" aria-pressed={!favoriteOnly} onClick={() => setFavoriteOnly(false)}>すべて</button>
       <button type="button" className="space-text" aria-pressed={favoriteOnly} onClick={() => setFavoriteOnly(true)}>お気に入り</button>

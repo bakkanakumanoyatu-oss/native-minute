@@ -2281,3 +2281,16 @@ html:has(.practice-shell) { background: #f7f6f2; }
 .take-metadata button, .take-filters button { min-height: 44px; }
 .take-filters { margin: 1rem 0; }
 .take-filters [aria-pressed="true"] { text-decoration: underline; text-underline-offset: .3em; }
+
+/* P3: approved finishing changes only; the P1/P2 visual system stays frozen. */
+.space-header button, .practice-focus-header button:first-child,
+.takes-screen > .space-text, .take-filters button { min-width: 44px; min-height: 44px; }
+.review-screen .review-kicker { margin-top: 24px; color: var(--review-secondary); font-size: .875rem; line-height: 1.6; }
+.review-screen .take-identity .take-name { font: 600 1.5rem/1.45 -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif; letter-spacing: 0; }
+.review-screen .take-identity .take-script-title { font: 400 1.75rem/1.4 Georgia, "Times New Roman", serif; letter-spacing: 0; }
+.take-metadata input { border-color: #6a777f; }
+.take-metadata input:focus-visible { outline: 3px solid #244c68; outline-offset: 3px; }
+.take-metadata .saved-take-name { margin-top: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.saved-take-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; column-gap: 24px; }
+.saved-take-audio audio:not([hidden]) { display: block; width: 100%; max-width: 100%; margin-top: 12px; }
+.saved-take-audio p { font-size: .875rem; line-height: 1.7; }

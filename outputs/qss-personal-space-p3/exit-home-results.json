@@ -1,0 +1,110 @@
+[
+  {
+    "screen": "listen",
+    "width": 320,
+    "textSize": 16,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  },
+  {
+    "screen": "record",
+    "width": 320,
+    "textSize": 16,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  },
+  {
+    "screen": "review",
+    "width": 320,
+    "textSize": 16,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  },
+  {
+    "screen": "listen",
+    "width": 320,
+    "textSize": 32,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  },
+  {
+    "screen": "record",
+    "width": 320,
+    "textSize": 32,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  },
+  {
+    "screen": "review",
+    "width": 320,
+    "textSize": 32,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  },
+  {
+    "screen": "listen",
+    "width": 428,
+    "textSize": 16,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  },
+  {
+    "screen": "record",
+    "width": 428,
+    "textSize": 16,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  },
+  {
+    "screen": "review",
+    "width": 428,
+    "textSize": 16,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  },
+  {
+    "screen": "listen",
+    "width": 428,
+    "textSize": 32,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  },
+  {
+    "screen": "record",
+    "width": 428,
+    "textSize": 32,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  },
+  {
+    "screen": "review",
+    "width": 428,
+    "textSize": 32,
+    "exit": "Home",
+    "back": "unchanged",
+    "bottomNav": "hidden",
+    "status": "PASS"
+  }
+]

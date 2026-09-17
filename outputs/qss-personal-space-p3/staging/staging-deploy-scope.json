@@ -1,0 +1,21 @@
+{
+  "baseDeployment": "dpl_8F4BiKEDkFVmHoP48ugi7twdke3j",
+  "p2": [
+    "app/api/mobile/takes/[takeId]/metadata/route.ts",
+    "lib/mobile/api-response.ts",
+    "lib/mobile/contracts.ts",
+    "lib/mobile/dto.ts",
+    "lib/mobile/take-metadata-route.ts",
+    "schemas/take-metadata.ts",
+    "services/progress/progress.service.ts",
+    "services/progress/types.ts",
+    "services/takes/take-metadata.service.ts",
+    "types/database.ts"
+  ],
+  "p3": [
+    "app/api/mobile/takes/[takeId]/audio/route.ts",
+    "lib/mobile/take-audio-route.ts",
+    "lib/take-audio-format.ts",
+    "services/takes/take-audio.service.ts"
+  ]
+}

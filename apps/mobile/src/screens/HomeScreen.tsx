@@ -83,7 +83,7 @@ export function HomeContent({ progress, onNavigate }: { progress: MobileProgress
             <span>前回 <strong>{take.score}点</strong></span>
             {item.bestTake ? <span>最高点 <strong>{item.bestTake.score}点</strong></span> : null}
           </span>
-          <span className="space-meta"><time dateTime={take.createdAt}>{formatReviewDate(take.createdAt)}</time> · {item.takeCount} Takes</span>
+          <span className="space-meta"><time dateTime={take.createdAt}>{formatReviewDate(take.createdAt)}</time> · 録音{item.takeCount}件</span>
         </button>
       </li>)}
     </ol></section>

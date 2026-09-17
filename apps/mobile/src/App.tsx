@@ -18,6 +18,7 @@ import { mobileEnvironment } from "./lib/environment";
 import { createPracticeApi } from "./practice/api";
 import { PracticeApp } from "./practice/PracticeApp";
 import { isPracticePath } from "./practice/routes";
+import { takeShareController } from "./audio/take-share";
 
 type ConnectionPanelProps = {
   state: HealthConnectionState;
@@ -327,11 +328,13 @@ export function App({ authController }: AppProps = {}) {
   }, [reconnect]);
 
   useEffect(() => {
+    void takeShareController.cleanupIdle();
     const unsubscribe = auth.subscribe((nextState) => {
       setAuthState(nextState);
 
       const nextUserId = nextState.kind === "authenticated" ? nextState.userId : null;
       if (nextUserId && practiceOwnerUserIdRef.current !== nextUserId) {
+        takeShareController.invalidate();
         practiceOwnerUserIdRef.current = nextUserId;
         setPracticeOwnerUserId(nextUserId);
       } else if (
@@ -340,6 +343,7 @@ export function App({ authController }: AppProps = {}) {
         practiceOwnerUserIdRef.current !== null
       ) {
         // Remounting the practice shell clears every owner-bound script, Blob and request state.
+        takeShareController.invalidate();
         practiceOwnerUserIdRef.current = null;
         setPracticeOwnerUserId(null);
       }

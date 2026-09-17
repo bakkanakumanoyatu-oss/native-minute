@@ -1,0 +1,9 @@
+{
+  "baseline": "af36179fd8e720e6b9fa8dcc11138dc43473db0b",
+  "sourceDirty": true,
+  "sha256": {
+    "apps/mobile/src/styles.css": "4d4e2cf7b9edb70fd8e10d4b9e020ff41ed19ea0690e1e53f2b7e8e0493e62aa",
+    "docs/current-state.md": "4af4127177aaf39944ad8fe19f2179fb4788f889cbe45effe736fea126031dec",
+    "apps/mobile/src/screens/SavedTakeAudio.tsx": "e8f0de0ef882a8b902178dd7889e3916cb6d7b987e4fcf0f37586b7b54ec1dfd"
+  }
+}

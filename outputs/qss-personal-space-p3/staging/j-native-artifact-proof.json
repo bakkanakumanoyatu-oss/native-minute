@@ -1,0 +1,29 @@
+{
+  "bundleId": "com.nativeminutes.app.staging",
+  "version": "1.0",
+  "build": "1",
+  "configuration": "Staging",
+  "signature": "strict PASS",
+  "targetDevice": "iPhone 14 Plus",
+  "identityPluginsPrivacy": "PASS",
+  "mobileMetadata": {
+    "profile": "staging",
+    "bundleId": "com.nativeminutes.app.staging",
+    "xcodeConfiguration": "Staging",
+    "capacitorProfile": "staging",
+    "bffOrigin": "https://native-minute-staging.vercel.app",
+    "authCallbackMode": "universal-link",
+    "authConfigured": true,
+    "authTargetFingerprint": "cfdbf57f7a1d3226019079df30e06c61276cb528f31779581fb6ae92592096b3",
+    "sourceRevision": "af36179fd8e720e6b9fa8dcc11138dc43473db0b",
+    "sourceDirty": true
+  },
+  "webAssetsSha256": {
+    "public/assets/web-CrFACOPM.js": "bc5e8a11321dd49fa8ad126cf3a30b32aaf657a8e38da0889ab8d29f45db96c3",
+    "public/assets/index-etYJmZDL.css": "fb275717f0631777bab0703b7a531b5637bffb41eb49747337c4807329d8a265",
+    "public/assets/web-OqLHAeoa.js": "7388b395bd933e4a000708bb5363d565f810af7946852623c5aa9b7365656bf3",
+    "public/assets/index-CZJrlAUs.js": "6ca976a7f55193eebfd74f97710dca95818a4a1f5943edaf4124e78d12846901",
+    "public/assets/web-BBcDNoqA.js": "501d6c1e9d592181eb630bc9b35303bd0ca190adacb687657e0eb415aa0007f7"
+  },
+  "releaseGuard": "3 expected clean-source findings; NOT PASS, authorized WIP test install"
+}

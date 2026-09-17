@@ -1409,6 +1409,28 @@ async function readAudioResponse(response: Response): Promise<AudioResponseBody>
   return { kind: "audio", audio, contentType };
 }
 
+export type MobileTakeAudioDownloadState = Exclude<MobileAudioDownloadState, { kind: "success" }> |
+  { kind: "success"; audio: Blob; contentType: string; filename: string };
+
+export async function downloadMobileTakeAudio(
+  bffBaseUrl: string, accessToken: string, takeId: string, options: MobileApiRequestOptions = {}
+): Promise<MobileTakeAudioDownloadState> {
+  const attempt = await executeBoundedRequest(
+    apiUrl(bffBaseUrl, `/api/mobile/takes/${encodeURIComponent(takeId)}/audio`),
+    { method: "GET", cache: "no-store", headers: { Accept: "audio/*", Authorization: `Bearer ${accessToken}` } },
+    readAudioResponse, options, DEFAULT_AUDIO_TIMEOUT_MS, "audio_download"
+  );
+  if (attempt.kind !== "response") return mapAttemptFailure(attempt);
+  if (!attempt.response.ok) return mapFailure(attempt.response, attempt.body.kind === "error" ? attempt.body.payload : null);
+  if (attempt.body.kind === "payload-too-large") return { kind: "payload-too-large", reasonCode: "audio_too_large" };
+  if (attempt.body.kind !== "audio") return { kind: "invalid-response" };
+  try {
+    const filename = decodeURIComponent(attempt.response.headers.get("content-disposition")?.match(/filename\*=UTF-8''([^;]+)/i)?.[1] ?? "");
+    if (!/^[\p{L}\p{N} _-]{1,60}\.(wav|m4a|mp3|ogg|webm)$/u.test(filename)) return { kind: "invalid-response" };
+    return { kind: "success", audio: attempt.body.audio, contentType: attempt.body.contentType, filename };
+  } catch { return { kind: "invalid-response" }; }
+}
+
 export async function downloadMobileScriptAudio(
   bffBaseUrl: string,
   accessToken: string,

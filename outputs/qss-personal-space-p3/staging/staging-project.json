@@ -1,0 +1,30 @@
+{
+  "id": "prj_RSxUzxugEIlH28tiQOyndjP365hw",
+  "name": "native-minute-staging",
+  "accountId": "team_ySEBXcgSwt9j7rmNmq69mlaH",
+  "framework": "nextjs",
+  "link": {
+    "repo": "native-minute",
+    "productionBranch": "feature/mobile-auth-gate"
+  },
+  "targets": {
+    "production": {
+      "id": "dpl_8F4BiKEDkFVmHoP48ugi7twdke3j",
+      "url": "native-minute-staging-p49kfw9x6-takahiro-karasawa-s-projects.vercel.app",
+      "alias": [
+        "native-minute-staging.vercel.app",
+        "native-minute-staging-takahiro-karasawa-s-projects.vercel.app"
+      ],
+      "readyState": "READY"
+    },
+    "preview": {
+      "id": "dpl_AunqBKTHaPp9Rtu7qo7VCWBZjeew",
+      "url": "native-minute-staging-fr3ll6iur-takahiro-karasawa-s-projects.vercel.app",
+      "alias": [
+        "native-minute-staging-git-c-78db0c-takahiro-karasawa-s-projects.vercel.app"
+      ],
+      "readyState": "READY",
+      "gitCommitSha": "af36179fd8e720e6b9fa8dcc11138dc43473db0b"
+    }
+  }
+}

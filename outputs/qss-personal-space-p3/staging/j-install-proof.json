@@ -1,0 +1,18 @@
+{
+  "installOutcome": "success",
+  "bundleId": "com.nativeminutes.app.staging",
+  "installedAppCount": 1,
+  "preferencesMetadataUnchanged": true,
+  "uninstall": 0,
+  "dataClear": 0,
+  "autoLaunch": 0,
+  "productionOperations": 0,
+  "backendDeploy": 0,
+  "schemaChanges": 0,
+  "stageCommitPush": [
+    0,
+    0,
+    0
+  ],
+  "humanAcceptance": "A-I and K previously reported PASS; J recheck pending"
+}

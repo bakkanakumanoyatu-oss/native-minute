@@ -1,0 +1,122 @@
+[
+  {
+    "engine": "chromium",
+    "width": 320,
+    "fontSize": 16,
+    "result": "PASS",
+    "checks": [
+      "one-tap actual playback after async fetch",
+      "24px gap",
+      "stable share position",
+      "cancel retains same Take",
+      "policy rejection retry",
+      "share before playback",
+      "no playback after navigation"
+    ]
+  },
+  {
+    "engine": "chromium",
+    "width": 320,
+    "fontSize": 32,
+    "result": "PASS",
+    "checks": [
+      "one-tap actual playback after async fetch",
+      "24px gap",
+      "stable share position",
+      "cancel retains same Take",
+      "policy rejection retry",
+      "share before playback",
+      "no playback after navigation"
+    ]
+  },
+  {
+    "engine": "chromium",
+    "width": 428,
+    "fontSize": 16,
+    "result": "PASS",
+    "checks": [
+      "one-tap actual playback after async fetch",
+      "24px gap",
+      "stable share position",
+      "cancel retains same Take",
+      "policy rejection retry",
+      "share before playback",
+      "no playback after navigation"
+    ]
+  },
+  {
+    "engine": "chromium",
+    "width": 428,
+    "fontSize": 32,
+    "result": "PASS",
+    "checks": [
+      "one-tap actual playback after async fetch",
+      "24px gap",
+      "stable share position",
+      "cancel retains same Take",
+      "policy rejection retry",
+      "share before playback",
+      "no playback after navigation"
+    ]
+  },
+  {
+    "engine": "webkit",
+    "width": 320,
+    "fontSize": 16,
+    "result": "PASS",
+    "checks": [
+      "one-tap actual playback after async fetch",
+      "24px gap",
+      "stable share position",
+      "cancel retains same Take",
+      "policy rejection retry",
+      "share before playback",
+      "no playback after navigation"
+    ]
+  },
+  {
+    "engine": "webkit",
+    "width": 320,
+    "fontSize": 32,
+    "result": "PASS",
+    "checks": [
+      "one-tap actual playback after async fetch",
+      "24px gap",
+      "stable share position",
+      "cancel retains same Take",
+      "policy rejection retry",
+      "share before playback",
+      "no playback after navigation"
+    ]
+  },
+  {
+    "engine": "webkit",
+    "width": 428,
+    "fontSize": 16,
+    "result": "PASS",
+    "checks": [
+      "one-tap actual playback after async fetch",
+      "24px gap",
+      "stable share position",
+      "cancel retains same Take",
+      "policy rejection retry",
+      "share before playback",
+      "no playback after navigation"
+    ]
+  },
+  {
+    "engine": "webkit",
+    "width": 428,
+    "fontSize": 32,
+    "result": "PASS",
+    "checks": [
+      "one-tap actual playback after async fetch",
+      "24px gap",
+      "stable share position",
+      "cancel retains same Take",
+      "policy rejection retry",
+      "share before playback",
+      "no playback after navigation"
+    ]
+  }
+]

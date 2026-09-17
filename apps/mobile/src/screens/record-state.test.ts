@@ -251,7 +251,7 @@ describe("active recording remains stoppable across connectivity changes", () =>
     let dialogs = 0;
     page.on("dialog", dialog => { dialogs++; void dialog.dismiss(); });
     await page.getByRole("button", { name: "この録音で評価する", exact: true }).click();
-    await browserExpect(page.getByRole("heading", { name: "Review", exact: true })).toBeVisible();
+    await browserExpect(page.locator(".review-screen .take-identity h1")).toBeVisible();
     expect(dialogs).toBe(0);
     expect((await stats(page)).uploads).toHaveLength(1);
     expect((await stats(page)).evaluations).toHaveLength(1);

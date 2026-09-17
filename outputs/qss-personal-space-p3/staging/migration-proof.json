@@ -1,0 +1,174 @@
+{
+  "columns": [
+    {
+      "default": "false",
+      "name": "favorite",
+      "nullable": "NO",
+      "type": "boolean"
+    },
+    {
+      "default": null,
+      "name": "display_name",
+      "nullable": "YES",
+      "type": "text"
+    }
+  ],
+  "constraint": "CHECK (((display_name IS NULL) OR (((char_length(display_name) >= 1) AND (char_length(display_name) <= 60)) AND (display_name = btrim(display_name)) AND (display_name !~ '[[:cntrl:]]'::text))))",
+  "default_rows": 6,
+  "ledger": [
+    {
+      "name": "init",
+      "version": "0001"
+    },
+    {
+      "name": "phase1_hardening",
+      "version": "0002"
+    },
+    {
+      "name": "phase25_hardening",
+      "version": "0003"
+    },
+    {
+      "name": "phase25_storage_guards",
+      "version": "0004"
+    },
+    {
+      "name": "phase5_recordings_storage",
+      "version": "0005"
+    },
+    {
+      "name": "phase6_script_audio_storage",
+      "version": "0006"
+    },
+    {
+      "name": "phase7_voice_sample_storage",
+      "version": "0007"
+    },
+    {
+      "name": "phase8_voice_consent_storage",
+      "version": "0008"
+    },
+    {
+      "name": "phase_s5_quota_events",
+      "version": "0009"
+    },
+    {
+      "name": "phase_s5_voice_quota_events",
+      "version": "0010"
+    },
+    {
+      "name": "phase_s6_audio_library",
+      "version": "0011"
+    },
+    {
+      "name": "phase_rr_account_deletion_requests",
+      "version": "0012"
+    },
+    {
+      "name": "g5a_canonical_processing_consents",
+      "version": "0013"
+    },
+    {
+      "name": "g5c_voice_binding_server_owned",
+      "version": "0014"
+    },
+    {
+      "name": "g5c_b1_voice_deletion_durable_state",
+      "version": "0015"
+    },
+    {
+      "name": "g5c_b2b_provider_voice_transitions",
+      "version": "0016"
+    },
+    {
+      "name": "g5c_b3_storage_object_transitions",
+      "version": "0017"
+    },
+    {
+      "name": "g5c_b3_invalid_storage_target_durable_mapping",
+      "version": "0018"
+    },
+    {
+      "name": "g5c_b4_db_cleanup_and_consent_withdrawal",
+      "version": "0019"
+    },
+    {
+      "name": "g5c_b5_post_delete_verification_transitions",
+      "version": "0020"
+    },
+    {
+      "name": "g5c_b7_manual_provider_absence_acceptance",
+      "version": "0021"
+    },
+    {
+      "name": "g5d_2a_account_deletion_provider_durable_state",
+      "version": "0022"
+    },
+    {
+      "name": "g5d_2e_account_deletion_storage_durable_state",
+      "version": "0023"
+    },
+    {
+      "name": "g5d_2h_db_anonymization_retention_owner_lifecycle_foundation",
+      "version": "0024"
+    },
+    {
+      "name": "g5d_2j_atomic_db_finalizer",
+      "version": "0025"
+    },
+    {
+      "name": "g5d_2m_auth_deletion_durable_recovery_foundation",
+      "version": "0026"
+    },
+    {
+      "name": "g5d_completion_foundation",
+      "version": "0027"
+    },
+    {
+      "name": "gate5_limited_legal_hold",
+      "version": "0028"
+    },
+    {
+      "name": "gate5_hold_aware_routine_purge",
+      "version": "0029"
+    },
+    {
+      "name": "gate5_registered_source_cleanup",
+      "version": "0030"
+    },
+    {
+      "name": "take_personal_metadata",
+      "version": "0031"
+    }
+  ],
+  "rls": true,
+  "total_rows": 6,
+  "target": "native-minute-staging",
+  "ref": "ztlliqishddrrvqqrrlu",
+  "region": "ap-northeast-1",
+  "migrationSha256": "f7b8d75b371635b9ebb63a308faa1f64dd1cf7d1277955699cbe194d887214c4",
+  "existingDataUnchanged": true,
+  "dataBeforeAfter": [
+    {
+      "fingerprint": "57081fe1dbeaed93cb368a766da2f975",
+      "row_count": 6,
+      "table_name": "takes"
+    },
+    {
+      "fingerprint": "27a7c4a3136bd47d3ae369c7daa5f068",
+      "row_count": 10,
+      "table_name": "scripts"
+    },
+    {
+      "fingerprint": "ed40a894f842338613a09a145215f270",
+      "row_count": 6,
+      "table_name": "coach_feedback"
+    },
+    {
+      "fingerprint": "16c4e9ca6d94ddbf9f81c4561fd6db6a",
+      "row_count": 21,
+      "table_name": "weak_words"
+    }
+  ],
+  "pendingMigrations": []
+}

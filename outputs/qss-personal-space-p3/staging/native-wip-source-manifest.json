@@ -1,0 +1,29 @@
+{
+  "baseline": "af36179fd8e720e6b9fa8dcc11138dc43473db0b",
+  "sourceDirty": true,
+  "sha256": {
+    "apps/mobile/package.json": "fd3bc3c8860e23d9b8534d5fdd16f462ae80fcbbcadcdd0e0cece634b28f8b0b",
+    "apps/mobile/src/App.tsx": "5dd83caea56d6356609a4733082b8386a7ae74734c98cac1bfd454255b330f48",
+    "apps/mobile/src/lib/api.ts": "47d65e714a7ae7d6a4a997d809defd916a461595d579952a5d5222ce6d3127bf",
+    "apps/mobile/src/practice/api.test.ts": "84dcd052498d4303edd32c9b9cd6b2ac1a06953dbafcc650003a507f8cbdb4b3",
+    "apps/mobile/src/practice/api.ts": "44167266976c78e7db41169996934cdc7f03bacb557dd9a6c752ec8192293561",
+    "apps/mobile/src/screens/HomeScreen.tsx": "4bc38af873c7de13f90df245edf1648a8f6315cbf00576920721b6c72bbeb1b2",
+    "apps/mobile/src/screens/ReviewScreen.tsx": "4bb09bc76aa9186f5b33c98902d8826484175ae385ff8630bb3f0564b7f95025",
+    "apps/mobile/src/screens/TakeMetadataEditor.tsx": "57074ae0fc23b01cf396c3304fbb1c2f4fa5568f75d5f63f4cb29b9cdf22fb3a",
+    "apps/mobile/src/screens/TakesScreen.tsx": "0b393d79f0db4056463c7963feec8e256d6fd55f18654cd02b10650d16cf3d92",
+    "apps/mobile/src/screens/record-state.test.ts": "2963799b4633e8aa504ffe60e28915b6e58ed5442fedd2a8ea8eeb28cc7dedd6",
+    "apps/mobile/src/styles.css": "5b3265efa3d8a3981969400f0c793dcc133c364c5ee441fec2d51e246f640701",
+    "capacitor.config.ts": "fe424dc8a624460e3819978801a80c3114eb13fe68e06649e72da5e9e7522a5b",
+    "ios/App/App.xcodeproj/project.pbxproj": "7919f13498546f4d3df439d29a784f56a31a56cc126e6da095762812bff3902d",
+    "ios/App/CapApp-SPM/Package.swift": "5fdfdf7eb6c67ac88d357716d23bf65884670507359164f883e46a848cdb6d75",
+    "package-lock.json": "1f82081f35eedd1f3ae9184d70be002887a80363644d7a3fada281a6d2cf073c",
+    "package.json": "c1bad8abe3be7e7ca89cece9c5ff47d0c394703588baf69a3ce95ee2bc38c59d",
+    "app/api/mobile/takes/[takeId]/audio/route.ts": "6d246dcb1e7e685824e851f907b492588f20643dc194116f119ec35325c7b4a2",
+    "apps/mobile/src/audio/take-share.ts": "3d59c496d472db0b4e88be05c8e8befbe5faad6d47a494e600bf58f06e0c1fd4",
+    "apps/mobile/src/screens/SavedTakeAudio.tsx": "49d0858c707abaaaf8c3a6bbb694681424390b505c7ab35cb84ebcf9f99738eb",
+    "lib/mobile/take-audio-route.ts": "857627665eda5cbe8556974a511b1feebab590064aa73ca3181599231469a1e7",
+    "lib/take-audio-format.ts": "255440c2198e767feee7a2f212420d535eef3bc4b81d958cd575c034995dbb66",
+    "services/takes/take-audio.service.ts": "ad41f2faffd04a0be79d7afd5f3553147e646cc428cf90062430dcddf1a0a8af",
+    "ios/App/App/PrivacyInfo.xcprivacy": "c90e0c7423093bb9e6fa73a5e4194ce70145c261f5188bcf1ee1f382095f599c"
+  }
+}
