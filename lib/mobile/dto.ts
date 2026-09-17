@@ -4,6 +4,8 @@ import type { MobileReviewDto } from "./contracts";
 export function toMobileReviewDto(review: HydratedTakeReview): MobileReviewDto {
   return {
     takeId: review.take.id,
+    favorite: review.take.favorite,
+    displayName: review.take.display_name,
     scriptId: review.take.script_id,
     createdAt: review.take.created_at,
     reviewedAt: review.take.reviewed_at,

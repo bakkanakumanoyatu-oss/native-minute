@@ -1,0 +1,97 @@
+{
+  "mode": "QSS_PERSONAL_SPACE_P2_HUMAN_ACCEPTANCE_CLOSEOUT_COMMIT_AND_PUSH",
+  "verdict": "HUMAN APPROVED / CLOSED",
+  "base": "ae951055c2156d3f60a8bfff2b638ca3dfb3e081",
+  "p1": "HUMAN APPROVED / CLOSED / VISUAL FROZEN",
+  "gate5": "CLOSED",
+  "share": "NOT STARTED",
+  "validation": {
+    "workspace": "PASS",
+    "diff": "PASS",
+    "root_lint": "PASS",
+    "mobile_lint": "PASS",
+    "root_typecheck": "PASS",
+    "mobile_source_test_typecheck": "PASS",
+    "root_build_post_typecheck": "PASS",
+    "mobile_build": "PASS",
+    "focused_tests": 226,
+    "fresh_db": "0001–0031 network none PASS",
+    "db_restart_persistence": "PASS",
+    "rls_ownership": "PASS",
+    "take_and_account_deletion": "PASS",
+    "p2_browser": 52,
+    "p2_errors": 8,
+    "p1_home": 40,
+    "p1_navigation": 36
+  },
+  "not_run": [
+    "Staging/Production migration",
+    "live account acceptance",
+    "real iPhone / VoiceOver / OS Dynamic Type",
+    "58-item formal acceptance"
+  ],
+  "next_one_action": "QSS_PERSONAL_SPACE_P3_IOS_TAKE_SHARE_IMPLEMENTATION",
+  "human_checkpoint_exit_correction": {
+    "exit": "練習を終了（Home） -> Home",
+    "direct_regression": 12,
+    "widths": [
+      320,
+      428
+    ],
+    "text_percent": [
+      100,
+      200
+    ],
+    "back": "unchanged",
+    "practice_bottom_navigation": "hidden",
+    "lint_mobile_build_typecheck": "PASS",
+    "broad_suites_rerun": false
+  },
+  "repository_delivery": {
+    "subject": "Add favorite and named Take library",
+    "method": "single commit / normal push",
+    "result": "verified in task final report after execution",
+    "exact_paths": "staged-paths.txt",
+    "unrelated_paths": 0,
+    "protected_paths": 0
+  },
+  "human_acceptance": {
+    "result": "PASS",
+    "surface": "browser QA fixture / actual components",
+    "favorite_on_off": true,
+    "rename_and_reload_persistence": true,
+    "my_takes_name_script_date_score": true,
+    "favorite_filter": true,
+    "home_count_preview": true,
+    "exit_home_back_and_hidden_navigation": true,
+    "iphone": "NOT RUN / after P3 integration"
+  },
+  "acceptance_58": "PAUSED / resume after P3 integration",
+  "final_closeout_validation": {
+    "root_lint": "PASS",
+    "mobile_lint": "PASS",
+    "root_build": "PASS",
+    "post_build_root_typecheck": "PASS",
+    "mobile_build_source_test_typecheck": "PASS",
+    "focused_tests": {
+      "files": 13,
+      "passed": 226
+    },
+    "direct_navigation": {
+      "passed": 12,
+      "widths": [
+        320,
+        428
+      ],
+      "text_percent": [
+        100,
+        200
+      ]
+    },
+    "diff_check": "PASS",
+    "code_unchanged_during_validation": true,
+    "migration_0031_sha256": "f7b8d75b371635b9ebb63a308faa1f64dd1cf7d1277955699cbe194d887214c4",
+    "remote_migration_applied": false,
+    "fresh_db_proof": "prior PASS reused; unchanged schema/service"
+  }
+}

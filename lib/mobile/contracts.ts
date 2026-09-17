@@ -25,6 +25,7 @@ export type MobileApiReasonCode =
   | "review_not_found"
   | "evaluation_in_progress"
   | "evaluation_unavailable"
+  | "take_metadata_unavailable"
   | "progress_unavailable"
   | "account_deletion_in_progress"
   | "account_deletion_unavailable"
@@ -46,6 +47,8 @@ export interface MobileApiSuccessBody<T> {
 }
 
 export interface MobileReviewDto {
+  favorite: boolean;
+  displayName: string | null;
   takeId: string;
   scriptId: string;
   createdAt: string;

@@ -7,7 +7,7 @@ import type { PracticeApi } from "../practice/api";
 function take(id: string, score: number, createdAt: string): MobileProgressTake {
   const coach = { titleJa: "保存された助言", summaryJa: "要約", nextStepJa: "ゆっくり", focusWords: [], bulletPointsJa: [] };
   const evaluation = { score, accuracyScore: score, fluencyScore: score, rhythmScore: score, summaryJa: "結果", strengthsJa: [], weakWords: [], scriptWordCount: 1, transcriptWordCount: 1 };
-  return { id, scriptId: "s1", score, accuracyScore: score, fluencyScore: score, rhythmScore: score, createdAt, reviewedAt: null, transcriptText: null, weakWords: [], coach, evaluation };
+  return { favorite: false, displayName: null, id, scriptId: "s1", score, accuracyScore: score, fluencyScore: score, rhythmScore: score, createdAt, reviewedAt: null, transcriptText: null, weakWords: [], coach, evaluation };
 }
 const latest = take("latest", 61, "2026-09-17T00:00:00Z");
 const best = take("best", 88, "2026-09-16T00:00:00Z");
@@ -67,7 +67,7 @@ describe("Personal Space uses persisted results", () => {
     expect(html).toContain("同じ台本の最高点 <strong>88点</strong>");
     expect(html).toContain('<strong>1</strong><span>練習した台本</span>');
     expect(html).toContain('<strong>2</strong><span>保存済み録音</span>');
-    expect(html).not.toContain("お気に入り");
+    expect(html).toContain('<strong>0</strong><span>お気に入り</span>');
     expect(html).not.toContain("準備中");
     expect(html).not.toContain("Favorite");
     expect(html).not.toContain("お気に入りの録音");
@@ -119,5 +119,31 @@ describe("Personal Space uses persisted results", () => {
       expect(html).not.toContain("space-counts");
       expect(html).not.toContain("最初の台本を選ぶ");
     }
+  });
+});
+
+
+describe("P2 canonical favorites", () => {
+  it("supports multiple favorites and caps the preview without reducing the count", () => {
+    const favorites = [latest, best, take("third-favorite", 50, "2026-09-15T00:00:00Z")].map(row => ({ ...row, favorite: true }));
+    const html = render({ ...empty, totalReviewedTakes: 3, scripts: [{ ...item, takeHistory: favorites }] });
+    expect(html).toContain('<strong>3</strong><span>お気に入り</span>');
+    const preview = html.split('aria-labelledby="space-favorites-title"')[1].split('</section>')[0];
+    expect(preview.match(/<li>/g)).toHaveLength(2);
+    expect(preview).not.toContain('スコア 50');
+  });
+
+  it("counts all favorites, previews only favorites and keeps script title below an escaped custom name", () => {
+    const named = { ...latest, favorite: true, displayName: "<b>My voice</b>" };
+    const progress = { ...empty, totalReviewedTakes: 2, scripts: [{ ...item, takeHistory: [best, named] }] };
+    const html = render(progress);
+    expect(html).toContain('<strong>1</strong><span>お気に入り</span>');
+    const preview = html.split('aria-labelledby="space-favorites-title"')[1].split('</section>')[0];
+    expect(preview.match(/<li>/g)).toHaveLength(1);
+    expect(preview).toContain('&lt;b&gt;My voice&lt;/b&gt;');
+    expect(preview).toContain('台本: Persisted title');
+    expect(preview).not.toContain('スコア 88');
+    expect(html).toContain('同じ台本の最高点 <strong>88点</strong>');
+    expect(html).not.toContain('準備中');
   });
 });

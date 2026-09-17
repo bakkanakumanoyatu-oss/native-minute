@@ -38,6 +38,7 @@ const coach = {
 };
 
 const review: MobileReview = {
+      favorite: false, displayName: null,
   takeId: "take-1",
   scriptId: "script-1",
   createdAt: "2026-08-13T00:00:00.000Z",
@@ -119,6 +120,7 @@ describe("mobile practice static screens", () => {
 
   it("preserves the server-provided progress and take-history order", () => {
     const take = {
+      favorite: false, displayName: null,
       id: "take-1",
       scriptId: "script-1",
       score: 82,

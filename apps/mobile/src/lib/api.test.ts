@@ -55,6 +55,7 @@ const COACH_FIXTURE = {
 };
 
 const REVIEW_FIXTURE = {
+      favorite: false, displayName: null,
   takeId: "take-fixture",
   scriptId: SCRIPT_FIXTURE.id,
   createdAt: "2026-07-20T00:00:00.000Z",
@@ -567,6 +568,7 @@ describe("review and progress", () => {
       fluencyScore: 80,
       rhythmScore: 81,
       reviewedAt: REVIEW_FIXTURE.reviewedAt,
+      favorite: false, displayName: null,
       createdAt: REVIEW_FIXTURE.createdAt,
       transcriptText: REVIEW_FIXTURE.transcriptText,
       weakWords: EVALUATION_FIXTURE.weakWords,

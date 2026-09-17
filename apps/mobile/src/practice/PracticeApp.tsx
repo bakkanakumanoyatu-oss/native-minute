@@ -104,7 +104,7 @@ export function PracticeApp({
       screen = <HomeScreen api={api} isOnline={isOnline} onNavigate={navigate} />;
       break;
     case "takes":
-      screen = <TakesScreen api={api} isOnline={isOnline} scriptId={route.scriptId} onNavigate={navigate} onBack={() => navigate(takesBack.current)} />;
+      screen = <TakesScreen favorites={route.favorites} api={api} isOnline={isOnline} scriptId={route.scriptId} onNavigate={navigate} onBack={() => navigate(takesBack.current)} />;
       break;
     case "scripts":
       screen = <ScriptsScreen api={api} isOnline={isOnline} onNavigate={navigate} />;
@@ -142,7 +142,7 @@ export function PracticeApp({
         <header className="practice-focus-header" aria-label="練習の移動">
           <button type="button" onClick={() => navigate(practiceBackRoute(route, origin.current))}>← 戻る</button>
           <span aria-label="練習のステップ">{route.name === "listen" ? "1 / 3" : route.name === "record" ? "2 / 3" : "3 / 3"}</span>
-          <button type="button" onClick={() => navigate(safePracticeOrigin(origin.current))}>練習を終了</button>
+          <button type="button" onClick={() => navigate({ name: "home" })}>練習を終了（Home）</button>
         </header>
       ) : <header className="space-header"><div><strong>Native Minute</strong><span>YOUR QUIET SPEAKING SPACE</span></div><button type="button" onClick={() => navigate({ name: "settings" })}>設定</button></header>}
       <div key={practiceRoutePath(route)}>{screen}</div>

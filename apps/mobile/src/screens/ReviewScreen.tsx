@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type {
   MobileReview,
   PracticeApi,
   PracticeRequestFailure
 } from "../practice/api";
 import type { PracticeRoute } from "../practice/routes";
+import { TakeMetadataEditor } from "./TakeMetadataEditor";
 import { LoadingState, RequestError, ScreenHeading, formatReviewDate } from "./ScreenParts";
 
 type ReviewState =
   | { kind: "loading" }
-  | { kind: "ready"; review: MobileReview }
+  | { kind: "ready"; review: MobileReview; scriptTitle: string }
   | { kind: "error"; error: PracticeRequestFailure };
 
 function Score({ label, value }: { label: string; value: number }) {
@@ -23,9 +24,11 @@ function Score({ label, value }: { label: string; value: number }) {
 
 export function ReviewContent({
   review,
-  onNavigate
+  onNavigate,
+  metadataActions
 }: {
   review: MobileReview;
+  metadataActions?: ReactNode;
   onNavigate: (route: PracticeRoute) => void;
 }) {
   return (
@@ -56,6 +59,7 @@ export function ReviewContent({
         </div>
       </section>
 
+      {metadataActions}
       <section className="review-results" aria-labelledby="review-result-title">
         <div className="review-result-top">
           <h2 id="review-result-title">今回の結果</h2>
@@ -149,15 +153,13 @@ export function ReviewScreen({
       };
     }
 
-    void api.getReview(scriptId, takeId).then((result) => {
-      if (!active) {
-        return;
-      }
-      setState(
-        result.kind === "success"
-          ? { kind: "ready", review: result.review }
-          : { kind: "error", error: result }
-      );
+    void Promise.all([api.getReview(scriptId, takeId), api.getScript(scriptId)]).then(([result, script]) => {
+      if (!active) return;
+      setState(result.kind !== "success" ? { kind: "error", error: result }
+        : script.kind !== "success" ? { kind: "error", error: script }
+        : { kind: "ready", review: result.review, scriptTitle: script.script.title });
+    }).catch(() => {
+      if (active) setState({ kind: "error", error: { kind: "network-error" } });
     });
 
     return () => {
@@ -175,7 +177,15 @@ export function ReviewScreen({
       {visibleState.kind === "loading" ? <LoadingState label="Reviewを読み込んでいます…" /> : null}
       {visibleState.kind === "error" ? <RequestError error={visibleState.error} onRetry={reload} /> : null}
       {visibleState.kind === "ready" ? (
-        <ReviewContent review={visibleState.review} onNavigate={onNavigate} />
+        <>
+          <div className="take-identity">
+            {visibleState.review.displayName ? <h2>{visibleState.review.displayName}</h2> : null}
+            <p className="review-meta">台本: <span lang="en">{visibleState.scriptTitle}</span></p>
+          </div>
+          <ReviewContent review={visibleState.review} onNavigate={onNavigate} metadataActions={<TakeMetadataEditor key={takeId} api={api} review={visibleState.review} onReload={reload}
+            onSaved={metadata => setState(current => current.kind === "ready" && current.review.takeId === metadata.takeId
+              ? { ...current, review: { ...current.review, ...metadata } } : current)} />} />
+        </>
       ) : (
         <button type="button" className="review-primary" disabled>
           <span>次のTakeを録る</span><span className="review-arrow" aria-hidden="true">→</span>

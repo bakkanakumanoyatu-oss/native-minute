@@ -177,6 +177,8 @@ export type MobileCoachFeedback = {
 };
 
 export type MobileReview = {
+  favorite: boolean;
+  displayName: string | null;
   takeId: string;
   scriptId: string;
   createdAt: string;
@@ -187,6 +189,8 @@ export type MobileReview = {
 };
 
 export type MobileProgressTake = {
+  favorite: boolean;
+  displayName: string | null;
   id: string;
   scriptId: string;
   score: number;
@@ -447,6 +451,7 @@ function isMobileCoachFeedback(value: unknown): value is MobileCoachFeedback {
 function isMobileReview(value: unknown): value is MobileReview {
   return (
     isObject(value) &&
+    isTakeMetadata(value) &&
     isNonEmptyString(value.takeId) &&
     isNonEmptyString(value.scriptId) &&
     isTimestamp(value.createdAt) &&
@@ -460,6 +465,7 @@ function isMobileReview(value: unknown): value is MobileReview {
 function isMobileProgressTake(value: unknown): value is MobileProgressTake {
   return (
     isObject(value) &&
+    isTakeMetadata(value) &&
     isNonEmptyString(value.id) &&
     isNonEmptyString(value.scriptId) &&
     isFiniteNumber(value.score) &&
@@ -1604,5 +1610,26 @@ export async function fetchMobileProgress(
   const progress = parseProgressPayload(attempt.body);
   return progress
     ? { kind: "success", progress }
+    : { kind: "invalid-response" };
+}
+
+export type MobileTakeMetadata = { takeId: string; favorite: boolean; displayName: string | null };
+export type TakeMetadataPatch = { favorite?: boolean; displayName?: string | null };
+export type TakeMetadataRequestState = { kind: "success"; metadata: MobileTakeMetadata } | MobileApiFailure;
+
+function isTakeMetadata(value: unknown): value is Record<string, unknown> & { favorite: boolean; displayName: string | null } {
+  return isObject(value) && typeof value.favorite === "boolean" &&
+    (value.displayName === null || (typeof value.displayName === "string" && value.displayName.length > 0 && value.displayName.length <= 60));
+}
+
+export async function updateMobileTakeMetadata(bffBaseUrl: string, accessToken: string, takeId: string, input: TakeMetadataPatch, options: MobileApiRequestOptions = {}): Promise<TakeMetadataRequestState> {
+  const attempt = await requestJson(bffBaseUrl, `/api/mobile/takes/${encodeURIComponent(takeId)}/metadata`, accessToken,
+    { method: "PATCH", body: JSON.stringify(input) }, options);
+  if (attempt.kind !== "response") return mapAttemptFailure(attempt);
+  if (!attempt.response.ok) return mapFailure(attempt.response, attempt.body);
+  const body = attempt.body;
+  const metadata = isObject(body) && body.ok === true && isObject(body.data) ? body.data.metadata : null;
+  return isObject(metadata) && metadata.takeId === takeId && isTakeMetadata(metadata)
+    ? { kind: "success", metadata: { takeId, favorite: metadata.favorite, displayName: metadata.displayName } }
     : { kind: "invalid-response" };
 }

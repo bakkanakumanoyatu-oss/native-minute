@@ -29,6 +29,7 @@ const MOBILE_API_ERROR_COPY: Record<MobileApiReasonCode, { message: string; retr
   review_not_found: { message: "レビューが見つかりませんでした。", retryable: false },
   evaluation_in_progress: { message: "同じ Take の評価を処理中です。少し待ってから再試行してください。", retryable: true },
   evaluation_unavailable: { message: "評価を完了できませんでした。", retryable: true },
+  take_metadata_unavailable: { message: "録音の情報を保存できませんでした。", retryable: true },
   progress_unavailable: { message: "進捗を取得できませんでした。", retryable: true },
   account_deletion_in_progress: { message: "アカウント処理中のため台本を表示できません。", retryable: false },
   account_deletion_unavailable: { message: "削除リクエストの状況を確認できませんでした。少し待ってから再試行してください。", retryable: true },

@@ -3,6 +3,8 @@ import type { EvaluateResult } from "@/services/pronunciation";
 import type { HydratedTakeReview } from "@/services/review";
 
 export interface ProgressTakeSummary {
+  favorite: boolean;
+  displayName: string | null;
   id: string;
   scriptId: string;
   score: number;

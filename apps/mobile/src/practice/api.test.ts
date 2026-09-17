@@ -127,3 +127,27 @@ describe("practice request state", () => {
     });
   });
 });
+
+
+it("waits for an in-flight metadata save before refetch on another screen", async () => {
+  let resolveWrite!: (response: Response) => void;
+  const calls: string[] = [];
+  const auth = { getState: () => ({ kind: "authenticated", userId: "user-a" }), getAccessToken: async () => "token" } as unknown as MobileAuthController;
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    calls.push(url);
+    if (url.endsWith("/metadata")) return new Promise<Response>(resolve => { resolveWrite = resolve; });
+    return new Response(JSON.stringify({ ok: true, data: { progress: { scripts: [], totalScripts: 0, totalReviewedTakes: 0, bestTakeCount: 0 } } }));
+  }));
+  try {
+    const api = createPracticeApi({ auth, bffBaseUrl: "https://example.test", ownerUserId: "user-a", onTiming: () => undefined });
+    const saving = api.updateTakeMetadata("take-a", { favorite: true });
+    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    const read = api.getProgress();
+    await Promise.resolve();
+    expect(calls).toHaveLength(1);
+    resolveWrite(new Response(JSON.stringify({ ok: true, data: { metadata: { takeId: "take-a", favorite: true, displayName: null } } })));
+    expect((await saving).kind).toBe("success");
+    expect((await read).kind).toBe("success");
+    expect(calls[1]).toContain("/progress");
+  } finally { vi.unstubAllGlobals(); }
+});

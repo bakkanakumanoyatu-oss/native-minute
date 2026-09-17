@@ -1,6 +1,6 @@
 export type PracticeRoute =
   | { name: "home" }
-  | { name: "takes"; scriptId?: string }
+  | { name: "takes"; scriptId?: string; favorites?: boolean }
   | { name: "scripts" }
   | { name: "settings" }
   | { name: "account_deletion" }
@@ -32,7 +32,7 @@ export function parsePracticeRoute(location: Pick<Location, "pathname" | "search
   if (segments.length === 0) return { name: "home" };
   if (segments.length === 1 && segments[0] === "takes") {
     const scriptId = safeSegment(new URLSearchParams(location.search).get("scriptId") ?? undefined);
-    return scriptId ? { name: "takes", scriptId } : { name: "takes" };
+    return { name: "takes", ...(scriptId ? { scriptId } : {}), ...(new URLSearchParams(location.search).get("filter") === "favorites" ? { favorites: true } : {}) };
   }
 
   if (segments.length === 1 && segments[0] === "scripts") {
@@ -88,8 +88,12 @@ export function practiceRoutePath(route: PracticeRoute) {
   switch (route.name) {
     case "home":
       return "/";
-    case "takes":
-      return route.scriptId ? `/takes?scriptId=${encodeURIComponent(route.scriptId)}` : "/takes";
+    case "takes": {
+      const query = new URLSearchParams();
+      if (route.scriptId) query.set("scriptId", route.scriptId);
+      if (route.favorites) query.set("filter", "favorites");
+      return `/takes${query.size ? `?${query}` : ""}`;
+    }
     case "scripts":
       return "/scripts";
     case "settings":

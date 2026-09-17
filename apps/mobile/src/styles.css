@@ -2263,10 +2263,21 @@ html:has(.practice-shell) { background: #f7f6f2; }
 .personal-space .space-primary { margin-top: 12px; }
 .space-section-heading h2 { flex: 1; }
 .space-section-heading button { flex: none; }
-.practice-focus-header { grid-template-columns: auto minmax(0, 1fr) auto; }
+.practice-focus-header { grid-template-columns: auto minmax(max-content, 1fr) auto; }
 .practice-focus-header button { white-space: nowrap; }
+.practice-focus-header button:last-child { white-space: normal; }
 .practice-focus-header > span { text-align: center; overflow-wrap: anywhere; }
 
 .home-screen .space-script-preview li { padding-block: 16px 8px; }
 .home-screen .space-script-preview .space-text { width: auto; }
 .home-screen .space-own-takes .space-text > strong { font-size: 1.125rem; line-height: 1.6; }
+
+/* Personal Take metadata: secondary to the frozen practice actions. */
+.take-identity { margin: 1rem 0; overflow-wrap: anywhere; }
+.take-identity h2 { font-size: 1.125rem; margin: 0 0 .4rem; }
+.take-metadata-actions, .take-filters { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; }
+.take-metadata input { display: block; width: 100%; box-sizing: border-box; margin-top: .5rem; font: inherit; }
+.take-metadata form { margin-top: 1rem; }
+.take-metadata button, .take-filters button { min-height: 44px; }
+.take-filters { margin: 1rem 0; }
+.take-filters [aria-pressed="true"] { text-decoration: underline; text-underline-offset: .3em; }

@@ -15,6 +15,9 @@ import {
   fetchMobileAccountDeletionStatus,
   fetchMobileVoiceDeletionStatus,
   fetchMobileProgress,
+  updateMobileTakeMetadata,
+  type TakeMetadataPatch,
+  type TakeMetadataRequestState,
   fetchMobileReview,
   fetchMobileScript,
   fetchMobileScripts,
@@ -88,6 +91,7 @@ export interface PracticeApi {
   uploadRecording(input: UploadMobileRecordingInput): Promise<MobileRecordingUploadState>;
   evaluateRecording(input: EvaluateMobileRecordingInput): Promise<MobileReviewRequestState>;
   getReview(scriptId: string, takeId: string): Promise<MobileReviewRequestState>;
+  updateTakeMetadata(takeId: string, input: TakeMetadataPatch): Promise<TakeMetadataRequestState>;
   getProgress(): Promise<MobileProgressRequestState>;
 }
 
@@ -178,6 +182,22 @@ export function createPracticeApi({
   onTiming = recordMobileApiTiming
 }: PracticeApiOptions): PracticeApi {
   const listenRequests = new Map<string, Promise<MobileListenRequestState>>();
+  const metadataWrites = new Set<Promise<TakeMetadataRequestState>>();
+
+  function updateTakeMetadata(takeId: string, input: TakeMetadataPatch) {
+    const pending = request(token => updateMobileTakeMetadata(bffBaseUrl, token, takeId, input, { onTiming }));
+    metadataWrites.add(pending);
+    const settled = () => { metadataWrites.delete(pending); };
+    void pending.then(settled, settled);
+    return pending;
+  }
+
+  async function afterMetadataWrites<T>(read: () => Promise<T>) {
+    // A screen may unmount during a save. New screens must read after that write,
+    // while still fetching canonical data instead of carrying client metadata.
+    await Promise.allSettled([...metadataWrites]);
+    return read();
+  }
 
   function ownerIsCurrent() {
     return isPracticeOwnerStateCurrent(auth.getState(), ownerUserId);
@@ -296,7 +316,8 @@ export function createPracticeApi({
     downloadAudio: (audioId) => request((token) => downloadMobileScriptAudio(bffBaseUrl, token, audioId, { onTiming })),
     uploadRecording: (input) => request((token) => uploadMobileRecording(bffBaseUrl, token, input, { onTiming })),
     evaluateRecording: (input) => request((token) => evaluateMobileRecording(bffBaseUrl, token, input, { onTiming })),
-    getReview: (scriptId, takeId) => request((token) => fetchMobileReview(bffBaseUrl, token, scriptId, takeId, { onTiming })),
-    getProgress: () => request((token) => fetchMobileProgress(bffBaseUrl, token, { onTiming }))
+    getReview: (scriptId, takeId) => afterMetadataWrites(() => request((token) => fetchMobileReview(bffBaseUrl, token, scriptId, takeId, { onTiming }))),
+    updateTakeMetadata,
+    getProgress: () => afterMetadataWrites(() => request((token) => fetchMobileProgress(bffBaseUrl, token, { onTiming })))
   };
 }

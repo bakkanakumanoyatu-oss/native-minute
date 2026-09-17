@@ -5,6 +5,7 @@ import { ProgressContent } from "./ProgressScreen";
 
 function take(id: string, score: number): MobileProgressTake {
   return {
+      favorite: false, displayName: null,
     id, scriptId: "script-1", score, accuracyScore: score, fluencyScore: score, rhythmScore: score,
     reviewedAt: "2026-09-05T08:42:00+09:00", createdAt: "2026-09-05T08:40:00+09:00",
     transcriptText: null, weakWords: [],

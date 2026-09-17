@@ -165,6 +165,7 @@ function createPcmWave(options?: {
 function createStoredReview(): StoredTakeReview {
   return {
     take: {
+      favorite: false, display_name: null,
       id: TAKE_ID,
       script_id: SCRIPT_ID,
       user_id: USER_ID,
@@ -212,6 +213,7 @@ function createProgressTake(id = TAKE_ID, createdAt = "2026-08-13T00:02:00.000Z"
   const stored = hydrateStoredReview(createStoredReview());
 
   return {
+    favorite: false, displayName: null,
     id,
     scriptId: SCRIPT_ID,
     score: stored.evaluation.score,
@@ -545,6 +547,7 @@ describe("mobile evaluation, review, and progress adapters", () => {
     expect(response.status).toBe(200);
     expect(createPersistedReview).not.toHaveBeenCalled();
     expect(payload.data.review).toEqual({
+      favorite: false, displayName: null,
       takeId: TAKE_ID,
       scriptId: SCRIPT_ID,
       createdAt: stored.take.created_at,

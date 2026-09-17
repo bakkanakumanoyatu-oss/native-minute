@@ -408,6 +408,8 @@ Gate 4 provider freezeは`CLOSED_COMMITTED_PASS`です。implementation source `
 
 ## setup
 
+Mobile Personal Space P2（Favorite / 録音名 / My Takes）は `0031_take_personal_metadata.sql` が必要です。既存migrationを順に適用したDBを前提とし、BFF/mobileの利用開始前に0031を適用してください。今回の実装では使い捨ての隔離DBだけに適用し、Staging / Productionには未適用です。[P2 checkpoint・ローカルpreview](docs/qss-personal-space-p2-checkpoint.md)を参照してください。追加環境変数はありません。
+
 1. `.env.example` を `.env.local` にコピーする
 2. 次を設定する
    - `NEXT_PUBLIC_SUPABASE_URL`

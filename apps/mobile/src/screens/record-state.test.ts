@@ -65,7 +65,7 @@ describe("active recording remains stoppable across connectivity changes", () =>
             content: Array(16).fill('I take a quiet moment to practice speaking clearly.').join('\\n\\n'),
             locale: 'en-US', targetSeconds: 60, createdAt: '2026-09-05T00:00:00Z', updatedAt: '2026-09-05T00:00:00Z' };
           const ok = data => new Response(JSON.stringify({ok: true, data}), {headers: {'Content-Type': 'application/json'}});
-          const review = () => ({ takeId: qa.evaluations[0].takeId, scriptId: script.id, createdAt: script.createdAt, reviewedAt: script.createdAt, transcriptText: 'A quiet morning.',
+          const review = () => ({ favorite: false, displayName: null, takeId: qa.evaluations[0].takeId, scriptId: script.id, createdAt: script.createdAt, reviewedAt: script.createdAt, transcriptText: 'A quiet morning.',
             evaluation: { score: 82, accuracyScore: 80, fluencyScore: 80, rhythmScore: 80, summaryJa: '結果', strengthsJa: [], weakWords: [], scriptWordCount: 10, transcriptWordCount: 10 },
             coach: { titleJa: '助言', summaryJa: '続けよう', nextStepJa: 'ゆっくり', bulletPointsJa: [], focusWords: [] } });
           window.fetch = async (input, init = {}) => {
@@ -215,11 +215,11 @@ describe("active recording remains stoppable across connectivity changes", () =>
   it("confirms before exiting active capture and keeps recording when declined", async () => {
     const page = await mount(); await start(page);
     page.once("dialog", dialog => dialog.dismiss());
-    await page.getByRole("button", { name: "練習を終了", exact: true }).click();
+    await page.getByRole("button", { name: "練習を終了（Home）", exact: true }).click();
     await browserExpect(stop(page)).toBeVisible();
     expect(await stats(page)).toMatchObject({ liveTracks: 1, trackStops: 0 });
     page.once("dialog", dialog => dialog.accept());
-    await page.getByRole("button", { name: "練習を終了", exact: true }).click();
+    await page.getByRole("button", { name: "練習を終了（Home）", exact: true }).click();
     await browserExpect(page).toHaveURL(origin + "/");
     expect(await stats(page)).toMatchObject({ liveTracks: 0, trackStops: 1, uploads: [], evaluations: [] });
   });

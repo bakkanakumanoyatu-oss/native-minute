@@ -32,7 +32,9 @@ export function HomeContent({ progress, onNavigate }: { progress: MobileProgress
   const recent = progress.scripts.flatMap(item => item.latestTake ? [{ item, take: item.latestTake }] : [])
     .sort((a, b) => b.take.createdAt.localeCompare(a.take.createdAt) || b.take.id.localeCompare(a.take.id));
   const latest = recent[0];
-  const savedTakes = recentPractice(progress).slice(0, 2);
+  const allTakes = recentPractice(progress);
+  const savedTakes = allTakes.slice(0, 2);
+  const favorites = allTakes.filter(row => row.take.favorite);
   if (!latest && progress.totalReviewedTakes === 0) return <section className="space-first">
     <p className="space-meta">練習すると、ここに結果と録音が残ります。</p>
     <button className="space-primary" onClick={() => onNavigate({ name: "scripts" })}>
@@ -71,7 +73,7 @@ export function HomeContent({ progress, onNavigate }: { progress: MobileProgress
         </button>
       </section>
     </> : <p>前回の台本を表示できません。台本から練習を始められます。</p>}
-    <div className="space-counts"><button onClick={() => onNavigate({ name: "progress" })}><strong>{new Set(progress.scripts.filter(item => item.takeCount > 0).map(item => item.script.id)).size}</strong><span>練習した台本</span></button><button onClick={() => onNavigate({ name: "takes" })}><strong>{progress.totalReviewedTakes}</strong><span>保存済み録音</span></button></div>
+    <div className="space-counts"><button onClick={() => onNavigate({ name: "progress" })}><strong>{new Set(progress.scripts.filter(item => item.takeCount > 0).map(item => item.script.id)).size}</strong><span>練習した台本</span></button><button onClick={() => onNavigate({ name: "takes" })}><strong>{progress.totalReviewedTakes}</strong><span>保存済み録音</span></button><button onClick={() => onNavigate({ name: "takes", favorites: true })}><strong>{favorites.length}</strong><span>お気に入り</span></button></div>
     <p className="space-meta space-count-note">録音数は評価して保存したTakeの件数です。</p>
     <section className="space-section"><div className="space-section-heading"><h2>最近の練習</h2><button className="space-text" onClick={() => onNavigate({ name: "takes" })}>履歴へ →</button></div><ol className="space-takes space-recent" aria-label="最近練習した台本">
       {recent.slice(0, 3).map(({ item, take }) => <li key={item.script.id}>
@@ -85,6 +87,11 @@ export function HomeContent({ progress, onNavigate }: { progress: MobileProgress
         </button>
       </li>)}
     </ol></section>
+    {favorites.length > 0 ? <section className="space-section" aria-labelledby="space-favorites-title">
+      <div className="space-section-heading"><h2 id="space-favorites-title">お気に入りの録音</h2>
+        <button className="space-text" onClick={() => onNavigate({ name: "takes", favorites: true })}>すべて見る →</button></div>
+      <TakeRows rows={favorites.slice(0, 2)} onNavigate={onNavigate} />
+    </section> : null}
     {savedTakes.length > 0 ? <section className="space-section space-own-takes" aria-labelledby="space-own-takes-title">
       <div className="space-section-heading">
         <h2 id="space-own-takes-title">自分の録音</h2>
@@ -96,7 +103,7 @@ export function HomeContent({ progress, onNavigate }: { progress: MobileProgress
 }
 
 export function TakeRows({ rows, onNavigate }: { rows: ReturnType<typeof recentPractice> } & Navigation) {
-  return <ol className="space-takes">{rows.map(({ take, item }) => <li key={take.id}><button className="space-text" onClick={() => onNavigate({ name: "review", scriptId: item.script.id, takeId: take.id })}><span className="space-meta">{formatReviewDate(take.reviewedAt ?? take.createdAt)}</span><strong>{item.script.title}</strong><span className="space-meta">スコア {take.score} · 結果を見る →</span></button></li>)}</ol>;
+  return <ol className="space-takes">{rows.map(({ take, item }) => <li key={take.id}><button className="space-text" onClick={() => onNavigate({ name: "review", scriptId: item.script.id, takeId: take.id })}><span className="space-meta">{formatReviewDate(take.reviewedAt ?? take.createdAt)}</span><strong>{take.displayName ?? item.script.title}</strong>{take.displayName ? <span className="space-meta">台本: {item.script.title}</span> : null}{take.favorite ? <span className="space-meta">♥ お気に入り</span> : null}<span className="space-meta">スコア {take.score} · 結果を見る →</span></button></li>)}</ol>;
 }
 
 export function HomeScreen({ api, isOnline, onNavigate }: { api: PracticeApi; isOnline: boolean } & Navigation) {

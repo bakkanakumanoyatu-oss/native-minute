@@ -42,6 +42,8 @@ function toStoredTakeReview(
 function toProgressTakeSummary(review: HydratedTakeReview): ProgressTakeSummary {
   return {
     id: review.take.id,
+    favorite: review.take.favorite,
+    displayName: review.take.display_name,
     scriptId: review.take.script_id,
     score: review.take.score ?? 0,
     accuracyScore: review.take.accuracy_score ?? 0,

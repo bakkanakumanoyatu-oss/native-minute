@@ -1129,6 +1129,8 @@ export interface Database {
           id: string;
           script_id: string;
           user_id: string;
+          favorite: boolean;
+          display_name: string | null;
           audio_path: string;
           duration_seconds: number | null;
           status: string;
@@ -1149,6 +1151,8 @@ export interface Database {
           id?: string;
           script_id: string;
           user_id: string;
+          favorite?: boolean;
+          display_name?: string | null;
           audio_path: string;
           duration_seconds?: number | null;
           status?: string;
@@ -1169,6 +1173,8 @@ export interface Database {
           id?: string;
           script_id?: string;
           user_id?: string;
+          favorite?: boolean;
+          display_name?: string | null;
           audio_path?: string;
           duration_seconds?: number | null;
           status?: string;

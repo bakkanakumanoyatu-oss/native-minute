@@ -1,0 +1,50 @@
+[
+  {
+    "width": 320,
+    "size": 16,
+    "name": "rename failure / concurrent deletion",
+    "status": "PASS"
+  },
+  {
+    "width": 320,
+    "size": 16,
+    "name": "takes read failure is not empty",
+    "status": "PASS"
+  },
+  {
+    "width": 320,
+    "size": 32,
+    "name": "rename failure / concurrent deletion",
+    "status": "PASS"
+  },
+  {
+    "width": 320,
+    "size": 32,
+    "name": "takes read failure is not empty",
+    "status": "PASS"
+  },
+  {
+    "width": 428,
+    "size": 16,
+    "name": "rename failure / concurrent deletion",
+    "status": "PASS"
+  },
+  {
+    "width": 428,
+    "size": 16,
+    "name": "takes read failure is not empty",
+    "status": "PASS"
+  },
+  {
+    "width": 428,
+    "size": 32,
+    "name": "rename failure / concurrent deletion",
+    "status": "PASS"
+  },
+  {
+    "width": 428,
+    "size": 32,
+    "name": "takes read failure is not empty",
+    "status": "PASS"
+  }
+]

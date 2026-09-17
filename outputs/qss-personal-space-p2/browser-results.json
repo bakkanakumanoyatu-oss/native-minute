@@ -1,0 +1,314 @@
+[
+  {
+    "name": "empty-home",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "empty-takes",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "one-home",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "review-unnamed",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "review-named",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "favorites-takes",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "favorite-home",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "long-name",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "update-failure",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "stale-response",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "zero-favorites",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "all-order",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "read-failure",
+    "width": 320,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "empty-home",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "empty-takes",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "one-home",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "review-unnamed",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "review-named",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "favorites-takes",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "favorite-home",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "long-name",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "update-failure",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "stale-response",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "zero-favorites",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "all-order",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "read-failure",
+    "width": 320,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "empty-home",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "empty-takes",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "one-home",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "review-unnamed",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "review-named",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "favorites-takes",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "favorite-home",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "long-name",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "update-failure",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "stale-response",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "zero-favorites",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "all-order",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "read-failure",
+    "width": 428,
+    "text": "100%",
+    "status": "PASS"
+  },
+  {
+    "name": "empty-home",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "empty-takes",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "one-home",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "review-unnamed",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "review-named",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "favorites-takes",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "favorite-home",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "long-name",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "update-failure",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "stale-response",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "zero-favorites",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "all-order",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  },
+  {
+    "name": "read-failure",
+    "width": 428,
+    "text": "200%",
+    "status": "PASS"
+  }
+]
