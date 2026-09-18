@@ -53,30 +53,34 @@ for (const [engine, launcher] of Object.entries({ chromium, webkit })) describe(
   it("uses actual media for seek/pause/rate, clamps both ends and never generates on controls", async () => mount(async p => {
     await prepare(p);
     expect(await audio(p).evaluate(e => (e as HTMLAudioElement).paused)).toBe(true);
-    await p.getByRole("button", { name: "お手本音声を10秒戻す" }).click();
+    await p.getByRole("button", { name: "お手本音声を5秒戻す" }).click();
     expect(await audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBe(0);
-    await p.getByRole("button", { name: "お手本音声を10秒進める" }).click();
-    expect(await audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBe(10);
+    await p.getByRole("button", { name: "お手本音声を5秒進める" }).click();
+    expect(await audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBe(5);
+    await p.getByRole("button", { name: "お手本音声を3秒進める" }).click();
+    expect(await audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBe(8);
+    await p.getByRole("button", { name: "お手本音声を3秒戻す" }).click();
+    expect(await audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBe(5);
     expect(await audio(p).evaluate(e => (e as HTMLAudioElement).paused)).toBe(true);
     for (const rate of ["0.75", "0.85", "1", "1.15"]) {
       await p.getByRole("combobox", { name: "お手本音声の再生速度" }).selectOption(rate);
       expect(await audio(p).evaluate(e => (e as HTMLAudioElement).playbackRate)).toBe(Number(rate));
     }
     await play(p).click();
-    await check.poll(() => audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBeGreaterThan(10);
+    await check.poll(() => audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBeGreaterThan(5);
     await pause(p).click();
     await p.waitForTimeout(150);
     const time = await audio(p).evaluate(e => (e as HTMLAudioElement).currentTime);
     await p.waitForTimeout(120);
     expect(await audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBe(time);
-    for (let i=0;i<4;i++) await p.getByRole("button", { name: "お手本音声を10秒進める" }).click();
+    for (let i=0;i<8;i++) await p.getByRole("button", { name: "お手本音声を5秒進める" }).click();
     expect(await audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBe(36);
     expect(await audio(p).evaluate(e => (e as HTMLAudioElement).paused)).toBe(true);
     expect(await p.evaluate(() => [window.listenQA.requests.length, window.listenQA.downloads.length])).toEqual([1,1]);
   }));
   it("releases on both lifecycle events, returns paused, then one play re-fetches the exact saved audio at retained time/rate", async () => mount(async p => {
     await prepare(p);
-    await p.getByRole("button", { name: "お手本音声を10秒進める" }).click();
+    await p.getByRole("button", { name: "お手本音声を5秒進める" }).click();
     await p.getByRole("combobox").selectOption("0.85");
     await play(p).click(); await check(pause(p)).toBeVisible();
     await p.waitForTimeout(150);
@@ -95,7 +99,7 @@ for (const [engine, launcher] of Object.entries({ chromium, webkit })) describe(
     expect(await p.evaluate(() => window.listenQA.downloads)).toEqual(["a:script-a:audio", "a:script-a:audio"]);
   }));
   it("expires only the position/rate after 15 minutes without generating or auto-playing", async () => mount(async p => {
-    await prepare(p); await p.getByRole("button", { name: "お手本音声を10秒進める" }).click();
+    await prepare(p); await p.getByRole("button", { name: "お手本音声を5秒進める" }).click();
     await p.getByRole("combobox").selectOption("0.75"); await suspend(p);
     await p.evaluate(() => { const now = Date.now(); Date.now = () => now + 16 * 60_000; });
     await play(p).click(); await check(pause(p)).toBeVisible();
@@ -139,6 +143,9 @@ for (const [engine, launcher] of Object.entries({ chromium, webkit })) describe(
       if (change === "logout") window.listenQA.unmount();
       else window.listenQA.render(change === "owner" ? "b" : "a", change === "script" ? "script-b" : "script-a");
     }, change);
+    // root.render is concurrent: release the old fetch only after the new identity commits.
+    if (change === "logout") await check(audio(p)).toHaveCount(0);
+    else await check(p.getByRole("button", { name: "お手本を準備する", exact: true })).toBeVisible();
     await p.evaluate(() => { window.listenQA.releaseDownload(); window.listenQA.holdDownload = false; });
     await p.waitForTimeout(100);
     expect(await p.evaluate(() => window.listenQA.plays)).toBe(0);
@@ -158,13 +165,13 @@ for (const [engine, launcher] of Object.entries({ chromium, webkit })) describe(
   }));
   it("play after returning from the end starts again and seek/rate stay connected while playing", async () => mount(async p => {
     await prepare(p);
-    for (let i=0;i<4;i++) await p.getByRole("button", { name: "お手本音声を10秒進める" }).click();
+    for (let i=0;i<8;i++) await p.getByRole("button", { name: "お手本音声を5秒進める" }).click();
     await suspend(p); await play(p).click(); await check(pause(p)).toBeVisible();
     await check.poll(() => audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBeGreaterThan(0);
     expect(await audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBeLessThan(3);
-    await p.getByRole("button", { name: "お手本音声を10秒進める" }).click();
+    await p.getByRole("button", { name: "お手本音声を5秒進める" }).click();
     await p.getByRole("combobox").selectOption("1.15");
-    expect(await audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBeGreaterThanOrEqual(10);
+    expect(await audio(p).evaluate(e => (e as HTMLAudioElement).currentTime)).toBeGreaterThanOrEqual(5);
     expect(await audio(p).evaluate(e => [(e as HTMLAudioElement).paused, (e as HTMLAudioElement).playbackRate])).toEqual([false, 1.15]);
     expect(await p.evaluate(() => window.listenQA.requests.length)).toBe(1);
   }));
@@ -204,12 +211,12 @@ for (const [engine, launcher] of Object.entries({ chromium, webkit })) describe(
   for (const width of [320,428]) for (const fontSize of [16,32]) it(`layout and accessible controls at ${width}px / ${fontSize}px text`, async () => mount(async p => {
     await p.setViewportSize({ width, height: 850 }); await p.evaluate(size => { document.documentElement.style.fontSize = size + "px"; }, fontSize);
     await prepare(p);
-    for (const control of [p.getByRole("button", { name: "お手本音声を10秒戻す" }), play(p), p.getByRole("button", { name: "お手本音声を10秒進める" }), p.getByRole("combobox")]) {
+    for (const control of [p.getByRole("button", { name: "お手本音声を5秒戻す" }), play(p), p.getByRole("button", { name: "お手本音声を5秒進める" }), p.getByRole("combobox")]) {
       await check(control).toBeVisible(); const box = await control.boundingBox();
       expect(box!.height).toBeGreaterThanOrEqual(44); expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.y + box!.height).toBeLessThanOrEqual(850);
     }
-    await p.screenshot({ path: `../../outputs/qss-listen-playback-return/${engine}-${width}-${fontSize}.png` });
+    await p.screenshot({ path: `../../outputs/qss-app-wide-rebaseline-b/listen-${engine}-${width}-${fontSize}.png` });
     expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no horizontal overflow").toBe(true);
     const scroll = p.getByRole("region", { name: "お手本の台本" });
     await scroll.evaluate(e => { e.scrollTop = e.scrollHeight; });
@@ -218,7 +225,7 @@ for (const [engine, launcher] of Object.entries({ chromium, webkit })) describe(
       const rect = range.getBoundingClientRect(); const scroll = e.closest(".listen-script-scroll")!.getBoundingClientRect();
       return rect.top >= scroll.top && rect.bottom <= scroll.bottom;
     });
-    await p.screenshot({ path: `../../outputs/qss-listen-playback-return/${engine}-${width}-${fontSize}.png` });
+    await p.screenshot({ path: `../../outputs/qss-app-wide-rebaseline-b/listen-${engine}-${width}-${fontSize}.png` });
     expect(visible, "final line visible").toBe(true);
   }));
 });

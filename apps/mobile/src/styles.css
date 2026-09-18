@@ -1662,7 +1662,8 @@ html:has(.progress-screen) { background: #f7f6f2; }
 }
 
 .progress-screen h3 { font-size: 1.125rem; line-height: 1.6; font-weight: 600; }
-.progress-screen .progress-next-step h3 { font-size: 1.25rem; }
+.progress-next-step { padding: 16px; border-left: 3px solid var(--progress-blue); background: #edf1f2; border-radius: 0 6px 6px 0; }
+.progress-screen .progress-next-step h3 { color: var(--progress-blue); font-size: 1rem; font-weight: 700; }
 .progress-script + .progress-script { border-top: 1px solid var(--progress-line); margin-top: 32px; padding-top: 32px; }
 
 .progress-screen .progress-advice {
@@ -1709,15 +1710,18 @@ html:has(.progress-screen) { background: #f7f6f2; }
 
 .progress-comparison { margin-top: 32px; padding: 24px 0; border-block: 1px solid var(--progress-line); }
 .progress-score-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: 24px; }
-.progress-score-pair > div { min-width: 0; }
-.progress-score-pair dt { font-size: 1rem; line-height: 1.6; font-weight: 600; }
+.progress-score-pair > div { min-width: 0; border-top: 3px solid var(--progress-blue); padding-top: 12px; }
+.progress-score-pair > div + div { border-top: 1px solid var(--progress-line); padding-top: 14px; }
+.progress-score-pair dt { font-size: 1.125rem; line-height: 1.6; font-weight: 700; }
+.progress-screen .progress-score-label { display: block; color: var(--progress-muted); font-size: .8125rem; line-height: 1.6; font-weight: 400; letter-spacing: 0; }
+.progress-score-pair .progress-score-label { margin-top: 8px; }
 .progress-screen .progress-score {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: 4px 6px;
   margin: 8px 0;
-  font-size: 2rem;
+  font-size: 2.5rem;
   line-height: 1.2;
   font-weight: 500;
   letter-spacing: -.025em;
@@ -1728,12 +1732,12 @@ html:has(.progress-screen) { background: #f7f6f2; }
 .progress-screen .progress-same-take { margin-top: 16px; }
 .progress-history { padding-top: 24px; container-type: inline-size; }
 .progress-screen .progress-history h3 { margin-bottom: 8px; }
-.progress-screen .progress-take-list { list-style: none; padding: 0; }
+.progress-screen .progress-take-list { list-style: none; padding: 0; margin-top: 12px; }
 .progress-take-list li + li { border-top: 1px solid var(--progress-line); }
 
 .progress-screen .progress-take-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px 20px;
   width: 100%;
@@ -1751,8 +1755,13 @@ html:has(.progress-screen) { background: #f7f6f2; }
   text-align: left;
 }
 .progress-take-row > * { min-width: 0; }
+.progress-take-identity { display: grid; gap: 8px; }
+.progress-take-identity time { color: var(--progress-muted); font-size: .875rem; }
+.progress-take-status { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.progress-take-status > span { padding: 2px 8px; border: 1px solid var(--progress-line); border-radius: 4px; color: var(--progress-blue); font-size: .75rem; font-weight: 600; }
 .progress-take-score { font-size: 1.375rem; line-height: 1.3; font-variant-numeric: tabular-nums; }
-.progress-review-action { color: var(--progress-blue); font-size: .875rem; line-height: 1.7; text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
+.progress-score-unit { color: var(--progress-muted); font-size: .8125rem; }
+.progress-review-action { grid-column: 1 / -1; justify-self: end; color: var(--progress-blue); font-size: .875rem; line-height: 1.7; text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
 
 .progress-secondary { border-top: 1px solid var(--progress-line); margin-top: 24px; padding-top: 16px; }
 .progress-screen .progress-text-action,
@@ -1803,7 +1812,7 @@ html:has(.progress-screen) { background: #f7f6f2; }
 
 @container (max-width: 17rem) {
   .progress-screen .progress-take-row { grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; }
-  .progress-take-row time { grid-column: 1 / -1; }
+  .progress-take-identity { grid-column: 1 / -1; }
   .progress-review-action { justify-self: end; }
 }
 

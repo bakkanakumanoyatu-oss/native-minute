@@ -5,7 +5,7 @@ import {
   deletionStatusCopy
 } from "./AccountDeletionScreen";
 import type { MobileProgress, MobileReview, MobileScript } from "../practice/api";
-import { ProgressContent } from "./ProgressScreen";
+import { ProgressDetails as ProgressContent } from "./ProgressScreen";
 import { ReviewContent } from "./ReviewScreen";
 import { formatListenMediaTime, getListenPrepareButtonLabel } from "./ListenScreen";
 import { getScriptExcerpt, ScriptsList } from "./ScriptsScreen";
@@ -159,9 +159,9 @@ describe("mobile practice static screens", () => {
       }]
     };
     const html = renderToStaticMarkup(<ProgressContent progress={progress} onNavigate={() => undefined} />);
-    expect(html).toContain("Latest");
-    expect(html).toContain("Best");
-    expect(html).toContain("Take history");
+    expect(html).toContain("最新の結果");
+    expect(html).toContain("ベスト結果");
+    expect(html).toContain("これまでの練習");
     expect(html).toContain("82");
   });
 

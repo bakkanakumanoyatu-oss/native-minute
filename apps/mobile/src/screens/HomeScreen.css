@@ -1,0 +1,45 @@
+/* Home only: practice first, results and saved recordings follow as compact lists. */
+.personal-space.home-screen .space-welcome h1 { font-size: 1.125rem; line-height: 1.5; }
+.personal-space.home-screen .space-welcome .space-meta { margin: 2px 0 0; }
+.personal-space.home-screen .space-hero { padding: 14px; margin-top: 12px; border-radius: 8px; }
+.personal-space.home-screen .space-hero .space-eyebrow { color: #244c68; font-size: .875rem; font-weight: 700; letter-spacing: 0; margin-bottom: 6px; }
+.personal-space.home-screen .space-selection-reason { margin: 0 0 6px; color: #56636c; font-size: .875rem; }
+.personal-space.home-screen .space-hero h2 { font-size: 1.375rem; line-height: 1.45; }
+.personal-space.home-screen .space-hero .space-primary { margin-top: 10px; }
+.personal-space.home-screen .space-section { padding: 12px 0 0; margin-top: 12px; }
+.personal-space.home-screen .space-section-heading h2 { color: #244c68; font-size: 1.125rem; font-weight: 700; }
+.personal-space.home-screen .space-recent-section { border-top: 0; padding-top: 0; }
+.personal-space.home-screen .space-recent-section h2 { color: #244c68; font-size: 1.125rem; }
+.personal-space.home-screen .space-takes { margin-top: 0; }
+.personal-space.home-screen .space-takes li { padding: 8px 0; }
+.personal-space.home-screen .space-takes li:last-child { border-bottom: 0; }
+.personal-space.home-screen .space-recent-info > strong { display: block; }
+.personal-space.home-screen .space-recent .space-script-title { font-size: 1rem; line-height: 1.45; }
+.personal-space.home-screen .space-recent-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0 10px; }
+.personal-space.home-screen .space-practice { display: inline-flex; align-items: center; justify-content: space-between; gap: 12px; width: auto; min-width: 112px; min-height: 44px; padding: 10px 14px; border-radius: 6px; background: #244c68; color: #fff; font-size: .875rem; font-weight: 600; text-align: left; }
+.personal-space.home-screen .space-result-link { width: auto; min-height: 44px; font-size: .875rem; text-decoration: underline; text-underline-offset: 3px; }
+.personal-space.home-screen .space-counts { margin-top: 10px; padding: 0; border-top: 0; gap: 4px; }
+.personal-space.home-screen .space-counts button { min-width: 0; min-height: 44px; padding: 4px; border: 1px solid #8b745c; border-radius: 6px; background: #fff8eb; text-align: center; }
+.personal-space.home-screen .space-counts strong { font-size: 28px; line-height: 1.1; color: #252a2d; }
+.personal-space.home-screen .space-script-preview li { padding-block: 10px; }
+
+.personal-space.home-screen .space-meta, .personal-space.home-screen .space-text { font-size: .875rem; }
+.personal-space.home-screen .space-script-preview-line { margin: 2px 0 6px; color: #56636c; font-size: 1rem; line-height: 1.5; contain: inline-size; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.personal-space.home-screen .space-counts span { margin-top: 2px; font-size: 1rem; line-height: 1.25; word-break: keep-all; font-weight: 600; color: #202b33; }
+.personal-space.home-screen :is(.space-favorites, .space-own-takes) { border: 1px solid #8b745c; border-radius: 8px; padding: 2px 8px; margin-top: 10px; }
+.personal-space.home-screen .space-favorites { background: #e8d4b5; }
+.personal-space.home-screen .space-own-takes { background: #fffaf0; }
+.personal-space.home-screen :is(.space-favorites, .space-own-takes) .space-section-heading { gap: 8px; }
+.personal-space.home-screen :is(.space-favorites, .space-own-takes) h2 { color: #352f29; font-size: 1rem; line-height: 1.4; }
+.personal-space.home-screen .space-own-takes h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
+.personal-space.home-screen .space-preview-count { color: #252a2d; font-size: 1rem; font-weight: 600; white-space: nowrap; }
+.personal-space.home-screen .space-preview-more { margin: 0; text-align: center; color: #65513f; font-size: 1rem; line-height: 1; }
+.personal-space.home-screen :is(.space-favorites, .space-own-takes) .space-takes li { padding-block: 2px; border-bottom-color: #b29b80; }
+.personal-space.home-screen .space-recording-row { padding-block: 2px; }
+.personal-space.home-screen .space-recording-row > strong { font-size: 1rem; line-height: 1.45; }
+.personal-space.home-screen .space-recording-script { color: #65513f; font-size: 1rem; line-height: 1.4; }
+.personal-space.home-screen .space-recording-detail { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; margin-top: 2px; color: #65513f; line-height: 1.4; }
+.personal-space.home-screen .space-recording-detail time { margin-left: auto; }
+.personal-space.home-screen .space-recording-result { color: #28333b; text-decoration: underline; text-underline-offset: 3px; }
+.personal-space.home-screen :is(.space-favorites, .space-own-takes) .space-text { color: #28333b; }
+.personal-space.home-screen :is(.space-counts, .space-favorites, .space-own-takes) button:focus-visible { outline-color: #28333b; }

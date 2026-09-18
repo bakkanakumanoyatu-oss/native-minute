@@ -1,5 +1,7 @@
 # iPhone 14 Plus formal acceptance 再開マッピング v2
 
+**2026-09-18 Stage B UI/UX: HUMAN ACTUAL-DEVICE PASS / CLOSED。** Human「すごく良くなっています」、Progress A=同じ台本のListen/B=指定注意文なし、各PASS。[受入scope・validation・残件](../qss-app-wide-rebaseline-closeout.md)。JSONの `appWideRebaselineAcceptance` に今回の確定authorityを追加。P-01〜03のvisual findingは解決。原58の旧個別status/集計を今回一括PASSへ変換せず、未確認assertionは正式受入で残す。旧P-05のRecord直行は履歴であり、現行練習入口はListen（Human A PASS）。以下は各時点の記録。
+
 **2026-09-18 Home Favorite→Review→Back: HUMAN ACTUAL-DEVICE PASS / CLOSED。** 戻り先Homeを実機確認。PS-N-01へ証拠追加、他の判定・件数は変更なし。既存CLOSED／PASSは保持。今回の再確認は完了、追加試験なし。[closeout](home-favorite-review-return-focused-fix.md)。以下の待機記述は履歴。
 
 **2026-09-18 Review→Listen→Back: HUMAN ACTUAL-DEVICE PASS / CLOSED。** 元のReview／same Takeへの復帰をHuman確認。PS-N-01とRV-06へ反映。既存Record Back・未保存退出・Favorite・Listen playback・P1/P2/P3/J/Gate5は保持。再試験不要。[closeout](listen-return-origin-focused-fix.md)。以下の待機記述は各時点の履歴であり、今回の再試験依頼ではない。

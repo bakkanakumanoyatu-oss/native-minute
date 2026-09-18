@@ -195,7 +195,7 @@ export function VoiceDeletionScreen({
   const visibleState: DeletionScreenState = isOnline ? state : { kind: "error", error: { kind: "offline" } };
   const terminalActions = visibleState.kind === "ready" ? getVoiceDeletionTerminalActions(visibleState.deletion.state) : null;
   return (
-    <section className="intro-card practice-card" aria-live="polite">
+    <section className="intro-card practice-card voice-deletion-screen" aria-live="polite">
       <ScreenHeading eyebrow="Voice data" title="クローンボイスの削除" detail="クローンボイスと関連するボイスデータだけを削除できます。アカウントと英語学習の記録は残ります。" />
 
       {visibleState.kind === "loading" ? <LoadingState label="削除状況を確認しています…" /> : null}
@@ -209,11 +209,11 @@ export function VoiceDeletionScreen({
       {visibleState.kind === "ready" ? (
         <div className="settings-stack">
           <div className="auth-notice" role="status">{mobileVoiceDeletionStatusCopy(visibleState.deletion)}</div>
-          {visibleState.deletion.state === "not_requested" ? <button type="button" onClick={() => setIsConfirming(nextVoiceDeletionConfirmationState("open"))}>クローンボイスを削除する</button> : null}
+          {visibleState.deletion.state === "not_requested" ? <button type="button" className="danger-button" onClick={() => setIsConfirming(nextVoiceDeletionConfirmationState("open"))}>クローンボイスを削除する</button> : null}
           {visibleState.deletion.state === "retry_available" ? (
             <div className="settings-stack">
               {visibleState.deletion.retryAfterSeconds ? <p className="scope-note">再試行まで約 {visibleState.deletion.retryAfterSeconds} 秒です。</p> : null}
-              <button type="button" disabled={!canRetryVoiceDeletion(visibleState.deletion) || isSubmitting} onClick={() => void retryDeletion()}>{isSubmitting ? "再試行しています…" : "削除を再試行する"}</button>
+              <button type="button" className="danger-button" disabled={!canRetryVoiceDeletion(visibleState.deletion) || isSubmitting} onClick={() => void retryDeletion()}>{isSubmitting ? "再試行しています…" : "削除を再試行する"}</button>
               {!canRetryVoiceDeletion(visibleState.deletion) ? <button type="button" className="secondary-button" onClick={() => reload(false)}>状態を再確認する</button> : null}
             </div>
           ) : null}
@@ -246,7 +246,7 @@ export function VoiceDeletionScreen({
           <p>削除: クローンボイス、音声サンプル、同意録音、個人用のお手本音声とキャッシュ、既定ボイス設定。</p>
           <p>残るもの: {retainedVoiceDeletionDataCopy}</p>
           <div className="settings-link-actions">
-            <button type="button" disabled={isSubmitting} onClick={() => void requestDeletion()}>{isSubmitting ? "開始しています…" : "クローンボイスを削除する"}</button>
+            <button type="button" className="danger-button" disabled={isSubmitting} onClick={() => void requestDeletion()}>{isSubmitting ? "開始しています…" : "クローンボイスを削除する"}</button>
             <button type="button" className="secondary-button" disabled={isSubmitting} onClick={() => setIsConfirming(nextVoiceDeletionConfirmationState("cancel"))}>キャンセル</button>
           </div>
         </div>

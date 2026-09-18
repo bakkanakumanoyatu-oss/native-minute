@@ -20,7 +20,7 @@ function ProgressResult({ label, take }: {
 
   return (
     <div>
-      <dt lang="en">{label}</dt>
+      <dt>{label}<span className="progress-score-label">総合スコア</span></dt>
       <dd className="progress-score">
         <span>{take?.score ?? "—"}</span>
         {take ? <span className="progress-meta">/ 100</span> : null}
@@ -30,7 +30,7 @@ function ProgressResult({ label, take }: {
   );
 }
 
-export function ProgressContent({
+export function ProgressDetails({
   progress,
   scriptId,
   onNavigate
@@ -77,7 +77,7 @@ export function ProgressContent({
           <button
             type="button"
             className={visibleScripts.length === 1 ? "progress-primary" : "progress-text-action progress-resume"}
-            onClick={() => onNavigate({ name: "record", scriptId: item.script.id })}
+            onClick={() => onNavigate({ name: "listen", scriptId: item.script.id })}
           >
             <span>{item.latestTake ? <><span className="progress-phrase">もう一度</span><span className="progress-phrase">練習する</span></> : "練習する"}</span>
             <span className="progress-arrow" aria-hidden="true">→</span>
@@ -87,22 +87,29 @@ export function ProgressContent({
             <>
               <section className="progress-comparison" aria-label="最新とベストの結果">
                 <dl className="progress-score-pair">
-                  <ProgressResult label="Latest" take={item.latestTake} />
-                  <ProgressResult label="Best" take={item.bestTake} />
+                  <ProgressResult label="最新の結果" take={item.latestTake} />
+                  <ProgressResult label="ベスト結果" take={item.bestTake} />
                 </dl>
-                {item.latestTake.id === item.bestTake?.id ? <p className="progress-meta progress-same-take">LatestとBestは同じTakeです。</p> : null}
+                {item.latestTake.id === item.bestTake?.id ? <p className="progress-meta progress-same-take">最新とベストは同じTake（録音）です。</p> : null}
               </section>
 
               <section className="progress-history" aria-labelledby={`progress-history-${item.script.id}`}>
-                <h3 id={`progress-history-${item.script.id}`} lang="en">Take history</h3>
+                <h3 id={`progress-history-${item.script.id}`}>これまでの練習</h3>
+                <p className="progress-meta">保存したTake（録音）の履歴</p>
                 {item.takeHistory.length > 0 ? (
                   <ol className="progress-take-list">
                     {item.takeHistory.map((take) => (
                       <li key={take.id}>
                         <button className="progress-take-row" type="button" onClick={() => onNavigate({ name: "review", scriptId: item.script.id, takeId: take.id })}>
-                          <time dateTime={take.reviewedAt ?? take.createdAt}>{formatReviewDate(take.reviewedAt ?? take.createdAt)}</time>
-                          <span className="progress-take-score" aria-label={`スコア ${take.score}`}>{take.score}</span>
-                          <span className="progress-review-action" lang="en">Review <span aria-hidden="true">→</span></span>
+                          <span className="progress-take-identity">
+                            <time dateTime={take.reviewedAt ?? take.createdAt}>{formatReviewDate(take.reviewedAt ?? take.createdAt)}</time>
+                            {take.id === item.latestTake?.id || take.id === item.bestTake?.id ? <span className="progress-take-status">
+                              {take.id === item.latestTake?.id ? <span>最新</span> : null}
+                              {take.id === item.bestTake?.id ? <span>ベスト</span> : null}
+                            </span> : null}
+                          </span>
+                          <span className="progress-take-score" aria-label={`総合スコア ${take.score} / 100`}><span className="progress-score-label">総合スコア</span>{take.score}<span className="progress-score-unit"> / 100</span></span>
+                          <span className="progress-review-action">結果を見る <span aria-hidden="true">→</span></span>
                         </button>
                       </li>
                     ))}
@@ -115,6 +122,39 @@ export function ProgressContent({
       ))}
     </div>
   );
+}
+
+// Selection is explicit route state; all detail data stays server-selected.
+export function ProgressContent({ progress, scriptId, onNavigate }: {
+  progress: MobileProgress; scriptId?: string; onNavigate: (route: PracticeRoute) => void;
+}) {
+  useEffect(() => {
+    if (!scriptId) return;
+    const frame = requestAnimationFrame(() => {
+      const detail = document.getElementById("progress-selected-detail");
+      detail?.scrollIntoView({ block: "start" });
+      detail?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [scriptId]);
+  const practiced = new Set(progress.scripts.filter(item => item.takeCount > 0).map(item => item.script.id)).size;
+  return <>
+    <section className="progress-overview-summary" aria-labelledby="growth-title">
+      <p className="section-kicker">これまでの積み重ね</p>
+      <h2 id="growth-title">あなたの1分が、残っています。</h2>
+      <dl><div><dt>練習した台本</dt><dd>{practiced}<span>本</span></dd></div><div><dt>録音・評価済み</dt><dd>{progress.totalReviewedTakes}<span>件</span></dd></div></dl>
+      <p>保存した練習の記録です。</p>
+    </section>
+    <section className="progress-script-picker" aria-labelledby="select-script-title">
+      <h2 id="select-script-title">台本ごとに振り返る</h2>
+      <p>保存済みの台本 {progress.totalScripts}本</p>
+      <ul>{progress.scripts.map(item => <li key={item.script.id}><button type="button" aria-current={scriptId === item.script.id ? "true" : undefined} onClick={() => onNavigate({ name: "progress", scriptId: item.script.id })}>
+        <span><strong lang={item.script.locale}>{item.script.title}</strong><small>{item.takeCount ? `録音・評価済み ${item.takeCount}件` : "まだ練習記録がありません"}</small></span><span className="progress-selected">{scriptId === item.script.id ? "表示中" : "見る →"}</span>
+      </button></li>)}</ul>
+    </section>
+    {scriptId ? <section id="progress-selected-detail" tabIndex={-1} className="progress-detail" aria-label="選んだ台本の記録"><p className="section-kicker">この台本の記録</p><ProgressDetails progress={progress} scriptId={scriptId} onNavigate={onNavigate} /></section> : <p className="progress-selection-note">台本を選ぶと、次の練習・最新とベスト・履歴を確認できます。</p>}
+    {!progress.scripts.length ? <EmptyState title="練習記録はまだありません"><p>台本を作って、最初の1分を始めましょう。</p></EmptyState> : null}
+  </>;
 }
 
 export function ProgressScreen({

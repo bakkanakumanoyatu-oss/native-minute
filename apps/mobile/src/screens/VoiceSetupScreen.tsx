@@ -237,7 +237,7 @@ export function VoiceSetupScreen({
   const recorderError = recorderState.kind === "error" ? RECORDER_ERROR_COPY[recorderState.reason] : null;
 
   return (
-    <section className="intro-card practice-card" aria-live="polite">
+    <section className="intro-card practice-card voice-setup-screen" aria-live="polite">
       <ScreenHeading
         eyebrow="Voice setup"
         title="お手本ボイスを準備"

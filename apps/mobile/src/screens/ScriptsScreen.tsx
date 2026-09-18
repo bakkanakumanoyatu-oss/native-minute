@@ -1,3 +1,4 @@
+import { MAX_PRACTICE_SLOTS } from "../../../../lib/practice-limits";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import type { PracticeRoute } from "../practice/routes";
 import {
@@ -183,6 +184,7 @@ export function ScriptsScreen({
         ) : null}
       </div>
       <p className="scripts-intro">練習する1分を選ぶ</p>
+      {visibleState.kind === "ready" ? <p className="scripts-capacity">保存済み {visibleState.scripts.length}件 <span>/ 上限{MAX_PRACTICE_SLOTS}件</span></p> : null}
 
       {showCreate ? (
         <form id="script-create-form" className="script-create-form" onSubmit={(event) => void submitCreate(event)}>

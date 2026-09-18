@@ -163,7 +163,7 @@ export function SettingsScreen({
     : { kind: "error", error: { kind: "offline" } };
 
   return (
-    <section className="intro-card practice-card" aria-live="polite">
+    <section className="intro-card practice-card settings-screen" aria-live="polite">
       <ScreenHeading
         eyebrow="Settings"
         title="設定とサポート"

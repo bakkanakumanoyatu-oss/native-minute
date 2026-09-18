@@ -66,7 +66,7 @@ export function AccountDeletionRequestControls({
   }
 
   return (
-    <button type="button" disabled={isSubmitting} onClick={onStart}>
+    <button type="button" className="danger-button" disabled={isSubmitting} onClick={onStart}>
       {deletionRequestActionLabel(deletion, isSubmitting)}
     </button>
   );
@@ -135,7 +135,7 @@ export function AccountDeletionScreen({
     ? state
     : { kind: "error", error: { kind: "offline" } };
   return (
-    <section className="intro-card practice-card" aria-live="polite">
+    <section className="intro-card practice-card account-deletion-screen" aria-live="polite">
       <ScreenHeading
         eyebrow="Account deletion"
         title="アカウント削除"

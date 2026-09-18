@@ -1,3 +1,4 @@
+import { MAX_PRACTICE_SLOTS } from "@/lib/practice-limits";
 import { AppError } from "@/lib/errors";
 import type { Database } from "@/types/database";
 import type { CreateScriptInput, UpdateScriptInput } from "@/schemas/script";
@@ -10,7 +11,7 @@ type PostgrestErrorLike = { message: string };
 
 type ScriptSingleResult = Promise<{ data: ScriptRow; error: PostgrestErrorLike | null }>;
 
-export const MAX_PRACTICE_SLOTS = 5;
+export { MAX_PRACTICE_SLOTS } from "@/lib/practice-limits";
 
 type ScriptInsertBuilder = {
   select(columns?: string): {

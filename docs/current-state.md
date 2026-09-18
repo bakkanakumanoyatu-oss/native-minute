@@ -1,5 +1,7 @@
 # 現在の状態
 
+- 2026-09-18 app-wide UI/UX rebaseline **Stage B HUMAN ACTUAL-DEVICE PASS / CLOSED**。Human「すごく良くなっています」＋Progress A（same Script Listen）/B（注意文削除）PASS。受入済み製品差分を確定し既存validation・17:49 Staging実機証拠を再利用。Gate5/P1/P2/P3/J・保存/ownership/戻り先を保持。原58全件・Dynamic Type/VoiceOver・template・Gate8完了は意味しない。[closeoutと残件境界](qss-app-wide-rebaseline-closeout.md)。次は原58＋追加条件の未確認分のみ。以下は履歴。
+
 - 2026-09-18 Home Favorite→Review→Back **HUMAN ACTUAL-DEVICE PASS / CLOSED**。戻り先Homeを実機確認。return-origin Navigation差分のみcloseout。PS-N-01へ追加、既存判定・件数・全CLOSED/PASS・評価成功証拠を保持。71 tests＋100 browser条件・lint/typecheck/build/install証拠を再利用、再実行なし。Home表示/Progress等はresidual WIP。[closeout](qss-iphone14plus-acceptance-resume/home-favorite-review-return-focused-fix.md)。以下は各時点の履歴。
 
 - 2026-09-18 Review→Listen→Back **HUMAN ACTUAL-DEVICE PASS / CLOSED**。元のReview／same Takeへ戻ることをHuman確認。accepted Record return-originも含むNavigation差分だけcloseout。122 tests＋50 browser条件・lint/typecheck/build/install証拠を再利用、再実行なし。PS-N-01／RV-06へ反映。P1/P2/P3/J/Gate5・Listen playback CLOSED、評価成功・未保存退出・Favorite・Record Back PASS維持。Progress視覚等はresidual WIP。[closeout](qss-iphone14plus-acceptance-resume/listen-return-origin-focused-fix.md)。以下は各時点の履歴。

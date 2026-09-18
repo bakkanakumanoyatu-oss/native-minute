@@ -1542,5 +1542,70 @@
     "buildInstallRepeated": false,
     "scope": "Review return-origin Navigation only; Home UI and Progress WIP excluded",
     "nextOneAction": "次の独立WIPとして「Homeの上段台本の選定理由・最近の練習CTA・情報密度」を扱う。"
+  },
+  "appWideRebaselineAcceptance": {
+    "mode": "QSS_APP_WIDE_VISUAL_AND_PRACTICE_UX_REBASELINE_STAGE_B_CLOSEOUT",
+    "date": "2026-09-18",
+    "status": "HUMAN ACTUAL-DEVICE PASS / CLOSED",
+    "humanEvidence": {
+      "stageB": "すごく良くなっています",
+      "progressA": "PASS: もう一度練習する → same Script Listen",
+      "progressB": "PASS: 回数は上達度を表しません。削除"
+    },
+    "acceptedScope": [
+      "app-wide cream/sand/ink/coral visual language",
+      "Home hierarchy and direct practice entry",
+      "Scripts layout and current capacity",
+      "Listen 5/3/play-pause/3/5; existing speed/position/no-autoplay",
+      "Record/Review/My Takes/settings/consent/deletion/login visual consistency",
+      "Progress summary/selection/advice/latest/best/history",
+      "Progress practice CTA to same-script Listen and exact copy removal",
+      "existing navigation/return-origin fixes"
+    ],
+    "installedIdentity": {
+      "recordedAt": "2026-09-18T17:50:22.160407+09:00",
+      "status": "STAGING_INSTALLED_PROGRESS_HUMAN_AB_PENDING",
+      "sameDevice": true,
+      "deviceModel": "iPhone 14 Plus",
+      "bundleId": "com.nativeminutes.app.staging",
+      "version": "1.0",
+      "build": "1",
+      "receiptMatchesInventory": true,
+      "sourceAndArtifactUnchanged": true,
+      "dataClear": 0,
+      "uninstall": 0,
+      "autoLaunch": 0,
+      "providerCalls": 0,
+      "externalDeployment": 0,
+      "commit": 0,
+      "push": 0
+    },
+    "navigationAuthority": {
+      "Progress practice CTA": "same Script Listen",
+      "Listen Back": "same selected Progress context",
+      "Listen to Record": "existing same-script route",
+      "Exit Home": "Home",
+      "note": "Supersedes the historical direct-Record Progress entry in P-05; original purpose/evidence is retained. A confirms the new entry; browser regression supports Back without inventing a new formal Human observation."
+    },
+    "resolvedVisualFindings": [
+      "P-01/P-02/P-03 visual hierarchy findings are resolved by accepted Stage B; original formal assertions are not blanket-passed."
+    ],
+    "formalAcceptanceBoundary": "Original 58 and approved additional formal IDs/counts are not bulk-updated here. Their preexisting records remain historical/individual evidence; resume only unverified assertions. UI closeout is not all-58, Dynamic Type, VoiceOver, template, capacity-10 or performance completion.",
+    "preservedClosed": [
+      "Gate5",
+      "P1",
+      "P2",
+      "P3",
+      "J"
+    ],
+    "validationReused": {
+      "stageB": "232 tests; 144 primary + 68 secondary browser conditions; support states; root/mobile lint/types; root/Staging/native build; focused review",
+      "progressFix": "88 tests; 24 browser journeys; lint/types/build/diff review; final signed artifact and receipt/inventory match"
+    },
+    "prototypeOnlyExcluded": [
+      "apps/mobile/visual-candidates/",
+      "outputs/qss-app-wide-rebaseline/"
+    ],
+    "nextOneAction": "原58＋承認済み追加条件の正式実機受入へ戻り、未確認項目だけを続行する。"
   }
 }

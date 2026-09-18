@@ -127,7 +127,7 @@ describe("active recording remains stoppable across connectivity changes", () =>
           createRoot(document.getElementById('root')).render(React.createElement(App, {authController: auth}));
         `
       },
-      bundle: true, write: false, platform: "browser", format: "iife", jsx: "automatic",
+      bundle: true, write: false, loader: { ".css": "empty" }, platform: "browser", format: "iife", jsx: "automatic",
       define: {
         "process.env.NODE_ENV": '"production"', __MOBILE_PROFILE__: '"development"',
         __BFF_BASE_URL__: "window.location.origin", __SUPABASE_URL__: '""',
@@ -135,7 +135,7 @@ describe("active recording remains stoppable across connectivity changes", () =>
       }
     });
     bundle = result.outputFiles[0].text;
-    css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
+    css = (await Promise.all(["../styles.css", "./HomeScreen.css", "../app-theme.css"].map(path => readFile(new URL(path, import.meta.url), "utf8")))).join("\n");
     browser = await chromium.launch({ headless: true });
   }, 30_000);
 
@@ -155,7 +155,7 @@ describe("active recording remains stoppable across connectivity changes", () =>
       }
       if (url.pathname === "/app.js") return route.fulfill({ contentType: "text/javascript", body: bundle });
       if (url.pathname === "/styles.css") return route.fulfill({ contentType: "text/css", body: css });
-      return route.fulfill({ contentType: "text/html", body: `<!doctype html><html lang="ja" style="font-size:${fontSize}px"><head><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; media-src blob:; base-uri 'none'"><link rel="stylesheet" href="/styles.css"></head><body><div id="root"></div><script src="/app.js"></script></body></html>` });
+      return route.fulfill({ contentType: "text/html", body: `<!doctype html><html lang="ja" class="mobile-theme" style="font-size:${fontSize}px"><head><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; media-src blob:; base-uri 'none'"><link rel="stylesheet" href="/styles.css"></head><body><div id="root"></div><script src="/app.js"></script></body></html>` });
     });
     const page = await context.newPage();
     page.on("pageerror", (error) => unexpected.push(error.message));

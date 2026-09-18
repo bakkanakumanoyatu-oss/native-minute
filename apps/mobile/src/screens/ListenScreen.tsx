@@ -366,12 +366,14 @@ function ListenSession({ api, scriptId, isOnline, onNavigate }: ListenScreenProp
                 <span className="listen-audio-time" aria-live="off">{formatListenMediaTime(playback.currentTime)} / {formatListenMediaTime(playback.duration)}</span>
               </div>
               <div className="listen-transport">
-                <button type="button" className="listen-seek" aria-label="お手本音声を10秒戻す" disabled={listenState.kind !== "ready" || !Number.isFinite(playback.duration)} onClick={() => seekBy(-10)}>10秒戻る</button>
+                <button type="button" className="listen-seek" aria-label="お手本音声を5秒戻す" disabled={listenState.kind !== "ready" || !Number.isFinite(playback.duration)} onClick={() => seekBy(-5)}><span aria-hidden="true">↶</span><span className="listen-seek-label"><span>5秒</span><wbr /><span>戻る</span></span></button>
+                <button type="button" className="listen-seek" aria-label="お手本音声を3秒戻す" disabled={listenState.kind !== "ready" || !Number.isFinite(playback.duration)} onClick={() => seekBy(-3)}><span aria-hidden="true">↶</span><span className="listen-seek-label"><span>3秒</span><wbr /><span>戻る</span></span></button>
               <button type="button" className="listen-play" disabled={listenState.kind === "loading"} aria-label={playback.playing ? "お手本音声を一時停止" : "お手本音声を再生"} onClick={() => void togglePlayback()}>
                 <span className={playback.playing ? "listen-pause-icon" : "listen-play-icon"} aria-hidden="true" />
-                <span>{playback.playing ? "一時停止" : "再生"}</span>
+                <span className="listen-seek-label">{playback.playing ? <><span>一時</span><wbr /><span>停止</span></> : "再生"}</span>
               </button>
-              <button type="button" className="listen-seek" aria-label="お手本音声を10秒進める" disabled={listenState.kind !== "ready" || !Number.isFinite(playback.duration)} onClick={() => seekBy(10)}>10秒進む</button>
+              <button type="button" className="listen-seek" aria-label="お手本音声を3秒進める" disabled={listenState.kind !== "ready" || !Number.isFinite(playback.duration)} onClick={() => seekBy(3)}><span aria-hidden="true">↷</span><span className="listen-seek-label"><span>3秒</span><wbr /><span>進む</span></span></button>
+                <button type="button" className="listen-seek" aria-label="お手本音声を5秒進める" disabled={listenState.kind !== "ready" || !Number.isFinite(playback.duration)} onClick={() => seekBy(5)}><span aria-hidden="true">↷</span><span className="listen-seek-label"><span>5秒</span><wbr /><span>進む</span></span></button>
               </div>
               <label className="listen-rate">再生速度
                 <select aria-label="お手本音声の再生速度" value={rate} disabled={listenState.kind === "loading"} onChange={(event) => changeRate(Number(event.target.value) as PlaybackRate)}>

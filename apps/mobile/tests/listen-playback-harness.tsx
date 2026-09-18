@@ -4,6 +4,8 @@ import { encodeMonoPcm16Wav } from "../../../lib/browser-pcm-wav";
 import type { PracticeApi, PracticeRequestFailure } from "../src/practice/api";
 import { notifyLifecycle } from "./listen-lifecycle-fixture";
 import "../src/styles.css";
+import "../src/app-theme.css";
+document.documentElement.classList.add("mobile-theme");
 
 const root = createRoot(document.getElementById("root")!);
 const script = { id: "script-a", title: "A full practice script", locale: "en-US", targetSeconds: 60,

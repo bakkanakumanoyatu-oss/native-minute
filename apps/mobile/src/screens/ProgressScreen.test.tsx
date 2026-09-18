@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { MobileProgress, MobileProgressTake, MobileScriptProgress } from "../lib/api";
-import { ProgressContent } from "./ProgressScreen";
+import { ProgressDetails as ProgressContent, ProgressContent as ProgressOverview } from "./ProgressScreen";
 
 function take(id: string, score: number): MobileProgressTake {
   return {
@@ -29,6 +29,22 @@ function render(scripts: MobileScriptProgress[], scriptId?: string) {
 }
 
 describe("Progress presentation preserves canonical results", () => {
+  it("labels result scores and history status by canonical take identity", () => {
+    const html = render([script()]);
+    expect(html).toContain("次の練習では");
+    expect(html).toContain("最新の結果");
+    expect(html).toContain("ベスト結果");
+    expect(html).toContain("保存したTake（録音）の履歴");
+    expect(html).toContain('aria-label="総合スコア 82 / 100"');
+    expect(html).toContain('class="progress-take-status"><span>最新</span>');
+    expect(html).toContain('class="progress-take-status"><span>ベスト</span>');
+    const same = take("same", 86);
+    expect(render([script({ latestTake: same, bestTake: same, takeHistory: [same] })]))
+      .toContain('class="progress-take-status"><span>最新</span><span>ベスト</span>');
+    expect(render([script({ latestTake: same, bestTake: same, takeHistory: [take("different", 86)] })]))
+      .not.toContain('class="progress-take-status"');
+  });
+
   it("uses the selected latest and best even when the history scores and dates suggest a different order", () => {
     const item = script({
       latestTake: take("server-latest", 31), bestTake: take("server-best", 74),
@@ -38,17 +54,17 @@ describe("Progress presentation preserves canonical results", () => {
       ]
     });
     const html = render([item]);
-    expect(html).toContain('<dt lang="en">Latest</dt><dd class="progress-score"><span>31</span>');
-    expect(html).toContain('<dt lang="en">Best</dt><dd class="progress-score"><span>74</span>');
+    expect(html).toContain('<dt>最新の結果<span class="progress-score-label">総合スコア</span></dt><dd class="progress-score"><span>31</span>');
+    expect(html).toContain('<dt>ベスト結果<span class="progress-score-label">総合スコア</span></dt><dd class="progress-score"><span>74</span>');
     expect(html.indexOf('スコア 43')).toBeLessThan(html.indexOf('スコア 99'));
     expect(html).toContain('dateTime="2026-09-01T00:00:00Z"');
     expect(item.takeHistory.map((entry) => entry.id)).toEqual(["first", "second"]);
   });
 
   it("shows the same-take note only for matching IDs, including equal scores on different takes", () => {
-    expect(render([script({ latestTake: take("a", 86), bestTake: take("b", 86) })])).not.toContain("LatestとBestは同じTakeです。");
-    expect(render([script({ latestTake: take("a", 86), bestTake: take("a", 86) })])).toContain("LatestとBestは同じTakeです。");
-    expect(render([script({ bestTake: null })])).not.toContain("LatestとBestは同じTakeです。");
+    expect(render([script({ latestTake: take("a", 86), bestTake: take("b", 86) })])).not.toContain("最新とベストは同じTake（録音）です。");
+    expect(render([script({ latestTake: take("a", 86), bestTake: take("a", 86) })])).toContain("最新とベストは同じTake（録音）です。");
+    expect(render([script({ bestTake: null })])).not.toContain("最新とベストは同じTake（録音）です。");
   });
 
   it("keeps the entire latest advice and the first three focus words in stored order without changing the data", () => {
@@ -59,7 +75,7 @@ describe("Progress presentation preserves canonical results", () => {
     expect(html).not.toContain("fourth");
     expect(item.latestTake?.coach.focusWords).toHaveLength(4);
     expect(html.indexOf("保存された助言。")).toBeLessThan(html.indexOf('class="progress-focus"'));
-    expect(html.indexOf('class="progress-primary"')).toBeLessThan(html.indexOf('<dt lang="en">Latest'));
+    expect(html.indexOf('class="progress-primary"')).toBeLessThan(html.indexOf('<dt>最新の結果'));
   });
 
   it("omits the focus group when the latest coach has no focus words", () => {
@@ -85,9 +101,35 @@ describe("Progress presentation preserves canonical results", () => {
     const empty = render([script({ takeCount: 0, latestTake: null, bestTake: null, takeHistory: [] })], "script-1");
     expect(empty).toContain("この台本の練習記録はまだありません");
     expect(empty).toContain("練習する");
-    expect(empty).not.toContain("Take history");
+    expect(empty).not.toContain("これまでの練習");
     expect(empty).not.toContain("progress-score-pair");
     expect(render([])).toContain("練習記録はまだありません");
     expect(render([script()], "missing")).toContain("この台本の記録を表示できません");
+  });
+});
+
+
+describe("Progress overview and selection", () => {
+  it("distinguishes owned scripts from practiced scripts and uses the server take total", () => {
+    const practiced = script();
+    const empty = script({ script: { ...practiced.script, id: "unpracticed" }, takeCount: 0, latestTake: null, bestTake: null, takeHistory: [] });
+    const progress: MobileProgress = { scripts: [practiced, empty], totalScripts: 2, totalReviewedTakes: 19, bestTakeCount: 1 };
+    const html = renderToStaticMarkup(<ProgressOverview progress={progress} onNavigate={() => undefined} />);
+    expect(html).toContain("練習した台本</dt><dd>1<span>本");
+    expect(html).toContain("録音・評価済み</dt><dd>19<span>件");
+    expect(html).toContain("保存済みの台本 2本");
+    expect(html).not.toContain("progress-next-step");
+    expect(html).not.toContain("progress-score-pair");
+  });
+  it("shows only the requested script's stored advice while keeping the picker available", () => {
+    const first = script();
+    const second = script({ script: { ...first.script, id: "script-2", title: "Second practice" }, latestTake: { ...take("other", 50), coach: { ...take("other", 50).coach, nextStepJa: "別の台本の助言" } } });
+    const progress: MobileProgress = { scripts: [first, second], totalScripts: 2, totalReviewedTakes: 4, bestTakeCount: 2 };
+    const html = renderToStaticMarkup(<ProgressOverview progress={progress} scriptId="script-1" onNavigate={() => undefined} />);
+    expect(html).toContain("保存された助言。");
+    expect(html).not.toContain("別の台本の助言");
+    expect(html).toContain('aria-current="true"');
+    expect(html).toContain("Second practice");
+    expect(html.match(/class="progress-script-title"/g)).toHaveLength(1);
   });
 });
