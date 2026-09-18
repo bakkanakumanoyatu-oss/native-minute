@@ -17,10 +17,10 @@
     "E": 1
   },
   "counts": {
-    "PASS": 6,
+    "PASS": 11,
     "FAIL": 0,
     "BLOCKED": 2,
-    "NOT YET RUN": 50
+    "NOT YET RUN": 45
   },
   "additionalCounts": {
     "PASS": 18,
@@ -169,6 +169,16 @@
         "Review→Listen→Back",
         "Listen playback"
       ]
+    },
+    "E-DYNAMIC-TYPE-HUMAN-20260918": {
+      "kind": "Human actual-device report",
+      "source": "Current task user: QSS_DYNAMIC_TYPE_GLOBAL_SUPPORT_FOCUSED_FIX",
+      "detail": "iPhone 14 Plus / iOS 26.2.1 / Stage B accepted installed build. Accessibility > Display & Text Size > Larger Text enabled, sufficiently enlarged. No text size change on Home/Scripts/Listen/Record/Review/Progress/My Takes; web search and multiple other apps clearly enlarged. Human explicitly declares Dynamic Type FAIL. Exact category and execution clock time not supplied."
+    },
+    "E-DYNAMIC-TYPE-HUMAN-PASS-20260918": {
+      "kind": "Human actual-device PASS / explicit formal closeout",
+      "source": "Current task: QSS_DYNAMIC_TYPE_GLOBAL_SUPPORT_CLOSEOUT",
+      "detail": "iPhone 14 Plus / iOS 26.2.1. Human reports actual app-wide enlargement after iOS Larger Text change and PASS after checking major screens; explicitly authorizes PASS for the five original Dynamic Type IDs. Same 18:38 Staging 1.0(1) installed in the preceding fix; no later rebuild/install. Exact category and execution time not supplied. No VoiceOver, viewport or Session D acceptance inferred."
     }
   },
   "original58": [
@@ -895,9 +905,12 @@
       "expected_version": "v2",
       "current_steps": "通常N/大きいLで一覧を読み、各行の現在の「練習する →」へ到達する。",
       "current_expected": "titleと現在のbutton labelが折返し、横overflow・clipped text・重なりなし。削除済み2つ目の操作は対象外。",
-      "status": "NOT YET RUN",
-      "evidence": [],
-      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+      "status": "PASS",
+      "evidence": [
+        "E-DYNAMIC-TYPE-HUMAN-20260918",
+        "E-DYNAMIC-TYPE-HUMAN-PASS-20260918"
+      ],
+      "reason": "Human actual-device Dynamic Type PASS; original ID explicitly accepted for closeout. Initial global non-scaling finding resolved. Formal template-dependent conditions remain separate."
     },
     {
       "id": "DT-L-01",
@@ -911,11 +924,13 @@
       "expected_version": "v1 unchanged",
       "current_steps": "両設定で本文末尾へscrollしplay/pause・Record CTAを操作",
       "current_expected": "dock・最終行・button labelが読め、重なりなく操作可能",
-      "status": "NOT YET RUN",
+      "status": "PASS",
       "evidence": [
-        "E-LISTEN-HUMAN"
+        "E-LISTEN-HUMAN",
+        "E-DYNAMIC-TYPE-HUMAN-20260918",
+        "E-DYNAMIC-TYPE-HUMAN-PASS-20260918"
       ],
-      "reason": "通常文字で本文末尾・dock非遮蔽はPASS。Human「文字サイズは変えられなかった」理由未確定。Dynamic TypeのPASS/FAILに変換せずSession Cに残す。"
+      "reason": "Human actual-device Dynamic Type PASS; original ID explicitly accepted for closeout. Initial global non-scaling finding resolved. Formal template-dependent conditions remain separate."
     },
     {
       "id": "DT-R-01",
@@ -929,9 +944,12 @@
       "expected_version": "v1 unchanged",
       "current_steps": "両設定でbefore → 短いrecording → stop → preview・確認状態を確認",
       "current_expected": "開始／停止／キャンセル／確認／評価の現在state操作へ到達でき、dock・最終行・折返しに破綻なし",
-      "status": "NOT YET RUN",
-      "evidence": [],
-      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+      "status": "PASS",
+      "evidence": [
+        "E-DYNAMIC-TYPE-HUMAN-20260918",
+        "E-DYNAMIC-TYPE-HUMAN-PASS-20260918"
+      ],
+      "reason": "Human actual-device Dynamic Type PASS; original ID explicitly accepted for closeout. Initial global non-scaling finding resolved. Formal template-dependent conditions remain separate."
     },
     {
       "id": "DT-RV-01",
@@ -945,9 +963,12 @@
       "expected_version": "v1 unchanged",
       "current_steps": "両設定で全文を読み「次のTakeを録る」へ到達",
       "current_expected": "clipped text・横overflow・重なりなし。大きい文字でもCTAを自力で発見・操作できる",
-      "status": "NOT YET RUN",
-      "evidence": [],
-      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+      "status": "PASS",
+      "evidence": [
+        "E-DYNAMIC-TYPE-HUMAN-20260918",
+        "E-DYNAMIC-TYPE-HUMAN-PASS-20260918"
+      ],
+      "reason": "Human actual-device Dynamic Type PASS; original ID explicitly accepted for closeout. Initial global non-scaling finding resolved. Formal template-dependent conditions remain separate."
     },
     {
       "id": "DT-P-01",
@@ -961,9 +982,12 @@
       "expected_version": "v1 unchanged",
       "current_steps": "両設定で全文・再練習CTA・historyへ到達",
       "current_expected": "全文とlabelが読め、CTAとhistoryを自力で発見・操作できる",
-      "status": "NOT YET RUN",
-      "evidence": [],
-      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+      "status": "PASS",
+      "evidence": [
+        "E-DYNAMIC-TYPE-HUMAN-20260918",
+        "E-DYNAMIC-TYPE-HUMAN-PASS-20260918"
+      ],
+      "reason": "Human actual-device Dynamic Type PASS; original ID explicitly accepted for closeout. Initial global non-scaling finding resolved. Formal template-dependent conditions remain separate."
     },
     {
       "id": "VO-NAV-01",
@@ -1448,9 +1472,26 @@
       "purpose": "new surfaces accessibility",
       "expected": "Home/My Takesの名前/filter、Reviewの再生/共有が大きい文字でも読め、VoiceOverで識別・操作・復帰できる。",
       "status": "NOT YET RUN",
-      "evidence": [],
+      "evidence": [
+        "E-DYNAMIC-TYPE-HUMAN-20260918",
+        "E-DYNAMIC-TYPE-HUMAN-PASS-20260918"
+      ],
       "session": "C",
-      "note": "原DT/VO/VPの同一設定・巡回で取得。通常文字/VoiceOver OFFのJをやり直す試験ではない。"
+      "note": "Dynamic Type part PASS; global non-scaling FAIL resolved. Composite item remains open pending VoiceOver and any unobserved specific operation/return conditions.",
+      "partialEvidence": {
+        "dynamicType": {
+          "status": "PASS",
+          "evidence": [
+            "E-DYNAMIC-TYPE-HUMAN-PASS-20260918"
+          ],
+          "scope": "Human-approved app-wide enlargement and major-screen Dynamic Type retest, including Home/My Takes/Review."
+        },
+        "voiceOver": {
+          "status": "NOT YET RUN",
+          "scope": "Names/filter/playback/share identification, operation and return with VoiceOver."
+        },
+        "remainingSpecificConditions": "Individual replay/share/filter operation or return assertions not expressly observed in this retest are not promoted."
+      }
     }
   ],
   "mutations": {
@@ -1607,5 +1648,68 @@
       "outputs/qss-app-wide-rebaseline/"
     ],
     "nextOneAction": "原58＋承認済み追加条件の正式実機受入へ戻り、未確認項目だけを続行する。"
+  },
+  "dynamicTypeFocusedFix": {
+    "mode": "QSS_DYNAMIC_TYPE_GLOBAL_SUPPORT_CLOSEOUT",
+    "status": "HUMAN ACTUAL-DEVICE PASS / CLOSED",
+    "originalIds": [
+      "DT-S-01",
+      "DT-L-01",
+      "DT-R-01",
+      "DT-RV-01",
+      "DT-P-01"
+    ],
+    "additionalIds": [
+      "PS-X-01"
+    ],
+    "otherSessionC": "VoiceOver and VP-01 remain NOT YET RUN; not started",
+    "sourceBase": "9a3eb7dcf9801ecf191aaeba3d89b927e432f1a3",
+    "mechanism": "UIFontMetrics body scaledValue(16) -> Capacitor DynamicType -> --nm-root-font-size -> existing rem typography",
+    "humanPass": true,
+    "evidence": "outputs/qss-dynamic-type-fix/",
+    "document": "docs/qss-iphone14plus-acceptance-resume/dynamic-type-global-focused-fix.md",
+    "installedBuild": {
+      "bundleId": "com.nativeminutes.app.staging",
+      "version": "1.0",
+      "build": "1",
+      "source": "9a3eb7dcf9801ecf191aaeba3d89b927e432f1a3 + Dynamic Type WIP",
+      "sourceDirty": true
+    },
+    "humanEvidence": "E-DYNAMIC-TYPE-HUMAN-PASS-20260918",
+    "psX01": "NOT YET RUN with Dynamic Type partial PASS; VoiceOver untested",
+    "nextOneAction": "Human VoiceOver actual-device acceptance.",
+    "validationReused": true,
+    "closeoutRebuilds": 0,
+    "closeoutInstalls": 0,
+    "formalAggregateIncludingPreservedWip": {
+      "original58": {
+        "PASS": 14,
+        "FAIL": 3,
+        "BLOCKED": 2,
+        "NOT YET RUN": 39
+      },
+      "additional30": {
+        "PASS": 19,
+        "FAIL": 0,
+        "BLOCKED": 3,
+        "NOT YET RUN": 8
+      }
+    },
+    "selectivelyCommittedLedgerAggregate": {
+      "original58": {
+        "PASS": 11,
+        "FAIL": 0,
+        "BLOCKED": 2,
+        "NOT YET RUN": 45
+      },
+      "additional30": {
+        "PASS": 18,
+        "FAIL": 0,
+        "BLOCKED": 3,
+        "NOT YET RUN": 9
+      }
+    },
+    "aggregateBoundary": "Existing unrelated acceptance WIP stays in the working tree. Each ledger counts its own rows; the latest working aggregate includes those pre-existing records. Only Dynamic Type rows/evidence and derived counts are staged.",
+    "commitPushAuthorization": "Explicit user instruction; commit and normal push after selective-index verification."
   }
 }

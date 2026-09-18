@@ -1,5 +1,7 @@
 # iPhone 14 Plus formal acceptance 再開マッピング v2
 
+**2026-09-18 Dynamic Type HUMAN ACTUAL-DEVICE PASS / CLOSED。** 原DT5件PASS、PS-X-01はDynamic Type部分PASS・全体NOT YET RUN。Stage B/Gate5/P1/P2/P3/J保持。VoiceOver/viewport未確認、Session D未開始。今回それらの操作は開始しない。[closeout・最新集計・証拠](dynamic-type-global-focused-fix.md)。NEXT_ONE_ACTION: Human VoiceOver actual-device acceptance. 以下の待機/FAIL記述は各時点の履歴。
+
 **2026-09-18 Stage B UI/UX: HUMAN ACTUAL-DEVICE PASS / CLOSED。** Human「すごく良くなっています」、Progress A=同じ台本のListen/B=指定注意文なし、各PASS。[受入scope・validation・残件](../qss-app-wide-rebaseline-closeout.md)。JSONの `appWideRebaselineAcceptance` に今回の確定authorityを追加。P-01〜03のvisual findingは解決。原58の旧個別status/集計を今回一括PASSへ変換せず、未確認assertionは正式受入で残す。旧P-05のRecord直行は履歴であり、現行練習入口はListen（Human A PASS）。以下は各時点の記録。
 
 **2026-09-18 Home Favorite→Review→Back: HUMAN ACTUAL-DEVICE PASS / CLOSED。** 戻り先Homeを実機確認。PS-N-01へ証拠追加、他の判定・件数は変更なし。既存CLOSED／PASSは保持。今回の再確認は完了、追加試験なし。[closeout](home-favorite-review-return-focused-fix.md)。以下の待機記述は履歴。
@@ -46,13 +48,13 @@ J artifactは `com.nativeminutes.app.staging` 1.0(1)、iPhone14 Plus/iOS26.2.1�
 
 ## 58の集計
 
-**PASS 6 / FAIL 0 / BLOCKED 2 / NOT YET RUN 50**（今回RV-06のみ新規PASS。その他の判定は保持）。
+**PASS 11 / FAIL 0 / BLOCKED 2 / NOT YET RUN 45**（この台帳の行から再計算。今回DT5件のみPASSへ更新）。
 
 | Session（原構成） | 件数 | PASS | FAIL | BLOCKED | NOT YET RUN |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | A | 1 | 1 | 0 | 0 | 0 |
 | B | 40 | 5 | 0 | 2 | 33 |
-| C | 9 | 0 | 0 | 0 | 9 |
+| C | 9 | 5 | 0 | 0 | 4 |
 | D | 7 | 0 | 0 | 0 | 7 |
 | E | 1 | 0 | 0 | 0 | 1 |
 
@@ -109,11 +111,11 @@ P3の機能証拠は主に追加criteriaへ一致する。Jのsaved Take playbac
 | P-05 / B | 同じ台本のRecordへ進み、操作先を誤認しない | v1 unchanged: 同じ台本のRecordへ進み、操作先を誤認しない | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
 | P-06 / B | latest nextStep全文が読め、文字切れ・省略・重なりなし | v1 unchanged: latest nextStep全文が読め、文字切れ・省略・重なりなし | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
 | P-07 / B | 補助説明なく通常scrollで見つけ、実用上無理なく押せる | v1 unchanged: 補助説明なく通常scrollで見つけ、実用上無理なく押せる | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
-| DT-S-01 / C | titleとbutton labelが折返し、横overflow・clipped text・重なりなし | v2: titleと現在のbutton labelが折返し、横overflow・clipped text・重なりなし。削除済み2つ目の操作は対象外。 | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
-| DT-L-01 / C | dock・最終行・button labelが読め、重なりなく操作可能 | v1 unchanged: dock・最終行・button labelが読め、重なりなく操作可能 | NOT YET RUN | 通常文字で本文末尾・dock非遮蔽はPASS。Human「文字サイズは変えられなかった」理由未確定。Dynamic TypeのPASS/FAILに変換せずSession Cに残す。 |
-| DT-R-01 / C | 開始／停止／キャンセル／確認／評価の現在state操作へ到達でき、dock・最終行・折返しに破綻なし | v1 unchanged: 開始／停止／キャンセル／確認／評価の現在state操作へ到達でき、dock・最終行・折返しに破綻なし | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
-| DT-RV-01 / C | clipped text・横overflow・重なりなし。大きい文字でもCTAを自力で発見・操作できる | v1 unchanged: clipped text・横overflow・重なりなし。大きい文字でもCTAを自力で発見・操作できる | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
-| DT-P-01 / C | 全文とlabelが読め、CTAとhistoryを自力で発見・操作できる | v1 unchanged: 全文とlabelが読め、CTAとhistoryを自力で発見・操作できる | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
+| DT-S-01 / C | titleとbutton labelが折返し、横overflow・clipped text・重なりなし | v2: titleと現在のbutton labelが折返し、横overflow・clipped text・重なりなし。削除済み2つ目の操作は対象外。 | PASS | E-DYNAMIC-TYPE-HUMAN-PASS-20260918: Human actual-device PASS / CLOSED. |
+| DT-L-01 / C | dock・最終行・button labelが読め、重なりなく操作可能 | v1 unchanged: dock・最終行・button labelが読め、重なりなく操作可能 | PASS | E-DYNAMIC-TYPE-HUMAN-PASS-20260918: Human actual-device PASS / CLOSED. |
+| DT-R-01 / C | 開始／停止／キャンセル／確認／評価の現在state操作へ到達でき、dock・最終行・折返しに破綻なし | v1 unchanged: 開始／停止／キャンセル／確認／評価の現在state操作へ到達でき、dock・最終行・折返しに破綻なし | PASS | E-DYNAMIC-TYPE-HUMAN-PASS-20260918: Human actual-device PASS / CLOSED. |
+| DT-RV-01 / C | clipped text・横overflow・重なりなし。大きい文字でもCTAを自力で発見・操作できる | v1 unchanged: clipped text・横overflow・重なりなし。大きい文字でもCTAを自力で発見・操作できる | PASS | E-DYNAMIC-TYPE-HUMAN-PASS-20260918: Human actual-device PASS / CLOSED. |
+| DT-P-01 / C | 全文とlabelが読め、CTAとhistoryを自力で発見・操作できる | v1 unchanged: 全文とlabelが読め、CTAとhistoryを自力で発見・操作できる | PASS | E-DYNAMIC-TYPE-HUMAN-PASS-20260918: Human actual-device PASS / CLOSED. |
 | VO-NAV-01 / C | headingと画面の意味が分かるlabelを読み上げ、順序・focusが自然。非表示要素への迷入や操作不能なし | v2: 各画面のheading・現在のprimary/secondaryの意味と順序が分かり、非表示tabへの迷入や操作不能なし。Home/My Takesの追加分はPS-X-01へ同一証拠参照。 | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
 | VO-REC-01 / C | 「録音中」・「停止」が理解でき、timerが操作を妨げず、停止と手動確認を実行できる | v1 unchanged: 「録音中」・「停止」が理解でき、timerが操作を妨げず、停止と手動確認を実行できる | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
 | VO-DATA-01 / C | 各語・score・history行の意味と順序が分かり、選んだReviewへ移れる | v2: 原期待どおり語・score・historyの意味と順序を理解し、選択したReviewへ移れる。My Takesだけでは代用しない。 | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
@@ -175,7 +177,7 @@ P3の機能証拠は主に追加criteriaへ一致する。Jのsaved Take playbac
 | PS-F-02 | account switch / wrong owner: 既存テストaccount BからAのTake/audio/metadataへアクセス不可。切替後に旧音声・名前・Favoriteが露出せず、対象外データ不変。 | BLOCKED | Session A。管理可能な既存A/B accountとexact対象・復帰手段が未確保。Codex準備を伴う限定試験。Humanへtoken/URLコピーを要求しない。PS-Cのwrong-ownerもこの1件。 |
 | PS-F-03 | no public recording URL: 現在BFFのowned binary契約・認証拒否・private responseを検証し、画面/exportにpublic recording URLを出さない。 | NOT YET RUN | Session A。Codex担当。現行code＋過去Staging smokeは補助証拠。Humanに再共有・API調査を要求しない。 |
 | PS-F-04 | temp file lifecycle: native share用一時fileが完了/cancel後に残存せず、同時共有/遷移/logoutで旧fileを再利用しない。 | NOT YET RUN | Session A。Codex担当の限定device/cache evidence。既存J後の状態をまず観察し、必要部分だけ追加準備。ブラウザfakeのcleanupを実機PASSにしない。 |
-| PS-X-01 | new surfaces accessibility: Home/My Takesの名前/filter、Reviewの再生/共有が大きい文字でも読め、VoiceOverで識別・操作・復帰できる。 | NOT YET RUN | Session C。原DT/VO/VPの同一設定・巡回で取得。通常文字/VoiceOver OFFのJをやり直す試験ではない。 |
+| PS-X-01 | new surfaces accessibility: Home/My Takesの名前/filter、Reviewの再生/共有が大きい文字でも読め、VoiceOverで識別・操作・復帰できる。 | NOT YET RUN | Dynamic Type partial PASS (E-DYNAMIC-TYPE-HUMAN-PASS-20260918); VoiceOver and unobserved operation/return conditions pending. |
 
 ## template-dependent deferred（原58とは別の内容確定条件）
 

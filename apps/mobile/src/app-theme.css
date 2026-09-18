@@ -21,7 +21,7 @@ html.mobile-theme { background:#e8ddce; }
 .mobile-theme :is(input,textarea,select) { color:var(--nm-ink); background:var(--nm-cream); border-color:#897762; border-radius:8px; }
 .mobile-theme :is(label,.practice-loading) { color:var(--nm-muted); }
 .mobile-theme .space-header { border-color:var(--nm-line); margin-bottom:18px; padding-block:14px; }
-.mobile-theme .space-header span { font-size:10px; color:var(--nm-muted); }
+.mobile-theme .space-header span { font-size:.625rem; color:var(--nm-muted); }
 .mobile-theme :is(.space-header button,.practice-focus-header button,.space-text,.space-logout) { color:var(--nm-ink); }
 .mobile-theme .practice-focus-header { border-color:var(--nm-line); }
 .mobile-theme .practice-focus-header>span { color:var(--nm-muted); }
@@ -143,6 +143,14 @@ html.mobile-theme { background:#e8ddce; }
 
 .mobile-theme .listen-transport :is(.listen-seek,.listen-play) { padding-inline:1px; }
 .mobile-theme .listen-seek-label>span { display:inline-block; white-space:nowrap; }
+
+/* At accessibility sizes, preserve a readable script region alongside the dock.
+   The dock stays in place; its longer preview/actions can scroll independently. */
+html[data-accessibility-text] .practice-focus-header { grid-template-columns:auto minmax(0,1fr); }
+html[data-accessibility-text] .practice-focus-header>span { grid-row:2; grid-column:1 / -1; }
+html[data-accessibility-text] .practice-focus-header button { min-width:0; overflow-wrap:anywhere; line-break:anywhere; }
+html[data-accessibility-text] :is(.listen-control-dock,.record-control-dock) { max-height:45dvh; min-height:0; overflow-y:auto; }
+html[data-accessibility-text] .listen-seek-label>span { white-space:normal; overflow-wrap:anywhere; }
 
 
 /* The same primitives also cover auth, support and data-management surfaces. */

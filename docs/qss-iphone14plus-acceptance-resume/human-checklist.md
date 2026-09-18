@@ -1,5 +1,7 @@
 # iPhone 14 Plus — 未確認項目だけの統合チェックリスト
 
+**2026-09-18 Dynamic Type HUMAN ACTUAL-DEVICE PASS / CLOSED。** 原DT5件PASS、PS-X-01はDynamic Type部分PASS・全体NOT YET RUN。Stage B/Gate5/P1/P2/P3/J保持。VoiceOver/viewport未確認、Session D未開始。今回それらの操作は開始しない。[closeout・最新集計・証拠](dynamic-type-global-focused-fix.md)。NEXT_ONE_ACTION: Human VoiceOver actual-device acceptance. 以下の待機/FAIL記述は各時点の履歴。
+
 **2026-09-18 最新: Stage B全体とProgress A/BはHUMAN ACTUAL-DEVICE PASS / CLOSED。追加のUI再確認不要。** [closeout](../qss-app-wide-rebaseline-closeout.md)。次は原58＋承認済み追加条件の未確認分だけ。今回その実機操作は開始しない。Dynamic Type/VoiceOver/template/Gate8は残件。以下のStage B一周・A/B待ち記述は履歴。
 
 **2026-09-18 Home Favorite→Review→Back: HUMAN ACTUAL-DEVICE PASS / CLOSED。** 戻り先Homeを実機確認。PS-N-01へ証拠追加、他の判定・件数は変更なし。既存CLOSED／PASSは保持。今回の再確認は完了、追加試験なし。[closeout](home-favorite-review-return-focused-fix.md)。以下の待機記述は履歴。

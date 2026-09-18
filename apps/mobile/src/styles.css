@@ -13,6 +13,8 @@
 }
 
 html {
+  /* UIKit supplies the body scale; the default preserves the approved 16px baseline. */
+  font-size: var(--nm-root-font-size, 16px);
   min-height: 100%;
   background:
     radial-gradient(circle at 90% 5%, rgba(222, 154, 88, 0.2), transparent 32rem),
@@ -2266,7 +2268,7 @@ html:has(.practice-shell) { background: #f7f6f2; }
 .app-shell:has(.practice-shell):not(:has(.record-screen, .listen-screen)) { width: min(100%, 428px); padding: env(safe-area-inset-top, 0px) 24px calc(96px + env(safe-area-inset-bottom, 0px)); background: #f7f6f2; }
 .app-shell .practice-shell { gap: 0; min-width: 0; }
 .space-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0; border-bottom: 1px solid #ccd2d3; margin-bottom: 24px; }
-.space-header strong { display: block; font: 600 21px/1.4 Georgia, serif; letter-spacing: -.6px; }
+.space-header strong { display: block; font: 600 1.3125rem/1.4 Georgia, serif; letter-spacing: -.6px; }
 .space-header span { display: block; font-size: .625rem; letter-spacing: .14em; margin-top: 3px; }
 .space-header button, .space-logout, .practice-focus-header button { background: transparent; color: #244c68; padding: 8px 0; min-height: 44px; border: 0; font-size: .8rem; font-weight: 500; }
 .space-bottom-nav { position: fixed; z-index: 10; bottom: 0; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, 1fr); width: min(100%, 428px); padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: #f7f6f2; border-top: 1px solid #ccd2d3; }
@@ -2279,7 +2281,7 @@ html:has(.practice-shell) { background: #f7f6f2; }
 .practice-focus-header > span { font-size: .7rem; color: #56636c; }
 .app-shell:has(:is(.record-screen, .listen-screen)) .practice-focus-header { margin-inline: max(20px, env(safe-area-inset-left, 0px)) max(20px, env(safe-area-inset-right, 0px)); }
 .personal-space { min-width: 0; overflow-wrap: anywhere; }
-.personal-space h1 { font: 500 28px/1.5 Georgia, "Yu Mincho", serif; letter-spacing: .04em; margin: 0 0 12px; }
+.personal-space h1 { font: 500 1.75rem/1.5 Georgia, "Yu Mincho", serif; letter-spacing: .04em; margin: 0 0 12px; }
 .personal-space h2 { font-size: 1.1rem; line-height: 1.6; margin: 0; letter-spacing: -.02em; }
 .personal-space h3 { font-size: 1rem; margin: 0; }
 .personal-space p { line-height: 1.7; }
@@ -2300,7 +2302,7 @@ html:has(.practice-shell) { background: #f7f6f2; }
 .home-screen .space-result-scores strong { font-size: .95rem; color: #202b33; }
 .space-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 16px 0 10px; gap: 8px; border-top: 1px solid #ccd2d3; }
 .space-counts > :is(button, div) { text-align: left; padding: 0; background: transparent; color: #202b33; font-weight: 400; }
-.space-counts strong { display: block; font: 600 26px/1.3 Georgia, serif; }
+.space-counts strong { display: block; font: 600 1.625rem/1.3 Georgia, serif; }
 .space-counts span, .space-counts small { display: block; font-size: .66rem; color: #56636c; }
 .personal-space .space-count-note { font-size: .66rem; }
 .space-section { border-top: 1px solid #ccd2d3; padding: 24px 0 12px; margin-top: 12px; }
@@ -2311,7 +2313,7 @@ html:has(.practice-shell) { background: #f7f6f2; }
 .practice-shell :is(button, a):focus-visible { outline: 3px solid #244c68; outline-offset: 3px; }
 @media (max-width: 360px) {
   .app-shell:has(.practice-shell):not(:has(.record-screen, .listen-screen)) { padding-inline: 20px; }
-  .personal-space h1 { font-size: 25px; }
+  .personal-space h1 { font-size: 1.5625rem; }
 }
 .space-header button, .practice-focus-header button, .space-bottom-nav button, .personal-space button { margin-top: 0; width: auto; letter-spacing: 0; }
 .space-header > div { min-width: 0; }
