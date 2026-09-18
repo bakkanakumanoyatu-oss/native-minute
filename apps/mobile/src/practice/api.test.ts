@@ -170,6 +170,24 @@ it.each(['signing_out', 'different-owner'])('discards a saved Take download afte
   } finally { vi.unstubAllGlobals(); }
 });
 
+it.each(['signing_out', 'different-owner'])('discards a Listen audio download after %s without exposing its Blob', async change => {
+  let state = { kind: 'authenticated', userId: 'user-a' };
+  let resolveFetch!: (response: Response) => void;
+  const fetchImpl = vi.fn(() => new Promise<Response>(resolve => { resolveFetch = resolve; }));
+  const auth = { getState: () => state, getAccessToken: async () => 'token' } as unknown as MobileAuthController;
+  vi.stubGlobal('fetch', fetchImpl);
+  try {
+    const api = createPracticeApi({ auth, bffBaseUrl: 'https://fixture.test', ownerUserId: 'user-a', onTiming: () => undefined });
+    const read = api.downloadAudio('audio-a');
+    await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(1));
+    state = change === 'signing_out' ? { kind: 'signing_out', userId: 'user-a' } : { kind: 'authenticated', userId: 'user-b' };
+    resolveFetch(new Response('synthetic audio', { headers: { 'content-type': 'audio/wav', 'content-disposition': "attachment; filename*=UTF-8''Practice.wav" } }));
+    await expect(read).resolves.toMatchObject({ kind: 'unauthorized', reasonCode: 'session_owner_changed' });
+    await expect(api.downloadAudio('audio-a')).resolves.toMatchObject({ kind: 'unauthorized', reasonCode: 'session_owner_changed' });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  } finally { vi.unstubAllGlobals(); }
+});
+
 it('waits for metadata persistence before exporting the newly named exact Take', async () => {
   let resolveWrite!: (response: Response) => void;
   const calls: string[] = [];
@@ -189,5 +207,29 @@ it('waits for metadata persistence before exporting the newly named exact Take',
     expect((await write).kind).toBe('success');
     await expect(read).resolves.toMatchObject({ kind: 'success', filename: 'New name.wav' });
     expect(calls[1]).toBe('https://fixture.test/api/mobile/takes/take-a/audio');
+  } finally { vi.unstubAllGlobals(); }
+});
+
+it('refreshes an expired Listen download credential once and repeats only the same authenticated GET', async () => {
+  const auth = {
+    getState: () => ({ kind: 'authenticated', userId: 'user-a' }),
+    getAccessToken: vi.fn().mockResolvedValueOnce('old-token').mockResolvedValueOnce('new-token'),
+    refresh: vi.fn().mockResolvedValue({ ok: true })
+  } as unknown as MobileAuthController;
+  const fetchImpl = vi.fn()
+    .mockResolvedValueOnce(new Response(JSON.stringify({ ok: false, error: { reasonCode: 'session_expired' } }), { status: 401, headers: { 'content-type': 'application/json' } }))
+    .mockResolvedValueOnce(new Response('synthetic audio', { headers: { 'content-type': 'audio/wav' } }));
+  vi.stubGlobal('fetch', fetchImpl);
+  try {
+    const api = createPracticeApi({ auth, bffBaseUrl: 'https://fixture.test', ownerUserId: 'user-a', onTiming: () => undefined });
+    await expect(api.downloadAudio('audio-a')).resolves.toMatchObject({ kind: 'success' });
+    expect(auth.refresh).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    for (const [index, token] of ['old-token', 'new-token'].entries()) {
+      const [url, init] = fetchImpl.mock.calls[index];
+      expect(url).toBe('https://fixture.test/api/mobile/script-audio/audio-a');
+      expect(init.method ?? 'GET').toBe('GET');
+      expect(new Headers(init.headers).get('authorization')).toBe('Bearer ' + token);
+    }
   } finally { vi.unstubAllGlobals(); }
 });

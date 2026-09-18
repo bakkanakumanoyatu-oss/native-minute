@@ -1,0 +1,92 @@
+
+> native-minute@0.1.0 mobile:test
+> npm run test --workspace @native-minute/mobile src/practice/api.test.ts src/screens/screens.test.tsx tests/voice-upload-durable-intent.test.ts tests/voice-server-owned-script-audio-writer.test.ts tests/script-audio-server-storage-writer.test.ts tests/account-deletion-db-foundation-contract.test.ts tests/account-deletion-db-finalizer-contract.test.ts
+
+
+> @native-minute/mobile@0.1.0 test
+> vitest run src/practice/api.test.ts src/screens/screens.test.tsx tests/voice-upload-durable-intent.test.ts tests/voice-server-owned-script-audio-writer.test.ts tests/script-audio-server-storage-writer.test.ts tests/account-deletion-db-foundation-contract.test.ts tests/account-deletion-db-finalizer-contract.test.ts
+
+
+ RUN  v4.1.10 /Users/karasawatakahiro/Developer/native-minute/apps/mobile
+
+ ✓ tests/account-deletion-db-finalizer-contract.test.ts (11 tests) 7ms
+ ✓ tests/account-deletion-db-foundation-contract.test.ts (7 tests) 7ms
+stdout | tests/script-audio-server-storage-writer.test.ts > G5D-2E server-owned script-audio Storage writer > uploads exactly once through the injected server Storage authority
+[timing] voice.replay.storageUpload 0.4ms
+
+stdout | tests/script-audio-server-storage-writer.test.ts > G5D-2E server-owned script-audio Storage writer > uploads exactly once through the injected server Storage authority
+[timing] voice.replay.stage 1.7ms
+
+ ✓ tests/voice-upload-durable-intent.test.ts (5 tests) 12ms
+stdout | tests/script-audio-server-storage-writer.test.ts > G5D-2E server-owned script-audio Storage writer > accepts a duplicate only after exact-byte reconciliation
+[timing] voice.replay.storageUpload 0.2ms
+
+stdout | tests/script-audio-server-storage-writer.test.ts > G5D-2E server-owned script-audio Storage writer > accepts a duplicate only after exact-byte reconciliation
+[timing] voice.replay.storageIdempotencyCheck 0.2ms
+
+stdout | tests/script-audio-server-storage-writer.test.ts > G5D-2E server-owned script-audio Storage writer > accepts a duplicate only after exact-byte reconciliation
+[timing] voice.replay.stage 1.1ms
+
+stdout | tests/script-audio-server-storage-writer.test.ts > G5D-2E server-owned script-audio Storage writer > keeps an ambiguous or mismatched write unresolved
+[timing] voice.replay.storageUpload 0.3ms
+
+stdout | tests/script-audio-server-storage-writer.test.ts > G5D-2E server-owned script-audio Storage writer > keeps an ambiguous or mismatched write unresolved
+[timing] voice.replay.storageIdempotencyCheck 0.0ms
+
+stdout | tests/script-audio-server-storage-writer.test.ts > G5D-2E server-owned script-audio Storage writer > keeps an ambiguous or mismatched write unresolved
+[timing] voice.replay.stage 0.6ms
+
+stdout | tests/script-audio-server-storage-writer.test.ts > G5D-2E server-owned script-audio Storage writer > keeps an ambiguous or mismatched write unresolved
+[timing] voice.replay.storageUpload 0.3ms
+
+stdout | tests/script-audio-server-storage-writer.test.ts > G5D-2E server-owned script-audio Storage writer > keeps an ambiguous or mismatched write unresolved
+[timing] voice.replay.storageIdempotencyCheck 0.1ms
+
+stdout | tests/script-audio-server-storage-writer.test.ts > G5D-2E server-owned script-audio Storage writer > keeps an ambiguous or mismatched write unresolved
+[timing] voice.replay.stage 1.4ms
+
+ ✓ tests/script-audio-server-storage-writer.test.ts (3 tests) 40ms
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > re-authenticates, validates owned script/voice/cache identity, and writes through the server client
+[timing] voice.speakScript.ownershipLoad 0.4ms
+
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > re-authenticates, validates owned script/voice/cache identity, and writes through the server client
+[timing] voice.speakScript.cacheLookup 0.1ms
+
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > re-authenticates, validates owned script/voice/cache identity, and writes through the server client
+[timing] voice.speakScript.providerSynthesize 0.0ms
+
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > re-authenticates, validates owned script/voice/cache identity, and writes through the server client
+[timing] voice.speakScript.stageReplay 0.0ms
+
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > re-authenticates, validates owned script/voice/cache identity, and writes through the server client
+[timing] voice.speakScript.insertAudio 0.0ms
+
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > re-authenticates, validates owned script/voice/cache identity, and writes through the server client
+[timing] voice.speakScript.ensureInsertedPlaybackPath 0.0ms
+
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > re-authenticates, validates owned script/voice/cache identity, and writes through the server client
+[timing] voice.speakScript.finalCacheLookup 0.0ms
+
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > re-authenticates, validates owned script/voice/cache identity, and writes through the server client
+[timing] voice.speakScript.ensureCompletedPlaybackPath 0.0ms
+
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > re-authenticates, validates owned script/voice/cache identity, and writes through the server client
+[timing] voice.speakScript 2.1ms
+
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > rejects before synthesis or Storage when deletion is active
+[timing] voice.speakScript.ownershipLoad 0.3ms
+
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > rejects before synthesis or Storage when deletion is active
+[timing] voice.speakScript.cacheLookup 0.0ms
+
+stdout | tests/voice-server-owned-script-audio-writer.test.ts > G5C-B4 server-owned Listen cache writer > rejects before synthesis or Storage when deletion is active
+[timing] voice.speakScript 0.5ms
+
+ ✓ tests/voice-server-owned-script-audio-writer.test.ts (2 tests) 6ms
+ ✓ src/screens/screens.test.tsx (20 tests) 38ms
+ ✓ src/practice/api.test.ts (14 tests) 385ms
+
+ Test Files  7 passed (7)
+      Tests  62 passed (62)
+   Start at  09:44:32
+   Duration  833ms (transform 1.04s, setup 0ms, import 1.33s, tests 495ms, environment 1ms)

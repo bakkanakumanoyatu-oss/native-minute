@@ -1,0 +1,44 @@
+{
+  "checkedAt": "2026-09-17T11:45:27.980649+00:00",
+  "artifactPath": "/tmp/qss-listen-device-install/DerivedData/Build/Products/Staging-iphoneos/App.app",
+  "bundleId": "com.nativeminutes.app.staging",
+  "version": "1.0",
+  "build": "1",
+  "metadata": {
+    "profile": "staging",
+    "bundleId": "com.nativeminutes.app.staging",
+    "xcodeConfiguration": "Staging",
+    "capacitorProfile": "staging",
+    "bffOrigin": "https://native-minute-staging.vercel.app",
+    "authCallbackMode": "universal-link",
+    "authConfigured": true,
+    "authTargetFingerprint": "cfdbf57f7a1d3226019079df30e06c61276cb528f31779581fb6ae92592096b3",
+    "sourceRevision": "910bfa46f63783966c50242b3ac6067dd4ce3f6b",
+    "sourceDirty": true
+  },
+  "executableSha256": "4cd19659509280366b4c0e0a13ad4b99b3f590706663236113f591cfdd3e0020",
+  "webAssetsSha256": {
+    "mobile-build.json": "d88e6fcb9b1259af854a268aadf738f182c7419d2786ed6b72cb4c22bb917945",
+    "index.html": "3db868de4a9d766b939a94dc680bb14438b72858f4ab5bca9149e97f4e807c0a",
+    "assets/web-BP79GkaU.js": "47eeac2e8fb0f6d45914609e58fc3d7eaab7925ff81becbb71ce3d474041192e",
+    "assets/web-Dlo6izMn.js": "7532d203e8b0a47f27625bc956479b67680d5118cce46e3ce03c26be3d6a0680",
+    "assets/index-Bo4ctn0b.css": "42ab9ae0c28aedfc49cd5424c370c0967d4248ba0f08cd3a2c3ffc1c2eb5da38",
+    "assets/web-BmycesjN.js": "f2085bcca80f6549c1a09ad7306917e14929b9c9e6c92ae4cabb899b52b3d9e0",
+    "assets/index-B9mxcfpb.js": "669a293ae183f5327add8e39e8f46703983d49c597087235a568a3fe0151e147"
+  },
+  "distSyncedSignedAssetsEqual": true,
+  "strictSignature": "PASS",
+  "provisioningMatchesDevice": true,
+  "associatedDomainMatchesStaging": true,
+  "pluginsAndPrivacy": "PASS",
+  "previousSyncedAssetsMatchJInstallEvidence": true,
+  "releaseGuard": {
+    "status": "NOT PASS",
+    "findings": [
+      "staging_build_metadata_mismatch (dist sourceDirty=true)",
+      "staging_build_metadata_mismatch (native sourceDirty=true)",
+      "staging_source_tree_dirty"
+    ],
+    "reason": "User-authorized uncommitted WIP actual-device test install; no guard or metadata bypass"
+  }
+}

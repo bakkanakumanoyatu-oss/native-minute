@@ -1,0 +1,20 @@
+{
+  "baselineDeployment": "dpl_DFFwoCYpuF8UbdeSe8ArTHJzCiBe",
+  "baselineSourceFiles": 658,
+  "sourceManifestMatched": true,
+  "patchFromExistingCommit": "26a8b3db85dd62322eaea16997746ecae82fb4d1",
+  "changed": [
+    {
+      "path": "services/voice/replay.service.ts",
+      "beforeSha1": "a6adff94dee610df080b1f29f4cb80bd8224080d",
+      "afterSha1": "3954fcd52873082c00b5bbd0113ebe3d330cf660"
+    },
+    {
+      "path": "services/voice/voice.service.ts",
+      "beforeSha1": "6a3251ad1f0a32c794476bb9e75fa6e8590157c4",
+      "afterSha1": "bcd553eeb89b87803f20111b959d0ef862059774"
+    }
+  ],
+  "candidate": "/tmp/qss-listen-writer-staging-candidate",
+  "deployed": false
+}

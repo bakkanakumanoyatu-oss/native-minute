@@ -1,0 +1,64 @@
+
+> native-minute@0.1.0 mobile:test
+> npm run test --workspace @native-minute/mobile tests/listen-playback-controls.test.ts --testTimeout=12000
+
+npm warn Unknown cli config "--testTimeout". This will stop working in the next major version of npm.
+
+> @native-minute/mobile@0.1.0 test
+> vitest run tests/listen-playback-controls.test.ts
+
+
+ RUN  v4.1.10 /Users/karasawatakahiro/Developer/native-minute/apps/mobile
+
+ ✓ tests/listen-playback-controls.test.ts (46 tests) 32391ms
+     ✓ uses actual media for seek/pause/rate, clamps both ends and never generates on controls  1268ms
+     ✓ releases on both lifecycle events, returns paused, then one play re-fetches the exact saved audio at retained time/rate  827ms
+     ✓ expires only the position/rate after 15 minutes without generating or auto-playing  514ms
+     ✓ not-found clears old identity/time/rate and never falls back to generation  362ms
+     ✓ forbidden clears old identity/time/rate and never falls back to generation  350ms
+     ✓ unauthorized clears old identity/time/rate and never falls back to generation  349ms
+     ✓ network-error permits a read-only one-play retry  507ms
+     ✓ timeout permits a read-only one-play retry  643ms
+     ✓ server-error permits a read-only one-play retry  573ms
+     ✓ deduplicates rapid resume and discards a fetch that completes after background  645ms
+     ✓ owner discards old async download, media and bookmark  567ms
+     ✓ script discards old async download, media and bookmark  716ms
+     ✓ logout discards old async download, media and bookmark  462ms
+     ✓ ignores initial request after unmount without downloading or auto-playing  373ms
+     ✓ play after returning from the end starts again and seek/rate stay connected while playing  609ms
+     ✓ unmount during actual playback pauses and detaches the old media  426ms
+     ✓ offline return keeps the bookmark and retries via play after reconnection  495ms
+     ✓ decode error and thrown download failure recover without generation  498ms
+     ✓ play policy rejection offers play again without another fetch  443ms
+     ✓ layout and accessible controls at 320px / 16px text  355ms
+     ✓ layout and accessible controls at 320px / 32px text  405ms
+     ✓ layout and accessible controls at 428px / 16px text  381ms
+     ✓ layout and accessible controls at 428px / 32px text  418ms
+     ✓ uses actual media for seek/pause/rate, clamps both ends and never generates on controls  1884ms
+     ✓ releases on both lifecycle events, returns paused, then one play re-fetches the exact saved audio at retained time/rate  1010ms
+     ✓ expires only the position/rate after 15 minutes without generating or auto-playing  554ms
+     ✓ not-found clears old identity/time/rate and never falls back to generation  600ms
+     ✓ forbidden clears old identity/time/rate and never falls back to generation  568ms
+     ✓ unauthorized clears old identity/time/rate and never falls back to generation  483ms
+     ✓ network-error permits a read-only one-play retry  523ms
+     ✓ timeout permits a read-only one-play retry  598ms
+     ✓ server-error permits a read-only one-play retry  518ms
+     ✓ deduplicates rapid resume and discards a fetch that completes after background  666ms
+     ✓ owner discards old async download, media and bookmark  830ms
+     ✓ script discards old async download, media and bookmark  704ms
+     ✓ logout discards old async download, media and bookmark  575ms
+     ✓ ignores initial request after unmount without downloading or auto-playing  402ms
+     ✓ play after returning from the end starts again and seek/rate stay connected while playing  1009ms
+     ✓ unmount during actual playback pauses and detaches the old media  506ms
+     ✓ offline return keeps the bookmark and retries via play after reconnection  511ms
+     ✓ decode error and thrown download failure recover without generation  514ms
+     ✓ play policy rejection offers play again without another fetch  499ms
+     ✓ layout and accessible controls at 320px / 16px text  586ms
+     ✓ layout and accessible controls at 320px / 32px text  475ms
+     ✓ layout and accessible controls at 428px / 16px text  466ms
+     ✓ layout and accessible controls at 428px / 32px text  565ms
+
+ Test Files  1 passed (1)
+      Tests  46 passed (46)
+   Start at  09:44:32
+   Duration  33.19s (transform 28ms, setup 0ms, import 510ms, tests 32.39s, environment 0ms)

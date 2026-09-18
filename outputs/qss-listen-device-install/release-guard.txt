@@ -1,0 +1,8 @@
+
+> native-minute@0.1.0 check:mobile-release:staging
+> node scripts/check-mobile-release.mjs --profile staging
+
+FAIL: mobile release guard found blocked categories.
+- staging_build_metadata_mismatch: apps/mobile/dist/mobile-build.json
+- staging_build_metadata_mismatch: ios/App/App/public/mobile-build.json
+- staging_source_tree_dirty: .git

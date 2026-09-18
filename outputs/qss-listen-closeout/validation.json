@@ -1,0 +1,29 @@
+{
+  "workspace": "PASS",
+  "rootLint": "PASS",
+  "mobileLint": "PASS",
+  "rootBuild": "PASS",
+  "rootPostBuildTypecheck": "PASS",
+  "mobileSourceAndTestTypecheck": "PASS",
+  "mobileBuild": "PASS: local-spike, isolated output only",
+  "scopedUnitSuites": 7,
+  "scopedUnitTestsPassed": 62,
+  "listenBrowserCasesPassed": 46,
+  "isolatedPostgresRecovery": "PASS: network none, fresh 0001\u20130032, three two-session races, fixture removed",
+  "mappingIntegrity": "PASS: original 58 IDs/purposes/sessions and unrelated rows preserved; PS30 byte-equivalent",
+  "sourceIdentity": "PASS: accepted product/test/migration bytes match install manifest",
+  "notRun": [
+    "full 58",
+    "P3 A\u2013K",
+    "full E2E",
+    "native build/sync/install",
+    "Dynamic Type",
+    "VoiceOver"
+  ],
+  "providerCalls": 0,
+  "stagingMutations": 0,
+  "storageChanges": 0,
+  "gitDiffCheck": "PASS: unstaged",
+  "strictStagedDiffCheck": "NONZERO: byte-preserved lib/audio-playback-rate.ts EOF blank and historical .patch blank context lines only",
+  "scopedStagedDiffCheck": "PASS: -c core.whitespace=-blank-at-eof, excluding historical writer .patch artifact"
+}

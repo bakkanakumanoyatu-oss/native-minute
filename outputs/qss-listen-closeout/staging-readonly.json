@@ -1,0 +1,95 @@
+[
+  {
+    "result": {
+      "intents": [
+        {
+          "status": "failed_after_provider",
+          "created_at": "2026-09-17T09:13:37.662275+00:00",
+          "updated_at": "2026-09-17T10:14:09.331878+00:00",
+          "same_voice_cache": true
+        },
+        {
+          "status": "completed",
+          "created_at": "2026-09-17T10:52:54.342423+00:00",
+          "updated_at": "2026-09-17T10:53:01.25243+00:00",
+          "same_voice_cache": true
+        }
+      ],
+      "canonical": [
+        {
+          "provider": "elevenlabs",
+          "created_at": "2026-09-17T10:53:01.25243+00:00",
+          "owned_voice": true,
+          "owned_script": true,
+          "audio_fingerprint": "9da54f91c6d3bb7e21a4385128c8a389",
+          "stored_asset_present": true,
+          "storage_catalog_present": true
+        }
+      ],
+      "recovered": {
+        "status": "failed_after_provider",
+        "recovered_at": "2026-09-17T10:14:09.364068+00:00",
+        "locator_present": true,
+        "orphan_possible": true,
+        "provider_effect": "occurred",
+        "storage_outcome": "failed",
+        "evidence_present": true
+      },
+      "observed_at": "2026-09-18T00:43:47.651183+00:00",
+      "target_events": [
+        {
+          "cached": "false",
+          "status": "failed",
+          "created_at": "2026-09-17T09:13:38.332976+00:00",
+          "completed_at": "2026-09-17T09:13:46.022+00:00",
+          "failure_stage": "storage_staging",
+          "event_fingerprint": "2b045281383a81a09fb4709769dda039",
+          "provider_request_present": true,
+          "target_matches_canonical": false
+        },
+        {
+          "cached": "false",
+          "status": "succeeded",
+          "created_at": "2026-09-17T10:52:54.653209+00:00",
+          "completed_at": "2026-09-17T10:53:03.615+00:00",
+          "failure_stage": null,
+          "event_fingerprint": "6c188153fdbdc4d5fd7f890d2e58c699",
+          "provider_request_present": true,
+          "target_matches_canonical": true
+        },
+        {
+          "cached": "true",
+          "status": "cache_hit",
+          "created_at": "2026-09-17T10:56:00.870055+00:00",
+          "completed_at": "2026-09-17T10:56:00.772+00:00",
+          "failure_stage": null,
+          "event_fingerprint": "090d269ac870bb4bb60fe7d009d7aed9",
+          "provider_request_present": false,
+          "target_matches_canonical": true
+        },
+        {
+          "cached": "true",
+          "status": "cache_hit",
+          "created_at": "2026-09-18T00:31:39.380446+00:00",
+          "completed_at": "2026-09-18T00:31:38.844+00:00",
+          "failure_stage": null,
+          "event_fingerprint": "78a5959bd079c349709f22c3b8067fc3",
+          "provider_request_present": false,
+          "target_matches_canonical": true
+        }
+      ],
+      "owner_unresolved": 0,
+      "script_fingerprint": "9ccb5de6ecd81d17698d624bbeac74c2",
+      "all_generation_events": 16,
+      "latest_owner_sessions": [
+        {
+          "created_at": "2026-08-22T02:54:15.864144+00:00",
+          "updated_at": "2026-09-18T00:29:34.22434+00:00",
+          "iphone_user_agent": true,
+          "mobile_user_agent": true,
+          "session_fingerprint": "49c49bb12663f755bb2a97b4d7648122"
+        }
+      ]
+    }
+  }
+]

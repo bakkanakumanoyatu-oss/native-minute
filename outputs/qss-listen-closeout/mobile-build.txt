@@ -1,0 +1,30 @@
+
+> @native-minute/mobile@0.1.0 build:local-spike
+> npm run typecheck && MOBILE_PROFILE=local-spike vite build --outDir /tmp/qss-listen-closeout-validation/mobile-dist
+
+
+> @native-minute/mobile@0.1.0 typecheck
+> npm run typecheck:source && npm run typecheck:tests
+
+
+> @native-minute/mobile@0.1.0 typecheck:source
+> tsc --noEmit -p tsconfig.json
+
+
+> @native-minute/mobile@0.1.0 typecheck:tests
+> tsc --noEmit -p tsconfig.test.json
+
+vite v8.1.5 building client environment for production...
+[2K
+transforming...✓ 103 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../../../../tmp/qss-listen-closeout-validation/mobile-dist/mobile-build.json            0.33 kB │ gzip:   0.24 kB
+../../../../../../tmp/qss-listen-closeout-validation/mobile-dist/index.html                   0.47 kB │ gzip:   0.29 kB
+../../../../../../tmp/qss-listen-closeout-validation/mobile-dist/assets/index-Bo4ctn0b.css   55.99 kB │ gzip:   8.99 kB
+../../../../../../tmp/qss-listen-closeout-validation/mobile-dist/assets/web-Bkw99yLA.js       0.36 kB │ gzip:   0.24 kB
+../../../../../../tmp/qss-listen-closeout-validation/mobile-dist/assets/web-DVYVF_z1.js       0.36 kB │ gzip:   0.24 kB
+../../../../../../tmp/qss-listen-closeout-validation/mobile-dist/assets/web-Fc-5-9kt.js       8.45 kB │ gzip:   2.82 kB
+../../../../../../tmp/qss-listen-closeout-validation/mobile-dist/assets/index-bBJtgYjH.js   471.02 kB │ gzip: 130.54 kB
+
+✓ built in 160ms

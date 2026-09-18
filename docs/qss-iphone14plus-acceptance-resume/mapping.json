@@ -1,0 +1,1471 @@
+{
+  "mode": "QSS_IPHONE14PLUS_FORMAL_ACCEPTANCE_RESUME_AFTER_P1_P3",
+  "verdict": "LISTEN_IMPROVEMENT_HUMAN_ACCEPTED_SERVER_VERIFIED_FORMAL_ACCEPTANCE_OPEN",
+  "baseline": {
+    "root": "/Users/karasawatakahiro/Developer/native-minute",
+    "branch": "codex/g3-mobile-main-loop",
+    "headUpstreamRemote": "910bfa46f63783966c50242b3ac6067dd4ce3f6b"
+  },
+  "originalSource": "/tmp/native-minute-qss-iphone14plus-device-acceptance-v1/recovered-original-20260906/CHECKLIST.md",
+  "originalSha256": "1c3096b25ff424dbaf76bb54ddc097ba5b15aae5fbac3691eb0b28a526e3316d",
+  "executionSource": "/tmp/native-minute-qss-iphone14plus-device-acceptance-v1/CHECKLIST.md",
+  "originalSessionCounts": {
+    "A": 1,
+    "B": 40,
+    "C": 9,
+    "D": 7,
+    "E": 1
+  },
+  "counts": {
+    "PASS": 5,
+    "FAIL": 0,
+    "BLOCKED": 2,
+    "NOT YET RUN": 51
+  },
+  "additionalCounts": {
+    "BLOCKED": 3,
+    "PASS": 17,
+    "NOT YET RUN": 10
+  },
+  "evidence": {
+    "E-BUILD": {
+      "source": "outputs/qss-personal-space-p3/staging/j-native-artifact-proof.json + j-install-proof.json + j-source-manifest.json + native-wip-source-manifest.json",
+      "kind": "artifact/install + read-only source reconciliation",
+      "detail": "iPhone14 Plus/iOS26.2.1, com.nativeminutes.app.staging 1.0(1), Staging fixed BFF, af36179+WIP source matches 910bfa4 product inputs. Build metadata is not rewritten; sourceDirty=true; existing 3 clean-source guard findings retained."
+    },
+    "E-CURRENT": {
+      "source": "Current task Human reply: 「J修正後のアプリでもA〜Kすべて確認した」; latest authoritative mode: P3 CLOSED / J HUMAN RECHECK PASS",
+      "kind": "Human actual-device report",
+      "detail": "Binds A-K to the J update-installed app. E-CURRENT-A..K are the original scenario letters, not new acceptance IDs. Same device/environment/build chain; no later installation reported or performed."
+    },
+    "E-FILTER": {
+      "source": "Latest request section4: 「今回Humanが確認した」 list explicitly includes Favorite filter; same-build scope confirmation above",
+      "kind": "Human actual-device report",
+      "detail": "Accept only basic filter selection/opening. Mixed Favorite/non-Favorite exclusion remains PS-C-06."
+    },
+    "E-SCREENSHOTS": {
+      "source": "Human attached IMG_2026.png / IMG_2027.png in current task; Take name からさわ, Script Test",
+      "kind": "earlier actual-device screenshots + current-build Human recheck attestation",
+      "detail": "Screenshots alone precede J build and are only corroboration. Current A-K attestation is required for reuse."
+    },
+    "E-BROWSER": {
+      "source": "outputs/qss-personal-space-p3/j-browser-results.json; prior P1/P2/P3 browser/unit records",
+      "kind": "synthetic/local supporting evidence",
+      "detail": "Not used to grant actual-device PASS."
+    },
+    "E-CURRENT-A": {
+      "source": "E-CURRENT",
+      "kind": "Human actual-device report",
+      "detail": "Original P3 scenario A confirmed again on J-fixed installed app."
+    },
+    "E-CURRENT-B": {
+      "source": "E-CURRENT",
+      "kind": "Human actual-device report",
+      "detail": "Original P3 scenario B confirmed again on J-fixed installed app."
+    },
+    "E-CURRENT-C": {
+      "source": "E-CURRENT",
+      "kind": "Human actual-device report",
+      "detail": "Original P3 scenario C confirmed again on J-fixed installed app."
+    },
+    "E-CURRENT-D": {
+      "source": "E-CURRENT",
+      "kind": "Human actual-device report",
+      "detail": "Original P3 scenario D confirmed again on J-fixed installed app."
+    },
+    "E-CURRENT-E": {
+      "source": "E-CURRENT",
+      "kind": "Human actual-device report",
+      "detail": "Original P3 scenario E confirmed again on J-fixed installed app."
+    },
+    "E-CURRENT-F": {
+      "source": "E-CURRENT",
+      "kind": "Human actual-device report",
+      "detail": "Original P3 scenario F confirmed again on J-fixed installed app."
+    },
+    "E-CURRENT-G": {
+      "source": "E-CURRENT",
+      "kind": "Human actual-device report",
+      "detail": "Original P3 scenario G confirmed again on J-fixed installed app."
+    },
+    "E-CURRENT-H": {
+      "source": "E-CURRENT",
+      "kind": "Human actual-device report",
+      "detail": "Original P3 scenario H confirmed again on J-fixed installed app."
+    },
+    "E-CURRENT-I": {
+      "source": "E-CURRENT",
+      "kind": "Human actual-device report",
+      "detail": "Original P3 scenario I confirmed again on J-fixed installed app."
+    },
+    "E-CURRENT-J": {
+      "source": "E-CURRENT",
+      "kind": "Human actual-device report",
+      "detail": "Original P3 scenario J confirmed again on J-fixed installed app."
+    },
+    "E-CURRENT-K": {
+      "source": "E-CURRENT",
+      "kind": "Human actual-device report",
+      "detail": "Original P3 scenario K confirmed again on J-fixed installed app."
+    },
+    "E-LISTEN-HUMAN": {
+      "source": "2026-09-18 current task Human A–M PASS and follow-up「2点とも観察済み」",
+      "kind": "Human actual-device report",
+      "detail": "Installed Listen Staging build, iPhone14 Plus. A–M PASS; no double playback, clear built-in speaker. Normal text last line PASS. Exact Human execution times not supplied. Dynamic Type/VoiceOver undecided."
+    },
+    "E-LISTEN-INSTALL": {
+      "source": "outputs/qss-listen-device-install/preflight-source-manifest.json + native-artifact-proof.json + install-proof.json",
+      "kind": "signed artifact/install/source reconciliation",
+      "detail": "Installed 910bfa46+known WIP. Product source hashes preserved through closeout; metadata remains sourceDirty=true. No reinstall."
+    },
+    "E-LISTEN-SERVER": {
+      "source": "outputs/qss-listen-closeout/staging-readonly.json",
+      "kind": "Staging read-only SELECT",
+      "detail": "Latest same-owner iPhone session updated 2026-09-18T00:29:34.224340Z; target cache_hit 00:31:39.380446Z; canonical identity retained, no new generation or create intent. Event has no session foreign key; exact background/return timestamps and replay GET count are not logged here."
+    }
+  },
+  "original58": [
+    {
+      "id": "D-01",
+      "session": "A",
+      "original_screen": "起動 / Scripts",
+      "original_preconditions": "iPhone 14 Plusと既存の対象buildが使える",
+      "original_steps": "上の実行記録を埋め、既存アプリを開いて端末・build・台本・音声前提を照合",
+      "original_purpose": "対象SHAのbuildで中心5画面を試せる。データ削除不要。対応不明・不足は保留",
+      "original_expected": "対象SHAのbuildで中心5画面を試せる。データ削除不要。対応不明・不足は保留",
+      "original_evidence_method": "build根拠＋H: ____",
+      "expected_version": "v2",
+      "current_steps": "起動先はHome。iPhone14 Plusの既存Staging appを対象とし、build metadataのaf36179＋WIPを、署名済みJ artifactのsource/asset manifestで910bfa4の製品sourceへ対応づける。version 1.0(1)だけで判定しない。",
+      "current_expected": "試験対象build・実機・Staging・利用可能な本人台本/保存音声を対応づけられる。clean-release guardのPASSとは別。",
+      "status": "PASS",
+      "evidence": [
+        "E-BUILD",
+        "E-CURRENT"
+      ],
+      "reason": "現在build/端末/Staging対応と利用可能な本人TakeをE-BUILD＋E-CURRENTで照合。実装manifest一致は確認済み。"
+    },
+    {
+      "id": "S-01",
+      "session": "B",
+      "original_screen": "Scripts",
+      "original_preconditions": "D-01完了、online、Aあり",
+      "original_steps": "一覧を開き、上端から下端を見る",
+      "original_purpose": "台本title・locale・目標時間・抜粋・操作が読め、正常な一覧として表示される",
+      "original_expected": "台本title・locale・目標時間・抜粋・操作が読め、正常な一覧として表示される",
+      "original_evidence_method": "SS＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "一覧を開き、上端から下端を見る",
+      "current_expected": "台本title・locale・目標時間・抜粋・操作が読め、正常な一覧として表示される",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "S-02",
+      "session": "B",
+      "original_screen": "Scripts",
+      "original_preconditions": "Bの長いtitleあり",
+      "original_steps": "該当行を読む",
+      "original_purpose": "titleが折返し、文字切れ・操作との重なり・横はみ出しがない",
+      "original_expected": "titleが折返し、文字切れ・操作との重なり・横はみ出しがない",
+      "original_evidence_method": "SS: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "該当行を読む",
+      "current_expected": "titleが折返し、文字切れ・操作との重なり・横はみ出しがない",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "S-03",
+      "session": "B",
+      "original_screen": "Scripts",
+      "original_preconditions": "複数の既存台本あり",
+      "original_steps": "一覧を縦scrollし、各行のtitleと2操作を見る",
+      "original_purpose": "全行が同等の選択肢として見え、別行の操作を誤認しない",
+      "original_expected": "全行が同等の選択肢として見え、別行の操作を誤認しない",
+      "original_evidence_method": "SSまたはVID＋H: ____",
+      "expected_version": "v2",
+      "current_steps": "一覧を縦scrollし、各行のtitleと現在の1つの「練習する →」を確認。",
+      "current_expected": "全行が同等の選択肢として見え、別行の操作を誤認しない。旧2操作を要求しない。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "S-04",
+      "session": "B",
+      "original_screen": "Scripts",
+      "original_preconditions": "遷移先をまだ説明していない",
+      "original_steps": "「通常の練習はどれから始めると思うか」を尋ねる",
+      "original_purpose": "Humanが「練習する」を通常開始として選べる",
+      "original_expected": "Humanが「練習する」を通常開始として選べる",
+      "original_evidence_method": "H（最初の回答）: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "「通常の練習はどれから始めると思うか」を尋ねる",
+      "current_expected": "Humanが「練習する」を通常開始として選べる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "S-05",
+      "session": "B",
+      "original_screen": "Scripts",
+      "original_preconditions": "S-04直後、補足説明前",
+      "original_steps": "「録音する」は何が違うと思うかを尋ねる",
+      "original_purpose": "Listenを飛ばして録音へ進むsecondaryだと理解し、通常開始と混同しない",
+      "original_expected": "Listenを飛ばして録音へ進むsecondaryだと理解し、通常開始と混同しない",
+      "original_evidence_method": "H（最初の回答）: ____",
+      "expected_version": "v1 retained / applicability blocked",
+      "current_steps": "旧「録音する」は承認済みScriptsから除去済み。Humanに存在しない操作を探させない。",
+      "current_expected": "原目的（Listenを飛ばすsecondaryの意味理解）は保持。別目的に置換せず、適用方針のHuman判断までBLOCKED。",
+      "status": "BLOCKED",
+      "evidence": [],
+      "reason": "承認済みP1のUI変更で旧入口なし。適用判断待ち。製品FAILではない。"
+    },
+    {
+      "id": "S-06",
+      "session": "B",
+      "original_screen": "Scripts → Listen",
+      "original_preconditions": "Aのtitle・本文の目印を確認済み",
+      "original_steps": "Aの「練習する」を押す",
+      "original_purpose": "AのListenへ移り、titleと本文が一致する",
+      "original_expected": "AのListenへ移り、titleと本文が一致する",
+      "original_evidence_method": "VIDまたは前後SS＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "Aの「練習する」を押す",
+      "current_expected": "AのListenへ移り、titleと本文が一致する",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "S-07",
+      "session": "B",
+      "original_screen": "Scripts → Record",
+      "original_preconditions": "Aの目印を確認済み",
+      "original_steps": "Scriptsへ戻り、Aの「録音する」を押す",
+      "original_purpose": "Listenを経由せずAのRecordへ移る。録音は自動開始しない",
+      "original_expected": "Listenを経由せずAのRecordへ移る。録音は自動開始しない",
+      "original_evidence_method": "VIDまたは前後SS＋H: ____",
+      "expected_version": "v1 retained / applicability blocked",
+      "current_steps": "旧Scripts→Record直行のUI入口はない。内部routeだけをnative入口とみなさない。",
+      "current_expected": "原目的（Listenを経由しない同じ台本のRecord遷移・手動開始）は保持。適用方針のHuman判断までBLOCKED。",
+      "status": "BLOCKED",
+      "evidence": [],
+      "reason": "承認済みP1のUI変更で旧入口なし。適用判断待ち。製品FAILではない。"
+    },
+    {
+      "id": "L-01",
+      "session": "B",
+      "original_screen": "Listen",
+      "original_preconditions": "online、scrollが必要な台本を読込済み",
+      "original_steps": "本文を上端から末尾までscrollし戻す",
+      "original_purpose": "全文を読め、途中でscroll不能にならない",
+      "original_expected": "全文を読め、途中でscroll不能にならない",
+      "original_evidence_method": "VIDまたはH: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "本文を上端から末尾までscrollし戻す",
+      "current_expected": "全文を読め、途中でscroll不能にならない",
+      "status": "PASS",
+      "evidence": [
+        "E-LISTEN-HUMAN",
+        "E-LISTEN-INSTALL"
+      ],
+      "reason": "Human A–M: 通常文字で本文最終行までscrollでき、末尾まで読める。"
+    },
+    {
+      "id": "L-02",
+      "session": "B",
+      "original_screen": "Listen",
+      "original_preconditions": "L-01と同じ",
+      "original_steps": "本文の上・中・下で、現在stateの準備／再生・一時停止操作を触る",
+      "original_purpose": "本文を戻さずbottom dockの該当操作へアクセスできる",
+      "original_expected": "本文を戻さずbottom dockの該当操作へアクセスできる",
+      "original_evidence_method": "VID＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "本文の上・中・下で、現在stateの準備／再生・一時停止操作を触る",
+      "current_expected": "本文を戻さずbottom dockの該当操作へアクセスできる",
+      "status": "NOT YET RUN",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ],
+      "reason": "再生操作自体はA–M PASS。本文上・中・下すべてでdock操作に届く条件は未確認。"
+    },
+    {
+      "id": "L-03",
+      "session": "B",
+      "original_screen": "Listen",
+      "original_preconditions": "本文末尾までscroll済み",
+      "original_steps": "最終行とHome indicator付近を見る",
+      "original_purpose": "最終行がdockに隠れず、末尾まで読める",
+      "original_expected": "最終行がdockに隠れず、末尾まで読める",
+      "original_evidence_method": "末尾SS: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "最終行とHome indicator付近を見る",
+      "current_expected": "最終行がdockに隠れず、末尾まで読める",
+      "status": "PASS",
+      "evidence": [
+        "E-LISTEN-HUMAN",
+        "E-LISTEN-INSTALL"
+      ],
+      "reason": "Human M: 通常文字でdockが最終行を隠さない。"
+    },
+    {
+      "id": "L-04",
+      "session": "B",
+      "original_screen": "Listen",
+      "original_preconditions": "実音声がready",
+      "original_steps": "再生 → 一時停止 → 再生を1回ずつ行う",
+      "original_purpose": "実際の音が操作に応じて開始・停止し、二重再生しない",
+      "original_expected": "実際の音が操作に応じて開始・停止し、二重再生しない",
+      "original_evidence_method": "H（聞こえた結果）＋VID任意: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "再生 → 一時停止 → 再生を1回ずつ行う",
+      "current_expected": "実際の音が操作に応じて開始・停止し、二重再生しない",
+      "status": "PASS",
+      "evidence": [
+        "E-LISTEN-HUMAN",
+        "E-LISTEN-INSTALL"
+      ],
+      "reason": "Human A–C/G/K–L: 実再生・pause・再開PASS。補足回答で二重再生なしも観察済み。"
+    },
+    {
+      "id": "L-05",
+      "session": "B",
+      "original_screen": "Listen",
+      "original_preconditions": "L-04と同じ",
+      "original_steps": "再生中と一時停止中に時間表示を観察",
+      "original_purpose": "実media時間に沿って進み、停止中は進み続けない。目標60秒を実音声長として誤表示しない",
+      "original_expected": "実media時間に沿って進み、停止中は進み続けない。目標60秒を実音声長として誤表示しない",
+      "original_evidence_method": "VIDまたは時刻付きH: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "再生中と一時停止中に時間表示を観察",
+      "current_expected": "実media時間に沿って進み、停止中は進み続けない。目標60秒を実音声長として誤表示しない",
+      "status": "NOT YET RUN",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ],
+      "reason": "実再生・pause・位置付近から再開はPASS。時間表示の進行/停止、目標60秒と実音声長の区別は未観察のため未判定。"
+    },
+    {
+      "id": "L-06",
+      "session": "B",
+      "original_screen": "Listen → Record",
+      "original_preconditions": "online、台本ready",
+      "original_steps": "本文上・中・末尾で「録音へ進む」を確認し、最後に押す",
+      "original_purpose": "ready状態でCTAに常時アクセスでき、全文再生を強制されず同じ台本のRecordへ移る",
+      "original_expected": "ready状態でCTAに常時アクセスでき、全文再生を強制されず同じ台本のRecordへ移る",
+      "original_evidence_method": "VID＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "本文上・中・末尾で「録音へ進む」を確認し、最後に押す",
+      "current_expected": "ready状態でCTAに常時アクセスでき、全文再生を強制されず同じ台本のRecordへ移る",
+      "status": "NOT YET RUN",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ],
+      "reason": "今回Recordへ進む操作は実施範囲外。各本文位置のCTA到達・全文再生不要・同一台本遷移が未確認。"
+    },
+    {
+      "id": "L-07",
+      "session": "B",
+      "original_screen": "Listen",
+      "original_preconditions": "speaker選択、聴ける音量",
+      "original_steps": "お手本を数秒再生する",
+      "original_purpose": "speakerから対象音声を明瞭に聞ける",
+      "original_expected": "speakerから対象音声を明瞭に聞ける",
+      "original_evidence_method": "H（出力先・聞こえ方）: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "お手本を数秒再生する",
+      "current_expected": "speakerから対象音声を明瞭に聞ける",
+      "status": "PASS",
+      "evidence": [
+        "E-LISTEN-HUMAN",
+        "E-LISTEN-INSTALL"
+      ],
+      "reason": "Human補足回答: iPhone本体speakerで対象音声を明瞭に聞けた。"
+    },
+    {
+      "id": "L-08",
+      "session": "D",
+      "original_screen": "Listen",
+      "original_preconditions": "使用可能なBluetooth機器がある場合",
+      "original_steps": "speakerで再生確認後、Bluetoothへ切替え再生し、speakerへ戻す",
+      "original_purpose": "選んだ出力先で聞け、切替後も操作可能・二重再生なし。非active化した場合の再準備は許容",
+      "original_expected": "選んだ出力先で聞け、切替後も操作可能・二重再生なし。非active化した場合の再準備は許容",
+      "original_evidence_method": "H＋VID任意: ____",
+      "expected_version": "v3 changed",
+      "current_steps": "speakerで再生確認後、Bluetoothへ切替え再生し、speakerへ戻す",
+      "current_expected": "出力先切替・二重再生なしの目的を保持。短時間の同一session復帰は再生1回で保存済み音声を取得して再開。通常の別ボタン再準備は不要。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-01",
+      "session": "B",
+      "original_screen": "Record / OS permission",
+      "original_preconditions": "online、台本ready、既存consent条件を満たす",
+      "original_steps": "permission開始状態を記録し「録音する」を押す。未決定なら通常のOS案内に応答",
+      "original_purpose": "許可後は録音可能。拒否状態なら分かる案内を表示し無断録音しない。許可済みでpromptが出ないのは正常",
+      "original_expected": "許可後は録音可能。拒否状態なら分かる案内を表示し無断録音しない。許可済みでpromptが出ないのは正常",
+      "original_evidence_method": "H＋SS任意: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "permission開始状態を記録し「録音する」を押す。未決定なら通常のOS案内に応答",
+      "current_expected": "許可後は録音可能。拒否状態なら分かる案内を表示し無断録音しない。許可済みでpromptが出ないのは正常",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-02",
+      "session": "B",
+      "original_screen": "Record",
+      "original_preconditions": "microphone許可済み",
+      "original_steps": "「録音する」を押してAを読む",
+      "original_purpose": "1回の録音開始に対し録音中表示と経過時間が進む",
+      "original_expected": "1回の録音開始に対し録音中表示と経過時間が進む",
+      "original_evidence_method": "VIDまたはH: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "「録音する」を押してAを読む",
+      "current_expected": "1回の録音開始に対し録音中表示と経過時間が進む",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-03",
+      "session": "B",
+      "original_screen": "Record recording",
+      "original_preconditions": "R-02の録音中、長い本文",
+      "original_steps": "声を出しながら本文を上・中・末尾へscroll",
+      "original_purpose": "本文を読め、録音が意図せず止まったり最初から始まったりしない",
+      "original_expected": "本文を読め、録音が意図せず止まったり最初から始まったりしない",
+      "original_evidence_method": "VID＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "声を出しながら本文を上・中・末尾へscroll",
+      "current_expected": "本文を読め、録音が意図せず止まったり最初から始まったりしない",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-04",
+      "session": "B",
+      "original_screen": "Record recording",
+      "original_preconditions": "R-03と同じ",
+      "original_steps": "各scroll位置で停止・キャンセルの位置と到達性を確認",
+      "original_purpose": "停止はbottom dockに残り、本文を戻さず押せる。キャンセルもアクセス可能",
+      "original_expected": "停止はbottom dockに残り、本文を戻さず押せる。キャンセルもアクセス可能",
+      "original_evidence_method": "VID: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "各scroll位置で停止・キャンセルの位置と到達性を確認",
+      "current_expected": "停止はbottom dockに残り、本文を戻さず押せる。キャンセルもアクセス可能",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-05",
+      "session": "B",
+      "original_screen": "Record recording",
+      "original_preconditions": "本文末尾",
+      "original_steps": "最終行とdock境界を見る",
+      "original_purpose": "最終行が隠れず、読み終えて停止できる",
+      "original_expected": "最終行が隠れず、読み終えて停止できる",
+      "original_evidence_method": "SS: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "最終行とdock境界を見る",
+      "current_expected": "最終行が隠れず、読み終えて停止できる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-06",
+      "session": "B",
+      "original_screen": "Record recording → after",
+      "original_preconditions": "通常の約1分録音中",
+      "original_steps": "停止を1回押す",
+      "original_purpose": "録音が終了し、previewへ進む。timer停止とOS上の当該appのmicrophone使用終了を観察できる",
+      "original_expected": "録音が終了し、previewへ進む。timer停止とOS上の当該appのmicrophone使用終了を観察できる",
+      "original_evidence_method": "H＋VID任意: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "停止を1回押す",
+      "current_expected": "録音が終了し、previewへ進む。timer停止とOS上の当該appのmicrophone使用終了を観察できる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-07",
+      "session": "B",
+      "original_screen": "Record after",
+      "original_preconditions": "R-06のpreviewあり",
+      "original_steps": "native previewを再生・一時停止する",
+      "original_purpose": "今録った自分の声が聞け、前のTakeとの取り違えや二重再生なし",
+      "original_expected": "今録った自分の声が聞け、前のTakeとの取り違えや二重再生なし",
+      "original_evidence_method": "H（声・冒頭末尾・音質）: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "native previewを再生・一時停止する",
+      "current_expected": "今録った自分の声が聞け、前のTakeとの取り違えや二重再生なし",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 保存済みTakeの再生PASSを録音直後の未保存previewへ転用しない。"
+    },
+    {
+      "id": "R-08",
+      "session": "B",
+      "original_screen": "Record after",
+      "original_preconditions": "新しいpreview、確認checkbox未選択",
+      "original_steps": "評価操作の無効を確認し、再生した後「録音を確認した」を選択する",
+      "original_purpose": "未確認では評価不可。再生だけでは自動チェックされず、手動確認後に評価可能",
+      "original_expected": "未確認では評価不可。再生だけでは自動チェックされず、手動確認後に評価可能",
+      "original_evidence_method": "前後SSまたはVID: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "評価操作の無効を確認し、再生した後「録音を確認した」を選択する",
+      "current_expected": "未確認では評価不可。再生だけでは自動チェックされず、手動確認後に評価可能",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-09",
+      "session": "B",
+      "original_screen": "Record evaluating",
+      "original_preconditions": "R-08完了、online、通常評価を利用可能",
+      "original_steps": "「この録音で評価する」を1回押す",
+      "original_purpose": "保存／評価中の状態が分かり、二重操作を促されない。正常応答なら完了する",
+      "original_expected": "保存／評価中の状態が分かり、二重操作を促されない。正常応答なら完了する",
+      "original_evidence_method": "VIDまたはH、error時ERR: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "「この録音で評価する」を1回押す",
+      "current_expected": "保存／評価中の状態が分かり、二重操作を促されない。正常応答なら完了する",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-10",
+      "session": "B",
+      "original_screen": "Record → Review",
+      "original_preconditions": "R-09成功",
+      "original_steps": "遷移先の台本と今回の結果を確認",
+      "original_purpose": "同じ台本・今回のTakeのReviewへ移る。title・日時・録音の目印を照合できる",
+      "original_expected": "同じ台本・今回のTakeのReviewへ移る。title・日時・録音の目印を照合できる",
+      "original_evidence_method": "前後SS＋H: ____",
+      "expected_version": "v2",
+      "current_steps": "評価後の「結果」画面で今回のTake・日時・台本を照合。録音名ありなら見出しは録音名、その下が台本名。",
+      "current_expected": "同じ台本・今回のTakeのReviewへ移り、title・日時・録音の目印を照合できる。録音名と台本名を混同しない。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-11",
+      "session": "B",
+      "original_screen": "Record after / retry",
+      "original_preconditions": "previewのある短い別試行、必要なら自然発生した一時評価error",
+      "original_steps": "「録り直す」→録音→停止→新previewを確認。評価errorが自然発生した場合のみ「同じ録音で評価を再試行」を使う",
+      "original_purpose": "録り直しは新しい音声となり手動確認が外れる。retry分岐は同じ保持音声で再試行できる",
+      "original_expected": "録り直しは新しい音声となり手動確認が外れる。retry分岐は同じ保持音声で再試行できる",
+      "original_evidence_method": "H＋VID、error時ERR: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "「録り直す」→録音→停止→新previewを確認。評価errorが自然発生した場合のみ「同じ録音で評価を再試行」を使う",
+      "current_expected": "録り直しは新しい音声となり手動確認が外れる。retry分岐は同じ保持音声で再試行できる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-12",
+      "session": "B",
+      "original_screen": "Record after",
+      "original_preconditions": "Aの目標60秒、microphone利用可能",
+      "original_steps": "5〜10秒ほど普通の声で録音して停止する",
+      "original_purpose": "短い録音と録り直し推奨の既存案内が出る。短いだけでDIGITAL_SILENCE扱いにならない",
+      "original_expected": "短い録音と録り直し推奨の既存案内が出る。短いだけでDIGITAL_SILENCE扱いにならない",
+      "original_evidence_method": "案内SS＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "5〜10秒ほど普通の声で録音して停止する",
+      "current_expected": "短い録音と録り直し推奨の既存案内が出る。短いだけでDIGITAL_SILENCE扱いにならない",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-13",
+      "session": "D",
+      "original_screen": "Record after",
+      "original_preconditions": "安全に小声／静かな試行ができる場合",
+      "original_steps": "小声または静かな試行を停止し、「録音の詳細」の分類と案内を見る",
+      "original_purpose": "LOW_SIGNALなら小さめ案内と手動確認gate。DIGITAL_SILENCEなら再録音案内で評価不可。観測した分類の既存挙動を保つ",
+      "original_expected": "LOW_SIGNALなら小さめ案内と手動確認gate。DIGITAL_SILENCEなら再録音案内で評価不可。観測した分類の既存挙動を保つ",
+      "original_evidence_method": "分類・案内SS＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "小声または静かな試行を停止し、「録音の詳細」の分類と案内を見る",
+      "current_expected": "LOW_SIGNALなら小さめ案内と手動確認gate。DIGITAL_SILENCEなら再録音案内で評価不可。観測した分類の既存挙動を保つ",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "RV-01",
+      "session": "B",
+      "original_screen": "Review",
+      "original_preconditions": "focus wordsのある保存済み結果",
+      "original_steps": "最初に目に入る内容と「次に何を直すか」をHumanに尋ねる",
+      "original_purpose": "focus words → advice →「次のTakeを録る」の順で理解できる",
+      "original_expected": "focus words → advice →「次のTakeを録る」の順で理解できる",
+      "original_evidence_method": "H（最初の回答）＋SS: ____",
+      "expected_version": "v2",
+      "current_steps": "小さな「結果」ラベルと録音名／台本名の下で、最初に目に入る練習内容と次に直す点を尋ねる。",
+      "current_expected": "focus words → advice →「次のTakeを録る」の順で練習内容を理解できる。identity見出しを増やしたこと自体をFAILにしない。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "RV-02",
+      "session": "B",
+      "original_screen": "Review",
+      "original_preconditions": "RV-01と同じ",
+      "original_steps": "最も重要に見えた内容を尋ねる",
+      "original_purpose": "scoreだけに注意が集まらず、次の練習内容と操作を説明できる",
+      "original_expected": "scoreだけに注意が集まらず、次の練習内容と操作を説明できる",
+      "original_evidence_method": "H（回答）: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "最も重要に見えた内容を尋ねる",
+      "current_expected": "scoreだけに注意が集まらず、次の練習内容と操作を説明できる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "RV-03",
+      "session": "B",
+      "original_screen": "Review",
+      "original_preconditions": "Cの長い保存済みadvice",
+      "original_steps": "adviceを先頭から末尾まで読む",
+      "original_purpose": "全文を読め、省略・文字切れ・重なりがない",
+      "original_expected": "全文を読め、省略・文字切れ・重なりがない",
+      "original_evidence_method": "SSまたはVID: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "adviceを先頭から末尾まで読む",
+      "current_expected": "全文を読め、省略・文字切れ・重なりがない",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "RV-04",
+      "session": "B",
+      "original_screen": "Review",
+      "original_preconditions": "RV-03と同じ",
+      "original_steps": "advice先頭から「次のTakeを録る」へ到達する",
+      "original_purpose": "通常のscrollで補助説明なくCTAを見つけて押せる。到達の負担・迷いを記録する",
+      "original_expected": "通常のscrollで補助説明なくCTAを見つけて押せる。到達の負担・迷いを記録する",
+      "original_evidence_method": "VID＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "advice先頭から「次のTakeを録る」へ到達する",
+      "current_expected": "通常のscrollで補助説明なくCTAを見つけて押せる。到達の負担・迷いを記録する",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "RV-05",
+      "session": "B",
+      "original_screen": "Review → Record",
+      "original_preconditions": "保存済みReviewの台本を確認済み",
+      "original_steps": "「次のTakeを録る」を押す",
+      "original_purpose": "同じ台本のRecordへ移り、録音は手動開始できる",
+      "original_expected": "同じ台本のRecordへ移り、録音は手動開始できる",
+      "original_evidence_method": "前後SSまたはVID: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "「次のTakeを録る」を押す",
+      "current_expected": "同じ台本のRecordへ移り、録音は手動開始できる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "RV-06",
+      "session": "B",
+      "original_screen": "Review → Listen",
+      "original_preconditions": "同じReviewを開き直す",
+      "original_steps": "「お手本を聞き直す」を押す",
+      "original_purpose": "同じ台本のListenへ移る",
+      "original_expected": "同じ台本のListenへ移る",
+      "original_evidence_method": "前後SSまたはVID: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "「お手本を聞き直す」を押す",
+      "current_expected": "同じ台本のListenへ移る",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "RV-07",
+      "session": "B",
+      "original_screen": "Review → Progress",
+      "original_preconditions": "同じReviewを開き直す",
+      "original_steps": "「成長を見る」を押す",
+      "original_purpose": "その台本のProgressへ移り、別台本と混同しない",
+      "original_expected": "その台本のProgressへ移り、別台本と混同しない",
+      "original_evidence_method": "前後SSまたはVID: ____",
+      "expected_version": "v2",
+      "current_steps": "Reviewの「練習を終了（Home）」→下部「成長」→同じ台本のsectionを探す。旧「成長を見る」ボタンは探さない。",
+      "current_expected": "同じ台本のProgressに到達して別台本と混同しない。現在は全体Progress内の同じ台本を照合し、台本filter自動適用とは主張しない。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "P-01",
+      "session": "B",
+      "original_screen": "Progress",
+      "original_preconditions": "latest結果のある台本",
+      "original_steps": "最初に見える内容から、次に行う練習をHumanが説明する",
+      "original_purpose": "nextStepが先に理解でき、score探索から始めなくてよい",
+      "original_expected": "nextStepが先に理解でき、score探索から始めなくてよい",
+      "original_evidence_method": "H（回答）＋SS: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "最初に見える内容から、次に行う練習をHumanが説明する",
+      "current_expected": "nextStepが先に理解でき、score探索から始めなくてよい",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "P-02",
+      "session": "B",
+      "original_screen": "Progress",
+      "original_preconditions": "Latest / Bestを表示できる既存履歴",
+      "original_steps": "ラベル・score・日時を読む",
+      "original_purpose": "LatestとBestの意味を区別できる。同じTake注記がある場合は同一結果と分かる",
+      "original_expected": "LatestとBestの意味を区別できる。同じTake注記がある場合は同一結果と分かる",
+      "original_evidence_method": "SS＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "ラベル・score・日時を読む",
+      "current_expected": "LatestとBestの意味を区別できる。同じTake注記がある場合は同一結果と分かる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "P-03",
+      "session": "B",
+      "original_screen": "Progress",
+      "original_preconditions": "historyあり",
+      "original_steps": "Take historyまでscrollし各行を読む",
+      "original_purpose": "日時・score・Review操作が読め、任意の行を選べる",
+      "original_expected": "日時・score・Review操作が読め、任意の行を選べる",
+      "original_evidence_method": "SSまたはVID: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "Take historyまでscrollし各行を読む",
+      "current_expected": "日時・score・Review操作が読め、任意の行を選べる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "P-04",
+      "session": "B",
+      "original_screen": "Progress → Review",
+      "original_preconditions": "P-03、選ぶ行の目印を記録済み",
+      "original_steps": "historyの1行を押す",
+      "original_purpose": "選んだ台本・TakeのReviewに移り、日時等の目印が一致する",
+      "original_expected": "選んだ台本・TakeのReviewに移り、日時等の目印が一致する",
+      "original_evidence_method": "前後SS＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "historyの1行を押す",
+      "current_expected": "選んだ台本・TakeのReviewに移り、日時等の目印が一致する",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 JはMy Takes→Reviewであり、Progress history→Reviewの証拠ではない。"
+    },
+    {
+      "id": "P-05",
+      "session": "B",
+      "original_screen": "Progress → Record",
+      "original_preconditions": "結果のある台本のProgressへ戻る",
+      "original_steps": "「もう一度練習する」を押す",
+      "original_purpose": "同じ台本のRecordへ進み、操作先を誤認しない",
+      "original_expected": "同じ台本のRecordへ進み、操作先を誤認しない",
+      "original_evidence_method": "前後SS＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "「もう一度練習する」を押す",
+      "current_expected": "同じ台本のRecordへ進み、操作先を誤認しない",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "P-06",
+      "session": "B",
+      "original_screen": "Progress",
+      "original_preconditions": "Cの長いlatest nextStep",
+      "original_steps": "adviceを先頭から末尾まで読む",
+      "original_purpose": "latest nextStep全文が読め、文字切れ・省略・重なりなし",
+      "original_expected": "latest nextStep全文が読め、文字切れ・省略・重なりなし",
+      "original_evidence_method": "SSまたはVID: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "adviceを先頭から末尾まで読む",
+      "current_expected": "latest nextStep全文が読め、文字切れ・省略・重なりなし",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "P-07",
+      "session": "B",
+      "original_screen": "Progress",
+      "original_preconditions": "P-06と同じ",
+      "original_steps": "advice先頭から再練習CTAへ到達する",
+      "original_purpose": "補助説明なく通常scrollで見つけ、実用上無理なく押せる",
+      "original_expected": "補助説明なく通常scrollで見つけ、実用上無理なく押せる",
+      "original_evidence_method": "VID＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "advice先頭から再練習CTAへ到達する",
+      "current_expected": "補助説明なく通常scrollで見つけ、実用上無理なく押せる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "DT-S-01",
+      "session": "C",
+      "original_screen": "Scripts",
+      "original_preconditions": "N/L設定を記録、B・複数行あり",
+      "original_steps": "両設定で一覧を読み、各行の2操作に到達する",
+      "original_purpose": "titleとbutton labelが折返し、横overflow・clipped text・重なりなし",
+      "original_expected": "titleとbutton labelが折返し、横overflow・clipped text・重なりなし",
+      "original_evidence_method": "N/LのSS＋H: ____",
+      "expected_version": "v2",
+      "current_steps": "通常N/大きいLで一覧を読み、各行の現在の「練習する →」へ到達する。",
+      "current_expected": "titleと現在のbutton labelが折返し、横overflow・clipped text・重なりなし。削除済み2つ目の操作は対象外。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "DT-L-01",
+      "session": "C",
+      "original_screen": "Listen",
+      "original_preconditions": "N/L、長い本文、online、音声ready",
+      "original_steps": "両設定で本文末尾へscrollしplay/pause・Record CTAを操作",
+      "original_purpose": "dock・最終行・button labelが読め、重なりなく操作可能",
+      "original_expected": "dock・最終行・button labelが読め、重なりなく操作可能",
+      "original_evidence_method": "N/LのSSまたはVID: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "両設定で本文末尾へscrollしplay/pause・Record CTAを操作",
+      "current_expected": "dock・最終行・button labelが読め、重なりなく操作可能",
+      "status": "NOT YET RUN",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ],
+      "reason": "通常文字で本文末尾・dock非遮蔽はPASS。Human「文字サイズは変えられなかった」理由未確定。Dynamic TypeのPASS/FAILに変換せずSession Cに残す。"
+    },
+    {
+      "id": "DT-R-01",
+      "session": "C",
+      "original_screen": "Record",
+      "original_preconditions": "N/L、長い本文、録音可能",
+      "original_steps": "両設定でbefore → 短いrecording → stop → preview・確認状態を確認",
+      "original_purpose": "開始／停止／キャンセル／確認／評価の現在state操作へ到達でき、dock・最終行・折返しに破綻なし",
+      "original_expected": "開始／停止／キャンセル／確認／評価の現在state操作へ到達でき、dock・最終行・折返しに破綻なし",
+      "original_evidence_method": "N/LのVID＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "両設定でbefore → 短いrecording → stop → preview・確認状態を確認",
+      "current_expected": "開始／停止／キャンセル／確認／評価の現在state操作へ到達でき、dock・最終行・折返しに破綻なし",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "DT-RV-01",
+      "session": "C",
+      "original_screen": "Review",
+      "original_preconditions": "N/L、Cの長いadvice",
+      "original_steps": "両設定で全文を読み「次のTakeを録る」へ到達",
+      "original_purpose": "clipped text・横overflow・重なりなし。大きい文字でもCTAを自力で発見・操作できる",
+      "original_expected": "clipped text・横overflow・重なりなし。大きい文字でもCTAを自力で発見・操作できる",
+      "original_evidence_method": "N/LのVID＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "両設定で全文を読み「次のTakeを録る」へ到達",
+      "current_expected": "clipped text・横overflow・重なりなし。大きい文字でもCTAを自力で発見・操作できる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "DT-P-01",
+      "session": "C",
+      "original_screen": "Progress",
+      "original_preconditions": "N/L、Cの長いlatest nextStep",
+      "original_steps": "両設定で全文・再練習CTA・historyへ到達",
+      "original_purpose": "全文とlabelが読め、CTAとhistoryを自力で発見・操作できる",
+      "original_expected": "全文とlabelが読め、CTAとhistoryを自力で発見・操作できる",
+      "original_evidence_method": "N/LのVID＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "両設定で全文・再練習CTA・historyへ到達",
+      "current_expected": "全文とlabelが読め、CTAとhistoryを自力で発見・操作できる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "VO-NAV-01",
+      "session": "C",
+      "original_screen": "5画面",
+      "original_preconditions": "VoiceOver ON、A・保存済み結果を利用可",
+      "original_steps": "各画面headingを探し、primary / secondaryへ順にfocusして必要な操作を実行",
+      "original_purpose": "headingと画面の意味が分かるlabelを読み上げ、順序・focusが自然。非表示要素への迷入や操作不能なし",
+      "original_expected": "headingと画面の意味が分かるlabelを読み上げ、順序・focusが自然。非表示要素への迷入や操作不能なし",
+      "original_evidence_method": "H（画面別の読み上げ順・label）: ____",
+      "expected_version": "v2",
+      "current_steps": "原5画面をVoiceOverで巡回。Home/台本/成長は非練習画面だけ、Listen/Record/Reviewは「← 戻る」「練習を終了（Home）」を使う。",
+      "current_expected": "各画面のheading・現在のprimary/secondaryの意味と順序が分かり、非表示tabへの迷入や操作不能なし。Home/My Takesの追加分はPS-X-01へ同一証拠参照。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "VO-REC-01",
+      "session": "C",
+      "original_screen": "Record",
+      "original_preconditions": "VoiceOver ON、録音可能",
+      "original_steps": "録音を開始し、状態を確認して停止へfocus・実行。preview確認へ進む",
+      "original_purpose": "「録音中」・「停止」が理解でき、timerが操作を妨げず、停止と手動確認を実行できる",
+      "original_expected": "「録音中」・「停止」が理解でき、timerが操作を妨げず、停止と手動確認を実行できる",
+      "original_evidence_method": "H＋VID任意: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "録音を開始し、状態を確認して停止へfocus・実行。preview確認へ進む",
+      "current_expected": "「録音中」・「停止」が理解でき、timerが操作を妨げず、停止と手動確認を実行できる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "VO-DATA-01",
+      "session": "C",
+      "original_screen": "Review / Progress",
+      "original_preconditions": "VoiceOver ON、focus words・score・historyあり",
+      "original_steps": "focus words → advice → CTA、score、history行へfocusし1行を開く",
+      "original_purpose": "各語・score・history行の意味と順序が分かり、選んだReviewへ移れる",
+      "original_expected": "各語・score・history行の意味と順序が分かり、選んだReviewへ移れる",
+      "original_evidence_method": "H（実際の読み上げ・順序）: ____",
+      "expected_version": "v2",
+      "current_steps": "結果画面の録音名／台本名を区別し、focus words→advice→CTA、score、Progress history行へfocusして選ぶ。",
+      "current_expected": "原期待どおり語・score・historyの意味と順序を理解し、選択したReviewへ移れる。My Takesだけでは代用しない。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "VP-01",
+      "session": "C",
+      "original_screen": "Scripts / Listen / Record",
+      "original_preconditions": "N/L、長い本文、VoiceOver OFF",
+      "original_steps": "下記viewport手順を実行し、safe area・keyboard・短い表示高さを確認",
+      "original_purpose": "Home indicatorとdock操作が衝突せず、keyboard後の回復と短いviewportで主要操作・本文末尾を使える",
+      "original_expected": "Home indicatorとdock操作が衝突せず、keyboard後の回復と短いviewportで主要操作・本文末尾を使える",
+      "original_evidence_method": "条件別SS/VID＋H: ____",
+      "expected_version": "v2",
+      "current_steps": "元の縦/横/keyboard/N/L手順を保持。practice中のtop Back/Exit、bottom dock、非練習画面の下部navがsafe areaと干渉しないか見る。",
+      "current_expected": "Home indicatorと操作が衝突せず、keyboard後の回復と短いviewportで主要操作・本文末尾を使える。新しいUIの配置だけを反映し、視覚再監査はしない。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "L-09",
+      "session": "D",
+      "original_screen": "Listen",
+      "original_preconditions": "実音声を再生中、N、VoiceOver OFF",
+      "original_steps": "通常操作で短くbackgroundへ移しforegroundへ戻る",
+      "original_purpose": "backgroundで音声を解放・停止し、復帰後は必要な再準備へ戻る。連続再生や元の秒数からの自動再開を必須にしない",
+      "original_expected": "backgroundで音声を解放・停止し、復帰後は必要な再準備へ戻る。連続再生や元の秒数からの自動再開を必須にしない",
+      "original_evidence_method": "H＋VID任意: ____",
+      "expected_version": "v3 changed",
+      "current_steps": "通常操作で短くbackgroundへ移しforegroundへ戻る",
+      "current_expected": "backgroundで停止・解放し、foregroundだけでは自動再生しない。15分以内の同一session復帰は再生1回で保存済み音声を取得し位置/速度を戻す。",
+      "status": "NOT YET RUN",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ],
+      "reason": "Human H–L: 別アプリ→15分以内復帰、自動再生なし、再生1回で位置付近/0.85倍復元PASS。background中の音声停止自体は明示観察なし。内部media解放はlocal test補助証拠のみ。原複合項目全体は未判定。"
+    },
+    {
+      "id": "L-10",
+      "session": "D",
+      "original_screen": "Listen",
+      "original_preconditions": "L-09の復帰直後",
+      "original_steps": "表示された再準備・再生・一時停止・Record導線を使う",
+      "original_purpose": "操作不能・二重再生・意図しない自動再生なし。同じ台本を確認して練習へ戻れる",
+      "original_expected": "操作不能・二重再生・意図しない自動再生なし。同じ台本を確認して練習へ戻れる",
+      "original_evidence_method": "H＋VID任意: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "表示された再準備・再生・一時停止・Record導線を使う",
+      "current_expected": "操作不能・二重再生・意図しない自動再生なし。同じ台本を確認して練習へ戻れる",
+      "status": "NOT YET RUN",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ],
+      "reason": "復帰時の自動再生なし・再生1回・二重再生なしはPASS。復帰後のpause/Record導線の未確認分だけ残す。"
+    },
+    {
+      "id": "R-OFFLINE-01",
+      "session": "D",
+      "original_screen": "Record recording",
+      "original_preconditions": "foregroundを保ってonline→offlineにできる安全な接続条件、台本ready・microphone利用可",
+      "original_steps": "下の独立手順を実行",
+      "original_purpose": "録音中・stop・cancel・scroll・dock・最終行を維持し、実停止できる。自動送信・評価・再録音開始なし",
+      "original_expected": "録音中・stop・cancel・scroll・dock・最終行を維持し、実停止できる。自動送信・評価・再録音開始なし",
+      "original_evidence_method": "時系列VIDまたは外部撮影＋H: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "下の独立手順を実行",
+      "current_expected": "録音中・stop・cancel・scroll・dock・最終行を維持し、実停止できる。自動送信・評価・再録音開始なし",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-INT-01",
+      "session": "D",
+      "original_screen": "Record",
+      "original_preconditions": "短い別録音中、online",
+      "original_steps": "アプリを短くbackgroundへ移しforegroundへ戻す。その後手動で新録音・停止する",
+      "original_purpose": "既存仕様どおり録音中Takeをcancel・破棄しmicrophoneを解放。自動再開・自動送信なし。復帰後の手動録音が可能",
+      "original_expected": "既存仕様どおり録音中Takeをcancel・破棄しmicrophoneを解放。自動再開・自動送信なし。復帰後の手動録音が可能",
+      "original_evidence_method": "H＋VID任意: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "アプリを短くbackgroundへ移しforegroundへ戻す。その後手動で新録音・停止する",
+      "current_expected": "既存仕様どおり録音中Takeをcancel・破棄しmicrophoneを解放。自動再開・自動送信なし。復帰後の手動録音が可能",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "R-INT-02",
+      "session": "D",
+      "original_screen": "Record",
+      "original_preconditions": "安全な通常のaudio interruptionを起こせる場合",
+      "original_steps": "種類を記録して短い録音中に1回割り込み、終了後に画面とmicrophone・回復操作を見る",
+      "original_purpose": "appが非activeになったり音声入力を失った場合はcancel／errorとして終了し、意図しない継続・送信なし。回復して手動録音できる",
+      "original_expected": "appが非activeになったり音声入力を失った場合はcancel／errorとして終了し、意図しない継続・送信なし。回復して手動録音できる",
+      "original_evidence_method": "H＋VID、必要ならERR: ____",
+      "expected_version": "v1 unchanged",
+      "current_steps": "種類を記録して短い録音中に1回割り込み、終了後に画面とmicrophone・回復操作を見る",
+      "current_expected": "appが非activeになったり音声入力を失った場合はcancel／errorとして終了し、意図しない継続・送信なし。回復して手動録音できる",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+    },
+    {
+      "id": "H-01",
+      "session": "E",
+      "original_screen": "Scripts → Listen → Record → Review → Record（必要ならProgress）",
+      "original_preconditions": "A、通常文字サイズ、online、音声条件復帰、重大な未解決障害なし",
+      "original_steps": "Humanが補助説明なしでAを聴き、約1分録音・preview確認・評価し、Reviewの助言から次のRecordへ戻る。最後の録音も自分で開始・停止する",
+      "original_purpose": "同じ1分を繰り返す中心loopが完走し、下の6問に具体的に答えられる。重大な操作迷子・dock操作不能なし",
+      "original_expected": "同じ1分を繰り返す中心loopが完走し、下の6問に具体的に答えられる。重大な操作迷子・dock操作不能なし",
+      "original_evidence_method": "H（回答）＋VID任意: ____",
+      "expected_version": "v2",
+      "current_steps": "Homeから「台本」へ入ってもよい。原主loopを補助説明なしで完走し、原6問へ回答。",
+      "current_expected": "同じ1分を繰り返すloopを完走し、原6問へ具体的に答えられる。「不要なdashboard感」は練習中の集中を問う。承認済みHome自体を再設計/再審査しない。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 A–Kは既存Takeから開始可能で、新規録音/評価/次のTakeと原6問は保証しない。"
+    }
+  ],
+  "additionalCriteria": [
+    {
+      "id": "PS-H-01",
+      "purpose": "Home first-use",
+      "expected": "保存済みTakeなしの本人accountでfirst-use案内と開始導線が成立。既存data削除で作らない。",
+      "status": "BLOCKED",
+      "evidence": [],
+      "session": "A",
+      "note": "同じbuildの未練習account条件が未確保。準備できるまで既存ユーザーに操作させない。"
+    },
+    {
+      "id": "PS-H-02",
+      "purpose": "Home populated",
+      "expected": "保存済み録音があるHomeから本人の録音に到達できる。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-K"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-H-03",
+      "purpose": "Home actual data",
+      "expected": "録音名/Favorite/Take previewが本人の保存データと一致。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-D",
+        "E-CURRENT-K"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-H-04",
+      "purpose": "Home failure state",
+      "expected": "offline/取得失敗を空データ・0件と見せず、復旧後に正常表示へ戻れる。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "session": "D",
+      "note": ""
+    },
+    {
+      "id": "PS-N-01",
+      "purpose": "Back",
+      "expected": "Listen→開始元、Record→同じListen、Review→同じRecord、My Takes→保持された戻り先へ正常遷移。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "session": "B",
+      "note": "各画面でBackを一度確認。ReviewのShare cancelとは別。"
+    },
+    {
+      "id": "PS-N-02",
+      "purpose": "Review Exit Home",
+      "expected": "「練習を終了（Home）」でHomeへ戻る。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-K"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-N-03",
+      "purpose": "Listen / Record Exit Home",
+      "expected": "Listenと未録音Recordで明示ExitがHomeへ戻る。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "session": "B",
+      "note": "既にPASSのReview Exitは繰返さない。"
+    },
+    {
+      "id": "PS-N-04",
+      "purpose": "未保存録音の保護",
+      "expected": "Back/Exitで未保存破棄確認。cancelなら同じ録音を保持し、明示破棄時だけ離脱する。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "session": "B",
+      "note": "R-11/R-12の短い試行を共用。新たな評価は不要。"
+    },
+    {
+      "id": "PS-N-05",
+      "purpose": "focused practice",
+      "expected": "Listen/Record/Reviewでは下部Home/台本/成長tabが隠れ、非練習画面に戻ると復帰。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "session": "B",
+      "note": "VO-NAV-01/VP-01と同じ巡回で証拠取得。"
+    },
+    {
+      "id": "PS-N-06",
+      "purpose": "My Takes exact return",
+      "expected": "録音履歴から選んだ同じTakeの結果を開き、再生/共有できる。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-J"
+      ],
+      "session": "B",
+      "note": "P-04はProgress内historyなので別IDのまま。"
+    },
+    {
+      "id": "PS-C-01",
+      "purpose": "Rename persistence",
+      "expected": "本人Takeの名前を保存し、画面移動・再読込後も保持。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-C",
+        "E-CURRENT-D"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-C-02",
+      "purpose": "Favorite persistence",
+      "expected": "本人TakeのFavoriteを保存し、画面移動・再読込後も保持。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-C",
+        "E-CURRENT-D"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-C-03",
+      "purpose": "correct Take",
+      "expected": "名前/Favoriteが操作した本人Takeへ適用され、再オープンするTakeも一致。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-C",
+        "E-CURRENT-D",
+        "E-CURRENT-J"
+      ],
+      "session": "B",
+      "note": "他Takeへの非波及とwrong-owner拒否はこのPASSへ含めない。"
+    },
+    {
+      "id": "PS-C-04",
+      "purpose": "Home / My Takes synchronization",
+      "expected": "同じTakeの名前/FavoriteがHomeとMy Takesで一致。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-D",
+        "E-CURRENT-J",
+        "E-CURRENT-K"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-C-05",
+      "purpose": "Favorite filter basic",
+      "expected": "お気に入りfilterを選び、本人のお気に入りを開ける。",
+      "status": "PASS",
+      "evidence": [
+        "E-FILTER"
+      ],
+      "session": "B",
+      "note": "最新依頼の実機確認済みというHuman申告を採用。複数Take混在の除外判定はC-06。"
+    },
+    {
+      "id": "PS-C-06",
+      "purpose": "複数Takeの非波及・filter exclusion",
+      "expected": "通常loopで作る非Favoriteの別Takeがfilterから除外され、以前の名前/Favoriteは不変。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "session": "B",
+      "note": "Session B/Eで生じた新Takeを共用。試験だけの追加録音を要求しない。wrong-ownerはPS-F-02へ一本化。"
+    },
+    {
+      "id": "PS-D-01",
+      "purpose": "Saved Take playback",
+      "expected": "1回の再生操作で読込後に本人の実音声が再生される。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-B",
+        "E-CURRENT-J"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-D-02",
+      "purpose": "Saved Take retry/error",
+      "expected": "音声取得/再生失敗時に安全な案内があり、復旧後の明示retryで同じTakeを再生できる。",
+      "status": "BLOCKED",
+      "evidence": [],
+      "session": "D",
+      "note": "実機の有効な取得失敗条件未確保。offlineでdisabledだけなら部分証拠。自然発生時のみ直接retryを記録し、BFF障害を作らない。"
+    },
+    {
+      "id": "PS-D-03",
+      "purpose": "recording name + Script title",
+      "expected": "命名済みTakeで録音名と元の台本名を区別し、同じ結果を特定できる。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-C",
+        "E-CURRENT-J",
+        "E-SCREENSHOTS"
+      ],
+      "session": "B",
+      "note": "長い実テンプレートtitleの折返しはTD-01へ持越し。"
+    },
+    {
+      "id": "PS-E-01",
+      "purpose": "Share Sheet",
+      "expected": "独立した共有操作でiOS Share Sheetが開く。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-E",
+        "E-CURRENT-J"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-E-02",
+      "purpose": "Save to Files",
+      "expected": "「ファイルに保存」で音声ファイルをFilesへ保存できる。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-F"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-E-03",
+      "purpose": "external playback",
+      "expected": "Filesアプリでexportした音声が実際に再生できる。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-G"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-E-04",
+      "purpose": "cancel",
+      "expected": "Shareをキャンセルして操作可能な状態へ復帰。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-I",
+        "E-CURRENT-J"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-E-05",
+      "purpose": "return to same Take",
+      "expected": "Files/Share Sheetから元の同じTakeの結果へ戻る。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-H",
+        "E-CURRENT-J"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-E-06",
+      "purpose": "state unchanged / distinct controls",
+      "expected": "再生/共有が別操作に見え、player展開で共有が突然現れず、Take/名前/Favorite/score/Best不変。",
+      "status": "PASS",
+      "evidence": [
+        "E-CURRENT-H",
+        "E-CURRENT-J"
+      ],
+      "session": "B",
+      "note": ""
+    },
+    {
+      "id": "PS-F-01",
+      "purpose": "logout boundary",
+      "expected": "ログアウトで旧Takeの音声/Share状態が利用不能になり、再起動で旧画面・音声を復元しない。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "session": "D",
+      "note": "P3ローカル状態のみ。Gate5再監査ではない。再ログイン手段を確認後、session最終に一度実施。"
+    },
+    {
+      "id": "PS-F-02",
+      "purpose": "account switch / wrong owner",
+      "expected": "既存テストaccount BからAのTake/audio/metadataへアクセス不可。切替後に旧音声・名前・Favoriteが露出せず、対象外データ不変。",
+      "status": "BLOCKED",
+      "evidence": [],
+      "session": "A",
+      "note": "管理可能な既存A/B accountとexact対象・復帰手段が未確保。Codex準備を伴う限定試験。Humanへtoken/URLコピーを要求しない。PS-Cのwrong-ownerもこの1件。"
+    },
+    {
+      "id": "PS-F-03",
+      "purpose": "no public recording URL",
+      "expected": "現在BFFのowned binary契約・認証拒否・private responseを検証し、画面/exportにpublic recording URLを出さない。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "session": "A",
+      "note": "Codex担当。現行code＋過去Staging smokeは補助証拠。Humanに再共有・API調査を要求しない。"
+    },
+    {
+      "id": "PS-F-04",
+      "purpose": "temp file lifecycle",
+      "expected": "native share用一時fileが完了/cancel後に残存せず、同時共有/遷移/logoutで旧fileを再利用しない。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "session": "A",
+      "note": "Codex担当の限定device/cache evidence。既存J後の状態をまず観察し、必要部分だけ追加準備。ブラウザfakeのcleanupを実機PASSにしない。"
+    },
+    {
+      "id": "PS-X-01",
+      "purpose": "new surfaces accessibility",
+      "expected": "Home/My Takesの名前/filter、Reviewの再生/共有が大きい文字でも読め、VoiceOverで識別・操作・復帰できる。",
+      "status": "NOT YET RUN",
+      "evidence": [],
+      "session": "C",
+      "note": "原DT/VO/VPの同一設定・巡回で取得。通常文字/VoiceOver OFFのJをやり直す試験ではない。"
+    }
+  ],
+  "mutations": {
+    "productSourceEditsThisCloseout": 0,
+    "stagingDbWrites": 0,
+    "storageChanges": 0,
+    "providerCalls": 0,
+    "nativeBuildInstall": 0,
+    "documentationAndEvidenceUpdates": true
+  },
+  "listenAdditionalCriteria": [
+    {
+      "id": "LP-01",
+      "status": "PASS",
+      "criterion": "10秒戻る/進むを実機操作",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ]
+    },
+    {
+      "id": "LP-02",
+      "status": "PASS",
+      "criterion": "0.85倍へ変更し実際に遅く再生",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ]
+    },
+    {
+      "id": "LP-03",
+      "status": "PASS",
+      "criterion": "15分以内の復帰で自動再生しない",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ]
+    },
+    {
+      "id": "LP-04",
+      "status": "PASS",
+      "criterion": "再生1回で以前の位置付近から再開",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ]
+    },
+    {
+      "id": "LP-05",
+      "status": "PASS",
+      "criterion": "復帰後も0.85倍を保持",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ]
+    },
+    {
+      "id": "LP-06",
+      "status": "PASS",
+      "criterion": "今回セッションに対応するcanonical/cache維持、追加provider生成/create intentなし",
+      "evidence": [
+        "E-LISTEN-SERVER"
+      ]
+    },
+    {
+      "id": "LP-07",
+      "status": "PASS",
+      "criterion": "通常文字で本文末尾がdockに隠れず読める",
+      "evidence": [
+        "E-LISTEN-HUMAN"
+      ]
+    }
+  ],
+  "listenAdditionalLimits": "Other three speeds, paused seek endpoints, >15 minute expiry, logout/owner/deletion failure branches are locally tested only; no additional Human PASS inferred. Dynamic Type and VoiceOver remain Session C."
+}

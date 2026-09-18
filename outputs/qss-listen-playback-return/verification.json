@@ -1,0 +1,37 @@
+{
+  "mode": "QSS_LISTEN_PLAYBACK_CONTROLS_AND_RETURN_UX_V1",
+  "head": "910bfa46f63783966c50242b3ac6067dd4ce3f6b",
+  "scope": "local only",
+  "checks": {
+    "workspace": "PASS",
+    "root_lint": "PASS",
+    "root_build": "PASS",
+    "root_post_build_typecheck": "PASS",
+    "mobile_lint": "PASS",
+    "mobile_source_and_test_typecheck": "PASS",
+    "mobile_local_spike_bundle_build": "PASS",
+    "scoped_tests": 99,
+    "chromium_webkit_browser_cases": 46,
+    "focused_self_review": "no remaining blocking finding",
+    "diff_check": "PASS"
+  },
+  "device_tests": "NOT RUN",
+  "native_build_install": "NOT RUN",
+  "staging_mutations": 0,
+  "provider_calls": 0,
+  "commits": 0,
+  "pushes": 0,
+  "source_sha256": {
+    "apps/mobile/src/screens/ListenScreen.tsx": "8ccf4dd33549446cfc8a664338be1a8b97e489e06e3219ac85dd1bcee07940ea",
+    "apps/mobile/src/styles.css": "0969418c3ebce28b91538442a504f39fa9de62e578b9b03c7b4a7c85d61a4ec8",
+    "lib/audio-playback-rate.ts": "c57dde047cb875c40fde21debb398be648d10024ecebf132b920de0b4265f53b",
+    "components/audio/playback-rate-control.tsx": "390cde28f3195db23b4a4ca680d8918fc5cbb6874e5df29912196f0ccf434187",
+    "apps/mobile/src/practice/api.test.ts": "fd924262f07e38ab53decb44ae8d8e69b443230ef6a985d18bef90c4b70196e5",
+    "apps/mobile/src/screens/screens.test.tsx": "a7d14fda259fd928e18de01bb1b7daa8accfbd86532fe6abc1b68de46b5b88f1",
+    "apps/mobile/tests/listen-playback-controls.test.ts": "aefef642f2c5290db7983e21d9685a0ce015a9adb46a2b495b8d338dbd2ccb24",
+    "apps/mobile/tests/listen-playback-harness.html": "0f450f595154b8baf89e93f8036b46072a06000d0d34fcafe7cd2fe33d2bca26",
+    "apps/mobile/tests/listen-playback-harness.tsx": "dc382dbb07d531ccab02f0950157402d140782387264c172657c3e5d9e9b667c",
+    "apps/mobile/tests/listen-lifecycle-fixture.ts": "a759920fd853c9752bce883ca9b900e2add56b52b0bf40eed384d5f61b4544a9",
+    "apps/mobile/tests/voice-upload-durable-intent.test.ts": "131043796617fa32dcac4d80a2f28d53e459e0a0f4d9a5a0656a52111f7b2d48"
+  }
+}

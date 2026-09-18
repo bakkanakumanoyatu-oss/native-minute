@@ -1,0 +1,7 @@
+
+> native-minute@0.1.0 mobile:lint
+> npm run lint --workspace @native-minute/mobile
+
+
+> @native-minute/mobile@0.1.0 lint
+> eslint "src/**/*.{ts,tsx}" "tests/**/*.{ts,tsx}" --max-warnings=0

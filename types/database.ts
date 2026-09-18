@@ -148,7 +148,7 @@ export type VoiceAssetWriteIntentKind =
   | "voice_sample_upload"
   | "voice_consent_upload"
   | "recording_upload";
-export type VoiceAssetWriteIntentStatus = "reserved" | "completed" | "cancelled" | "manual_required";
+export type VoiceAssetWriteIntentStatus = "reserved" | "completed" | "cancelled" | "manual_required" | "failed_after_provider";
 
 export interface Database {
   public: {
@@ -602,6 +602,11 @@ export interface Database {
       };
       voice_asset_write_intents: {
         Row: {
+          provider_effect: "occurred" | "possible" | null;
+          storage_outcome: "failed" | "unknown" | null;
+          orphan_possible: boolean | null;
+          recovery_evidence_ref: string | null;
+          recovered_at: string | null;
           source_lifecycle_known: boolean;
           first_registered_at: string | null;
           first_registration_intent_id: string | null;
@@ -634,6 +639,11 @@ export interface Database {
           updated_at: string;
         };
         Insert: {
+          provider_effect?: "occurred" | "possible" | null;
+          storage_outcome?: "failed" | "unknown" | null;
+          orphan_possible?: boolean | null;
+          recovery_evidence_ref?: string | null;
+          recovered_at?: string | null;
           source_lifecycle_known?: boolean;
           first_registered_at?: string | null;
           first_registration_intent_id?: string | null;
@@ -1621,6 +1631,16 @@ export interface Database {
           p_cache_key?: string | null;
           p_storage_bucket?: string | null;
           p_storage_object_key?: string | null;
+        };
+        Returns: Database["public"]["Tables"]["voice_asset_write_intents"]["Row"];
+      };
+      recover_script_audio_post_provider_failure: {
+        Args: {
+          p_intent_id: string; p_user_id: string; p_lease_token: string;
+          p_expected_updated_at: string; p_script_id: string; p_voice_id: string;
+          p_cache_key: string; p_storage_bucket: string; p_storage_object_key: string;
+          p_provider_effect: "occurred" | "possible";
+          p_storage_outcome: "failed" | "unknown"; p_evidence_ref: string;
         };
         Returns: Database["public"]["Tables"]["voice_asset_write_intents"]["Row"];
       };

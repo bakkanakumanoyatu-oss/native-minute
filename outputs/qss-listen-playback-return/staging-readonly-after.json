@@ -1,0 +1,76 @@
+[
+  {
+    "result": {
+      "intents": [
+        {
+          "status": "failed_after_provider",
+          "created_at": "2026-09-17T09:13:37.662275+00:00",
+          "updated_at": "2026-09-17T10:14:09.331878+00:00",
+          "same_voice_cache": true
+        },
+        {
+          "status": "completed",
+          "created_at": "2026-09-17T10:52:54.342423+00:00",
+          "updated_at": "2026-09-17T10:53:01.25243+00:00",
+          "same_voice_cache": true
+        }
+      ],
+      "canonical": [
+        {
+          "provider": "elevenlabs",
+          "created_at": "2026-09-17T10:53:01.25243+00:00",
+          "owned_voice": true,
+          "owned_script": true,
+          "stored_asset_present": true,
+          "storage_catalog_present": true,
+          "voice_is_current_default": true
+        }
+      ],
+      "recovered": {
+        "status": "failed_after_provider",
+        "recovered_at": "2026-09-17T10:14:09.364068+00:00",
+        "orphan_possible": true,
+        "provider_effect": "occurred",
+        "storage_outcome": "failed"
+      },
+      "observed_at": "2026-09-17T11:18:30.237508+00:00",
+      "target_events": [
+        {
+          "cached": "false",
+          "status": "failed",
+          "created_at": "2026-09-17T09:13:38.332976+00:00",
+          "cache_lookup": null,
+          "completed_at": "2026-09-17T09:13:46.022+00:00",
+          "failure_stage": "storage_staging",
+          "cache_key_matches": null,
+          "provider_request_present": true,
+          "target_matches_canonical": false
+        },
+        {
+          "cached": "false",
+          "status": "succeeded",
+          "created_at": "2026-09-17T10:52:54.653209+00:00",
+          "cache_lookup": null,
+          "completed_at": "2026-09-17T10:53:03.615+00:00",
+          "failure_stage": null,
+          "cache_key_matches": null,
+          "provider_request_present": true,
+          "target_matches_canonical": true
+        },
+        {
+          "cached": "true",
+          "status": "cache_hit",
+          "created_at": "2026-09-17T10:56:00.870055+00:00",
+          "cache_lookup": null,
+          "completed_at": "2026-09-17T10:56:00.772+00:00",
+          "failure_stage": null,
+          "cache_key_matches": null,
+          "provider_request_present": false,
+          "target_matches_canonical": true
+        }
+      ],
+      "owner_unresolved": 0,
+      "all_generation_events": 15
+    }
+  }
+]

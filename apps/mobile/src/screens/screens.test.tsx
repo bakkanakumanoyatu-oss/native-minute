@@ -50,10 +50,11 @@ const review: MobileReview = {
 
 describe("mobile practice static screens", () => {
   it("shows prepare only when the local reference audio needs it", () => {
-    expect(getListenPrepareButtonLabel("idle", true)).toBe("再準備する");
+    expect(getListenPrepareButtonLabel("idle", true)).toBeNull();
     expect(getListenPrepareButtonLabel("idle", false)).toBe("お手本を準備する");
-    expect(getListenPrepareButtonLabel("loading", true)).toBe("お手本を準備中…");
-    expect(getListenPrepareButtonLabel("error", true)).toBe("再準備する");
+    expect(getListenPrepareButtonLabel("loading", true)).toBeNull();
+    expect(getListenPrepareButtonLabel("loading", false)).toBe("お手本を準備中…");
+    expect(getListenPrepareButtonLabel("error", true)).toBeNull();
     expect(getListenPrepareButtonLabel("ready", true)).toBeNull();
     expect(getListenPrepareButtonLabel("ready", false)).toBeNull();
   });

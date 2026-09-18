@@ -1,5 +1,19 @@
 # 現在の状態
 
+- 2026-09-18 Listen改善 **HUMAN ACCEPTED / CLOSED**：installed Staging/iPhone14 PlusのA–M、二重再生なし・speaker明瞭・通常文字の本文末尾PASS。最新iPhone session／09:31 cache_hitをread-only照合、追加provider生成・create intentなし、canonicalとfailed_after_provider/orphan証拠維持。製品source不変、0032/Listen known WIPを単一closeout。原58=PASS 5 / FAIL 0 / BLOCKED 2 / NOT YET RUN 51。正式受入を `QSS_IPHONE14PLUS_FORMAL_ACCEPTANCE_RESUME_AFTER_P1_P3` の未確認B＋Eへ戻す。Dynamic Type/VoiceOverは未判定でSession C、P1/P2/P3/J/Gate5 CLOSED維持。[closeout](qss-iphone14plus-acceptance-resume/listen-human-pass-closeout.md) / [残りの操作](qss-iphone14plus-acceptance-resume/human-checklist.md)。以下は各時点の履歴。
+
+- 2026-09-17 20:45 JST Listen更新を同じiPhone14 PlusへStaging署名付き上書きinstall済み。source=`910bfa46...`＋既存WIP、dist/sync/署名済みasset hash一致・install receiptと端末inventory一致。データclear/自動起動/サーバー操作なし。HumanはListen A–Mのみ（任意N–P）待ちでSTOP、結果後のみ追加生成をread-only確認。P1/P2/P3/J/Gate5 CLOSED、formal acceptance待ち・commit/pushなし。[実機install・Human手順](qss-iphone14plus-acceptance-resume/listen-device-install-and-human-check.md)。
+
+- 2026-09-17 Listen再生操作・復帰UXをLOCAL実装：±10秒、Web共通0.75/0.85/1/1.15倍、短時間復帰は保存済み音声を再生1回で取得・位置/速度復元。Staging read-onlyで19:53新intent completed/canonicalと19:56 cache_hitを確認。Human確認は19:56実再生のみ。実機更新・VoiceOver等は未実施、0032/orphan追跡とP1/P2/P3/J/Gate5 CLOSEDを保持。[実装・検証・Human手順](qss-iphone14plus-acceptance-resume/listen-playback-controls-and-return.md)。
+
+- 2026-09-17 Staging 0032のみ適用・18:13 exact intentを正式RPCで `failed_after_provider` へ回復・既存2-file writerをStaging BFFへ配備済み。owner unresolved=0、他39 intent不変、orphan_possible=true保持、追加生成event=0。新deployment `dpl_GFTxhyxGxhCf34wQwMmAQ58TiKhd` READY／alias・全658 source hash一致。Humanの同じiPhone／台本でListen再確認待ち。実機結果未確認、commit/pushなし。P1/P2/P3/J/Gate5 CLOSED、formal acceptance PAUSED維持。[実行結果・次の1操作](qss-iphone14plus-acceptance-resume/staging-recovery-and-listen-writer-deploy.md)。以下のLOCAL未適用／旧blocker記録は各時点の履歴。
+
+- 2026-09-17 post-provider terminalのLOCAL実装・隔離DB tests・独立focused review 1回PASS。0032 `failed_after_provider` はphysical absenceを要求せず、provider副作用・Storage失敗/不明・orphan可能性とexact locatorを保持。生成予約guardから解除する一方、未解決orphanの削除成功/証跡消去はfail closed。Staging未適用・18:13未回復・Human retry不可。P1/P2/P3/J/Gate5 CLOSED、formal acceptance PAUSED。[実装契約・次のexact sequence](qss-iphone14plus-acceptance-resume/post-provider-terminal-recovery.md)。
+
+- 2026-09-17 post-provider recoveryローカルpreflightは明示STOP条件で停止。既存Storage `info()` absenceだけではcatalog不在対象のphysical absenceを保証できず、必要な外部証拠契約が未確立。terminal/migration/RPC未追加・18:13未回復・retry不可。P1/P2/P3/J/Gate5 CLOSED、formal acceptance PAUSED維持。[停止根拠・再開条件](qss-iphone14plus-acceptance-resume/post-provider-recovery-stop.md)。
+
+- 2026-09-17 Session BはListen音声準備blockerで再停止。保存voiceは一致するが、Staging旧BFFのauthenticated Storage uploadと現行SELECT-only policyが不整合。既存HEAD修正の2-file配備候補は検証済み・未配備、失敗時のreserved writer intent回復は未確定。実機retry前に対象1件の回復照合が必要。P1/P2/P3/J/Gate5 CLOSEDを維持。[原因・証拠・次の1操作](qss-iphone14plus-acceptance-resume/listen-voice-readiness-blocker.md)。
+
 ## 現在の main flow
 1. login する。mobileは `/` のHomeから台本や前回の練習へ進む。
 2. 必要なときだけ `/setup/voice` で同意と既定の voice を整える。
@@ -12,6 +26,7 @@
 
 
 ## Mobile UI/UX implementation
+- iPhone14 Plus formal acceptance再開準備（2026-09-17）: P1/P2/P3/J/Gate5のHuman CLOSED authorityを維持。原58 ID/目的/Session A–Eを回収し、P1–P3後の導線だけv2対応。Humanの「J修正後のアプリでもA〜Kすべて確認した」を同一build証拠として再利用。原58=`PASS 1 / FAIL 0 / BLOCKED 2 / NOT YET RUN 55`、追加30criteria=`17/0/3/10`。旧Scripts直行を前提にしたS-05/S-07は適用判断待ち。template-dependent6件は別途保留。コード/build/install変更なし、mapping作成でSTOP、stage/commit/push=0/0/0。[対応表](qss-iphone14plus-acceptance-resume/mapping.md) / [未確認項目だけのHuman統合チェックリスト](qss-iphone14plus-acceptance-resume/human-checklist.md)。以下P3等の実装closeout履歴は保持。
 - Personal Space P3（2026-09-17）: `HUMAN APPROVED / CLOSED`。HumanがA–I / Kに続き、修正後J①〜⑥をiPhone14 Plusで確認。本人録音の再生、名前/Favorite保持、iOS Share Sheet、Files保存・実音声再生、キャンセル復帰、My Takes、Home反映を承認。Jのみ1タップ読込後再生＋再生/共有の分離を修正し、確認済みソースを維持。root/mobile lint・typecheck・build、P3関連122 tests、ブラウザ44＋148条件、J修正後26 tests＋Chromium/WebKit 8条件PASS。0031/Staging BFF・署名済み更新install済み、Production操作0。P1/P2/Gate5 CLOSED維持。未commit実機buildのclean-source guard既知3件は履歴として保持し、cross-user live proof等の未検証項目をPASSへ変換しない。承認済みP3を1 commit＋normal pushで引き渡す（配送結果はtask final report）。[P3 closeout](qss-personal-space-p3-checkpoint.md)。次は既存のformal acceptance / release-readinessへ引継ぎ、自動開始なし。
 - Personal Space P2（2026-09-17）: `HUMAN APPROVED / CLOSED`。Humanはbrowser QA fixtureでFavorite ON/OFF、名前保存・reload保持、My Takesの録音名＋Script名＋日時＋score、filter、Home件数／preview反映を承認。Listen / Record / Reviewの `練習を終了（Home）` → 常にHomeも承認済み；Back・Record未保存退出確認・practice中bottom nav非表示を維持。0031はrepository migration、Staging / Production未適用。承認済みP2だけを単一commit＋normal pushで引き渡すcloseout（配送結果はtask final report）。P1=`HUMAN APPROVED / CLOSED / VISUAL FROZEN`、Gate5=`CLOSED`。58-item acceptance=`PAUSED / resume after P3 integration`；iPhone実機Favorite/RenameはP3統合後のactual-device acceptanceで回収し、実機確認済みとはしない。[P2 closeout](qss-personal-space-p2-checkpoint.md)。P2時点の次工程はP3。現在の状態は上記P3項を正とする。
 以下のP1項目は承認時点の記録。Favorite / 名前 / My Takesの現仕様は上記P2/P3を優先する。
