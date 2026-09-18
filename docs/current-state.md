@@ -1,5 +1,7 @@
 # 現在の状態
 
+- 2026-09-18 Review→Listen→Back **HUMAN ACTUAL-DEVICE PASS / CLOSED**。元のReview／same Takeへ戻ることをHuman確認。accepted Record return-originも含むNavigation差分だけcloseout。122 tests＋50 browser条件・lint/typecheck/build/install証拠を再利用、再実行なし。PS-N-01／RV-06へ反映。P1/P2/P3/J/Gate5・Listen playback CLOSED、評価成功・未保存退出・Favorite・Record Back PASS維持。Progress視覚等はresidual WIP。[closeout](qss-iphone14plus-acceptance-resume/listen-return-origin-focused-fix.md)。以下は各時点の履歴。
+
 - 2026-09-18 Listen改善 **HUMAN ACCEPTED / CLOSED**：installed Staging/iPhone14 PlusのA–M、二重再生なし・speaker明瞭・通常文字の本文末尾PASS。最新iPhone session／09:31 cache_hitをread-only照合、追加provider生成・create intentなし、canonicalとfailed_after_provider/orphan証拠維持。製品source不変、0032/Listen known WIPを単一closeout。原58=PASS 5 / FAIL 0 / BLOCKED 2 / NOT YET RUN 51。正式受入を `QSS_IPHONE14PLUS_FORMAL_ACCEPTANCE_RESUME_AFTER_P1_P3` の未確認B＋Eへ戻す。Dynamic Type/VoiceOverは未判定でSession C、P1/P2/P3/J/Gate5 CLOSED維持。[closeout](qss-iphone14plus-acceptance-resume/listen-human-pass-closeout.md) / [残りの操作](qss-iphone14plus-acceptance-resume/human-checklist.md)。以下は各時点の履歴。
 
 - 2026-09-17 20:45 JST Listen更新を同じiPhone14 PlusへStaging署名付き上書きinstall済み。source=`910bfa46...`＋既存WIP、dist/sync/署名済みasset hash一致・install receiptと端末inventory一致。データclear/自動起動/サーバー操作なし。HumanはListen A–Mのみ（任意N–P）待ちでSTOP、結果後のみ追加生成をread-only確認。P1/P2/P3/J/Gate5 CLOSED、formal acceptance待ち・commit/pushなし。[実機install・Human手順](qss-iphone14plus-acceptance-resume/listen-device-install-and-human-check.md)。

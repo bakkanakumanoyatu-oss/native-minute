@@ -1,0 +1,32 @@
+{
+  "mode": "QSS_REVIEW_LISTEN_RETURN_ORIGIN_CLOSEOUT",
+  "status": "HUMAN ACTUAL-DEVICE PASS / CLOSED",
+  "humanEvidence": {
+    "source": "Human reply in QSS_REVIEW_LISTEN_RETURN_ORIGIN_CLOSEOUT",
+    "kind": "Human actual-device PASS on installed Staging/iPhone14 Plus",
+    "detail": "2026-09-18 Human actual-device PASS: Review → お手本を聞き直す → Listen → 戻る = 元のReview / same Take。13:37 JST上書きinstall済みStaging/iPhone14 Plus。",
+    "report": "listen-return-origin-focused-fix.md",
+    "installProof": "outputs/qss-listen-return-fix/install-status.json",
+    "preservedPass": [
+      "Review→Record→Back",
+      "Progress→Record→Back",
+      "Listen→Record→Back",
+      "未保存録音退出",
+      "Favorite状態"
+    ],
+    "closedPreserved": [
+      "P1",
+      "P2",
+      "P3",
+      "J",
+      "Gate5",
+      "Listen playback"
+    ]
+  },
+  "validationReused": true,
+  "newTests": 0,
+  "newBuilds": 0,
+  "newInstalls": 0,
+  "sourceChangedDuringCloseout": false,
+  "nextOneAction": "次の独立WIPとして「HomeからReviewを経由せず練習を始められる導線」へ進む。"
+}

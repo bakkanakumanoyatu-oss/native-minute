@@ -1,5 +1,7 @@
 # iPhone 14 Plus formal acceptance 再開マッピング v2
 
+**2026-09-18 Review→Listen→Back: HUMAN ACTUAL-DEVICE PASS / CLOSED。** 元のReview／same Takeへの復帰をHuman確認。PS-N-01とRV-06へ反映。既存Record Back・未保存退出・Favorite・Listen playback・P1/P2/P3/J/Gate5は保持。再試験不要。[closeout](listen-return-origin-focused-fix.md)。以下の待機記述は各時点の履歴であり、今回の再試験依頼ではない。
+
 2026-09-18 latest: **Listen改善A–M HUMAN PASS / SERVER VERIFIED**。[closeout](listen-human-pass-closeout.md)。L-01/L-03/L-04/L-07のみ原58へ新規PASS。L-05は時間表示未確認、L-02/L-06/L-09/L-10は未確認小条件を保持。追加LP-01〜07はPASS（原58・既存PS30の外）。Dynamic Typeは「文字サイズを変えられなかった」理由未確定の未判定、VoiceOverもSession Cへ。P1/P2/P3/J/Gate5 CLOSEDと既存PSの17/0/3/10を再計算しない。
 
 以下の2026-09-17再開計画・blocker・実装時記録は履歴。現在の集計と各行は2026-09-18結果を反映。
@@ -40,12 +42,12 @@ J artifactは `com.nativeminutes.app.staging` 1.0(1)、iPhone14 Plus/iOS26.2.1�
 
 ## 58の集計
 
-**PASS 5 / FAIL 0 / BLOCKED 2 / NOT YET RUN 51**（2026-09-18 closeout）。
+**PASS 6 / FAIL 0 / BLOCKED 2 / NOT YET RUN 50**（今回RV-06のみ新規PASS。その他の判定は保持）。
 
 | Session（原構成） | 件数 | PASS | FAIL | BLOCKED | NOT YET RUN |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | A | 1 | 1 | 0 | 0 | 0 |
-| B | 40 | 4 | 0 | 2 | 34 |
+| B | 40 | 5 | 0 | 2 | 33 |
 | C | 9 | 0 | 0 | 0 | 9 |
 | D | 7 | 0 | 0 | 0 | 7 |
 | E | 1 | 0 | 0 | 0 | 1 |
@@ -94,7 +96,7 @@ P3の機能証拠は主に追加criteriaへ一致する。Jのsaved Take playbac
 | RV-03 / B | 全文を読め、省略・文字切れ・重なりがない | v1 unchanged: 全文を読め、省略・文字切れ・重なりがない | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
 | RV-04 / B | 通常のscrollで補助説明なくCTAを見つけて押せる。到達の負担・迷いを記録する | v1 unchanged: 通常のscrollで補助説明なくCTAを見つけて押せる。到達の負担・迷いを記録する | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
 | RV-05 / B | 同じ台本のRecordへ移り、録音は手動開始できる | v1 unchanged: 同じ台本のRecordへ移り、録音は手動開始できる | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
-| RV-06 / B | 同じ台本のListenへ移る | v1 unchanged: 同じ台本のListenへ移る | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
+| RV-06 / B | 同じ台本のListenへ移る | v1 unchanged: 同じ台本のListenへ移る | PASS | 2026-09-18 Human actual-device PASS: Review → お手本を聞き直す → Listen → 戻る = 元のReview / same Take。13:37 JST上書きinstall済みStaging/iPhone14 Plus。 [closeout](listen-return-origin-focused-fix.md) |
 | RV-07 / B | その台本のProgressへ移り、別台本と混同しない | v2: 同じ台本のProgressに到達して別台本と混同しない。現在は全体Progress内の同じ台本を照合し、台本filter自動適用とは主張しない。 | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
 | P-01 / B | nextStepが先に理解でき、score探索から始めなくてよい | v1 unchanged: nextStepが先に理解でき、score探索から始めなくてよい | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
 | P-02 / B | LatestとBestの意味を区別できる。同じTake注記がある場合は同一結果と分かる | v1 unchanged: LatestとBestの意味を区別できる。同じTake注記がある場合は同一結果と分かる | NOT YET RUN | このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。 |
@@ -136,7 +138,7 @@ P3の機能証拠は主に追加criteriaへ一致する。Jのsaved Take playbac
 
 ## P1–P3追加criteria（原58のIDとは別namespace）
 
-**30 criteria: PASS 17 / FAIL 0 / BLOCKED 3 / NOT YET RUN 10**。同じ操作を二度要求せず、原58と重なる観察は同じsession記録へ参照。original58の58という件数は変えない。wrong-ownerはFavorite/Rename/audio共通のPS-F-02に一本化。
+**30 criteria: PASS 18 / FAIL 0 / BLOCKED 3 / NOT YET RUN 9**。同じ操作を二度要求せず、原58と重なる観察は同じsession記録へ参照。original58の58という件数は変えない。wrong-ownerはFavorite/Rename/audio共通のPS-F-02に一本化。
 
 | ID | purpose / expected | status | evidence / 実行session・不足条件 |
 | --- | --- | --- | --- |
@@ -144,7 +146,7 @@ P3の機能証拠は主に追加criteriaへ一致する。Jのsaved Take playbac
 | PS-H-02 | Home populated: 保存済み録音があるHomeから本人の録音に到達できる。 | PASS | E-CURRENT-K。 |
 | PS-H-03 | Home actual data: 録音名/Favorite/Take previewが本人の保存データと一致。 | PASS | E-CURRENT-D, E-CURRENT-K。 |
 | PS-H-04 | Home failure state: offline/取得失敗を空データ・0件と見せず、復旧後に正常表示へ戻れる。 | NOT YET RUN | Session D。 |
-| PS-N-01 | Back: Listen→開始元、Record→同じListen、Review→同じRecord、My Takes→保持された戻り先へ正常遷移。 | NOT YET RUN | Session B。各画面でBackを一度確認。ReviewのShare cancelとは別。 |
+| PS-N-01 | Back: Listen→開始元（Reviewから来た場合は元のReview／same Take）。Record→同じListen／元のReview・same Take／元のProgress context。invalid/staleはListenなら既存safe origin、Recordなら同じListenへfallback。Review/My Takesの既存Backを保持。 | PASS | v4: Human actual-device PASS / CLOSED。2026-09-18 Human actual-device PASS: Review → お手本を聞き直す → Listen → 戻る = 元のReview / same Take。13:37 JST上書きinstall済みStaging/iPhone14 Plus。 Review→Record→Back、Progress→Record→Back、通常Listen→Record→Backの既存PASSを保持。自動検証122 tests/50 browser条件を再利用し再試験なし。 [closeout](listen-return-origin-focused-fix.md) |
 | PS-N-02 | Review Exit Home: 「練習を終了（Home）」でHomeへ戻る。 | PASS | E-CURRENT-K。 |
 | PS-N-03 | Listen / Record Exit Home: Listenと未録音Recordで明示ExitがHomeへ戻る。 | NOT YET RUN | Session B。既にPASSのReview Exitは繰返さない。 |
 | PS-N-04 | 未保存録音の保護: Back/Exitで未保存破棄確認。cancelなら同じ録音を保持し、明示破棄時だけ離脱する。 | NOT YET RUN | Session B。R-11/R-12の短い試行を共用。新たな評価は不要。 |

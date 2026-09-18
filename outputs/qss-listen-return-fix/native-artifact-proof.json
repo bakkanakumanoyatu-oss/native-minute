@@ -1,0 +1,43 @@
+{
+  "checkedAt": "2026-09-18T04:37:33.135818+00:00",
+  "artifactPath": "/tmp/qss-listen-return-fix/DerivedData/Build/Products/Staging-iphoneos/App.app",
+  "bundleId": "com.nativeminutes.app.staging",
+  "version": "1.0",
+  "build": "1",
+  "metadata": {
+    "profile": "staging",
+    "bundleId": "com.nativeminutes.app.staging",
+    "xcodeConfiguration": "Staging",
+    "capacitorProfile": "staging",
+    "bffOrigin": "https://native-minute-staging.vercel.app",
+    "authCallbackMode": "universal-link",
+    "authConfigured": true,
+    "authTargetFingerprint": "cfdbf57f7a1d3226019079df30e06c61276cb528f31779581fb6ae92592096b3",
+    "sourceRevision": "24a647bf9283d3a82f4011986b9e783c3871a13a",
+    "sourceDirty": true
+  },
+  "executableSha256": "8f87e7e248e96894f782a31ef1ec25269d0430ea10f7e7b4325e1e4cef122af0",
+  "webAssetsSha256": {
+    "mobile-build.json": "d308c1cec36609c7e6df6ad76be75a23e73f2b6f9ddb2c3add4dc7acc54cb6a5",
+    "index.html": "40d35d4898ee830ee951db3ed4837cd9fd2e82e4682ac46376153dd3893a0559",
+    "assets/web-DiKFBbFS.js": "6b672108fc12ba8ebac8477eacb956dd57d00616f0d5ec925ef1cad6b9bac338",
+    "assets/index-kwc9wk2I.js": "92356964cd244b771e513a40f46886cf1b0894549af432bbad6ff426c718fc16",
+    "assets/web-DaSTx8v9.js": "6a8ebb1c9eb69279e94383407b5aeeccd07a46adc1142610722f423ed4b83803",
+    "assets/web-Dn-nFM-O.js": "2507f303c508177e1782aadc334738d9aff5d4c04bb1a414bee83e8e2f263770",
+    "assets/index-D5mjgFTS.css": "e2492ac30ee9843f77e8fe73b77d424d509109c4f8616578a2f06780c8924404"
+  },
+  "distSyncedSignedAssetsEqual": true,
+  "strictSignature": "PASS",
+  "provisioningMatchesDevice": true,
+  "associatedDomainMatchesStaging": true,
+  "pluginsAndPrivacy": "PASS",
+  "releaseGuard": {
+    "status": "NOT PASS",
+    "findings": [
+      "staging_build_metadata_mismatch (dist sourceDirty=true)",
+      "staging_build_metadata_mismatch (native sourceDirty=true)",
+      "staging_source_tree_dirty"
+    ],
+    "reason": "User-authorized uncommitted WIP actual-device test install; no guard or metadata bypass"
+  }
+}

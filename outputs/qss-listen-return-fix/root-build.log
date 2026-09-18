@@ -1,0 +1,105 @@
+
+> native-minute@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/57) ...
+   Generating static pages (14/57)
+   Generating static pages (28/57)
+   Generating static pages (42/57)
+ ✓ Generating static pages (57/57)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                               Size     First Load JS
+┌ ƒ /                                                     187 B          96.2 kB
+├ ○ /_not-found                                           873 B          88.1 kB
+├ ƒ /api/account/deletion-auth-dry-run                    0 B                0 B
+├ ƒ /api/account/deletion-confirm                         0 B                0 B
+├ ƒ /api/account/deletion-database-dry-run                0 B                0 B
+├ ƒ /api/account/deletion-inventory                       0 B                0 B
+├ ƒ /api/account/deletion-job-dry-run                     0 B                0 B
+├ ƒ /api/account/deletion-provider-dry-run                0 B                0 B
+├ ƒ /api/account/deletion-request                         0 B                0 B
+├ ƒ /api/account/deletion-status                          0 B                0 B
+├ ƒ /api/account/deletion-storage-dry-run                 0 B                0 B
+├ ƒ /api/auth/sign-in                                     0 B                0 B
+├ ƒ /api/auth/sign-out                                    0 B                0 B
+├ ƒ /api/coach                                            0 B                0 B
+├ ƒ /api/consents/[consentType]                           0 B                0 B
+├ ƒ /api/create-voice                                     0 B                0 B
+├ ƒ /api/evaluate                                         0 B                0 B
+├ ƒ /api/internal/g5c-b7/manual-provider-recovery         0 B                0 B
+├ ○ /api/internal/g5c-b7/provider-ownership-probe         0 B                0 B
+├ ƒ /api/mobile/account-deletion/request                  0 B                0 B
+├ ƒ /api/mobile/account-deletion/status                   0 B                0 B
+├ ƒ /api/mobile/consents/[consentType]                    0 B                0 B
+├ ƒ /api/mobile/evaluate                                  0 B                0 B
+├ ƒ /api/mobile/health                                    0 B                0 B
+├ ƒ /api/mobile/progress                                  0 B                0 B
+├ ƒ /api/mobile/recordings                                0 B                0 B
+├ ƒ /api/mobile/script-audio/[audioId]                    0 B                0 B
+├ ƒ /api/mobile/scripts                                   0 B                0 B
+├ ƒ /api/mobile/scripts/[id]                              0 B                0 B
+├ ƒ /api/mobile/scripts/[id]/listen                       0 B                0 B
+├ ƒ /api/mobile/scripts/[id]/reviews/[takeId]             0 B                0 B
+├ ƒ /api/mobile/takes/[takeId]/audio                      0 B                0 B
+├ ƒ /api/mobile/takes/[takeId]/metadata                   0 B                0 B
+├ ƒ /api/mobile/voice-deletion/advance                    0 B                0 B
+├ ƒ /api/mobile/voice-deletion/request                    0 B                0 B
+├ ƒ /api/mobile/voice-deletion/status                     0 B                0 B
+├ ƒ /api/mobile/voice-setup                               0 B                0 B
+├ ƒ /api/script-audio/[audioId]                           0 B                0 B
+├ ƒ /api/script-studio/generate                           0 B                0 B
+├ ƒ /api/scripts                                          0 B                0 B
+├ ƒ /api/scripts/[id]                                     0 B                0 B
+├ ƒ /api/scripts/[id]/saved-best-takes                    0 B                0 B
+├ ƒ /api/scripts/[id]/saved-best-takes/[savedBestTakeId]  0 B                0 B
+├ ƒ /api/scripts/[id]/saved-model-audios                  0 B                0 B
+├ ƒ /api/scripts/[id]/saved-model-audios/[savedAudioId]   0 B                0 B
+├ ƒ /api/speak-script                                     0 B                0 B
+├ ƒ /api/takes/[takeId]/audio                             0 B                0 B
+├ ƒ /api/test-login                                       0 B                0 B
+├ ƒ /api/test-seed-script                                 0 B                0 B
+├ ƒ /api/test-voice-state                                 0 B                0 B
+├ ƒ /api/uploads/recording                                0 B                0 B
+├ ƒ /api/uploads/voice-consent                            0 B                0 B
+├ ƒ /api/uploads/voice-sample                             0 B                0 B
+├ ƒ /api/voice-consent                                    0 B                0 B
+├ ƒ /api/voice-deletion/advance                           0 B                0 B
+├ ƒ /api/voice-deletion/dry-run                           0 B                0 B
+├ ƒ /api/voice-deletion/request                           0 B                0 B
+├ ƒ /api/voice-deletion/status                            0 B                0 B
+├ ƒ /auth/callback                                        0 B                0 B
+├ ƒ /login                                                1.39 kB        97.4 kB
+├ ƒ /mobile/auth/callback                                 0 B                0 B
+├ ○ /mobile/auth/recovery                                 138 B          87.4 kB
+├ ○ /privacy                                              187 B          96.2 kB
+├ ƒ /progress                                             3.05 kB          99 kB
+├ ƒ /scripts                                              1.19 kB        97.2 kB
+├ ƒ /scripts/[id]/listen                                  8.47 kB         104 kB
+├ ƒ /scripts/[id]/record                                  12 kB           108 kB
+├ ƒ /scripts/[id]/review/[takeId]                         6.21 kB         102 kB
+├ ƒ /scripts/new                                          12.7 kB         109 kB
+├ ƒ /settings                                             8.74 kB         105 kB
+├ ƒ /settings/voice-data                                  3.59 kB        99.6 kB
+├ ƒ /setup/voice                                          7.83 kB         104 kB
+├ ○ /support                                              187 B          96.2 kB
+├ ○ /support/account-deletion                             187 B          96.2 kB
+└ ○ /terms                                                187 B          96.2 kB
++ First Load JS shared by all                             87.3 kB
+  ├ chunks/117-169d3e1a3388e0c8.js                        31.7 kB
+  ├ chunks/fd9d1056-93154754b7f8bf90.js                   53.6 kB
+  └ other shared chunks (total)                           1.89 kB
+
+
+ƒ Middleware                                              74.9 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

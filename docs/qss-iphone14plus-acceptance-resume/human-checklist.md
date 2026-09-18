@@ -1,5 +1,9 @@
 # iPhone 14 Plus — 未確認項目だけの統合チェックリスト
 
+**2026-09-18 Review→Listen→Back: HUMAN ACTUAL-DEVICE PASS / CLOSED。** 元のReview／same Takeへの復帰をHuman確認。PS-N-01とRV-06へ反映。既存Record Back・未保存退出・Favorite・Listen playback・P1/P2/P3/J/Gate5は保持。再試験不要。[closeout](listen-return-origin-focused-fix.md)。以下の待機記述は各時点の履歴であり、今回の再試験依頼ではない。
+
+今回のHuman操作は完了。残りの受入手順・Progress再確認は今回開始しない。
+
 対象はListen更新を2026-09-17にinstall済みの **Native Minute Staging**（iPhone14 Plus）。`910bfa46 + accepted known WIP` と署名artifact/source manifestを対応づけ済み。2026-09-18 Human Listen A〜M PASS＋二重再生なし・本体speaker明瞭を受理。P3 A〜Kの既存証拠も保持。再install不要。
 
 **既に完了した操作は再実施しない:** saved Takeの1タップ再生、名前/Favoriteの保存と再読込保持、My Takesから同じ録音を開く、基本Favorite filter、Homeへの反映、通常状態のShare Sheet・Files保存/外部再生・cancel・同じ結果へ戻る、Reviewの「練習を終了（Home）」。

@@ -45,6 +45,55 @@ describe("practice routes", () => {
 });
 
 describe("focused practice destinations", () => {
+  it("returns Listen to its captured Review and exact Take", () => {
+    const review: PracticeRoute = { name: "review", scriptId: "s1", takeId: "original-take" };
+    expect(practiceBackRoute({ name: "listen", scriptId: "s1" }, { name: "home" }, null, review)).toEqual(review);
+  });
+
+  it.each([
+    null,
+    { name: "review", scriptId: "stale-script", takeId: "t1" },
+    { name: "review", scriptId: "s1", takeId: "https://evil.test" },
+    { name: "review", scriptId: "s1", takeId: "../other" },
+    { name: "review", scriptId: "s1" },
+    { name: "record", scriptId: "s1" },
+    { name: "listen", scriptId: "s1" },
+    { name: "https://evil.test" }
+  ])("keeps the existing Listen fallback for an invalid or stale Review: %j", (entry) => {
+    for (const origin of [{ name: "home" }, { name: "scripts" }, { name: "progress", scriptId: "s1" }] as PracticeRoute[]) {
+      expect(practiceBackRoute({ name: "listen", scriptId: "s1" }, origin, null, entry as PracticeRoute | null)).toEqual(origin);
+    }
+  });
+
+  it("ignores URL-supplied Listen origins", () => {
+    expect(parsePracticeRoute(location("/scripts/s1/listen", "?origin=/scripts/s1/review/t1&returnTo=https://evil.test"))).toEqual({ name: "listen", scriptId: "s1" });
+  });
+
+  it.each<PracticeRoute>([
+    { name: "listen", scriptId: "s1" },
+    { name: "review", scriptId: "s1", takeId: "original-take" },
+    { name: "progress", scriptId: "s1" },
+    { name: "progress" },
+    { name: "takes", scriptId: "s1", favorites: true }
+  ])("returns Record to its captured $name context", (entry) => {
+    expect(practiceBackRoute({ name: "record", scriptId: "s1" }, { name: "home" }, entry)).toEqual(entry);
+  });
+
+  it.each([
+    null,
+    { name: "review", scriptId: "stale-script", takeId: "t1" },
+    { name: "review", scriptId: "s1", takeId: "https://evil.test" },
+    { name: "review", scriptId: "s1" },
+    { name: "listen", scriptId: "stale-script" },
+    { name: "progress", scriptId: "stale-script" },
+    { name: "takes", scriptId: "stale-script" },
+    { name: "scripts" },
+    { name: "record", scriptId: "s1" },
+    { name: "https://evil.test" }
+  ])("falls back to same-script Listen for an invalid or stale entry: %j", (entry) => {
+    expect(practiceBackRoute({ name: "record", scriptId: "s1" }, { name: "home" }, entry as PracticeRoute | null)).toEqual({ name: "listen", scriptId: "s1" });
+  });
+
   it("uses semantic steps and preserves a validated origin", () => {
     const origin: PracticeRoute = { name: "progress", scriptId: "s1" };
     expect(practiceBackRoute({ name: "record", scriptId: "s1" }, origin)).toEqual({ name: "listen", scriptId: "s1" });

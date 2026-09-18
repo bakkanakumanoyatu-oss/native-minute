@@ -1,0 +1,15 @@
+
+> native-minute@0.1.0 mobile:typecheck
+> npm run typecheck --workspace @native-minute/mobile
+
+
+> @native-minute/mobile@0.1.0 typecheck
+> npm run typecheck:source && npm run typecheck:tests
+
+
+> @native-minute/mobile@0.1.0 typecheck:source
+> tsc --noEmit -p tsconfig.json
+
+
+> @native-minute/mobile@0.1.0 typecheck:tests
+> tsc --noEmit -p tsconfig.test.json

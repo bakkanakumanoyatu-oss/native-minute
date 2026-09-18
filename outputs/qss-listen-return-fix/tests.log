@@ -1,0 +1,77 @@
+
+> native-minute@0.1.0 mobile:test
+> npm run test --workspace @native-minute/mobile src/practice/routes.test.ts src/practice/PracticeApp.test.ts src/screens/record-state.test.ts tests/listen-playback-controls.test.ts
+
+
+> @native-minute/mobile@0.1.0 test
+> vitest run src/practice/routes.test.ts src/practice/PracticeApp.test.ts src/screens/record-state.test.ts tests/listen-playback-controls.test.ts
+
+
+ RUN  v4.1.10 /Users/karasawatakahiro/Developer/native-minute/apps/mobile
+
+ ✓ src/practice/routes.test.ts (43 tests) 7ms
+ ✓ src/practice/PracticeApp.test.ts (1 test) 2ms
+ ✓ src/screens/record-state.test.ts (32 tests) 5894ms
+     ✓ keeps stop in its dock and actually stops offline at 428/16  384ms
+     ✓ keeps stop in its dock and actually stops offline at 428/32  398ms
+     ✓ keeps stop in its dock and actually stops offline at 320/16  330ms
+     ✓ protects a prepared take on Back and browser history and uses Listen for accepted Back  311ms
+     ✓ opens the saved Review without a discard confirmation after evaluation succeeds  404ms
+     ✓ retains the same recording while reconnecting with consent accepted  349ms
+     ✓ retains the same recording while reconnecting with consent pending  474ms
+     ✓ retains the same recording while reconnecting with consent error  450ms
+     ✓ retains the same recording while reconnecting with consent withdrawn  332ms
+     ✓ retains the same recording while reconnecting with consent required  325ms
+     ✓ keeps prepared-take and retained-upload gates while offline, with no automatic submission on reconnect  567ms
+ ✓ tests/listen-playback-controls.test.ts (46 tests) 30763ms
+     ✓ uses actual media for seek/pause/rate, clamps both ends and never generates on controls  2884ms
+     ✓ releases on both lifecycle events, returns paused, then one play re-fetches the exact saved audio at retained time/rate  856ms
+     ✓ expires only the position/rate after 15 minutes without generating or auto-playing  517ms
+     ✓ not-found clears old identity/time/rate and never falls back to generation  412ms
+     ✓ forbidden clears old identity/time/rate and never falls back to generation  378ms
+     ✓ unauthorized clears old identity/time/rate and never falls back to generation  366ms
+     ✓ network-error permits a read-only one-play retry  468ms
+     ✓ timeout permits a read-only one-play retry  483ms
+     ✓ server-error permits a read-only one-play retry  519ms
+     ✓ deduplicates rapid resume and discards a fetch that completes after background  568ms
+     ✓ owner discards old async download, media and bookmark  607ms
+     ✓ script discards old async download, media and bookmark  601ms
+     ✓ logout discards old async download, media and bookmark  525ms
+     ✓ ignores initial request after unmount without downloading or auto-playing  454ms
+     ✓ play after returning from the end starts again and seek/rate stay connected while playing  660ms
+     ✓ unmount during actual playback pauses and detaches the old media  387ms
+     ✓ offline return keeps the bookmark and retries via play after reconnection  485ms
+     ✓ decode error and thrown download failure recover without generation  511ms
+     ✓ play policy rejection offers play again without another fetch  507ms
+     ✓ layout and accessible controls at 320px / 16px text  307ms
+     ✓ layout and accessible controls at 320px / 32px text  368ms
+     ✓ layout and accessible controls at 428px / 16px text  385ms
+     ✓ layout and accessible controls at 428px / 32px text  365ms
+     ✓ uses actual media for seek/pause/rate, clamps both ends and never generates on controls  1962ms
+     ✓ releases on both lifecycle events, returns paused, then one play re-fetches the exact saved audio at retained time/rate  851ms
+     ✓ expires only the position/rate after 15 minutes without generating or auto-playing  542ms
+     ✓ not-found clears old identity/time/rate and never falls back to generation  474ms
+     ✓ forbidden clears old identity/time/rate and never falls back to generation  564ms
+     ✓ unauthorized clears old identity/time/rate and never falls back to generation  466ms
+     ✓ network-error permits a read-only one-play retry  509ms
+     ✓ timeout permits a read-only one-play retry  516ms
+     ✓ server-error permits a read-only one-play retry  515ms
+     ✓ deduplicates rapid resume and discards a fetch that completes after background  580ms
+     ✓ owner discards old async download, media and bookmark  739ms
+     ✓ script discards old async download, media and bookmark  803ms
+     ✓ logout discards old async download, media and bookmark  589ms
+     ✓ ignores initial request after unmount without downloading or auto-playing  418ms
+     ✓ play after returning from the end starts again and seek/rate stay connected while playing  1135ms
+     ✓ unmount during actual playback pauses and detaches the old media  606ms
+     ✓ offline return keeps the bookmark and retries via play after reconnection  633ms
+     ✓ decode error and thrown download failure recover without generation  612ms
+     ✓ play policy rejection offers play again without another fetch  696ms
+     ✓ layout and accessible controls at 320px / 16px text  664ms
+     ✓ layout and accessible controls at 320px / 32px text  474ms
+     ✓ layout and accessible controls at 428px / 16px text  672ms
+     ✓ layout and accessible controls at 428px / 32px text  643ms
+
+ Test Files  4 passed (4)
+      Tests  122 passed (122)
+   Start at  13:35:11
+   Duration  31.36s (transform 251ms, setup 0ms, import 1.03s, tests 36.67s, environment 0ms)

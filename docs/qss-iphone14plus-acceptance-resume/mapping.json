@@ -1,6 +1,6 @@
 {
-  "mode": "QSS_IPHONE14PLUS_FORMAL_ACCEPTANCE_RESUME_AFTER_P1_P3",
-  "verdict": "LISTEN_IMPROVEMENT_HUMAN_ACCEPTED_SERVER_VERIFIED_FORMAL_ACCEPTANCE_OPEN",
+  "mode": "QSS_REVIEW_LISTEN_RETURN_ORIGIN_CLOSEOUT",
+  "verdict": "REVIEW-LISTEN RETURN ORIGIN HUMAN PASS / CLOSED; unrelated acceptance state retained",
   "baseline": {
     "root": "/Users/karasawatakahiro/Developer/native-minute",
     "branch": "codex/g3-mobile-main-loop",
@@ -17,15 +17,16 @@
     "E": 1
   },
   "counts": {
-    "PASS": 5,
+    "PASS": 6,
     "FAIL": 0,
     "BLOCKED": 2,
-    "NOT YET RUN": 51
+    "NOT YET RUN": 50
   },
   "additionalCounts": {
+    "PASS": 18,
+    "FAIL": 0,
     "BLOCKED": 3,
-    "PASS": 17,
-    "NOT YET RUN": 10
+    "NOT YET RUN": 9
   },
   "evidence": {
     "E-BUILD": {
@@ -122,6 +123,28 @@
       "source": "outputs/qss-listen-closeout/staging-readonly.json",
       "kind": "Staging read-only SELECT",
       "detail": "Latest same-owner iPhone session updated 2026-09-18T00:29:34.224340Z; target cache_hit 00:31:39.380446Z; canonical identity retained, no new generation or create intent. Event has no session foreign key; exact background/return timestamps and replay GET count are not logged here."
+    },
+    "E-LISTEN-RETURN-HUMAN-PASS-20260918": {
+      "source": "Human reply in QSS_REVIEW_LISTEN_RETURN_ORIGIN_CLOSEOUT",
+      "kind": "Human actual-device PASS on installed Staging/iPhone14 Plus",
+      "detail": "2026-09-18 Human actual-device PASS: Review → お手本を聞き直す → Listen → 戻る = 元のReview / same Take。13:37 JST上書きinstall済みStaging/iPhone14 Plus。",
+      "report": "listen-return-origin-focused-fix.md",
+      "installProof": "outputs/qss-listen-return-fix/install-status.json",
+      "preservedPass": [
+        "Review→Record→Back",
+        "Progress→Record→Back",
+        "Listen→Record→Back",
+        "未保存録音退出",
+        "Favorite状態"
+      ],
+      "closedPreserved": [
+        "P1",
+        "P2",
+        "P3",
+        "J",
+        "Gate5",
+        "Listen playback"
+      ]
     }
   },
   "original58": [
@@ -702,9 +725,11 @@
       "expected_version": "v1 unchanged",
       "current_steps": "「お手本を聞き直す」を押す",
       "current_expected": "同じ台本のListenへ移る",
-      "status": "NOT YET RUN",
-      "evidence": [],
-      "reason": "このIDの原試験目的を満たすcurrent-buildのHuman観察は未記録。"
+      "status": "PASS",
+      "evidence": [
+        "E-LISTEN-RETURN-HUMAN-PASS-20260918"
+      ],
+      "reason": "2026-09-18 Human actual-device PASS: Review → お手本を聞き直す → Listen → 戻る = 元のReview / same Take。13:37 JST上書きinstall済みStaging/iPhone14 Plus。"
     },
     {
       "id": "RV-07",
@@ -1126,11 +1151,13 @@
     {
       "id": "PS-N-01",
       "purpose": "Back",
-      "expected": "Listen→開始元、Record→同じListen、Review→同じRecord、My Takes→保持された戻り先へ正常遷移。",
-      "status": "NOT YET RUN",
-      "evidence": [],
+      "expected": "Listen→開始元（Reviewから来た場合は元のReview／same Take）。Record→同じListen／元のReview・same Take／元のProgress context。invalid/staleはListenなら既存safe origin、Recordなら同じListenへfallback。Review/My Takesの既存Backを保持。",
+      "status": "PASS",
+      "evidence": [
+        "E-LISTEN-RETURN-HUMAN-PASS-20260918"
+      ],
       "session": "B",
-      "note": "各画面でBackを一度確認。ReviewのShare cancelとは別。"
+      "note": "v4: Human actual-device PASS / CLOSED。2026-09-18 Human actual-device PASS: Review → お手本を聞き直す → Listen → 戻る = 元のReview / same Take。13:37 JST上書きinstall済みStaging/iPhone14 Plus。 Review→Record→Back、Progress→Record→Back、通常Listen→Record→Backの既存PASSを保持。自動検証122 tests/50 browser条件を再利用し再試験なし。"
     },
     {
       "id": "PS-N-02",
@@ -1467,5 +1494,17 @@
       ]
     }
   ],
-  "listenAdditionalLimits": "Other three speeds, paused seek endpoints, >15 minute expiry, logout/owner/deletion failure branches are locally tested only; no additional Human PASS inferred. Dynamic Type and VoiceOver remain Session C."
+  "listenAdditionalLimits": "Other three speeds, paused seek endpoints, >15 minute expiry, logout/owner/deletion failure branches are locally tested only; no additional Human PASS inferred. Dynamic Type and VoiceOver remain Session C.",
+  "listenReturnOriginFinding": {
+    "mode": "QSS_REVIEW_LISTEN_RETURN_ORIGIN_CLOSEOUT",
+    "status": "HUMAN ACTUAL-DEVICE PASS / CLOSED",
+    "exactCriterion": "PS-N-01",
+    "relatedOriginal": "RV-06",
+    "evidence": "E-LISTEN-RETURN-HUMAN-PASS-20260918",
+    "report": "listen-return-origin-focused-fix.md",
+    "validationReused": true,
+    "buildInstallRepeated": false,
+    "scope": "Listen return-origin plus its accepted Record return-origin prerequisite; no Progress visual closeout",
+    "nextOneAction": "次の独立WIPとして「HomeからReviewを経由せず練習を始められる導線」へ進む。"
+  }
 }

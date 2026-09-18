@@ -46,6 +46,8 @@ export function PracticeApp({
 
   const routeRef = useRef(route);
   const origin = useRef<PracticeRoute>({ name: "home" });
+  const recordOrigin = useRef<PracticeRoute | null>(null);
+  const listenOrigin = useRef<PracticeRoute | null>(null);
   const takesBack = useRef<PracticeRoute>({ name: "home" });
   const leaveGuard = useRef<(() => boolean) | null>(null);
   const registerLeaveGuard = useCallback((guard: (() => boolean) | null) => { leaveGuard.current = guard; }, []);
@@ -63,6 +65,9 @@ export function PracticeApp({
         return;
       }
       if (!isFocusedPractice(routeRef.current) || !isFocusedPractice(next)) origin.current = { name: "home" };
+      // Browser history and deep links do not supply trusted return context.
+      recordOrigin.current = null;
+      listenOrigin.current = null;
       routeRef.current = next;
       setRoute(next);
       finishRouteTransition(startedAt);
@@ -81,6 +86,15 @@ export function PracticeApp({
   const navigate = useCallback((nextRoute: PracticeRoute, options: { replace?: boolean } = {}) => {
     if (practiceRoutePath(nextRoute) === practiceRoutePath(routeRef.current)) return;
     if (leaveGuard.current && !leaveGuard.current()) return;
+    if (nextRoute.name === "listen" && routeRef.current.name === "review") {
+      listenOrigin.current = routeRef.current;
+    } else if (!((nextRoute.name === "listen" || nextRoute.name === "record")
+      && (routeRef.current.name === "listen" || routeRef.current.name === "record")
+      && nextRoute.scriptId === routeRef.current.scriptId)) {
+      // Keep Review context through Listen → Record → Back, but never across other sessions.
+      listenOrigin.current = null;
+    }
+    recordOrigin.current = nextRoute.name === "record" ? routeRef.current : null;
     if (isFocusedPractice(nextRoute) && !isFocusedPractice(routeRef.current) && routeRef.current.name !== "voice_setup") {
       origin.current = safePracticeOrigin(routeRef.current);
     }
@@ -140,7 +154,7 @@ export function PracticeApp({
       {!isOnline ? <div className="offline-banner" role="status">オフラインです。接続後に再試行できます。</div> : null}
       {isFocusedPractice(route) ? (
         <header className="practice-focus-header" aria-label="練習の移動">
-          <button type="button" onClick={() => navigate(practiceBackRoute(route, origin.current))}>← 戻る</button>
+          <button type="button" onClick={() => navigate(practiceBackRoute(route, origin.current, recordOrigin.current, listenOrigin.current))}>← 戻る</button>
           <span aria-label="練習のステップ">{route.name === "listen" ? "1 / 3" : route.name === "record" ? "2 / 3" : "3 / 3"}</span>
           <button type="button" onClick={() => navigate({ name: "home" })}>練習を終了（Home）</button>
         </header>

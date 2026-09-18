@@ -137,8 +137,25 @@ export function safePracticeOrigin(route: PracticeRoute): PracticeRoute {
   return ["home", "scripts", "progress", "takes"].includes(route.name) ? route : { name: "home" };
 }
 
-export function practiceBackRoute(route: PracticeRoute, origin: PracticeRoute): PracticeRoute {
-  if (route.name === "record") return { name: "listen", scriptId: route.scriptId };
+export function practiceBackRoute(route: PracticeRoute, origin: PracticeRoute, recordOrigin?: PracticeRoute | null, listenOrigin?: PracticeRoute | null): PracticeRoute {
+  if (route.name === "listen" && listenOrigin?.name === "review"
+    && listenOrigin.scriptId === route.scriptId && SAFE_ROUTE_SEGMENT.test(route.scriptId)
+    && typeof listenOrigin.takeId === "string" && SAFE_ROUTE_SEGMENT.test(listenOrigin.takeId)) {
+    return listenOrigin;
+  }
+  if (route.name === "record") {
+    // Only a route captured inside this practice session can override the direct-link fallback.
+    // Match script context so an old or malformed origin cannot point at another practice.
+    if (recordOrigin) {
+      const sameScript = "scriptId" in recordOrigin && recordOrigin.scriptId === route.scriptId
+        && SAFE_ROUTE_SEGMENT.test(route.scriptId);
+      if (recordOrigin.name === "listen" && sameScript) return recordOrigin;
+      if (recordOrigin.name === "review" && sameScript && typeof recordOrigin.takeId === "string" && SAFE_ROUTE_SEGMENT.test(recordOrigin.takeId)) return recordOrigin;
+      if ((recordOrigin.name === "progress" || recordOrigin.name === "takes")
+        && (recordOrigin.scriptId === undefined || sameScript)) return recordOrigin;
+    }
+    return { name: "listen", scriptId: route.scriptId };
+  }
   if (route.name === "review") return { name: "record", scriptId: route.scriptId };
   return safePracticeOrigin(origin);
 }

@@ -1,0 +1,24 @@
+{
+  "workspace": "PASS",
+  "scopedTests": 122,
+  "browserConditions": 50,
+  "browserEngines": [
+    "Chromium",
+    "WebKit"
+  ],
+  "rootLint": "PASS",
+  "mobileLint": "PASS",
+  "rootTypecheck": "PASS after root build",
+  "mobileTypecheck": "PASS",
+  "rootBuild": "PASS",
+  "stagingBuildSync": "PASS",
+  "focusedSelfReview": "PASS, 0 findings",
+  "diffCheck": "PASS",
+  "notRun": [
+    "full E2E",
+    "full 58-item acceptance",
+    "new live evaluation/provider tests",
+    "physical VoiceOver/Dynamic Type"
+  ],
+  "harnessNotes": "Initial browser selectors used visible copy rather than existing accessible names; corrected fixture only and final entire navigation run passed."
+}
