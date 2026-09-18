@@ -1,5 +1,7 @@
 # iPhone 14 Plus formal acceptance 再開マッピング v2
 
+**2026-09-18 Home Favorite→Review→Back: HUMAN ACTUAL-DEVICE PASS / CLOSED。** 戻り先Homeを実機確認。PS-N-01へ証拠追加、他の判定・件数は変更なし。既存CLOSED／PASSは保持。今回の再確認は完了、追加試験なし。[closeout](home-favorite-review-return-focused-fix.md)。以下の待機記述は履歴。
+
 **2026-09-18 Review→Listen→Back: HUMAN ACTUAL-DEVICE PASS / CLOSED。** 元のReview／same Takeへの復帰をHuman確認。PS-N-01とRV-06へ反映。既存Record Back・未保存退出・Favorite・Listen playback・P1/P2/P3/J/Gate5は保持。再試験不要。[closeout](listen-return-origin-focused-fix.md)。以下の待機記述は各時点の履歴であり、今回の再試験依頼ではない。
 
 2026-09-18 latest: **Listen改善A–M HUMAN PASS / SERVER VERIFIED**。[closeout](listen-human-pass-closeout.md)。L-01/L-03/L-04/L-07のみ原58へ新規PASS。L-05は時間表示未確認、L-02/L-06/L-09/L-10は未確認小条件を保持。追加LP-01〜07はPASS（原58・既存PS30の外）。Dynamic Typeは「文字サイズを変えられなかった」理由未確定の未判定、VoiceOverもSession Cへ。P1/P2/P3/J/Gate5 CLOSEDと既存PSの17/0/3/10を再計算しない。
@@ -146,7 +148,7 @@ P3の機能証拠は主に追加criteriaへ一致する。Jのsaved Take playbac
 | PS-H-02 | Home populated: 保存済み録音があるHomeから本人の録音に到達できる。 | PASS | E-CURRENT-K。 |
 | PS-H-03 | Home actual data: 録音名/Favorite/Take previewが本人の保存データと一致。 | PASS | E-CURRENT-D, E-CURRENT-K。 |
 | PS-H-04 | Home failure state: offline/取得失敗を空データ・0件と見せず、復旧後に正常表示へ戻れる。 | NOT YET RUN | Session D。 |
-| PS-N-01 | Back: Listen→開始元（Reviewから来た場合は元のReview／same Take）。Record→同じListen／元のReview・same Take／元のProgress context。invalid/staleはListenなら既存safe origin、Recordなら同じListenへfallback。Review/My Takesの既存Backを保持。 | PASS | v4: Human actual-device PASS / CLOSED。2026-09-18 Human actual-device PASS: Review → お手本を聞き直す → Listen → 戻る = 元のReview / same Take。13:37 JST上書きinstall済みStaging/iPhone14 Plus。 Review→Record→Back、Progress→Record→Back、通常Listen→Record→Backの既存PASSを保持。自動検証122 tests/50 browser条件を再利用し再試験なし。 [closeout](listen-return-origin-focused-fix.md) |
+| PS-N-01 | Back: Listen→開始元（Reviewから来た場合は元のReview／same Take）。Record→同じListen／元のReview・same Take／元のProgress context。Home Favorite→Review→Back=Home。保存済みReviewは明示My Takes／Progress入口も保持し、same script/Takeを検証。invalid/staleはListenなら既存safe origin、Recordなら同じListen、Reviewなら同じRecordへfallback。 | PASS | v5: Home Favorite→Review→Back HUMAN ACTUAL-DEVICE PASS / CLOSED。2026-09-18 Human actual-device PASS: Home → お気に入りの録音 → Review → 戻る = Home。14:21 JST上書きinstall済みStaging／同じiPhone14 Plus。 Review→Listen→Back CLOSED、Review→Record→Back／Progress→Record→Back／Listen→Record→Backの既存PASSを保持。71 tests／100 browser条件を再利用。My Takes／Progress→Review→Backは自動回帰PASSであり、新たなHuman PASSを推定しない。 [closeout](home-favorite-review-return-focused-fix.md) |
 | PS-N-02 | Review Exit Home: 「練習を終了（Home）」でHomeへ戻る。 | PASS | E-CURRENT-K。 |
 | PS-N-03 | Listen / Record Exit Home: Listenと未録音Recordで明示ExitがHomeへ戻る。 | NOT YET RUN | Session B。既にPASSのReview Exitは繰返さない。 |
 | PS-N-04 | 未保存録音の保護: Back/Exitで未保存破棄確認。cancelなら同じ録音を保持し、明示破棄時だけ離脱する。 | NOT YET RUN | Session B。R-11/R-12の短い試行を共用。新たな評価は不要。 |

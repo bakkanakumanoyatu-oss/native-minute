@@ -1,0 +1,43 @@
+{
+  "checkedAt": "2026-09-18T05:21:04.127630+00:00",
+  "artifactPath": "/tmp/qss-home-review-return-fix/DerivedData/Build/Products/Staging-iphoneos/App.app",
+  "bundleId": "com.nativeminutes.app.staging",
+  "version": "1.0",
+  "build": "1",
+  "metadata": {
+    "profile": "staging",
+    "bundleId": "com.nativeminutes.app.staging",
+    "xcodeConfiguration": "Staging",
+    "capacitorProfile": "staging",
+    "bffOrigin": "https://native-minute-staging.vercel.app",
+    "authCallbackMode": "universal-link",
+    "authConfigured": true,
+    "authTargetFingerprint": "cfdbf57f7a1d3226019079df30e06c61276cb528f31779581fb6ae92592096b3",
+    "sourceRevision": "f39977c3ca56ef066b620bd02fe3b73964969b54",
+    "sourceDirty": true
+  },
+  "executableSha256": "c5ebb80857e30f41de0127c4cc502af6824bc33c4279438da6e4da1cd9550997",
+  "webAssetsSha256": {
+    "mobile-build.json": "34d201e481d47d01c70fdf8625c8e151f4b8312c6bc5fcbacc80a05f13874f28",
+    "index.html": "d77b94fd3813411b5ed05e43373fe43d2afe84b58617c2e115a1b70abd3c11dd",
+    "assets/index-D5mjgFTS.css": "e2492ac30ee9843f77e8fe73b77d424d509109c4f8616578a2f06780c8924404",
+    "assets/web-CG0lHFCo.js": "6149131268068c3d016e363177607f737419bcadf1ef4acf340436aac8e87089",
+    "assets/web-Dj8JaOH0.js": "526e1a6b4e0926620c23136b3efe25a3b6f170d3719cf70f414ad1d007ae9f86",
+    "assets/index-c4wTvymx.js": "aa675ac86bdeeba7060b1a56d0885c71eb1a7fe99a930d426d50c559a7cb448a",
+    "assets/web-dQwq9Rt_.js": "45a5c47bd61626bcd1e93e2d5813ee750573860f5f4ffc6c0a1182f853041263"
+  },
+  "distSyncedSignedAssetsEqual": true,
+  "strictSignature": "PASS",
+  "provisioningMatchesDevice": true,
+  "associatedDomainMatchesStaging": true,
+  "pluginsAndPrivacy": "PASS",
+  "releaseGuard": {
+    "status": "NOT PASS",
+    "findings": [
+      "staging_build_metadata_mismatch (dist sourceDirty=true)",
+      "staging_build_metadata_mismatch (native sourceDirty=true)",
+      "staging_source_tree_dirty"
+    ],
+    "reason": "User-authorized uncommitted WIP actual-device test install; no guard or metadata bypass"
+  }
+}

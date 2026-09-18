@@ -137,7 +137,12 @@ export function safePracticeOrigin(route: PracticeRoute): PracticeRoute {
   return ["home", "scripts", "progress", "takes"].includes(route.name) ? route : { name: "home" };
 }
 
-export function practiceBackRoute(route: PracticeRoute, origin: PracticeRoute, recordOrigin?: PracticeRoute | null, listenOrigin?: PracticeRoute | null): PracticeRoute {
+export type ReviewReturnOrigin = {
+  review: Extract<PracticeRoute, { name: "review" }>;
+  origin: PracticeRoute;
+};
+
+export function practiceBackRoute(route: PracticeRoute, origin: PracticeRoute, recordOrigin?: PracticeRoute | null, listenOrigin?: PracticeRoute | null, reviewOrigin?: ReviewReturnOrigin | null): PracticeRoute {
   if (route.name === "listen" && listenOrigin?.name === "review"
     && listenOrigin.scriptId === route.scriptId && SAFE_ROUTE_SEGMENT.test(route.scriptId)
     && typeof listenOrigin.takeId === "string" && SAFE_ROUTE_SEGMENT.test(listenOrigin.takeId)) {
@@ -156,6 +161,17 @@ export function practiceBackRoute(route: PracticeRoute, origin: PracticeRoute, r
     }
     return { name: "listen", scriptId: route.scriptId };
   }
-  if (route.name === "review") return { name: "record", scriptId: route.scriptId };
+  if (route.name === "review") {
+    // List entry belongs to this exact saved Take, not a later evaluation of the same script.
+    const entry = reviewOrigin?.origin;
+    if (reviewOrigin?.review?.name === "review" && reviewOrigin.review.scriptId === route.scriptId
+      && reviewOrigin.review.takeId === route.takeId && SAFE_ROUTE_SEGMENT.test(route.scriptId)
+      && SAFE_ROUTE_SEGMENT.test(route.takeId)) {
+      if (entry?.name === "home") return entry;
+      if ((entry?.name === "takes" || entry?.name === "progress")
+        && (entry.scriptId === undefined || entry.scriptId === route.scriptId)) return entry;
+    }
+    return { name: "record", scriptId: route.scriptId };
+  }
   return safePracticeOrigin(origin);
 }

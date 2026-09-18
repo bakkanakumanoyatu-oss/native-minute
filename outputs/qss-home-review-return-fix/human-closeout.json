@@ -1,0 +1,34 @@
+{
+  "mode": "QSS_HOME_FAVORITE_REVIEW_RETURN_CLOSEOUT",
+  "status": "HUMAN ACTUAL-DEVICE PASS / CLOSED",
+  "humanEvidence": {
+    "source": "Human reply in QSS_HOME_FAVORITE_REVIEW_RETURN_CLOSEOUT",
+    "kind": "Human actual-device PASS on installed Staging/iPhone14 Plus",
+    "detail": "2026-09-18 Human actual-device PASS: Home → お気に入りの録音 → Review → 戻る = Home。14:21 JST上書きinstall済みStaging／同じiPhone14 Plus。",
+    "report": "home-favorite-review-return-focused-fix.md",
+    "installProof": "outputs/qss-home-review-return-fix/install-status.json",
+    "preservedPass": [
+      "Review→Record→Back",
+      "Progress→Record→Back",
+      "Listen→Record→Back",
+      "Record/evaluate success",
+      "Favorite/Share",
+      "unsaved recording exit"
+    ],
+    "closedPreserved": [
+      "P1",
+      "P2",
+      "P3",
+      "J",
+      "Gate5",
+      "Review→Listen→Back",
+      "Listen playback"
+    ]
+  },
+  "validationReused": true,
+  "newTests": 0,
+  "newBuilds": 0,
+  "newInstalls": 0,
+  "sourceChangedDuringCloseout": false,
+  "nextOneAction": "次の独立WIPとして「Homeの上段台本の選定理由・最近の練習CTA・情報密度」を扱う。"
+}

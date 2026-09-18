@@ -1,0 +1,30 @@
+{
+  "workspace": "PASS",
+  "scopedTests": 71,
+  "browserConditions": 100,
+  "browserEngines": [
+    "Chromium",
+    "WebKit"
+  ],
+  "rootLint": "PASS",
+  "mobileLint": "PASS",
+  "rootTypecheck": "PASS after root build",
+  "mobileTypecheck": "PASS",
+  "rootBuild": "PASS",
+  "stagingBuildSync": "PASS",
+  "signedNativeBuild": "PASS",
+  "focusedSelfReview": "PASS, 0 must-fix, Navigation diff only",
+  "diffCheck": "PASS",
+  "releaseGuard": {
+    "status": "NOT PASS",
+    "reason": "Three known dirty-source categories for expressly authorized pre-Human WIP install; no bypass"
+  },
+  "notRun": [
+    "full E2E",
+    "full 58-item acceptance",
+    "live evaluation/provider calls",
+    "physical VoiceOver/Dynamic Type",
+    "Human actual-device Home Favorite Review Back acceptance",
+    "unrelated pre-existing Progress English-label assertion"
+  ]
+}

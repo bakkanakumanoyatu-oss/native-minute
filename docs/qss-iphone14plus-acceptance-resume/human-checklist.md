@@ -1,5 +1,7 @@
 # iPhone 14 Plus — 未確認項目だけの統合チェックリスト
 
+**2026-09-18 Home Favorite→Review→Back: HUMAN ACTUAL-DEVICE PASS / CLOSED。** 戻り先Homeを実機確認。PS-N-01へ証拠追加、他の判定・件数は変更なし。既存CLOSED／PASSは保持。今回の再確認は完了、追加試験なし。[closeout](home-favorite-review-return-focused-fix.md)。以下の待機記述は履歴。
+
 **2026-09-18 Review→Listen→Back: HUMAN ACTUAL-DEVICE PASS / CLOSED。** 元のReview／same Takeへの復帰をHuman確認。PS-N-01とRV-06へ反映。既存Record Back・未保存退出・Favorite・Listen playback・P1/P2/P3/J/Gate5は保持。再試験不要。[closeout](listen-return-origin-focused-fix.md)。以下の待機記述は各時点の履歴であり、今回の再試験依頼ではない。
 
 今回のHuman操作は完了。残りの受入手順・Progress再確認は今回開始しない。

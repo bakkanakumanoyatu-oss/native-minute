@@ -11,7 +11,7 @@ import { VoiceSetupScreen } from "../screens/VoiceSetupScreen";
 import { AccountDeletionScreen } from "../screens/AccountDeletionScreen";
 import { VoiceDeletionScreen } from "../screens/VoiceDeletionScreen";
 import type { PracticeApi } from "./api";
-import { isFocusedPractice, safePracticeOrigin, practiceBackRoute, parsePracticeRoute, practiceRoutePath, type PracticeRoute } from "./routes";
+import { isFocusedPractice, safePracticeOrigin, practiceBackRoute, parsePracticeRoute, practiceRoutePath, type PracticeRoute, type ReviewReturnOrigin } from "./routes";
 
 export const MOBILE_ROUTE_TRANSITION_MEASURE = "mobile_route_transition";
 
@@ -48,6 +48,7 @@ export function PracticeApp({
   const origin = useRef<PracticeRoute>({ name: "home" });
   const recordOrigin = useRef<PracticeRoute | null>(null);
   const listenOrigin = useRef<PracticeRoute | null>(null);
+  const reviewOrigin = useRef<ReviewReturnOrigin | null>(null);
   const takesBack = useRef<PracticeRoute>({ name: "home" });
   const leaveGuard = useRef<(() => boolean) | null>(null);
   const registerLeaveGuard = useCallback((guard: (() => boolean) | null) => { leaveGuard.current = guard; }, []);
@@ -68,6 +69,7 @@ export function PracticeApp({
       // Browser history and deep links do not supply trusted return context.
       recordOrigin.current = null;
       listenOrigin.current = null;
+      reviewOrigin.current = null;
       routeRef.current = next;
       setRoute(next);
       finishRouteTransition(startedAt);
@@ -86,6 +88,21 @@ export function PracticeApp({
   const navigate = useCallback((nextRoute: PracticeRoute, options: { replace?: boolean } = {}) => {
     if (practiceRoutePath(nextRoute) === practiceRoutePath(routeRef.current)) return;
     if (leaveGuard.current && !leaveGuard.current()) return;
+    if (nextRoute.name === "takes" && !(routeRef.current.name === "review"
+      && reviewOrigin.current?.origin.name === "takes"
+      && practiceRoutePath(nextRoute) === practiceRoutePath(reviewOrigin.current.origin))) {
+      // Returning from a saved Review must not replace My Takes' own parent with that Review.
+      takesBack.current = routeRef.current;
+    }
+    if (nextRoute.name === "review" && (routeRef.current.name === "home"
+      || routeRef.current.name === "takes" || routeRef.current.name === "progress")) {
+      reviewOrigin.current = { review: nextRoute, origin: routeRef.current };
+    } else if (reviewOrigin.current && (!isFocusedPractice(nextRoute)
+      || !("scriptId" in nextRoute) || nextRoute.scriptId !== reviewOrigin.current.review.scriptId
+      || (nextRoute.name === "review" && nextRoute.takeId !== reviewOrigin.current.review.takeId))) {
+      // Retain the entry through same-script Listen/Record detours, not a new Take or session.
+      reviewOrigin.current = null;
+    }
     if (nextRoute.name === "listen" && routeRef.current.name === "review") {
       listenOrigin.current = routeRef.current;
     } else if (!((nextRoute.name === "listen" || nextRoute.name === "record")
@@ -98,7 +115,6 @@ export function PracticeApp({
     if (isFocusedPractice(nextRoute) && !isFocusedPractice(routeRef.current) && routeRef.current.name !== "voice_setup") {
       origin.current = safePracticeOrigin(routeRef.current);
     }
-    if (nextRoute.name === "takes") takesBack.current = routeRef.current;
     routeRef.current = nextRoute;
     const startedAt = performance.now();
     const path = practiceRoutePath(nextRoute);
@@ -154,7 +170,7 @@ export function PracticeApp({
       {!isOnline ? <div className="offline-banner" role="status">オフラインです。接続後に再試行できます。</div> : null}
       {isFocusedPractice(route) ? (
         <header className="practice-focus-header" aria-label="練習の移動">
-          <button type="button" onClick={() => navigate(practiceBackRoute(route, origin.current, recordOrigin.current, listenOrigin.current))}>← 戻る</button>
+          <button type="button" onClick={() => navigate(practiceBackRoute(route, origin.current, recordOrigin.current, listenOrigin.current, reviewOrigin.current))}>← 戻る</button>
           <span aria-label="練習のステップ">{route.name === "listen" ? "1 / 3" : route.name === "record" ? "2 / 3" : "3 / 3"}</span>
           <button type="button" onClick={() => navigate({ name: "home" })}>練習を終了（Home）</button>
         </header>

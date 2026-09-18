@@ -1,0 +1,502 @@
+[
+  {
+    "engine": "chromium",
+    "name": "/scripts/preview-script/listen → Record → Back",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/scripts/preview-script/listen unsaved Back/Home cancel retains recording; discard returns to origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/scripts/preview-script/listen Record Exit → Home",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/scripts/preview-script/review/preview-best → Record → Back",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/scripts/preview-script/review/preview-best unsaved Back/Home cancel retains recording; discard returns to origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/scripts/preview-script/review/preview-best Record Exit → Home",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress?scriptId=preview-script → Record → Back",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress?scriptId=preview-script unsaved Back/Home cancel retains recording; discard returns to origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress?scriptId=preview-script Record Exit → Home",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress → Record → Back",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress unsaved Back/Home cancel retains recording; discard returns to origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress Record Exit → Home",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "direct Record ignores URL origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "reload clears session origin / Listen fallback",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "popstate clears stale origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "My Takes exact return preserved",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Review → Listen → Back exact preview-best",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Review → Listen → Back exact preview-latest",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Review → Listen → Record → Back → Listen → Back → original Review",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "unsaved cancel retains Listen Review origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Listen safe fallback after reload",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Listen safe fallback after popstate",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Listen safe fallback after home-exit",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Listen ignores URL origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Scripts → Listen → Back preserves Scripts",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/ saved Review → Back exact entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/ Review → Listen → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/ Review → Record → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/ Review → Listen → Record → Back → Back → Review → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/takes saved Review → Back exact entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/takes Review → Listen → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/takes Review → Record → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/takes Review → Listen → Record → Back → Back → Review → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/takes?scriptId=preview-script&filter=favorites saved Review → Back exact entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/takes?scriptId=preview-script&filter=favorites Review → Listen → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/takes?scriptId=preview-script&filter=favorites Review → Record → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/takes?scriptId=preview-script&filter=favorites Review → Listen → Record → Back → Back → Review → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress saved Review → Back exact entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress Review → Listen → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress Review → Record → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress Review → Listen → Record → Back → Back → Review → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress?scriptId=preview-script saved Review → Back exact entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress?scriptId=preview-script Review → Listen → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress?scriptId=preview-script Review → Record → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "/progress?scriptId=preview-script Review → Listen → Record → Back → Back → Review → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Home → My Takes → Review → Back → My Takes → Back Home, no loop",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Review Record fallback after reload",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Review Record fallback after popstate",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "Review Record fallback after home-exit",
+    "status": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "name": "direct Review ignores URL origin and retains Record fallback",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/scripts/preview-script/listen → Record → Back",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/scripts/preview-script/listen unsaved Back/Home cancel retains recording; discard returns to origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/scripts/preview-script/listen Record Exit → Home",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/scripts/preview-script/review/preview-best → Record → Back",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/scripts/preview-script/review/preview-best unsaved Back/Home cancel retains recording; discard returns to origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/scripts/preview-script/review/preview-best Record Exit → Home",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress?scriptId=preview-script → Record → Back",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress?scriptId=preview-script unsaved Back/Home cancel retains recording; discard returns to origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress?scriptId=preview-script Record Exit → Home",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress → Record → Back",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress unsaved Back/Home cancel retains recording; discard returns to origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress Record Exit → Home",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "direct Record ignores URL origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "reload clears session origin / Listen fallback",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "popstate clears stale origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "My Takes exact return preserved",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Review → Listen → Back exact preview-best",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Review → Listen → Back exact preview-latest",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Review → Listen → Record → Back → Listen → Back → original Review",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "unsaved cancel retains Listen Review origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Listen safe fallback after reload",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Listen safe fallback after popstate",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Listen safe fallback after home-exit",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Listen ignores URL origin",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Scripts → Listen → Back preserves Scripts",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/ saved Review → Back exact entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/ Review → Listen → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/ Review → Record → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/ Review → Listen → Record → Back → Back → Review → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/takes saved Review → Back exact entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/takes Review → Listen → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/takes Review → Record → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/takes Review → Listen → Record → Back → Back → Review → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/takes?scriptId=preview-script&filter=favorites saved Review → Back exact entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/takes?scriptId=preview-script&filter=favorites Review → Listen → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/takes?scriptId=preview-script&filter=favorites Review → Record → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/takes?scriptId=preview-script&filter=favorites Review → Listen → Record → Back → Back → Review → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress saved Review → Back exact entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress Review → Listen → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress Review → Record → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress Review → Listen → Record → Back → Back → Review → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress?scriptId=preview-script saved Review → Back exact entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress?scriptId=preview-script Review → Listen → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress?scriptId=preview-script Review → Record → Back same Take → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "/progress?scriptId=preview-script Review → Listen → Record → Back → Back → Review → Back entry",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Home → My Takes → Review → Back → My Takes → Back Home, no loop",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Review Record fallback after reload",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Review Record fallback after popstate",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "Review Record fallback after home-exit",
+    "status": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "name": "direct Review ignores URL origin and retains Record fallback",
+    "status": "PASS"
+  }
+]

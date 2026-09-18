@@ -1,0 +1,20 @@
+{
+  "scope": "Review return-origin Navigation diff only",
+  "reviewer": "self-review",
+  "status": "PASS",
+  "mustFix": 0,
+  "changedTrackedFiles": [
+    "apps/mobile/src/practice/PracticeApp.tsx",
+    "apps/mobile/src/practice/routes.test.ts",
+    "apps/mobile/src/practice/routes.ts"
+  ],
+  "checks": [
+    "Explicit internal Home/Takes/Progress entry bound to exact script and Take",
+    "Review Listen/Record detours preserve captured entry; another Take/session/popstate/reload clears it",
+    "Record completion/direct URL/untrusted or stale context retains same-script Record fallback",
+    "Leave guard precedes all context mutation",
+    "My Takes parent preserved on Review Back, no loop",
+    "No server/data/UI/CSS/Progress/provider changes",
+    "71 tests and 100 Chromium/WebKit conditions PASS"
+  ]
+}

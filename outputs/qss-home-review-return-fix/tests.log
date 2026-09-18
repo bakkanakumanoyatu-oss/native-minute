@@ -1,0 +1,19 @@
+
+> native-minute@0.1.0 mobile:test
+> npm run test --workspace @native-minute/mobile src/practice/routes.test.ts src/practice/PracticeApp.test.ts src/screens/HomeScreen.test.tsx
+
+
+> @native-minute/mobile@0.1.0 test
+> vitest run src/practice/routes.test.ts src/practice/PracticeApp.test.ts src/screens/HomeScreen.test.tsx
+
+
+ RUN  v4.1.10 /Users/karasawatakahiro/Developer/native-minute/apps/mobile
+
+ ✓ src/practice/routes.test.ts (58 tests) 4ms
+ ✓ src/screens/HomeScreen.test.tsx (12 tests) 24ms
+ ✓ src/practice/PracticeApp.test.ts (1 test) 2ms
+
+ Test Files  3 passed (3)
+      Tests  71 passed (71)
+   Start at  14:17:47
+   Duration  379ms (transform 194ms, setup 0ms, import 256ms, tests 30ms, environment 0ms)

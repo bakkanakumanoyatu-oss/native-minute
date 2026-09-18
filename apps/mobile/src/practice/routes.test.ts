@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isFocusedPractice, practiceBackRoute, safePracticeOrigin, isPracticePath, parsePracticeRoute, practiceRoutePath, type PracticeRoute } from "./routes";
+import { isFocusedPractice, practiceBackRoute, safePracticeOrigin, isPracticePath, parsePracticeRoute, practiceRoutePath, type PracticeRoute, type ReviewReturnOrigin } from "./routes";
 
 function location(pathname: string, search = "") {
   return { pathname, search } as Location;
@@ -45,6 +45,39 @@ describe("practice routes", () => {
 });
 
 describe("focused practice destinations", () => {
+  const savedReview = { name: "review", scriptId: "s1", takeId: "favorite-take" } as const;
+
+  it.each<PracticeRoute>([
+    { name: "home" },
+    { name: "takes" },
+    { name: "takes", scriptId: "s1", favorites: true },
+    { name: "progress" },
+    { name: "progress", scriptId: "s1" }
+  ])("returns the exact saved Review to its captured $name entry", entry => {
+    expect(practiceBackRoute(savedReview, { name: "home" }, null, null, { review: savedReview, origin: entry })).toEqual(entry);
+  });
+
+  it.each([
+    null,
+    { review: { ...savedReview, takeId: "old-take" }, origin: { name: "home" } },
+    { review: { ...savedReview, scriptId: "other-script" }, origin: { name: "home" } },
+    { review: savedReview, origin: { name: "takes", scriptId: "other-script" } },
+    { review: savedReview, origin: { name: "progress", scriptId: "../other" } },
+    { review: savedReview, origin: { name: "record", scriptId: "s1" } },
+    { review: savedReview, origin: { name: "scripts" } },
+    { review: savedReview, origin: { name: "https://evil.test" } },
+    { origin: { name: "home" } }
+  ])("keeps Review's Record fallback for absent, stale or invalid entry: %j", entry => {
+    expect(practiceBackRoute(savedReview, { name: "home" }, null, null, entry as ReviewReturnOrigin | null)).toEqual({ name: "record", scriptId: "s1" });
+  });
+
+  it("does not reuse a saved Review entry for a newly evaluated Take or URL origin", () => {
+    const nextReview = { ...savedReview, takeId: "new-evaluation" };
+    expect(practiceBackRoute(nextReview, { name: "home" }, null, null, { review: savedReview, origin: { name: "home" } })).toEqual({ name: "record", scriptId: "s1" });
+    const direct = parsePracticeRoute(location("/scripts/s1/review/favorite-take", "?origin=/&returnTo=/takes"));
+    expect(practiceBackRoute(direct, { name: "home" })).toEqual({ name: "record", scriptId: "s1" });
+  });
+
   it("returns Listen to its captured Review and exact Take", () => {
     const review: PracticeRoute = { name: "review", scriptId: "s1", takeId: "original-take" };
     expect(practiceBackRoute({ name: "listen", scriptId: "s1" }, { name: "home" }, null, review)).toEqual(review);

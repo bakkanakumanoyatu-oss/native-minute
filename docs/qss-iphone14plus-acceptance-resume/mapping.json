@@ -1,6 +1,6 @@
 {
-  "mode": "QSS_REVIEW_LISTEN_RETURN_ORIGIN_CLOSEOUT",
-  "verdict": "REVIEW-LISTEN RETURN ORIGIN HUMAN PASS / CLOSED; unrelated acceptance state retained",
+  "mode": "QSS_HOME_FAVORITE_REVIEW_RETURN_CLOSEOUT",
+  "verdict": "HOME-FAVORITE REVIEW RETURN ORIGIN HUMAN PASS / CLOSED; unrelated acceptance state retained",
   "baseline": {
     "root": "/Users/karasawatakahiro/Developer/native-minute",
     "branch": "codex/g3-mobile-main-loop",
@@ -143,6 +143,30 @@
         "P3",
         "J",
         "Gate5",
+        "Listen playback"
+      ]
+    },
+    "E-HOME-FAVORITE-REVIEW-RETURN-HUMAN-PASS-20260918": {
+      "source": "Human reply in QSS_HOME_FAVORITE_REVIEW_RETURN_CLOSEOUT",
+      "kind": "Human actual-device PASS on installed Staging/iPhone14 Plus",
+      "detail": "2026-09-18 Human actual-device PASS: Home → お気に入りの録音 → Review → 戻る = Home。14:21 JST上書きinstall済みStaging／同じiPhone14 Plus。",
+      "report": "home-favorite-review-return-focused-fix.md",
+      "installProof": "outputs/qss-home-review-return-fix/install-status.json",
+      "preservedPass": [
+        "Review→Record→Back",
+        "Progress→Record→Back",
+        "Listen→Record→Back",
+        "Record/evaluate success",
+        "Favorite/Share",
+        "unsaved recording exit"
+      ],
+      "closedPreserved": [
+        "P1",
+        "P2",
+        "P3",
+        "J",
+        "Gate5",
+        "Review→Listen→Back",
         "Listen playback"
       ]
     }
@@ -1151,13 +1175,14 @@
     {
       "id": "PS-N-01",
       "purpose": "Back",
-      "expected": "Listen→開始元（Reviewから来た場合は元のReview／same Take）。Record→同じListen／元のReview・same Take／元のProgress context。invalid/staleはListenなら既存safe origin、Recordなら同じListenへfallback。Review/My Takesの既存Backを保持。",
+      "expected": "Listen→開始元（Reviewから来た場合は元のReview／same Take）。Record→同じListen／元のReview・same Take／元のProgress context。Home Favorite→Review→Back=Home。保存済みReviewは明示My Takes／Progress入口も保持し、same script/Takeを検証。invalid/staleはListenなら既存safe origin、Recordなら同じListen、Reviewなら同じRecordへfallback。",
       "status": "PASS",
       "evidence": [
-        "E-LISTEN-RETURN-HUMAN-PASS-20260918"
+        "E-LISTEN-RETURN-HUMAN-PASS-20260918",
+        "E-HOME-FAVORITE-REVIEW-RETURN-HUMAN-PASS-20260918"
       ],
       "session": "B",
-      "note": "v4: Human actual-device PASS / CLOSED。2026-09-18 Human actual-device PASS: Review → お手本を聞き直す → Listen → 戻る = 元のReview / same Take。13:37 JST上書きinstall済みStaging/iPhone14 Plus。 Review→Record→Back、Progress→Record→Back、通常Listen→Record→Backの既存PASSを保持。自動検証122 tests/50 browser条件を再利用し再試験なし。"
+      "note": "v5: Home Favorite→Review→Back HUMAN ACTUAL-DEVICE PASS / CLOSED。2026-09-18 Human actual-device PASS: Home → お気に入りの録音 → Review → 戻る = Home。14:21 JST上書きinstall済みStaging／同じiPhone14 Plus。 Review→Listen→Back CLOSED、Review→Record→Back／Progress→Record→Back／Listen→Record→Backの既存PASSを保持。71 tests／100 browser条件を再利用。My Takes／Progress→Review→Backは自動回帰PASSであり、新たなHuman PASSを推定しない。"
     },
     {
       "id": "PS-N-02",
@@ -1506,5 +1531,16 @@
     "buildInstallRepeated": false,
     "scope": "Listen return-origin plus its accepted Record return-origin prerequisite; no Progress visual closeout",
     "nextOneAction": "次の独立WIPとして「HomeからReviewを経由せず練習を始められる導線」へ進む。"
+  },
+  "homeFavoriteReviewReturnFinding": {
+    "mode": "QSS_HOME_FAVORITE_REVIEW_RETURN_CLOSEOUT",
+    "status": "HUMAN ACTUAL-DEVICE PASS / CLOSED",
+    "exactCriterion": "PS-N-01",
+    "evidence": "E-HOME-FAVORITE-REVIEW-RETURN-HUMAN-PASS-20260918",
+    "report": "home-favorite-review-return-focused-fix.md",
+    "validationReused": true,
+    "buildInstallRepeated": false,
+    "scope": "Review return-origin Navigation only; Home UI and Progress WIP excluded",
+    "nextOneAction": "次の独立WIPとして「Homeの上段台本の選定理由・最近の練習CTA・情報密度」を扱う。"
   }
 }
