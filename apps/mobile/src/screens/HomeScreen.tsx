@@ -1,29 +1,13 @@
-import { useEffect, useState } from "react";
 import "./HomeScreen.css";
-import type { MobileProgress, PracticeApi, PracticeRequestFailure } from "../practice/api";
+import { useSavedProgress } from "../practice/use-saved-progress";
+export { useSavedProgress } from "../practice/use-saved-progress";
+import type { MobileProgress, PracticeApi } from "../practice/api";
 import type { PracticeRoute } from "../practice/routes";
 import { LoadingState, RequestError, formatReviewDate } from "./ScreenParts";
 
 export function recentPractice(progress: MobileProgress) {
   return progress.scripts.flatMap(item => item.takeHistory.map(take => ({ take, item })))
     .sort((a, b) => b.take.createdAt.localeCompare(a.take.createdAt) || b.take.id.localeCompare(a.take.id));
-}
-
-export function useSavedProgress(api: PracticeApi, isOnline: boolean) {
-  const [state, setState] = useState<{ kind: "loading" } | { kind: "ready"; progress: MobileProgress } | { kind: "error"; error: PracticeRequestFailure }>({ kind: "loading" });
-  const [version, setVersion] = useState(0);
-  useEffect(() => {
-    let active = true;
-    if (isOnline) {
-      void api.getProgress().then(result => {
-        if (active) setState(result.kind === "success" ? { kind: "ready", progress: result.progress } : { kind: "error", error: result });
-      }).catch(() => {
-        if (active) setState({ kind: "error", error: { kind: "network-error" } });
-      });
-    }
-    return () => { active = false; };
-  }, [api, isOnline, version]);
-  return { state: isOnline ? state : { kind: "error" as const, error: { kind: "offline" as const } }, retry: () => { setState({ kind: "loading" }); setVersion(v => v + 1); } };
 }
 
 // Preview only the actual English script; blank/missing content has no invented fallback.
@@ -120,6 +104,7 @@ export function HomeScreen({ api, isOnline, onNavigate }: { api: PracticeApi; is
   return <section className="home-screen personal-space" lang="ja">
     {state.kind === "loading" ? <LoadingState label="記録を読み込んでいます…" /> : null}
     {state.kind === "error" ? <><h1>おかえりなさい。</h1><h2>記録を読み込めませんでした</h2><p>台本や録音がなくなったわけではありません。</p><RequestError error={state.error} onRetry={retry} /></> : null}
+    {state.kind === "ready" && state.refreshing ? <p role="status" className="space-meta">前回取得した記録を表示しています。最新情報を確認中…</p> : null}
     {state.kind === "ready" ? <HomeContent progress={state.progress} onNavigate={onNavigate} /> : null}
   </section>;
 }

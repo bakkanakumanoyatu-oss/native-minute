@@ -1,0 +1,13 @@
+{
+  "id": "dpl_5Pxfw3X3KDVJmMw6w4oo13Nvum5L",
+  "name": "native-minute-staging",
+  "projectId": "prj_RSxUzxugEIlH28tiQOyndjP365hw",
+  "readyState": "READY",
+  "regions": [
+    "iad1"
+  ],
+  "aliasMatches": true,
+  "sourceFiles": 658,
+  "allPriorSourceHashesMatch": true,
+  "externalDeploy": false
+}

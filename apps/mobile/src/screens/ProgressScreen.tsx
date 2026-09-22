@@ -1,16 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import type {
   MobileProgress,
-  PracticeApi,
-  PracticeRequestFailure
+  PracticeApi
 } from "../practice/api";
 import type { PracticeRoute } from "../practice/routes";
 import { EmptyState, LoadingState, RequestError, ScreenHeading, formatReviewDate } from "./ScreenParts";
 
-type ProgressState =
-  | { kind: "loading" }
-  | { kind: "ready"; progress: MobileProgress }
-  | { kind: "error"; error: PracticeRequestFailure };
+import { useSavedProgress } from "../practice/use-saved-progress";
 
 function ProgressResult({ label, take }: {
   label: string;
@@ -168,40 +164,7 @@ export function ProgressScreen({
   isOnline: boolean;
   onNavigate: (route: PracticeRoute) => void;
 }) {
-  const [state, setState] = useState<ProgressState>({ kind: "loading" });
-  const [reloadKey, setReloadKey] = useState(0);
-  const reload = useCallback(() => {
-    setState({ kind: "loading" });
-    setReloadKey((value) => value + 1);
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    if (!isOnline) {
-      return () => {
-        active = false;
-      };
-    }
-
-    void api.getProgress().then((result) => {
-      if (!active) {
-        return;
-      }
-      setState(
-        result.kind === "success"
-          ? { kind: "ready", progress: result.progress }
-          : { kind: "error", error: result }
-      );
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [api, isOnline, reloadKey]);
-
-  const visibleState: ProgressState = isOnline
-    ? state
-    : { kind: "error", error: { kind: "offline" } };
+  const { state: visibleState, retry: reload } = useSavedProgress(api, isOnline);
 
   return (
     <section className="progress-screen" aria-live="polite">
@@ -213,6 +176,7 @@ export function ProgressScreen({
           <RequestError error={visibleState.error} onRetry={reload} />
         </div>
       ) : null}
+      {visibleState.kind === "ready" && visibleState.refreshing ? <p role="status" className="space-meta">前回取得した記録を表示しています。最新情報を確認中…</p> : null}
       {visibleState.kind === "ready" ? <ProgressContent progress={visibleState.progress} scriptId={scriptId} onNavigate={onNavigate} /> : null}
       <div className="progress-secondary">
         <button type="button" className="progress-text-action" onClick={() => onNavigate({ name: "scripts" })}>台本一覧へ戻る</button>

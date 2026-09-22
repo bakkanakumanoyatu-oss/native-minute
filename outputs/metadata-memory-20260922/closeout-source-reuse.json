@@ -1,0 +1,87 @@
+{
+  "mode": "OWNER_SESSION_METADATA_MEMORY_REUSE_30S_COMMIT_PUSH_CLOSEOUT",
+  "baseHead": "a31fe4d96d613fdf2c5445d908516f7d4c5680f9",
+  "productAndTestFiles": [
+    "apps/mobile/src/App.tsx",
+    "apps/mobile/src/practice/api.ts",
+    "apps/mobile/src/practice/api.test.ts",
+    "apps/mobile/src/practice/progress-memory.ts",
+    "apps/mobile/src/practice/progress-memory.test.ts",
+    "apps/mobile/src/practice/progress-memory-lifecycle.ts",
+    "apps/mobile/src/practice/progress-memory-lifecycle.test.ts",
+    "apps/mobile/src/practice/use-saved-progress.ts",
+    "apps/mobile/src/screens/HomeScreen.tsx",
+    "apps/mobile/src/screens/ProgressScreen.tsx",
+    "apps/mobile/src/screens/TakesScreen.tsx"
+  ],
+  "buildSourceHashCount": 87,
+  "trackedPreflightReconciledCount": 939,
+  "allSourceHashesMatch": true,
+  "validationReused": {
+    "workspace": "PASS",
+    "rootLint": "PASS",
+    "mobileLint": "PASS",
+    "mobileTypecheck": "PASS (also run by final Staging build)",
+    "targetedTests": {
+      "passed": 141,
+      "files": 7
+    },
+    "browserChecks": {
+      "passed": 20,
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "data": "synthetic, real App/API/screens"
+    },
+    "rootBuild": "PASS",
+    "rootTypecheck": "PASS",
+    "stagingBuildSync": "PASS",
+    "nativeBuild": "PASS",
+    "signedArtifact": "PASS",
+    "diffCheck": "PASS",
+    "releaseGuard": "NOT PASS: existing 3 dirty-source findings retained",
+    "liveDestructiveMutations": "NOT RUN; original dataset preserved",
+    "audioFirstPlayFix": "NOT DONE; audio 18s measurement timeout retained",
+    "coldLaunchPerformance": "NOT RUN; out of scope",
+    "fullTestSuite": "NOT RUN; targeted regression scope",
+    "newEnvOrSchema": "none",
+    "shipCheck": "focused review complete; server authority, errors, loading/empty states and existing audio/consent/provider flows preserved; README setup unchanged",
+    "commit": "NOT DONE",
+    "push": "NOT DONE",
+    "capturedPhase": "Implementation, before Human acceptance and before this commit/push closeout"
+  },
+  "testsBuildRerun": false,
+  "signedArtifactReverified": true,
+  "diagnosticInstrumentationAbsent": true,
+  "humanAcceptance": {
+    "perceivedPerformance": "clearly improved",
+    "dataCorrectness": "PASS",
+    "remainingWaits": [
+      "Scripts",
+      "Review",
+      "saved Take first playback"
+    ],
+    "adopted": true
+  },
+  "knownFindingsUnchanged": [
+    "release guard NOT PASS 3",
+    "VP-01",
+    "R-INT-02 copy",
+    "other acceptance WIP"
+  ],
+  "unrelatedWipHashCount": 1601,
+  "validationLogSha256": {
+    "targeted-tests.log": "95fdc0818b29b98fa974115591e3578f8dd3fe384f3a5baa23477fa12f6a081b",
+    "browser.log": "974d6a125277970ca14bcc2d4d91d5b233a2d9f7a921b3a67bc443aebad989d6",
+    "root-lint.log": "efe0eaa62b95585b816ae37463dba93be54cbfdf720c882447fdcc124c7387e2",
+    "mobile-lint.log": "06bb40e54ec4f6df3c74e0ca80b959bc480d81cbeeb036ce2df7a1b594aef334",
+    "mobile-typecheck.log": "be7b6188b24b6db61c6a8f4fd3851606fb31b080d7374a25b2d66ecf99b8724f",
+    "root-typecheck.log": "5dcb41f43ba76f98ab5727c6f2ceb676f9e22d1e100af81f59dfb4e50cec7046",
+    "root-build.log": "b8db1169c5fa79f4bf6aaa5ab0f2decd2ef855069b872b3617e970d7bd11fc1b",
+    "staging-sync.log": "67bc139f71d4e33a92bed36f5386ebc3adaa0109ce404256ca592d1119dc6623",
+    "native-build.log": "543cfcb46d69b34d7fa26e295c7ee08b78a18a10e6e8b89fed0bc2bbefeffda9",
+    "diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "release-guard.log": "8e76d30e6829c60a750bfe7a1006fb84ced91fca98f8b6714f841ce7bbd8eef8"
+  }
+}

@@ -1,0 +1,102 @@
+[
+  {
+    "engine": "webkit",
+    "check": "initial server data 5 scripts / 2 Takes",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "check": "rapid three-screen cached navigation with one shared authenticated revalidation",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "check": "Favorite/name mutations refetch canonical data and preserve Review back destination",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "check": "latest 82 / best 91 and selected-script route",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "check": "revalidation error removes cached content",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "check": "TTL expiry removes visible stale metadata while slow refetch waits",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "check": "background → foreground refetch",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "check": "same-frame A→B→A remount clears session metadata",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "check": "other account never sees previous account data",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "check": "logout hides and revokes owner state",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "check": "initial server data 5 scripts / 2 Takes",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "check": "rapid three-screen cached navigation with one shared authenticated revalidation",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "check": "Favorite/name mutations refetch canonical data and preserve Review back destination",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "check": "latest 82 / best 91 and selected-script route",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "check": "revalidation error removes cached content",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "check": "TTL expiry removes visible stale metadata while slow refetch waits",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "check": "background → foreground refetch",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "check": "same-frame A→B→A remount clears session metadata",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "check": "other account never sees previous account data",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "check": "logout hides and revokes owner state",
+    "result": "PASS"
+  }
+]

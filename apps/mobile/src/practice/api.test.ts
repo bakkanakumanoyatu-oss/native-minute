@@ -233,3 +233,60 @@ it('refreshes an expired Listen download credential once and repeats only the sa
     }
   } finally { vi.unstubAllGlobals(); }
 });
+
+it.each([
+  'favorite', 'name', 'create-script', 'evaluate', 'account-delete', 'voice-delete', 'advance-delete'
+])('invalidates memory at start and settlement of %s, rejecting an older read', async mutation => {
+  const auth = { getState: () => ({ kind: 'authenticated', userId: 'a' }), getAccessToken: async () => 'token' } as unknown as MobileAuthController;
+  let resolveMutation!: (response: Response) => void;
+  let resolveOld!: (response: Response) => void;
+  let reads = 0;
+  const response = (count: number) => new Response(JSON.stringify({ ok: true, data: { progress: { scripts: [], totalScripts: count, totalReviewedTakes: 0, bestTakeCount: 0 } } }));
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+    if (url.endsWith('/progress')) {
+      reads++;
+      if (reads === 2) return new Promise<Response>(resolve => { resolveOld = resolve; });
+      return response(reads === 1 ? 5 : 4);
+    }
+    return new Promise<Response>(resolve => { resolveMutation = resolve; });
+  }));
+  const api = createPracticeApi({ auth, bffBaseUrl: 'https://fixture.test', ownerUserId: 'a', onTiming: () => undefined });
+  const memory = api.progressMemory!;
+  try {
+    await memory.revalidate();
+    const old = memory.revalidate();
+    await vi.waitFor(() => expect(reads).toBe(2));
+    const write = mutation === 'favorite' ? api.updateTakeMetadata('t', { favorite: true })
+      : mutation === 'name' ? api.updateTakeMetadata('t', { displayName: 'New name' })
+      : mutation === 'create-script' ? api.createScript({ title: 'New', content: 'Hello.' })
+      : mutation === 'evaluate' ? api.evaluateRecording({ scriptId: 's', takeId: 't', recordingRef: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' })
+      : mutation === 'account-delete' ? api.createAccountDeletionRequest()
+      : mutation === 'voice-delete' ? api.createVoiceDeletionRequest() : api.advanceVoiceDeletion();
+    expect(memory.getSnapshot().kind).toBe('loading');
+    await memory.revalidate(); expect(reads).toBe(2);
+    await vi.waitFor(() => expect(resolveMutation).toBeTypeOf('function'));
+    // Metadata succeeds; the other writes fail. Both outcomes must drop all old metadata.
+    resolveMutation(mutation === 'favorite' || mutation === 'name'
+      ? new Response(JSON.stringify({ ok: true, data: { metadata: { takeId: 't', favorite: true, displayName: 'New name' } } }))
+      : new Response('{}', { status: 503 }));
+    await write; await memory.revalidate();
+    resolveOld(response(5)); await old;
+    expect(memory.getSnapshot()).toMatchObject({ kind: 'ready', progress: { totalScripts: 4 } });
+  } finally { memory.revoke(); vi.unstubAllGlobals(); }
+});
+
+it('does not sign out a new same-owner session when an old revoked request returns unauthorized', async () => {
+  const auth = { getState: () => ({ kind: 'authenticated', userId: 'a' }), getAccessToken: async () => 'token' } as unknown as MobileAuthController;
+  const onSessionInvalid = vi.fn();
+  let resolve!: (response: Response) => void;
+  vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(done => { resolve = done; })));
+  const api = createPracticeApi({ auth, bffBaseUrl: 'https://fixture.test', ownerUserId: 'a', onSessionInvalid, onTiming: () => undefined });
+  try {
+    const old = api.getProgress();
+    await vi.waitFor(() => expect(resolve).toBeTypeOf('function'));
+    api.progressMemory!.revoke();
+    resolve(new Response(JSON.stringify({ok:false,error:{reasonCode:'session_expired'}}),{status:401}));
+    await expect(old).resolves.toMatchObject({kind:'unauthorized',reasonCode:'session_owner_changed'});
+    expect(onSessionInvalid).not.toHaveBeenCalled();
+  } finally { api.progressMemory!.revoke(); vi.unstubAllGlobals(); }
+});

@@ -1,5 +1,6 @@
 import type { MobileAuthController } from "../auth/mobile-auth";
 import type { MobileAuthState } from "../auth/state-machine";
+import { ProgressMemory } from "./progress-memory";
 import {
   acceptMobilePronunciationConsent,
   acceptMobileVoiceConsent,
@@ -74,6 +75,7 @@ export type PracticeRequestFailure =
 type RequestState = { kind: string; reasonCode?: string };
 
 export interface PracticeApi {
+  readonly progressMemory?: ProgressMemory;
   listScripts(): Promise<ScriptsRequestState>;
   createScript(input: CreateMobileScriptInput): Promise<MobileScriptRequestState>;
   getScript(scriptId: string): Promise<MobileScriptRequestState>;
@@ -186,9 +188,17 @@ export function createPracticeApi({
 }: PracticeApiOptions): PracticeApi {
   const listenRequests = new Map<string, Promise<MobileListenRequestState>>();
   const metadataWrites = new Set<Promise<TakeMetadataRequestState>>();
+  const progressMemory = new ProgressMemory(() => afterMetadataWrites(() =>
+    request(token => fetchMobileProgress(bffBaseUrl, token, { onTiming }))));
+
+  async function mutate<T>(operation: () => Promise<T>): Promise<T> {
+    const finish = progressMemory.beginMutation();
+    try { return await operation(); }
+    finally { finish(); }
+  }
 
   function updateTakeMetadata(takeId: string, input: TakeMetadataPatch) {
-    const pending = request(token => updateMobileTakeMetadata(bffBaseUrl, token, takeId, input, { onTiming }));
+    const pending = mutate(() => request(token => updateMobileTakeMetadata(bffBaseUrl, token, takeId, input, { onTiming })));
     metadataWrites.add(pending);
     const settled = () => { metadataWrites.delete(pending); };
     void pending.then(settled, settled);
@@ -203,7 +213,7 @@ export function createPracticeApi({
   }
 
   function ownerIsCurrent() {
-    return isPracticeOwnerStateCurrent(auth.getState(), ownerUserId);
+    return !progressMemory.isRevoked() && isPracticeOwnerStateCurrent(auth.getState(), ownerUserId);
   }
 
   async function invalidateSession() {
@@ -301,17 +311,18 @@ export function createPracticeApi({
   }
 
   return {
+    progressMemory,
     listScripts: () => request((token) => fetchMobileScripts(bffBaseUrl, token, { onTiming })),
-    createScript: (input) => request((token) => createMobileScript(bffBaseUrl, token, input, { onTiming })),
+    createScript: (input) => mutate(() => request((token) => createMobileScript(bffBaseUrl, token, input, { onTiming }))),
     getScript: (scriptId) => request((token) => fetchMobileScript(bffBaseUrl, token, scriptId, { onTiming })),
     requestListen,
     getPronunciationConsent: () => request((token) => fetchMobilePronunciationConsent(bffBaseUrl, token, { onTiming })),
     getVoiceCloningConsent: () => request((token) => fetchMobileProcessingConsent(bffBaseUrl, token, "voice_cloning", { onTiming })),
     getAccountDeletionStatus: () => request((token) => fetchMobileAccountDeletionStatus(bffBaseUrl, token, { onTiming })),
-    createAccountDeletionRequest: () => request((token) => createMobileAccountDeletionRequest(bffBaseUrl, token, { onTiming })),
+    createAccountDeletionRequest: () => mutate(() => request((token) => createMobileAccountDeletionRequest(bffBaseUrl, token, { onTiming }))),
     getVoiceDeletionStatus: () => request((token) => fetchMobileVoiceDeletionStatus(bffBaseUrl, token, { onTiming })),
-    createVoiceDeletionRequest: () => request((token) => createMobileVoiceDeletionRequest(bffBaseUrl, token, { onTiming })),
-    advanceVoiceDeletion: () => request((token) => advanceMobileVoiceDeletion(bffBaseUrl, token, { onTiming })),
+    createVoiceDeletionRequest: () => mutate(() => request((token) => createMobileVoiceDeletionRequest(bffBaseUrl, token, { onTiming }))),
+    advanceVoiceDeletion: () => mutate(() => request((token) => advanceMobileVoiceDeletion(bffBaseUrl, token, { onTiming }))),
     acceptPronunciationConsent: () => request((token) => acceptMobilePronunciationConsent(bffBaseUrl, token, { onTiming })),
     getVoiceSetup: () => request((token) => fetchMobileVoiceSetup(bffBaseUrl, token, { onTiming })),
     acceptVoiceConsent: () => request((token) => acceptMobileVoiceConsent(bffBaseUrl, token, { onTiming })),
@@ -319,7 +330,7 @@ export function createPracticeApi({
     downloadAudio: (audioId) => request((token) => downloadMobileScriptAudio(bffBaseUrl, token, audioId, { onTiming })),
     downloadTakeAudio: (takeId) => afterMetadataWrites(() => request((token) => downloadMobileTakeAudio(bffBaseUrl, token, takeId, { onTiming }))),
     uploadRecording: (input) => request((token) => uploadMobileRecording(bffBaseUrl, token, input, { onTiming })),
-    evaluateRecording: (input) => request((token) => evaluateMobileRecording(bffBaseUrl, token, input, { onTiming })),
+    evaluateRecording: (input) => mutate(() => request((token) => evaluateMobileRecording(bffBaseUrl, token, input, { onTiming }))),
     getReview: (scriptId, takeId) => afterMetadataWrites(() => request((token) => fetchMobileReview(bffBaseUrl, token, scriptId, takeId, { onTiming }))),
     updateTakeMetadata,
     getProgress: () => afterMetadataWrites(() => request((token) => fetchMobileProgress(bffBaseUrl, token, { onTiming })))

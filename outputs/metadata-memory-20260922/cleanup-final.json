@@ -1,0 +1,13 @@
+{
+  "probePresent": false,
+  "home": true,
+  "visible": "visible",
+  "audioElements": 0,
+  "idleTimerDisabled": false,
+  "diagnosticFilesRemain": false,
+  "lldbDetached": true,
+  "localDiagnosticServerStopped": true,
+  "diagnosticInstrumentationInFinalDiff": false,
+  "deviceDataCleared": false,
+  "commitPush": false
+}

@@ -1,0 +1,369 @@
+{
+  "validLoops": 5,
+  "attemptedLoops": 6,
+  "excluded": [
+    {
+      "attempt": "setup",
+      "operations": 0,
+      "reason": "start on usable Home failed; no measured actions"
+    },
+    {
+      "attempt": "main loop 5",
+      "reason": "audio playing wait exceeded 18s; HTTP200 headers at2370ms, no body completion/media readiness recorded; retained failure evidence"
+    }
+  ],
+  "loopBlocking": {
+    "before": {
+      "n": 5,
+      "medianMs": 15283,
+      "rangeMs": [
+        13581,
+        18415
+      ]
+    },
+    "after": {
+      "n": 5,
+      "medianMs": 7777,
+      "rangeMs": [
+        5197,
+        17148
+      ]
+    }
+  },
+  "loopBlockingCounts": {
+    "before": [
+      8,
+      8,
+      8,
+      8,
+      8
+    ],
+    "after": [
+      4,
+      3,
+      3,
+      3,
+      3
+    ]
+  },
+  "progressBlocking": {
+    "before": {
+      "n": 5,
+      "medianMs": 9131,
+      "rangeMs": [
+        7025,
+        10045
+      ]
+    },
+    "after": {
+      "n": 5,
+      "medianMs": 0,
+      "rangeMs": [
+        0,
+        1781
+      ]
+    }
+  },
+  "progressBlockingCounts": {
+    "before": [
+      5,
+      5,
+      5,
+      5,
+      5
+    ],
+    "after": [
+      1,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "screenUsableSum": {
+    "n": 5,
+    "medianMs": 3783,
+    "rangeMs": [
+      3053,
+      7305
+    ]
+  },
+  "elapsed": {
+    "n": 5,
+    "medianMs": 11557,
+    "rangeMs": [
+      8995,
+      20954
+    ]
+  },
+  "rows": [
+    {
+      "label": "scripts",
+      "usableOrPlaying": {
+        "n": 5,
+        "medianMs": 1148,
+        "rangeMs": [
+          1000,
+          2485
+        ]
+      },
+      "blocking": {
+        "n": 5,
+        "medianMs": 1108,
+        "rangeMs": [
+          955,
+          2417
+        ]
+      },
+      "blockingCounts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "home-from-scripts",
+      "usableOrPlaying": {
+        "n": 5,
+        "medianMs": 67,
+        "rangeMs": [
+          65,
+          1818
+        ]
+      },
+      "blocking": {
+        "n": 5,
+        "medianMs": 0,
+        "rangeMs": [
+          0,
+          1781
+        ]
+      },
+      "blockingCounts": [
+        1,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "progress",
+      "usableOrPlaying": {
+        "n": 5,
+        "medianMs": 67,
+        "rangeMs": [
+          66,
+          83
+        ]
+      },
+      "blocking": {
+        "n": 5,
+        "medianMs": 0,
+        "rangeMs": [
+          0,
+          0
+        ]
+      },
+      "blockingCounts": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "home-from-progress",
+      "usableOrPlaying": {
+        "n": 5,
+        "medianMs": 67,
+        "rangeMs": [
+          66,
+          67
+        ]
+      },
+      "blocking": {
+        "n": 5,
+        "medianMs": 0,
+        "rangeMs": [
+          0,
+          0
+        ]
+      },
+      "blockingCounts": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "takes",
+      "usableOrPlaying": {
+        "n": 5,
+        "medianMs": 67,
+        "rangeMs": [
+          66,
+          67
+        ]
+      },
+      "blocking": {
+        "n": 5,
+        "medianMs": 0,
+        "rangeMs": [
+          0,
+          0
+        ]
+      },
+      "blockingCounts": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "review",
+      "usableOrPlaying": {
+        "n": 5,
+        "medianMs": 2303,
+        "rangeMs": [
+          1684,
+          4603
+        ]
+      },
+      "blocking": {
+        "n": 5,
+        "medianMs": 2272,
+        "rangeMs": [
+          1665,
+          4557
+        ]
+      },
+      "blockingCounts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "label": "take-first",
+      "usableOrPlaying": {
+        "n": 1,
+        "medianMs": 4864,
+        "rangeMs": [
+          4864,
+          4864
+        ]
+      },
+      "blocking": {
+        "n": 1,
+        "medianMs": 4661,
+        "rangeMs": [
+          4661,
+          4661
+        ]
+      },
+      "blockingCounts": [
+        1
+      ]
+    },
+    {
+      "label": "take-same-mount",
+      "usableOrPlaying": {
+        "n": 5,
+        "medianMs": 92,
+        "rangeMs": [
+          85,
+          96
+        ]
+      },
+      "blocking": {
+        "n": 5,
+        "medianMs": 0,
+        "rangeMs": [
+          0,
+          0
+        ]
+      },
+      "blockingCounts": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "home-from-review",
+      "usableOrPlaying": {
+        "n": 5,
+        "medianMs": 69,
+        "rangeMs": [
+          66,
+          85
+        ]
+      },
+      "blocking": {
+        "n": 5,
+        "medianMs": 0,
+        "rangeMs": [
+          0,
+          0
+        ]
+      },
+      "blockingCounts": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "take-reentry",
+      "usableOrPlaying": {
+        "n": 4,
+        "medianMs": 3693,
+        "rangeMs": [
+          2642,
+          10694
+        ]
+      },
+      "blocking": {
+        "n": 4,
+        "medianMs": 3617,
+        "rangeMs": [
+          2549,
+          10616
+        ]
+      },
+      "blockingCounts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "data": {
+    "scripts": 5,
+    "takes": 2,
+    "favorites": 1
+  },
+  "validLoopCorrectnessChecks": 30,
+  "allCorrectnessChecksPass": true,
+  "allValidLoopRequests200": true,
+  "validLoopGetCount": 29,
+  "progressRelatedVisits": 25,
+  "progressBlockingVisits": 1,
+  "finalObjectUrls": 0,
+  "humanPerceivedAcceptance": "PASS: clearly improved; data correctness PASS; Scripts/Review/saved Take first playback waits remain"
+}

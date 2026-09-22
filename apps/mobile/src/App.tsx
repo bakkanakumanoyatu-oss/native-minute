@@ -16,6 +16,7 @@ import {
 } from "./lib/api";
 import { mobileEnvironment } from "./lib/environment";
 import { createPracticeApi } from "./practice/api";
+import { bindProgressMemory } from "./practice/progress-memory-lifecycle";
 import { PracticeApp } from "./practice/PracticeApp";
 import { isPracticePath } from "./practice/routes";
 import { takeShareController } from "./audio/take-share";
@@ -278,10 +279,11 @@ export function App({ authController }: AppProps = {}) {
     initialHealthState(typeof navigator === "undefined" ? true : navigator.onLine)
   );
   const [authState, setAuthState] = useState<MobileAuthState>(() => auth.getState());
-  const [practiceOwnerUserId, setPracticeOwnerUserId] = useState<string | null>(() => {
+  const [practiceSession, setPracticeSession] = useState(() => {
     const initialState = auth.getState();
-    return initialState.kind === "authenticated" ? initialState.userId : null;
+    return { userId: initialState.kind === "authenticated" ? initialState.userId : null, epoch: 0 };
   });
+  const practiceOwnerUserId = practiceSession.userId;
   const [email, setEmail] = useState("");
   const [nowSeconds, setNowSeconds] = useState(() => Math.floor(Date.now() / 1000));
   const healthRequestSequence = useRef(0);
@@ -336,7 +338,7 @@ export function App({ authController }: AppProps = {}) {
       if (nextUserId && practiceOwnerUserIdRef.current !== nextUserId) {
         takeShareController.invalidate();
         practiceOwnerUserIdRef.current = nextUserId;
-        setPracticeOwnerUserId(nextUserId);
+        setPracticeSession(session => ({ userId: nextUserId, epoch: session.epoch + 1 }));
       } else if (
         !nextUserId &&
         nextState.kind !== "refreshing" &&
@@ -345,7 +347,7 @@ export function App({ authController }: AppProps = {}) {
         // Remounting the practice shell clears every owner-bound script, Blob and request state.
         takeShareController.invalidate();
         practiceOwnerUserIdRef.current = null;
-        setPracticeOwnerUserId(null);
+        setPracticeSession(session => ({ userId: null, epoch: session.epoch + 1 }));
       }
     });
     void auth.start();
@@ -404,16 +406,22 @@ export function App({ authController }: AppProps = {}) {
       : 0;
   const cooldownSeconds = Math.max(0, cooldownUntil - nowSeconds);
   const practiceApi = useMemo(
-    () => practiceOwnerUserId
+    () => practiceSession.userId
       ? createPracticeApi({
           auth,
           bffBaseUrl: mobileEnvironment.bffBaseUrl,
-          ownerUserId: practiceOwnerUserId,
+          ownerUserId: practiceSession.userId,
           onSessionInvalid: () => auth.signOut()
         })
       : null,
-    [auth, practiceOwnerUserId]
+    [auth, practiceSession]
   );
+
+  useEffect(() => {
+    if (practiceApi?.progressMemory && practiceOwnerUserId) {
+      return bindProgressMemory(practiceApi.progressMemory, auth, practiceOwnerUserId);
+    }
+  }, [auth, practiceApi, practiceOwnerUserId]);
 
   const submitLogin = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
@@ -437,7 +445,7 @@ export function App({ authController }: AppProps = {}) {
       {authState.kind === "authenticated" || authState.kind === "refreshing" ? (
         practiceOwnerUserId && practiceApi ? (
           <PracticeApp
-            key={practiceOwnerUserId}
+            key={`${practiceOwnerUserId}:${practiceSession.epoch}`}
             api={practiceApi}
             isOnline={healthState.kind !== "offline"}
             onLogout={() => void auth.signOut()}

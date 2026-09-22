@@ -16,6 +16,7 @@ export function TakesScreen({ api, isOnline, scriptId, favorites = false, onNavi
     </div>
     {state.kind === "loading" ? <LoadingState label="録音履歴を読み込んでいます…" /> : null}
     {state.kind === "error" ? <RequestError error={state.error} onRetry={retry} /> : null}
+    {state.kind === "ready" && state.refreshing ? <p role="status" className="space-meta">前回取得した記録を表示しています。最新情報を確認中…</p> : null}
     {state.kind === "ready" ? rows.length ? <TakeRows rows={rows} onNavigate={onNavigate} /> : <p>{favoriteOnly ? "お気に入りの録音はまだありません。Reviewで♡を押すと、ここに表示されます。" : "保存済みTakeはまだありません。"}</p> : null}
   </section>;
 }
