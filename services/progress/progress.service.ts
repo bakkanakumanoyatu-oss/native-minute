@@ -145,16 +145,14 @@ export function sortProgressTakeHistory(takes: ProgressTakeSummary[]) {
 
 async function getHydratedReviews(client: AppSupabaseClient, userId: string) {
   return timeAsync("progress.hydratedReviews", async () => {
-    const [{ data: takes, error: takesError }, { data: weakWords, error: weakWordsError }, { data: coachFeedback, error: coachFeedbackError }] =
+    const [takesResult, { data: weakWords, error: weakWordsError }, { data: coachFeedback, error: coachFeedbackError }] =
       await Promise.all([
-        asMany<TakeRow>(
-          await client
-            .from("takes")
-            .select("*")
-            .eq("user_id", userId)
-            .eq("status", "reviewed")
-            .order("created_at", { ascending: false })
-        ),
+        client
+          .from("takes")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("status", "reviewed")
+          .order("created_at", { ascending: false }),
         client
           .from("weak_words")
           .select("*, takes!inner(user_id)")
@@ -162,6 +160,7 @@ async function getHydratedReviews(client: AppSupabaseClient, userId: string) {
           .order("created_at", { ascending: true }),
         client.from("coach_feedback").select("*, takes!inner(user_id)").eq("takes.user_id", userId)
       ]);
+    const { data: takes, error: takesError } = asMany<TakeRow>(takesResult);
 
     if (takesError) {
       throw mapProgressError("take 一覧取得", takesError);
