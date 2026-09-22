@@ -1,0 +1,15 @@
+{
+  "verifiedBy": "read-only authenticated Vercel CLI inspect, existing CLI auth",
+  "id": "dpl_Evxze3rYhAL4AwgT8i7rsoJYqEbB",
+  "state": "READY",
+  "name": "native-minute-staging",
+  "url": "native-minute-staging-28hh38g21-takahiro-karasawa-s-projects.vercel.app",
+  "aliases": [
+    "native-minute-staging.vercel.app",
+    "native-minute-staging-takahiro-karasawa-s-projects.vercel.app"
+  ],
+  "projectIdFromPreviousVerifiedUnchangedDeployment": "prj_RSxUzxugEIlH28tiQOyndjP365hw",
+  "sourceFilesFromPreviousSameDeployment": 659,
+  "redeployed": false,
+  "finalReadOnlyInspectionMatches": true
+}

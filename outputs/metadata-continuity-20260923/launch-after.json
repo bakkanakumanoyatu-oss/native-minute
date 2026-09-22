@@ -1,0 +1,56 @@
+{
+  "info" : {
+    "arguments" : [
+      "devicectl",
+      "device",
+      "process",
+      "launch",
+      "--device",
+      "844A958E-D0A6-5751-BE5D-B12BFC054181",
+      "com.nativeminutes.app.staging",
+      "--json-output",
+      "outputs/metadata-continuity-20260923/launch-after.json"
+    ],
+    "commandType" : "devicectl.device.process.launch",
+    "environment" : {
+      "TERM" : "dumb"
+    },
+    "jsonVersion" : 3,
+    "outcome" : "success",
+    "version" : "518.33"
+  },
+  "result" : {
+    "deviceIdentifier" : "844A958E-D0A6-5751-BE5D-B12BFC054181",
+    "launchOptions" : {
+      "activatedWhenStarted" : true,
+      "arguments" : [
+
+      ],
+      "environmentVariables" : {
+        "TERM" : "dumb"
+      },
+      "platformSpecificOptions" : {
+
+      },
+      "startStopped" : false,
+      "terminateExistingInstances" : false,
+      "user" : {
+        "active" : true
+      }
+    },
+    "process" : {
+      "auditToken" : [
+        4294967295,
+        501,
+        501,
+        501,
+        501,
+        20138,
+        0,
+        298291
+      ],
+      "executable" : "file:///private/var/containers/Bundle/Application/E75CBD4C-F290-4CA8-BE30-67E7AADF8A9B/App.app/App",
+      "processIdentifier" : 20138
+    }
+  }
+}

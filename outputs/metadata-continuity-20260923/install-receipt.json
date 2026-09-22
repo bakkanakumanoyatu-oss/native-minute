@@ -1,0 +1,37 @@
+{
+  "info" : {
+    "arguments" : [
+      "devicectl",
+      "device",
+      "install",
+      "app",
+      "--device",
+      "844A958E-D0A6-5751-BE5D-B12BFC054181",
+      "/tmp/nm-continuity-20260923/DerivedData/Build/Products/Staging-iphoneos/App.app",
+      "--json-output",
+      "outputs/metadata-continuity-20260923/install-receipt.json"
+    ],
+    "commandType" : "devicectl.device.install.app",
+    "environment" : {
+      "TERM" : "dumb"
+    },
+    "jsonVersion" : 3,
+    "outcome" : "success",
+    "version" : "518.33"
+  },
+  "result" : {
+    "deviceIdentifier" : "844A958E-D0A6-5751-BE5D-B12BFC054181",
+    "installedApplications" : [
+      {
+        "bundleID" : "com.nativeminutes.app.staging",
+        "databaseSequenceNumber" : 19836,
+        "databaseUUID" : "52A10256-2E6A-4303-9493-836B176ABA4B",
+        "installationURL" : "file:///private/var/containers/Bundle/Application/E75CBD4C-F290-4CA8-BE30-67E7AADF8A9B/App.app/",
+        "launchServicesIdentifier" : "unknown",
+        "options" : {
+
+        }
+      }
+    ]
+  }
+}

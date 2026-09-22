@@ -10,8 +10,8 @@ const shareCopy: Record<TakeShareResult, string> = {
   "cleanup-failed": "共有用の一時ファイルを片付けられませんでした。もう一度お試しください。"
 };
 
-export function SavedTakeAudio({ api, takeId, review, isOnline, sharing = takeShareController }: {
-  api: PracticeApi; takeId: string; review?: MobileReview; isOnline: boolean; sharing?: TakeShareController;
+export function SavedTakeAudio({ api, takeId, review, isOnline, prefetchEnabled = true, sharing = takeShareController }: {
+  api: PracticeApi; takeId: string; review?: MobileReview; isOnline: boolean; prefetchEnabled?: boolean; sharing?: TakeShareController;
 }) {
   const [state, setState] = useState<"idle" | "loading" | "ready" | "error" | "unavailable">("idle");
   const [shareBusy, setShareBusy] = useState(false);
@@ -26,7 +26,7 @@ export function SavedTakeAudio({ api, takeId, review, isOnline, sharing = takeSh
   const prefetchedVisit = useRef<MobileReview["audioVisit"]>();
   useEffect(() => { online.current = isOnline; }, [isOnline]);
   useEffect(() => {
-    if (!isOnline || !review?.audioVisit || !api.prefetchSavedTakeAudio || prefetchedVisit.current === review.audioVisit) return;
+    if (!prefetchEnabled || !isOnline || !review?.audioVisit || !api.prefetchSavedTakeAudio || prefetchedVisit.current === review.audioVisit) return;
     // This component mounts only with a usable, server-validated Review. Allow
     // that UI to paint before starting its single foreground binary request.
     let nextFrame: number | undefined;
@@ -37,7 +37,7 @@ export function SavedTakeAudio({ api, takeId, review, isOnline, sharing = takeSh
       });
     });
     return () => { cancelAnimationFrame(frame); if (nextFrame !== undefined) cancelAnimationFrame(nextFrame); };
-  }, [api, isOnline, review]);
+  }, [api, isOnline, review, prefetchEnabled]);
   useEffect(() => api.savedTakeAudioMemory?.subscribe(() => {
     generation.current++;
     locked.current = false;

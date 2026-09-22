@@ -236,7 +236,7 @@ it('refreshes an expired Listen download credential once and repeats only the sa
 
 it.each([
   'favorite', 'name', 'create-script', 'evaluate', 'account-delete', 'voice-delete', 'advance-delete'
-])('retains display and fences only the data affected by %s', async mutation => {
+])('invalidates memory at start and settlement of %s, rejecting an older read', async mutation => {
   const auth = { getState: () => ({ kind: 'authenticated', userId: 'a' }), getAccessToken: async () => 'token' } as unknown as MobileAuthController;
   let resolveMutation!: (response: Response) => void;
   let resolveOld!: (response: Response) => void;
@@ -253,7 +253,6 @@ it.each([
   const api = createPracticeApi({ auth, bffBaseUrl: 'https://fixture.test', ownerUserId: 'a', onTiming: () => undefined });
   const memory = api.progressMemory!;
   try {
-    memory.enter();
     await memory.revalidate();
     const old = memory.revalidate();
     await vi.waitFor(() => expect(reads).toBe(2));
@@ -263,20 +262,16 @@ it.each([
       : mutation === 'evaluate' ? api.evaluateRecording({ scriptId: 's', takeId: 't', recordingRef: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' })
       : mutation === 'account-delete' ? api.createAccountDeletionRequest()
       : mutation === 'voice-delete' ? api.createVoiceDeletionRequest() : api.advanceVoiceDeletion();
-    expect(memory.getSnapshot()).toMatchObject({ kind: 'ready', progress: { totalScripts: 5 } });
-    expect(reads).toBe(2);
+    expect(memory.getSnapshot().kind).toBe('loading');
+    await memory.revalidate(); expect(reads).toBe(2);
     await vi.waitFor(() => expect(resolveMutation).toBeTypeOf('function'));
-    // Exact metadata success needs no read. Ambiguous aggregate-changing writes
-    // reconcile; voice deletion does not affect this display snapshot.
+    // Metadata succeeds; the other writes fail. Both outcomes must drop all old metadata.
     resolveMutation(mutation === 'favorite' || mutation === 'name'
       ? new Response(JSON.stringify({ ok: true, data: { metadata: { takeId: 't', favorite: true, displayName: 'New name' } } }))
       : new Response('{}', { status: 503 }));
-    await write;
-    resolveOld(response(2)); await old;
-    const voiceOnly = mutation === 'voice-delete' || mutation === 'advance-delete';
-    const exactMetadata = mutation === 'favorite' || mutation === 'name';
-    await vi.waitFor(() => expect(memory.getSnapshot()).toMatchObject({ kind: 'ready', progress: { totalScripts: voiceOnly ? 2 : exactMetadata ? 5 : 4 } }));
-    expect(reads).toBe(voiceOnly || exactMetadata ? 2 : 3);
+    await write; await memory.revalidate();
+    resolveOld(response(5)); await old;
+    expect(memory.getSnapshot()).toMatchObject({ kind: 'ready', progress: { totalScripts: 4 } });
   } finally { memory.revoke(); vi.unstubAllGlobals(); }
 });
 

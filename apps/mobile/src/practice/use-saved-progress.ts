@@ -8,10 +8,10 @@ export function useSavedProgress(api: PracticeApi, isOnline: boolean) {
   const state = useSyncExternalStore(memory.subscribe, memory.getSnapshot, memory.getSnapshot);
   useEffect(() => {
     memory.setOnline(isOnline);
-    if (isOnline) void memory.revalidate();
   }, [memory, isOnline]);
+  useEffect(() => memory.enter(), [memory]);
   return {
-    state: isOnline ? state : { kind: "error" as const, error: { kind: "offline" as const } },
+    state: state.kind === "ready" || isOnline ? state : { kind: "error" as const, error: { kind: "offline" as const } },
     retry: memory.revalidate
   };
 }

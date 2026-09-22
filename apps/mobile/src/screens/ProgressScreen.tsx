@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { MetadataRefresh } from "./MetadataRefresh";
 import type {
   MobileProgress,
   PracticeApi
@@ -167,7 +168,7 @@ export function ProgressScreen({
   const { state: visibleState, retry: reload } = useSavedProgress(api, isOnline);
 
   return (
-    <section className="progress-screen" aria-live="polite">
+    <section className="progress-screen">
       <ScreenHeading title="Progress" />
       {visibleState.kind === "loading" ? <LoadingState label="記録を読み込み中…" /> : null}
       {visibleState.kind === "error" ? (
@@ -176,7 +177,7 @@ export function ProgressScreen({
           <RequestError error={visibleState.error} onRetry={reload} />
         </div>
       ) : null}
-      {visibleState.kind === "ready" && visibleState.refreshing ? <p role="status" className="space-meta">前回取得した記録を表示しています。最新情報を確認中…</p> : null}
+      {visibleState.kind === "ready" ? <MetadataRefresh refreshing={visibleState.refreshing} reason={visibleState.refreshReason} error={visibleState.updateError} isOnline={isOnline} onRefresh={reload} /> : null}
       {visibleState.kind === "ready" ? <ProgressContent progress={visibleState.progress} scriptId={scriptId} onNavigate={onNavigate} /> : null}
       <div className="progress-secondary">
         <button type="button" className="progress-text-action" onClick={() => onNavigate({ name: "scripts" })}>台本一覧へ戻る</button>

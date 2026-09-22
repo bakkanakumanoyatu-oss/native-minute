@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { MetadataRefresh } from "./MetadataRefresh";
 import type { PracticeApi } from "../practice/api";
 import type { PracticeRoute } from "../practice/routes";
 import { recentPractice, TakeRows, useSavedProgress } from "./HomeScreen";
 import { LoadingState, RequestError } from "./ScreenParts";
 
 export function TakesScreen({ api, isOnline, scriptId, favorites = false, onNavigate, onBack }: { api: PracticeApi; isOnline: boolean; scriptId?: string; favorites?: boolean; onNavigate: (route: PracticeRoute) => void; onBack: () => void }) {
-  const [favoriteOnly, setFavoriteOnly] = useState(favorites);
+  const favoriteOnly = favorites;
+  const setFavoriteOnly = (value: boolean) => onNavigate({ name: "takes", scriptId, favorites: value });
   const { state, retry } = useSavedProgress(api, isOnline);
   const rows = state.kind === "ready" ? recentPractice(state.progress).filter(row => (!scriptId || row.item.script.id === scriptId) && (!favoriteOnly || row.take.favorite)) : [];
   return <section className="takes-screen personal-space" lang="ja">
@@ -16,7 +17,7 @@ export function TakesScreen({ api, isOnline, scriptId, favorites = false, onNavi
     </div>
     {state.kind === "loading" ? <LoadingState label="録音履歴を読み込んでいます…" /> : null}
     {state.kind === "error" ? <RequestError error={state.error} onRetry={retry} /> : null}
-    {state.kind === "ready" && state.refreshing ? <p role="status" className="space-meta">前回取得した記録を表示しています。最新情報を確認中…</p> : null}
+    {state.kind === "ready" ? <MetadataRefresh refreshing={state.refreshing} reason={state.refreshReason} error={state.updateError} isOnline={isOnline} onRefresh={retry} /> : null}
     {state.kind === "ready" ? rows.length ? <TakeRows rows={rows} onNavigate={onNavigate} /> : <p>{favoriteOnly ? "お気に入りの録音はまだありません。Reviewで♡を押すと、ここに表示されます。" : "保存済みTakeはまだありません。"}</p> : null}
   </section>;
 }

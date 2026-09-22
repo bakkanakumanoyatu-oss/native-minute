@@ -34,6 +34,7 @@
 - Stored review/progress data should keep reading from persisted take/review tables.
 - Be careful with history semantics: `takes` do not snapshot full script content, so in-place script editing can break old review/progress meaning.
 - `script_audios` and `recordings` must stay ownership-checked.
+- Display metadata is bounded, owner/session-scoped, process-memory-only: one Scripts snapshot, one shared Home/Progress/My Takes snapshot, and up to five Reviews. Five minutes is a revalidation age, never a deletion timer. Fresh revisits, short background, and normal token refresh preserve data; meaningful entry/resume/manual/mutation/recovery events refresh only related data. Temporary failures retain safe successful display; logout/owner change and detected resource loss remove it. Mutation responses patch exact fields; stale reads are fenced. Cached Review metadata carries no audio authorization.
 - Saved Take audio reuse is memory-only, one item, 30 seconds from download. Every Review re-entry requires fresh server ownership and Storage object-version validation; auth/lifecycle/error invalidation is mandatory. Share always fetches fresh audio. Only the validated, rendered Review may foreground-prefetch its one saved Take through that same entry; Play shares the in-flight request. Exit cancels pending fetch; failure never retries automatically.
 
 ## Product defaults

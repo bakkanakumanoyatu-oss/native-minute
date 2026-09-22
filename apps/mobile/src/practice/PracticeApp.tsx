@@ -50,6 +50,8 @@ export function PracticeApp({
   const listenOrigin = useRef<PracticeRoute | null>(null);
   const reviewOrigin = useRef<ReviewReturnOrigin | null>(null);
   const takesBack = useRef<PracticeRoute>({ name: "home" });
+  const positions = useRef(new Map<string, number>());
+  const progressSelection = useRef<PracticeRoute>({ name: "progress" });
   const leaveGuard = useRef<(() => boolean) | null>(null);
   const registerLeaveGuard = useCallback((guard: (() => boolean) | null) => { leaveGuard.current = guard; }, []);
 
@@ -64,6 +66,11 @@ export function PracticeApp({
       if (leaveGuard.current && !leaveGuard.current()) {
         window.history.replaceState(null, "", practiceRoutePath(routeRef.current));
         return;
+      }
+      if (["home", "scripts", "progress", "takes", "review"].includes(routeRef.current.name)) {
+        const path = practiceRoutePath(routeRef.current);
+        positions.current.delete(path); positions.current.set(path, window.scrollY);
+        if (positions.current.size > 24) positions.current.delete(positions.current.keys().next().value!);
       }
       if (!isFocusedPractice(routeRef.current) || !isFocusedPractice(next)) origin.current = { name: "home" };
       // Browser history and deep links do not supply trusted return context.
@@ -85,10 +92,24 @@ export function PracticeApp({
     }
   }, [route]);
 
+  useEffect(() => {
+    if (route.name === "progress") progressSelection.current = route;
+    const path = practiceRoutePath(route);
+    const top = positions.current.get(path) ?? 0;
+    const frame = requestAnimationFrame(() => window.scrollTo({ top, behavior: "auto" }));
+    return () => cancelAnimationFrame(frame);
+  }, [route]);
+
   const navigate = useCallback((nextRoute: PracticeRoute, options: { replace?: boolean } = {}) => {
     if (practiceRoutePath(nextRoute) === practiceRoutePath(routeRef.current)) return;
     if (leaveGuard.current && !leaveGuard.current()) return;
-    if (nextRoute.name === "takes" && !(routeRef.current.name === "review"
+    if (["home", "scripts", "progress", "takes", "review"].includes(routeRef.current.name)) {
+      const currentPath = practiceRoutePath(routeRef.current);
+      positions.current.delete(currentPath);
+      positions.current.set(currentPath, window.scrollY);
+      if (positions.current.size > 24) positions.current.delete(positions.current.keys().next().value!);
+    }
+    if (nextRoute.name === "takes" && routeRef.current.name !== "takes" && !(routeRef.current.name === "review"
       && reviewOrigin.current?.origin.name === "takes"
       && practiceRoutePath(nextRoute) === practiceRoutePath(reviewOrigin.current.origin))) {
       // Returning from a saved Review must not replace My Takes' own parent with that Review.
@@ -124,7 +145,6 @@ export function PracticeApp({
       window.history.pushState(null, "", path);
     }
     setRoute(nextRoute);
-    window.scrollTo({ top: 0, behavior: "auto" });
     finishRouteTransition(startedAt);
   }, [finishRouteTransition]);
 
@@ -178,7 +198,7 @@ export function PracticeApp({
       <div key={practiceRoutePath(route)}>{screen}</div>
       {route.name === "settings" ? <button type="button" className="space-logout" onClick={onLogout}>ログアウト</button> : null}
       {!isFocusedPractice(route) ? <nav className="space-bottom-nav" aria-label="メインナビゲーション">
-        {([{ name: "home", label: "Home" }, { name: "scripts", label: "台本" }, { name: "progress", label: "成長" }] as const).map(item => <button key={item.name} type="button" aria-current={route.name === item.name ? "page" : undefined} onClick={() => navigate({ name: item.name })}>{item.label}</button>)}
+        {([{ name: "home", label: "Home" }, { name: "scripts", label: "台本" }, { name: "progress", label: "成長" }] as const).map(item => <button key={item.name} type="button" aria-current={route.name === item.name ? "page" : undefined} onClick={() => navigate(item.name === "progress" ? progressSelection.current : { name: item.name })}>{item.label}</button>)}
       </nav> : null}
     </div>
   );

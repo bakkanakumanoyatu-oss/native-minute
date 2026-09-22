@@ -1,0 +1,688 @@
+{
+  "asset": "./assets/index-DeMYF9z6.js",
+  "dataset": {
+    "scripts": 5,
+    "takes": 2,
+    "favorites": 1
+  },
+  "timingDefinition": "tap→canonical content/primary controls available + two animation frames; fresh/audio readiness separately",
+  "phases": {
+    "primer": {
+      "operations": 6,
+      "blockingCount": 2,
+      "blockingMs": 7456.0,
+      "gets": {
+        "progress": 1,
+        "scripts": 1,
+        "script-title": 1,
+        "review-authorization": 1,
+        "binary": 1
+      },
+      "byOperation": {
+        "primer-progress": {
+          "usable": {
+            "N": 1,
+            "medianMs": 3134,
+            "minMs": 3134,
+            "maxMs": 3134
+          },
+          "fresh": null
+        },
+        "Scripts": {
+          "usable": {
+            "N": 1,
+            "medianMs": 2835,
+            "minMs": 2835,
+            "maxMs": 2835
+          },
+          "fresh": {
+            "N": 1,
+            "medianMs": 2867.0,
+            "minMs": 2867.0,
+            "maxMs": 2867.0
+          }
+        },
+        "Home": {
+          "usable": {
+            "N": 2,
+            "medianMs": 34.0,
+            "minMs": 33,
+            "maxMs": 35
+          },
+          "fresh": {
+            "N": 2,
+            "medianMs": 67.0,
+            "minMs": 66,
+            "maxMs": 68
+          }
+        },
+        "Takes": {
+          "usable": {
+            "N": 1,
+            "medianMs": 33,
+            "minMs": 33,
+            "maxMs": 33
+          },
+          "fresh": {
+            "N": 1,
+            "medianMs": 67.0,
+            "minMs": 67.0,
+            "maxMs": 67.0
+          }
+        },
+        "Review-0": {
+          "usable": {
+            "N": 1,
+            "medianMs": 4704.0,
+            "minMs": 4704.0,
+            "maxMs": 4704.0
+          },
+          "fresh": {
+            "N": 1,
+            "medianMs": 4737.0,
+            "minMs": 4737.0,
+            "maxMs": 4737.0
+          }
+        }
+      },
+      "binaryCompleted": 0,
+      "binaryAborted": 1,
+      "loadingOperations": [
+        {
+          "label": "Scripts",
+          "n": 0,
+          "blockingMs": 2785.0
+        },
+        {
+          "label": "Review-0",
+          "n": 0,
+          "blockingMs": 4671
+        }
+      ]
+    },
+    "A-short": {
+      "operations": 35,
+      "blockingCount": 0,
+      "blockingMs": 0,
+      "gets": {
+        "review-authorization": 5,
+        "binary": 5
+      },
+      "byOperation": {
+        "Scripts": {
+          "usable": {
+            "N": 5,
+            "medianMs": 33,
+            "minMs": 33.0,
+            "maxMs": 33
+          },
+          "fresh": {
+            "N": 5,
+            "medianMs": 67.0,
+            "minMs": 66.0,
+            "maxMs": 67
+          }
+        },
+        "Home": {
+          "usable": {
+            "N": 15,
+            "medianMs": 33.0,
+            "minMs": 33,
+            "maxMs": 52
+          },
+          "fresh": {
+            "N": 15,
+            "medianMs": 67,
+            "minMs": 66,
+            "maxMs": 86
+          }
+        },
+        "Takes": {
+          "usable": {
+            "N": 5,
+            "medianMs": 33,
+            "minMs": 33.0,
+            "maxMs": 33
+          },
+          "fresh": {
+            "N": 5,
+            "medianMs": 66,
+            "minMs": 66.0,
+            "maxMs": 67
+          }
+        },
+        "Review-0": {
+          "usable": {
+            "N": 5,
+            "medianMs": 49,
+            "minMs": 34,
+            "maxMs": 50.0
+          },
+          "fresh": {
+            "N": 5,
+            "medianMs": 2486,
+            "minMs": 2268,
+            "maxMs": 3937.0
+          }
+        },
+        "Progress": {
+          "usable": {
+            "N": 5,
+            "medianMs": 33,
+            "minMs": 33,
+            "maxMs": 50.0
+          },
+          "fresh": {
+            "N": 5,
+            "medianMs": 67,
+            "minMs": 66,
+            "maxMs": 83.0
+          }
+        }
+      },
+      "binaryCompleted": 0,
+      "binaryAborted": 5,
+      "loadingOperations": []
+    },
+    "B-reading": {
+      "operations": 7,
+      "blockingCount": 0,
+      "blockingMs": 0,
+      "gets": {
+        "review-authorization": 1,
+        "binary": 1
+      },
+      "byOperation": {
+        "Scripts": {
+          "usable": {
+            "N": 2,
+            "medianMs": 33.0,
+            "minMs": 33,
+            "maxMs": 33
+          },
+          "fresh": {
+            "N": 2,
+            "medianMs": 66.0,
+            "minMs": 66,
+            "maxMs": 66
+          }
+        },
+        "Home": {
+          "usable": {
+            "N": 3,
+            "medianMs": 51.0,
+            "minMs": 42,
+            "maxMs": 55
+          },
+          "fresh": {
+            "N": 3,
+            "medianMs": 85,
+            "minMs": 67,
+            "maxMs": 88
+          }
+        },
+        "Takes": {
+          "usable": {
+            "N": 1,
+            "medianMs": 33,
+            "minMs": 33,
+            "maxMs": 33
+          },
+          "fresh": {
+            "N": 1,
+            "medianMs": 66,
+            "minMs": 66,
+            "maxMs": 66
+          }
+        },
+        "Review-0": {
+          "usable": {
+            "N": 1,
+            "medianMs": 49.0,
+            "minMs": 49.0,
+            "maxMs": 49.0
+          },
+          "fresh": {
+            "N": 1,
+            "medianMs": 4053.0,
+            "minMs": 4053.0,
+            "maxMs": 4053.0
+          }
+        }
+      },
+      "binaryCompleted": 0,
+      "binaryAborted": 1,
+      "loadingOperations": []
+    },
+    "C-A-B-A": {
+      "operations": 27,
+      "blockingCount": 1,
+      "blockingMs": 3869,
+      "gets": {
+        "review-authorization": 9,
+        "binary": 9,
+        "script-title": 1
+      },
+      "byOperation": {
+        "Takes": {
+          "usable": {
+            "N": 9,
+            "medianMs": 33,
+            "minMs": 33,
+            "maxMs": 34
+          },
+          "fresh": {
+            "N": 9,
+            "medianMs": 67,
+            "minMs": 66,
+            "maxMs": 67.0
+          }
+        },
+        "Review-0": {
+          "usable": {
+            "N": 6,
+            "medianMs": 42.0,
+            "minMs": 34.0,
+            "maxMs": 50
+          },
+          "fresh": {
+            "N": 6,
+            "medianMs": 3669.0,
+            "minMs": 2135,
+            "maxMs": 4103.0
+          }
+        },
+        "Home": {
+          "usable": {
+            "N": 9,
+            "medianMs": 52.0,
+            "minMs": 51.0,
+            "maxMs": 53
+          },
+          "fresh": {
+            "N": 9,
+            "medianMs": 86,
+            "minMs": 85,
+            "maxMs": 86
+          }
+        },
+        "Review-1": {
+          "usable": {
+            "N": 3,
+            "medianMs": 34.0,
+            "minMs": 33,
+            "maxMs": 3887
+          },
+          "fresh": {
+            "N": 3,
+            "medianMs": 2836,
+            "minMs": 2018.0,
+            "maxMs": 3920
+          }
+        }
+      },
+      "binaryCompleted": 0,
+      "binaryAborted": 9,
+      "loadingOperations": [
+        {
+          "label": "Review-1",
+          "n": 0,
+          "blockingMs": 3869
+        }
+      ]
+    },
+    "D-wait-background": {
+      "operations": 1,
+      "blockingCount": 0,
+      "blockingMs": 0,
+      "gets": {},
+      "byOperation": {
+        "Scripts": {
+          "usable": {
+            "N": 1,
+            "medianMs": 33,
+            "minMs": 33,
+            "maxMs": 33
+          },
+          "fresh": {
+            "N": 1,
+            "medianMs": 66.0,
+            "minMs": 66.0,
+            "maxMs": 66.0
+          }
+        }
+      },
+      "binaryCompleted": 0,
+      "binaryAborted": 0,
+      "loadingOperations": []
+    },
+    "E-manual": {
+      "operations": 4,
+      "blockingCount": 0,
+      "blockingMs": 0,
+      "gets": {
+        "scripts": 3
+      },
+      "byOperation": {
+        "manual-Scripts": {
+          "usable": {
+            "N": 3,
+            "medianMs": 2469,
+            "minMs": 1268,
+            "maxMs": 2935
+          },
+          "fresh": null
+        },
+        "Home": {
+          "usable": {
+            "N": 1,
+            "medianMs": 64,
+            "minMs": 64,
+            "maxMs": 64
+          },
+          "fresh": {
+            "N": 1,
+            "medianMs": 97,
+            "minMs": 97,
+            "maxMs": 97
+          }
+        }
+      },
+      "binaryCompleted": 0,
+      "binaryAborted": 0,
+      "loadingOperations": []
+    },
+    "audio-check": {
+      "operations": 10,
+      "blockingCount": 0,
+      "blockingMs": 0,
+      "gets": {
+        "review-authorization": 2,
+        "binary": 1
+      },
+      "byOperation": {
+        "Takes": {
+          "usable": {
+            "N": 2,
+            "medianMs": 33.5,
+            "minMs": 33,
+            "maxMs": 34
+          },
+          "fresh": {
+            "N": 2,
+            "medianMs": 66.5,
+            "minMs": 66,
+            "maxMs": 67
+          }
+        },
+        "Review-0": {
+          "usable": {
+            "N": 2,
+            "medianMs": 42.0,
+            "minMs": 34,
+            "maxMs": 50
+          },
+          "fresh": {
+            "N": 2,
+            "medianMs": 3036.5,
+            "minMs": 2136,
+            "maxMs": 3937
+          }
+        },
+        "Home": {
+          "usable": {
+            "N": 4,
+            "medianMs": 43.0,
+            "minMs": 33,
+            "maxMs": 56
+          },
+          "fresh": {
+            "N": 4,
+            "medianMs": 77.0,
+            "minMs": 66,
+            "maxMs": 89
+          }
+        },
+        "Progress": {
+          "usable": {
+            "N": 1,
+            "medianMs": 32,
+            "minMs": 32,
+            "maxMs": 32
+          },
+          "fresh": {
+            "N": 1,
+            "medianMs": 66.0,
+            "minMs": 66.0,
+            "maxMs": 66.0
+          }
+        },
+        "Progress-selected": {
+          "usable": {
+            "N": 1,
+            "medianMs": 34,
+            "minMs": 34,
+            "maxMs": 34
+          },
+          "fresh": {
+            "N": 1,
+            "medianMs": 67,
+            "minMs": 67,
+            "maxMs": 67
+          }
+        }
+      },
+      "binaryCompleted": 1,
+      "binaryAborted": 0,
+      "loadingOperations": []
+    }
+  },
+  "checks": {
+    "dataset": {
+      "scripts": 5,
+      "takes": 2,
+      "favorites": 1
+    },
+    "beforeA": {
+      "progress": 1,
+      "scripts": 1,
+      "script-title": 1,
+      "review-authorization": 1,
+      "binary": 1
+    },
+    "afterA": {
+      "progress": 1,
+      "scripts": 1,
+      "script-title": 1,
+      "review-authorization": 6,
+      "binary": 6
+    },
+    "readingMs": 90001,
+    "readingStillVisible": true,
+    "readingScrollDelta": 0,
+    "readingRevisitMs": 33,
+    "beforeD": {
+      "progress": 1,
+      "scripts": 1,
+      "script-title": 2,
+      "review-authorization": 16,
+      "binary": 16
+    },
+    "afterD": {
+      "progress": 1,
+      "scripts": 1,
+      "script-title": 2,
+      "review-authorization": 16,
+      "binary": 16
+    },
+    "backgroundDataPresent": true,
+    "backgroundSameList": true,
+    "backgroundScrollDelta": 0,
+    "firstPlay": {
+      "label": "firstPlay",
+      "playingMs": 5375,
+      "mediaTime": 0.4673141673176374,
+      "correctTake": true
+    },
+    "replay": {
+      "label": "replay",
+      "playingMs": 125,
+      "mediaTime": 0.8812826739988079,
+      "correctTake": true
+    },
+    "reentryPlay": {
+      "label": "reentryPlay",
+      "playingMs": 85,
+      "mediaTime": 0.4796435427794287,
+      "correctTake": true
+    },
+    "homeCountsMatch": true,
+    "homeLatestMatch": true,
+    "latestBestMatch": true,
+    "selectionRetained": true,
+    "noRemainingPlayer": true
+  },
+  "retentionEstimate": {
+    "scripts": true,
+    "progress": true,
+    "reviews": 2,
+    "scriptsBytes": 3861,
+    "progressBytes": 22683,
+    "reviewBytes": 4989
+  },
+  "abandonedTrials": [
+    {
+      "file": "pre-final-partial-trial.json",
+      "reason": "unknown exception classification source hardening before final install; not mixed with final cohort"
+    }
+  ],
+  "shortLoops": {
+    "elapsed": {
+      "N": 5,
+      "medianMs": 3086,
+      "minMs": 2886,
+      "maxMs": 4537.0
+    },
+    "blocking": {
+      "N": 5,
+      "medianMs": 0,
+      "minMs": 0,
+      "maxMs": 0
+    },
+    "count": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "allGets": {
+    "progress": 1,
+    "scripts": 4,
+    "script-title": 2,
+    "review-authorization": 18,
+    "binary": 17
+  },
+  "requestErrors": [
+    {
+      "kind": "binary",
+      "phase": "primer",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "A-short",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "A-short",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "A-short",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "A-short",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "A-short",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "B-reading",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "C-A-B-A",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "C-A-B-A",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "C-A-B-A",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "C-A-B-A",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "C-A-B-A",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "C-A-B-A",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "C-A-B-A",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "C-A-B-A",
+      "failed": true,
+      "aborted": true
+    },
+    {
+      "kind": "binary",
+      "phase": "C-A-B-A",
+      "failed": true,
+      "aborted": true
+    }
+  ],
+  "unexpectedMetadataDuplicates": [],
+  "reviewGetCount": 18,
+  "reviewEntryCount": 18
+}

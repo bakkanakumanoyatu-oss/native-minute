@@ -1,0 +1,72 @@
+{
+  "mode": "NATIVE_MINUTES_METADATA_SESSION_CONTINUITY_HUMAN_PASS_COMMIT_PUSH",
+  "checkedAt": "2026-09-22T16:07:27.167402+00:00",
+  "baseHeadUpstreamRemote": "54b58de2163cc1e1797168843caffbeaa49b88c5",
+  "sourceFilesMatched": 107,
+  "sourceMismatches": [],
+  "installedReportedAsset": "index-DeMYF9z6.js",
+  "signedArtifactExecutableAndAllAssetsUnchanged": true,
+  "artifactSignatureVerification": "previous PASS reused on identical signed bytes",
+  "validationReused": {
+    "affectedPassed": 228,
+    "skipped": 1,
+    "skipReason": "既存take-metadata-isolated testは隔離DB環境未設定。実DB検証PASSを主張しない。",
+    "browserPassed": 62,
+    "engines": [
+      "Chromium",
+      "WebKit"
+    ]
+  },
+  "checksReused": {
+    "workspace": "PASS",
+    "rootLint": "PASS",
+    "mobileLint": "PASS",
+    "mobileSourceAndTestsTypecheck": "PASS",
+    "rootTypecheck": "PASS",
+    "rootBuild": "PASS",
+    "stagingSyncBuild": "PASS",
+    "nativeBuild": "PASS",
+    "signatureAssetsSource": "PASS",
+    "releaseGuard": "NOT PASS (known three dirty source findings)"
+  },
+  "diagnosticMarkersInProductOrArtifact": [],
+  "priorDeviceCleanupConfirmed": true,
+  "productionSourceEditedDuringCloseout": false,
+  "buildInstallDeployRerun": false,
+  "protectedFiles": [
+    "apps/mobile/src/styles.css",
+    "docs/current-state.md",
+    "docs/qss-iphone14plus-acceptance-resume/human-checklist.md",
+    "docs/qss-iphone14plus-acceptance-resume/mapping.json",
+    "docs/qss-iphone14plus-acceptance-resume/mapping.md"
+  ],
+  "currentStateUpdate": "not edited or staged at explicit user request",
+  "humanAcceptance": {
+    "verdict": "PASS",
+    "naturalUseWithoutTimeLimit": true,
+    "mainLoopSmooth": true,
+    "revisitsSmooth": true,
+    "frequentFullScreenLoadingNoLongerConcerning": true,
+    "displayCorrect": true,
+    "correctSavedAudioPlayed": true,
+    "formallyAdopted": true
+  },
+  "residuals": [
+    "initial data load",
+    "true first audio fetch wait",
+    "release guard NOT PASS x3",
+    "VP-01 intermittent FAIL",
+    "R-INT-02 copy finding",
+    "other acceptance WIP"
+  ],
+  "nextOneAction": "採用済み状態を維持し、次に取り組む残件のHuman指示を待つ。新規performance修正は開始しない。",
+  "scope": {
+    "productAndTests": 25,
+    "contract": 1,
+    "performanceRecord": 1,
+    "curatedEvidenceAndHistoricalTests": 24,
+    "totalFiles": 51
+  },
+  "diffCheck": "PASS (working tree and staged)",
+  "stagedProductSourceMatchesValidatedSource": true
+}

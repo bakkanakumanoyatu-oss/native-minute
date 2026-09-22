@@ -1,0 +1,71 @@
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { DisplayMemory, type DisplayResult } from "./display-memory";
+type Value = { name: string; proof?: object };
+const ok = (name = "saved"): DisplayResult<Value> => ({ kind: "success", data: { name, proof: {} } });
+const deferred = () => { let resolve!: (r: DisplayResult<Value>) => void; const promise = new Promise<DisplayResult<Value>>(r => { resolve = r; }); return { promise, resolve }; };
+const strip = ({ name }: Value) => ({ name });
+beforeEach(() => vi.useFakeTimers());
+afterEach(() => vi.useRealTimers());
+it("fresh entry, immediate cached display without proof, and mandatory revalidation on every reentry", async () => {
+ const next = deferred(), read = vi.fn().mockResolvedValueOnce(ok()).mockReturnValue(next.promise), release = vi.fn();
+ const m = new DisplayMemory<Value>(read, strip, release);
+ expect(m.getSnapshot("a").kind).toBe("loading");
+ const leave = m.enter("a"); await m.revalidate();
+ expect(m.getSnapshot("a")).toMatchObject({ kind: "ready", refreshing: false, prefetchAllowed: true });
+ leave(); expect(release).toHaveBeenCalledOnce();
+ expect(m.getSnapshot("a")).toMatchObject({ kind: "ready", data: { name: "saved" }, refreshing: true, prefetchAllowed: false });
+ expect(m.getSnapshot("a")).not.toHaveProperty("data.proof");
+ m.enter("a"); await Promise.resolve(); expect(read).toHaveBeenCalledTimes(2);
+ next.resolve(ok("fresh")); await m.revalidate();
+ expect(m.getSnapshot("a")).toMatchObject({ data: { name: "fresh" }, refreshing: false }); m.revoke();
+});
+it("keeps exactly one reusable key and rejects reversed route completions including stale errors", async () => {
+ const old = deferred(), read = vi.fn().mockReturnValueOnce(old.promise).mockResolvedValue(ok("b")), release = vi.fn(), failure = vi.fn();
+ const m = new DisplayMemory(read, strip, release, undefined, undefined, undefined, failure);
+ const leaveA = m.enter("a"), pending = m.revalidate(); await Promise.resolve();
+ const leaveB = m.enter("b"); await m.revalidate(); leaveA();
+ old.resolve({ kind: "not-found", reasonCode: "deleted" }); await pending;
+ expect(failure).not.toHaveBeenCalled(); expect(m.getSnapshot("b")).toMatchObject({ data: { name: "b" }, refreshing: false });
+ leaveB(); expect(m.getSnapshot("a").kind).toBe("loading"); expect(m.getSnapshot("b").kind).toBe("ready"); m.revoke();
+});
+it.each([true, false])("mutation success=%s fences old responses and preserves editor state until canonical refresh", async success => {
+ const old = deferred(), fresh = deferred(), read = vi.fn().mockResolvedValueOnce(ok()).mockReturnValueOnce(old.promise).mockReturnValueOnce(fresh.promise);
+ const m = new DisplayMemory<Value>(read, strip); m.enter("a"); await m.revalidate();
+ const pending = m.revalidate(); await Promise.resolve(); const finishA = m.beginMutation(), finishB = m.beginMutation();
+ expect(m.getSnapshot("a")).toMatchObject({ kind: "ready", refreshing: true });
+ finishA(); await m.revalidate(); expect(read).toHaveBeenCalledTimes(2); finishB(); await Promise.resolve();
+ old.resolve(success ? ok("old") : { kind: "server-error", status: 500 }); await pending;
+ expect(m.getSnapshot("a")).toMatchObject({ data: { name: "saved" } });
+ fresh.resolve(ok("canonical")); await m.revalidate();
+ expect(m.getSnapshot("a")).toMatchObject({ data: { name: "canonical" }, refreshing: false, prefetchAllowed: false }); m.revoke();
+});
+it("TTL removes offscreen snapshot but never resets a fresh mounted view or restarts audio", async () => {
+ const read = vi.fn().mockResolvedValue(ok()), m = new DisplayMemory<Value>(read, strip); const leave = m.enter("a"); await m.revalidate();
+ await vi.advanceTimersByTimeAsync(30_000); expect(m.getSnapshot("a")).toMatchObject({ kind: "ready", refreshing: false }); expect(read).toHaveBeenCalledOnce();
+ leave(); expect(m.getSnapshot("a").kind).toBe("loading"); m.revoke();
+});
+it.each(["expiry", "audio invalidation"])("cached-only view disappears on %s while fresh response is pending", async reason => {
+ const pending = deferred(), read = vi.fn().mockResolvedValueOnce(ok()).mockReturnValueOnce(pending.promise), m = new DisplayMemory<Value>(read, strip);
+ const leave = m.enter("a"); await m.revalidate(); leave(); await vi.advanceTimersByTimeAsync(29_000); m.enter("a"); await Promise.resolve();
+ if (reason === "expiry") await vi.advanceTimersByTimeAsync(1_000); else m.dropCached();
+ expect(m.getSnapshot("a").kind).toBe("loading"); pending.resolve(ok("fresh")); await m.revalidate(); expect(m.getSnapshot("a")).toMatchObject({ data: { name: "fresh" } }); m.revoke();
+});
+it.each(["unauthorized", "forbidden", "not-found", "invalid-response", "network-error"] as const)("failed revalidation %s removes stale snapshot without automatic retry", async kind => {
+ const read = vi.fn().mockResolvedValueOnce(ok()).mockResolvedValue({ kind, reasonCode: "failure" }), m = new DisplayMemory<Value>(read, strip);
+ const leave = m.enter("a"); await m.revalidate(); leave(); m.enter("a"); await m.revalidate();
+ expect(m.getSnapshot("a")).toMatchObject({ kind: "error", error: { kind } }); await vi.advanceTimersByTimeAsync(31_000); expect(read).toHaveBeenCalledTimes(2); m.revoke();
+});
+it.each(["foreground", "online", "session"])("%s invalidation blocks stale requests, resumes metadata without automatic audio prefetch", async event => {
+ const pending=deferred(), read=vi.fn().mockResolvedValueOnce(ok()).mockReturnValueOnce(pending.promise).mockResolvedValue(ok("new")), m=new DisplayMemory<Value>(read,strip);
+ m.enter("a"); await m.revalidate(); const old=m.revalidate();await Promise.resolve(); const set=event==="foreground"?m.setForeground:event==="online"?m.setOnline:m.setSessionReady;
+ set(false); expect(m.getSnapshot("a").kind).toBe("loading"); await m.revalidate();expect(read).toHaveBeenCalledTimes(2);
+ set(true); await m.revalidate(); pending.resolve(ok("old"));await old;expect(m.getSnapshot("a")).toMatchObject({ data:{name:"new"},prefetchAllowed:false });m.revoke();
+});
+it("logout revokes irreversibly, owner guard hides data synchronously, and new instance starts empty",async()=>{
+ let owner=true;const read=vi.fn().mockResolvedValue(ok()),m=new DisplayMemory<Value>(read,strip,undefined,()=>owner);m.enter("a");await m.revalidate();owner=false;expect(m.getSnapshot("a").kind).toBe("loading");m.revoke();owner=true;m.setSessionReady(false);m.setSessionReady(true);await m.revalidate();expect(m.getSnapshot("a").kind).toBe("loading");expect(read).toHaveBeenCalledOnce();expect(new DisplayMemory(read).getSnapshot("a").kind).toBe("loading");
+});
+
+it("mutation during a cached-only visit removes that old snapshot instead of converting it to an unbounded live view",async()=>{
+ const pending=deferred(),read=vi.fn().mockResolvedValueOnce(ok()).mockReturnValue(pending.promise),m=new DisplayMemory<Value>(read,strip);
+ const leave=m.enter("a");await m.revalidate();leave();m.enter("a");await Promise.resolve();const finish=m.beginMutation();expect(m.getSnapshot("a").kind).toBe("loading");await vi.advanceTimersByTimeAsync(31_000);expect(m.getSnapshot("a").kind).toBe("loading");finish();m.revoke();pending.resolve(ok());
+});

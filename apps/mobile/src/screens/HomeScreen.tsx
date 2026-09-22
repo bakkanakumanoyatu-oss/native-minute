@@ -1,4 +1,5 @@
 import "./HomeScreen.css";
+import { MetadataRefresh } from "./MetadataRefresh";
 import { useSavedProgress } from "../practice/use-saved-progress";
 export { useSavedProgress } from "../practice/use-saved-progress";
 import type { MobileProgress, PracticeApi } from "../practice/api";
@@ -104,7 +105,7 @@ export function HomeScreen({ api, isOnline, onNavigate }: { api: PracticeApi; is
   return <section className="home-screen personal-space" lang="ja">
     {state.kind === "loading" ? <LoadingState label="記録を読み込んでいます…" /> : null}
     {state.kind === "error" ? <><h1>おかえりなさい。</h1><h2>記録を読み込めませんでした</h2><p>台本や録音がなくなったわけではありません。</p><RequestError error={state.error} onRetry={retry} /></> : null}
-    {state.kind === "ready" && state.refreshing ? <p role="status" className="space-meta">前回取得した記録を表示しています。最新情報を確認中…</p> : null}
+    {state.kind === "ready" ? <MetadataRefresh refreshing={state.refreshing} reason={state.refreshReason} error={state.updateError} isOnline={isOnline} onRefresh={retry} /> : null}
     {state.kind === "ready" ? <HomeContent progress={state.progress} onNavigate={onNavigate} /> : null}
   </section>;
 }

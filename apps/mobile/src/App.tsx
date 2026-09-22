@@ -1,3 +1,4 @@
+import { bindDisplayMemory } from "./practice/display-memory-lifecycle";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createMobileAuthService,
@@ -16,7 +17,6 @@ import {
 } from "./lib/api";
 import { mobileEnvironment } from "./lib/environment";
 import { createPracticeApi } from "./practice/api";
-import { bindProgressMemory } from "./practice/progress-memory-lifecycle";
 import { bindSavedTakeAudioMemory } from "./audio/saved-take-memory-lifecycle";
 import { PracticeApp } from "./practice/PracticeApp";
 import { isPracticePath } from "./practice/routes";
@@ -419,14 +419,14 @@ export function App({ authController }: AppProps = {}) {
   );
 
   useEffect(() => {
-    if (practiceApi?.progressMemory && practiceOwnerUserId) {
-      return bindProgressMemory(practiceApi.progressMemory, auth, practiceOwnerUserId);
+    if (practiceApi?.savedTakeAudioMemory && practiceOwnerUserId) {
+      return bindSavedTakeAudioMemory(practiceApi.savedTakeAudioMemory, auth, practiceOwnerUserId);
     }
   }, [auth, practiceApi, practiceOwnerUserId]);
 
   useEffect(() => {
-    if (practiceApi?.savedTakeAudioMemory && practiceOwnerUserId) {
-      return bindSavedTakeAudioMemory(practiceApi.savedTakeAudioMemory, auth, practiceOwnerUserId);
+    if (practiceApi?.scriptsMemory && practiceApi.reviewMemory && practiceApi.progressMemory && practiceOwnerUserId) {
+      return bindDisplayMemory([practiceApi.scriptsMemory, practiceApi.reviewMemory, practiceApi.progressMemory], auth, practiceOwnerUserId);
     }
   }, [auth, practiceApi, practiceOwnerUserId]);
 

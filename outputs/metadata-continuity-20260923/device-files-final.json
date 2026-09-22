@@ -1,0 +1,38 @@
+{
+  "info" : {
+    "arguments" : [
+      "devicectl",
+      "device",
+      "info",
+      "files",
+      "--device",
+      "844A958E-D0A6-5751-BE5D-B12BFC054181",
+      "--domain-type",
+      "appDataContainer",
+      "--domain-identifier",
+      "com.nativeminutes.app.staging",
+      "--subdirectory",
+      "tmp",
+      "--no-recurse",
+      "--filter",
+      "Name BEGINSWITH 'nm-continuity'",
+      "--json-output",
+      "outputs/metadata-continuity-20260923/device-files-final.json"
+    ],
+    "commandType" : "devicectl.device.info.files",
+    "environment" : {
+      "TERM" : "dumb"
+    },
+    "jsonVersion" : 3,
+    "outcome" : "success",
+    "version" : "518.33"
+  },
+  "result" : {
+    "deviceIdentifier" : "844A958E-D0A6-5751-BE5D-B12BFC054181",
+    "domain" : "appDataContainer",
+    "domainIdentifier" : "com.nativeminutes.app.staging",
+    "files" : [
+
+    ]
+  }
+}

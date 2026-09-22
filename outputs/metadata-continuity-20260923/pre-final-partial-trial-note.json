@@ -1,0 +1,5 @@
+{
+  "excludedFromFinalCohort": true,
+  "reason": "初回実機試行の途中で、sourceの未知例外分類2箇所を補強した。A/BとC途中の値は最終source cohortへ混ぜず保存。最終bundleで再実施。",
+  "priorAsset": "index-CiYk5PWW.js"
+}

@@ -1,5 +1,8 @@
+import { scriptsDisplayMemory } from "../practice/display-loaders";
+import { MetadataRefresh } from "./MetadataRefresh";
+import { useDisplayMemory } from "../practice/use-display-memory";
 import { MAX_PRACTICE_SLOTS } from "../../../../lib/practice-limits";
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { PracticeRoute } from "../practice/routes";
 import {
   type MobileScript,
@@ -7,11 +10,6 @@ import {
   type PracticeRequestFailure
 } from "../practice/api";
 import { EmptyState, LoadingState, RequestError, ScreenHeading } from "./ScreenParts";
-
-type ScriptsLoadState =
-  | { kind: "loading" }
-  | { kind: "ready"; scripts: MobileScript[] }
-  | { kind: "error"; error: PracticeRequestFailure };
 
 // Display-only excerpt. The server-owned content remains intact for practice.
 export function getScriptExcerpt(content: string) {
@@ -67,8 +65,8 @@ export function ScriptsScreen({
   isOnline: boolean;
   onNavigate: (route: PracticeRoute) => void;
 }) {
-  const [state, setState] = useState<ScriptsLoadState>({ kind: "loading" });
-  const [reloadKey, setReloadKey] = useState(0);
+  const memory = useMemo(() => api.scriptsMemory ?? scriptsDisplayMemory(api), [api]);
+  const { state, retry: reload } = useDisplayMemory(memory, "scripts", isOnline);
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -89,36 +87,6 @@ export function ScriptsScreen({
   useEffect(() => () => {
     createGeneration.current += 1;
   }, []);
-
-  const reload = useCallback(() => {
-    setState({ kind: "loading" });
-    setReloadKey((value) => value + 1);
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    if (!isOnline) {
-      return () => {
-        active = false;
-      };
-    }
-
-    void api.listScripts().then((result) => {
-      if (!active) {
-        return;
-      }
-      setState(
-        result.kind === "success"
-          ? { kind: "ready", scripts: result.scripts }
-          : { kind: "error", error: result }
-      );
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [api, isOnline, reloadKey]);
 
   async function submitCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -162,10 +130,10 @@ export function ScriptsScreen({
   }
 
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
-  const visibleState: ScriptsLoadState = isOnline
+  const visibleState: typeof state = isOnline || state.kind === "ready"
     ? state
     : { kind: "error", error: { kind: "offline" } };
-  const isEmpty = visibleState.kind === "ready" && visibleState.scripts.length === 0;
+  const isEmpty = visibleState.kind === "ready" && visibleState.data.length === 0;
 
   return (
     <section className="scripts-screen" lang="ja" aria-label="Scripts">
@@ -184,7 +152,7 @@ export function ScriptsScreen({
         ) : null}
       </div>
       <p className="scripts-intro">練習する1分を選ぶ</p>
-      {visibleState.kind === "ready" ? <p className="scripts-capacity">保存済み {visibleState.scripts.length}件 <span>/ 上限{MAX_PRACTICE_SLOTS}件</span></p> : null}
+      {visibleState.kind === "ready" ? <p className="scripts-capacity">保存済み {visibleState.data.length}件 <span>/ 上限{MAX_PRACTICE_SLOTS}件</span></p> : null}
 
       {showCreate ? (
         <form id="script-create-form" className="script-create-form" onSubmit={(event) => void submitCreate(event)}>
@@ -227,6 +195,7 @@ export function ScriptsScreen({
         </form>
       ) : null}
 
+      {visibleState.kind === "ready" ? <MetadataRefresh refreshing={visibleState.refreshing} reason={visibleState.refreshReason} error={visibleState.updateError} isOnline={isOnline} onRefresh={reload} /> : null}
       {visibleState.kind === "loading" ? (
         <div className="scripts-state">
           <LoadingState label="台本を読み込んでいます…" />
@@ -253,7 +222,7 @@ export function ScriptsScreen({
           </button>
         </EmptyState>
       ) : null}
-      {visibleState.kind === "ready" && !isEmpty ? <ScriptsList scripts={visibleState.scripts} onNavigate={onNavigate} /> : null}
+      {visibleState.kind === "ready" && !isEmpty ? <ScriptsList scripts={visibleState.data} onNavigate={onNavigate} /> : null}
     </section>
   );
 }

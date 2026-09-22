@@ -1,5 +1,7 @@
 import type { MobileAuthController } from "../auth/mobile-auth";
 import type { MobileAuthState } from "../auth/state-machine";
+import { scriptsDisplayMemory, reviewDisplayMemory, type ReviewDisplay } from "./display-loaders";
+import type { DisplayMemory } from "./display-memory";
 import { ProgressMemory } from "./progress-memory";
 import { SavedTakeAudioMemory, type SavedTakeAudioVisit } from "../audio/saved-take-memory";
 import {
@@ -21,6 +23,7 @@ import {
   fetchMobileProgress,
   updateMobileTakeMetadata,
   type TakeMetadataPatch,
+  type MobileTakeMetadata,
   type TakeMetadataRequestState,
   fetchMobileReview,
   fetchMobileScript,
@@ -77,12 +80,14 @@ type RequestState = { kind: string; reasonCode?: string };
 
 export interface PracticeApi {
   readonly progressMemory?: ProgressMemory;
+  readonly scriptsMemory?: DisplayMemory<MobileScript[]>;
+  readonly reviewMemory?: DisplayMemory<ReviewDisplay>;
   readonly savedTakeAudioMemory?: SavedTakeAudioMemory;
   prepareSavedTakeAudio?(review: MobileReview): Promise<MobileTakeAudioDownloadState>;
   prefetchSavedTakeAudio?(review: MobileReview): Promise<void>;
-  listScripts(): Promise<ScriptsRequestState>;
+  listScripts(signal?: AbortSignal): Promise<ScriptsRequestState>;
   createScript(input: CreateMobileScriptInput): Promise<MobileScriptRequestState>;
-  getScript(scriptId: string): Promise<MobileScriptRequestState>;
+  getScript(scriptId: string, signal?: AbortSignal): Promise<MobileScriptRequestState>;
   requestListen(scriptId: string): Promise<MobileListenRequestState>;
   getVoiceSetup(): Promise<MobileVoiceSetupRequestState>;
   getPronunciationConsent(): Promise<MobileProcessingConsentRequestState>;
@@ -99,7 +104,7 @@ export interface PracticeApi {
   downloadTakeAudio(takeId: string): Promise<MobileTakeAudioDownloadState>;
   uploadRecording(input: UploadMobileRecordingInput): Promise<MobileRecordingUploadState>;
   evaluateRecording(input: EvaluateMobileRecordingInput): Promise<MobileReviewRequestState>;
-  getReview(scriptId: string, takeId: string): Promise<MobileReviewRequestState>;
+  getReview(scriptId: string, takeId: string, signal?: AbortSignal): Promise<MobileReviewRequestState>;
   updateTakeMetadata(takeId: string, input: TakeMetadataPatch): Promise<TakeMetadataRequestState>;
   getProgress(): Promise<MobileProgressRequestState>;
 }
@@ -192,19 +197,80 @@ export function createPracticeApi({
 }: PracticeApiOptions): PracticeApi {
   const listenRequests = new Map<string, Promise<MobileListenRequestState>>();
   const metadataWrites = new Set<Promise<TakeMetadataRequestState>>();
-  const progressMemory = new ProgressMemory(() => afterMetadataWrites(() =>
-    request(token => fetchMobileProgress(bffBaseUrl, token, { onTiming }))));
+  const progressMemory = new ProgressMemory(signal => afterMetadataWrites(() =>
+    request(token => fetchMobileProgress(bffBaseUrl, token, { onTiming, signal }))), undefined,
+    () => isPracticeOwnerStateCurrent(auth.getState(), ownerUserId));
   const savedTakeAudioMemory = new SavedTakeAudioMemory(ownerIsCurrent);
+  const displayOwnerIsCurrent = () => {
+    const state = auth.getState();
+    return ownerIsCurrent() && isPracticeOwnerStateCurrent(state, ownerUserId);
+  };
+  const listScripts = (signal?: AbortSignal) => request(token => fetchMobileScripts(bffBaseUrl, token, { onTiming, signal }));
+  const getScript = (scriptId: string, signal?: AbortSignal) => request(token => fetchMobileScript(bffBaseUrl, token, scriptId, { onTiming, signal }));
+  const scriptsMemory = scriptsDisplayMemory({ listScripts }, displayOwnerIsCurrent);
+  const reviewMemory = reviewDisplayMemory({ getReview, getScript, savedTakeAudioMemory }, displayOwnerIsCurrent, {
+    onFailure: (key, error) => { if (error.kind === "not-found" || error.kind === "forbidden") removeUnavailableReview(key, error); },
+    onSuccess: (_key, data) => patchProgressTake(data.review)
+  });
 
-  async function mutate<T>(operation: () => Promise<T>): Promise<T> {
+
+  function patchProgressTake(metadata: MobileTakeMetadata) {
+    const differs = (take: { id: string; favorite: boolean; displayName: string | null } | null) =>
+      take?.id === metadata.takeId && (take.favorite !== metadata.favorite || take.displayName !== metadata.displayName);
+    const patch = <T extends { id: string; favorite: boolean; displayName: string | null }>(take: T | null): T | null =>
+      take?.id === metadata.takeId ? { ...take, favorite: metadata.favorite, displayName: metadata.displayName } : take;
+    progressMemory.memory.update((_key, progress) => progress.scripts.some(item =>
+      [item.latestTake, item.bestTake, item.previousTake, ...item.takeHistory].some(differs)), progress => ({ ...progress,
+      scripts: progress.scripts.map(item => ({ ...item, latestTake: patch(item.latestTake), bestTake: patch(item.bestTake),
+        previousTake: patch(item.previousTake), takeHistory: item.takeHistory.map(take => patch(take)!) })) }));
+  }
+  function removeUnavailableReview(key: string, error: PracticeRequestFailure) {
+    const [scriptId, takeId] = key.split("/");
+    const scriptUnavailable = "reasonCode" in error && error.reasonCode.startsWith("script_");
+    reviewMemory.remove(k => scriptUnavailable ? k.startsWith(scriptId + "/") : k === key, error);
+    if (scriptUnavailable) scriptsMemory.update(() => true, scripts => scripts.filter(script => script.id !== scriptId));
+    // These server-selected aggregates cannot safely be inferred after a denial.
+    progressMemory.memory.remove((_key, progress) => !!progress?.scripts.some(item => item.script.id === scriptId &&
+      (scriptUnavailable || [item.latestTake, item.bestTake, item.previousTake, ...item.takeHistory].some(take => take?.id === takeId))));
+    void progressMemory.revalidate();
+  }
+  async function mutate<T extends RequestState>(operation: () => Promise<T>, scope: "take" | "script" | "evaluate" | "account" | "voice", takeId?: string, apply?: (result: T) => void): Promise<T> {
     savedTakeAudioMemory.invalidate();
-    const finish = progressMemory.beginMutation();
-    try { return await operation(); }
-    finally { savedTakeAudioMemory.invalidate(); finish(); }
+    const relevantReview = (key: string) => scope === "account" || ((scope === "take" || scope === "evaluate") && key.endsWith("/" + takeId));
+    const finishProgress = scope !== "voice" ? progressMemory.beginMutation() : () => undefined;
+    const finishScripts = scope === "script" || scope === "account" ? scriptsMemory.beginMutation() : () => undefined;
+    const finishReview = scope !== "voice" ? reviewMemory.beginMutation(relevantReview) : () => undefined;
+    const markUncertain = () => {
+      if (scope !== "voice") progressMemory.memory.markDirty();
+      if (scope === "script" || scope === "account") scriptsMemory.markDirty();
+      if (scope === "take" || scope === "account") reviewMemory.markDirty(relevantReview);
+    };
+    try {
+      const result = await operation();
+      if (!ownerIsCurrent()) return result;
+      if (result.kind === "success") apply?.(result);
+      const uncertain = ["timeout", "network-error", "invalid-response", "server-error"].includes(result.kind);
+      if (uncertain || result.kind === "success") {
+        if (scope === "script" || scope === "evaluate" || scope === "account" || (scope === "take" && uncertain)) progressMemory.memory.markDirty();
+        if (scope === "account" || (scope === "script" && uncertain)) scriptsMemory.markDirty();
+        if (scope === "account" || (scope === "take" && uncertain)) reviewMemory.markDirty(relevantReview);
+      }
+      if (scope === "take" && (result.kind === "not-found" || result.kind === "forbidden")) {
+        for (const key of reviewMemory.keys().filter(relevantReview)) removeUnavailableReview(key, result as unknown as PracticeRequestFailure);
+      }
+      return result;
+    } catch (error) {
+      if (ownerIsCurrent()) markUncertain();
+      throw error;
+    } finally { savedTakeAudioMemory.invalidate(); finishProgress(); finishScripts(); finishReview(); }
   }
 
   function updateTakeMetadata(takeId: string, input: TakeMetadataPatch) {
-    const pending = mutate(() => request(token => updateMobileTakeMetadata(bffBaseUrl, token, takeId, input, { onTiming })));
+    const pending = mutate(() => request(token => updateMobileTakeMetadata(bffBaseUrl, token, takeId, input, { onTiming })), "take", takeId, result => {
+      if (result.kind !== "success") return;
+      patchProgressTake(result.metadata);
+      reviewMemory.update((_key, data) => data.review.takeId === takeId, data => ({ ...data, review: { ...data.review, ...result.metadata } }));
+    });
     metadataWrites.add(pending);
     const settled = () => { metadataWrites.delete(pending); };
     void pending.then(settled, settled);
@@ -240,7 +306,7 @@ export function createPracticeApi({
     try {
       accessToken = await auth.getAccessToken();
     } catch {
-      return networkFailure<T>();
+      return { kind: "invalid-response" } as T;
     }
 
     if (!accessToken) {
@@ -305,29 +371,39 @@ export function createPracticeApi({
     return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
   }
 
-  async function validateAudioVisit(visit: SavedTakeAudioVisit, token: string): Promise<MobileReviewRequestState> {
+  async function validateAudioVisit(visit: SavedTakeAudioVisit, token: string, signal?: AbortSignal): Promise<MobileReviewRequestState> {
     const epoch = savedTakeAudioMemory.validationEpoch();
     const session = await sessionFingerprint(token);
-    const result = await fetchMobileReview(bffBaseUrl, token, visit.scriptId, visit.takeId, { onTiming });
+    const result = await fetchMobileReview(bffBaseUrl, token, visit.scriptId, visit.takeId, { onTiming, signal });
     if (!savedTakeAudioMemory.current(visit) || epoch !== savedTakeAudioMemory.validationEpoch()) return { kind: "invalid-response" };
     if (result.kind !== "success") { savedTakeAudioMemory.invalidate(); return result; }
     savedTakeAudioMemory.authorize(visit, epoch, session, result.review.audioIdentity);
     return { ...result, review: { ...result.review, audioVisit: visit } };
   }
 
-  async function getReview(scriptId: string, takeId: string) {
+  async function getReview(scriptId: string, takeId: string, signal?: AbortSignal) {
     const visit = savedTakeAudioMemory.beginVisit(scriptId, takeId);
     try {
-      const result = await afterMetadataWrites(() => request(token => validateAudioVisit(visit, token)));
+      const result = await afterMetadataWrites(() => request(token => validateAudioVisit(visit, token, signal)));
       if (result.kind !== "success" && savedTakeAudioMemory.current(visit)) savedTakeAudioMemory.invalidate();
       return result;
     } catch {
       if (savedTakeAudioMemory.current(visit)) savedTakeAudioMemory.invalidate();
-      return { kind: "network-error" as const };
+      return { kind: "invalid-response" as const };
     }
   }
 
   async function prepareSavedTakeAudio(review: MobileReview): Promise<MobileTakeAudioDownloadState> {
+    if (!review.audioVisit) {
+      // An exact metadata write may have fenced an entry's pending validation.
+      // Only an explicit Play can recover that missing capability. This shares
+      // the mounted Review request and cannot start work after its route exits.
+      const key = `${review.scriptId}/${review.takeId}`;
+      await reviewMemory.refreshKey(key, "audio");
+      const current = reviewMemory.peek(key)?.review;
+      if (!current?.audioVisit) return { kind: "invalid-response" };
+      review = current;
+    }
     const visit = review.audioVisit;
     if (!visit || !savedTakeAudioMemory.current(visit) || visit.takeId !== review.takeId || visit.scriptId !== review.scriptId) return { kind: "invalid-response" };
     return afterMetadataWrites(() => request(async token => {
@@ -396,19 +472,24 @@ export function createPracticeApi({
   return {
     progressMemory,
     savedTakeAudioMemory,
+    scriptsMemory,
+    reviewMemory,
     prepareSavedTakeAudio,
     prefetchSavedTakeAudio,
-    listScripts: () => request((token) => fetchMobileScripts(bffBaseUrl, token, { onTiming })),
-    createScript: (input) => mutate(() => request((token) => createMobileScript(bffBaseUrl, token, input, { onTiming }))),
-    getScript: (scriptId) => request((token) => fetchMobileScript(bffBaseUrl, token, scriptId, { onTiming })),
+    listScripts,
+    createScript: (input) => mutate(() => request((token) => createMobileScript(bffBaseUrl, token, input, { onTiming })), "script", undefined, result => {
+      if (result.kind === "success") scriptsMemory.update(() => true, scripts => [result.script, ...scripts.filter(script => script.id !== result.script.id)]
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+    }),
+    getScript,
     requestListen,
     getPronunciationConsent: () => request((token) => fetchMobilePronunciationConsent(bffBaseUrl, token, { onTiming })),
     getVoiceCloningConsent: () => request((token) => fetchMobileProcessingConsent(bffBaseUrl, token, "voice_cloning", { onTiming })),
     getAccountDeletionStatus: () => request((token) => fetchMobileAccountDeletionStatus(bffBaseUrl, token, { onTiming })),
-    createAccountDeletionRequest: () => mutate(() => request((token) => createMobileAccountDeletionRequest(bffBaseUrl, token, { onTiming }))),
+    createAccountDeletionRequest: () => mutate(() => request((token) => createMobileAccountDeletionRequest(bffBaseUrl, token, { onTiming })), "account"),
     getVoiceDeletionStatus: () => request((token) => fetchMobileVoiceDeletionStatus(bffBaseUrl, token, { onTiming })),
-    createVoiceDeletionRequest: () => mutate(() => request((token) => createMobileVoiceDeletionRequest(bffBaseUrl, token, { onTiming }))),
-    advanceVoiceDeletion: () => mutate(() => request((token) => advanceMobileVoiceDeletion(bffBaseUrl, token, { onTiming }))),
+    createVoiceDeletionRequest: () => mutate(() => request((token) => createMobileVoiceDeletionRequest(bffBaseUrl, token, { onTiming })), "voice"),
+    advanceVoiceDeletion: () => mutate(() => request((token) => advanceMobileVoiceDeletion(bffBaseUrl, token, { onTiming })), "voice"),
     acceptPronunciationConsent: () => request((token) => acceptMobilePronunciationConsent(bffBaseUrl, token, { onTiming })),
     getVoiceSetup: () => request((token) => fetchMobileVoiceSetup(bffBaseUrl, token, { onTiming })),
     acceptVoiceConsent: () => request((token) => acceptMobileVoiceConsent(bffBaseUrl, token, { onTiming })),
@@ -416,7 +497,12 @@ export function createPracticeApi({
     downloadAudio: (audioId) => request((token) => downloadMobileScriptAudio(bffBaseUrl, token, audioId, { onTiming })),
     downloadTakeAudio: (takeId) => afterMetadataWrites(() => request((token) => downloadMobileTakeAudio(bffBaseUrl, token, takeId, { onTiming }))),
     uploadRecording: (input) => request((token) => uploadMobileRecording(bffBaseUrl, token, input, { onTiming })),
-    evaluateRecording: (input) => mutate(() => request((token) => evaluateMobileRecording(bffBaseUrl, token, input, { onTiming }))),
+    evaluateRecording: (input) => mutate(() => request((token) => evaluateMobileRecording(bffBaseUrl, token, input, { onTiming })), "evaluate", input.takeId, result => {
+      if (result.kind !== "success") return;
+      const script = scriptsMemory.peek("scripts")?.find(script => script.id === input.scriptId);
+      const progressScript = progressMemory.memory.peek("progress")?.scripts.find(item => item.script.id === input.scriptId)?.script;
+      reviewMemory.seed(`${input.scriptId}/${input.takeId}`, { review: result.review, scriptTitle: script?.title ?? progressScript?.title ?? "" });
+    }),
     getReview,
     updateTakeMetadata,
     getProgress: () => afterMetadataWrites(() => request((token) => fetchMobileProgress(bffBaseUrl, token, { onTiming })))

@@ -1,20 +1,15 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { reviewDisplayMemory } from "../practice/display-loaders";
+import { MetadataRefresh } from "./MetadataRefresh";
+import { useDisplayMemory } from "../practice/use-display-memory";
+import { useMemo, type ReactNode } from "react";
 import type {
   MobileReview,
-  PracticeApi,
-  PracticeRequestFailure
+  PracticeApi
 } from "../practice/api";
 import type { PracticeRoute } from "../practice/routes";
 import { TakeMetadataEditor } from "./TakeMetadataEditor";
 import { SavedTakeAudio } from "./SavedTakeAudio";
 import { LoadingState, RequestError, formatReviewDate } from "./ScreenParts";
-import type { SavedTakeAudioVisit } from "../audio/saved-take-memory";
-
-type ReviewState =
-  | { kind: "loading" }
-  | { kind: "ready"; review: MobileReview; scriptTitle: string }
-  | { kind: "error"; error: PracticeRequestFailure };
-
 function Score({ label, value }: { label: string; value: number }) {
   return (
     <div>
@@ -140,62 +135,28 @@ export function ReviewScreen({
   isOnline: boolean;
   onNavigate: (route: PracticeRoute) => void;
 }) {
-  const [state, setState] = useState<ReviewState>({ kind: "loading" });
-  const [reloadKey, setReloadKey] = useState(0);
-  const reload = useCallback(() => {
-    setState({ kind: "loading" });
-    setReloadKey((value) => value + 1);
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    let visit: SavedTakeAudioVisit | undefined;
-    if (!isOnline) {
-      api.savedTakeAudioMemory?.invalidate();
-      return () => {
-        active = false;
-      };
-    }
-
-    void Promise.all([api.getReview(scriptId, takeId), api.getScript(scriptId)]).then(([result, script]) => {
-      if (result.kind === "success") visit = result.review.audioVisit;
-      if (!active) { if (visit) api.savedTakeAudioMemory?.endVisit(visit); return; }
-      if (result.kind !== "success" || script.kind !== "success") api.savedTakeAudioMemory?.invalidate();
-      setState(result.kind !== "success" ? { kind: "error", error: result }
-        : script.kind !== "success" ? { kind: "error", error: script }
-        : { kind: "ready", review: result.review, scriptTitle: script.script.title });
-    }).catch(() => {
-      if (active) { api.savedTakeAudioMemory?.invalidate(); setState({ kind: "error", error: { kind: "network-error" } }); }
-    });
-
-    return () => {
-      active = false;
-      if (visit) api.savedTakeAudioMemory?.endVisit(visit);
-    };
-  }, [api, isOnline, reloadKey, scriptId, takeId]);
-
-  const visibleState: ReviewState = isOnline
-    ? state.kind === "ready" && (state.review.takeId !== takeId || state.review.scriptId !== scriptId) ? { kind: "loading" } : state
-    : { kind: "error", error: { kind: "offline" } };
+  const memory = useMemo(() => api.reviewMemory ?? reviewDisplayMemory(api), [api]);
+  const { state: visibleState, retry: reload } = useDisplayMemory(memory, `${scriptId}/${takeId}`, isOnline);
 
   return (
-    <section className="review-screen" aria-live="polite">
+    <section className="review-screen">
       <p className="review-kicker">結果</p>
+      {visibleState.kind === "ready" ? <MetadataRefresh refreshing={visibleState.refreshing} reason={visibleState.refreshReason} error={visibleState.updateError} isOnline={isOnline} onRefresh={reload} /> : null}
       {visibleState.kind === "loading" ? <LoadingState label="Reviewを読み込んでいます…" /> : null}
       {visibleState.kind === "error" ? <RequestError error={visibleState.error} onRetry={reload} /> : null}
       {visibleState.kind === "ready" ? (
         <>
           <div className="take-identity">
-            <h1 className={visibleState.review.displayName ? "take-name" : "take-script-title"}>{visibleState.review.displayName ?? visibleState.scriptTitle}</h1>
-            {visibleState.review.displayName ? <p className="review-meta">台本: <span lang="en">{visibleState.scriptTitle}</span></p> : null}
+            <h1 className={visibleState.data.review.displayName ? "take-name" : "take-script-title"}>{visibleState.data.review.displayName ?? (visibleState.data.scriptTitle || "練習結果")}</h1>
+            {visibleState.data.review.displayName ? <p className="review-meta">台本: <span lang="en">{visibleState.data.scriptTitle}</span></p> : null}
           </div>
-          <ReviewContent review={visibleState.review} onNavigate={onNavigate} metadataActions={<TakeMetadataEditor key={takeId} api={api} review={visibleState.review} onReload={reload}
-            onSaved={metadata => setState(current => current.kind === "ready" && current.review.takeId === metadata.takeId
-              ? { ...current, review: { ...current.review, ...metadata } } : current)}>
-              <p className="saved-take-name">{visibleState.review.displayName ?? visibleState.scriptTitle}</p>
-              {visibleState.review.displayName ? <p className="review-meta">台本: {visibleState.scriptTitle}</p> : null}
-              <p className="review-meta">{formatReviewDate(visibleState.review.reviewedAt ?? visibleState.review.createdAt)} · スコア {visibleState.review.evaluation.score}</p>
-              <SavedTakeAudio key={takeId} api={api} takeId={takeId} review={visibleState.review} isOnline={isOnline} />
+          <ReviewContent review={visibleState.data.review} onNavigate={onNavigate} metadataActions={<TakeMetadataEditor key={takeId} api={api} review={visibleState.data.review} onReload={reload}
+            disabled={!isOnline} onSaved={metadata => memory.update((_key, data) => data.review.takeId === metadata.takeId &&
+              (data.review.favorite !== metadata.favorite || data.review.displayName !== metadata.displayName), data => ({ ...data, review: { ...data.review, ...metadata } }))}>
+              <p className="saved-take-name">{visibleState.data.review.displayName ?? visibleState.data.scriptTitle}</p>
+              {visibleState.data.review.displayName ? <p className="review-meta">台本: {visibleState.data.scriptTitle}</p> : null}
+              <p className="review-meta">{formatReviewDate(visibleState.data.review.reviewedAt ?? visibleState.data.review.createdAt)} · スコア {visibleState.data.review.evaluation.score}</p>
+              <SavedTakeAudio key={takeId} api={api} takeId={takeId} review={visibleState.data.review} isOnline={isOnline && (!visibleState.refreshing || !!visibleState.data.review.audioVisit)} prefetchEnabled={visibleState.prefetchAllowed} />
             </TakeMetadataEditor>} />
         </>
       ) : (

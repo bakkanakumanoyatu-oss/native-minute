@@ -1,0 +1,400 @@
+[
+  {
+    "engine": "chromium",
+    "label": "initial Scripts still waits for actual server data",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Scripts revisit 20000ms retains data with zero GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Scripts revisit 31000ms retains data with zero GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Scripts revisit 120000ms retains data with zero GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Home/Progress/My Takes share one fresh snapshot with zero revisit GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "five-minute elapsed time causes no timer fetch or screen removal",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "aged entry refreshes once in background without routine live announcement",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "manual refresh preserves Scripts DOM and unsaved create form",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "cached route return restores scroll position",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Progress selection survives bottom navigation",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "My Takes filter survives Review and Back",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "first Review requires fresh validation; prefetch and Play share one binary",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "cached Review keeps ordinary actions; only audio waits for one fresh GET, with no title GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "save during entry validation fences old data; explicit Play recovers fresh authorization without automatic GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Review A/B/A retains two correct metadata entries",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "name success patches Review/Home immediately without GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Favorite patch preserves canonical counts/latest/best without aggregate GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "scripts temporary error retains data, suppresses route retry, and recovers manually",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "review temporary error retains data, suppresses route retry, and recovers manually",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "progress temporary error retains data, suppresses route retry, and recovers manually",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Review 401 hides unavailable/untrusted data",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Review 403 hides unavailable/untrusted data",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Review 404 hides unavailable/untrusted data",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Review malformed hides unavailable/untrusted data",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "normal same-session token rotation preserves metadata and starts no GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "short background return confirms existing auth and reuses fresh metadata",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "offline recovery shares one GET across lifecycle and mounted hooks",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "logout/new login and account switch discard previous session snapshots",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "background keeps metadata, aborts audio, and never restarts prefetch automatically",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "unchanged 30-second binary expiry requires a new authorized download",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "retention samples",
+    "before": {
+      "scripts": {
+        "entries": 1,
+        "bytes": 955,
+        "active": 0,
+        "pending": 0
+      },
+      "progress": {
+        "entries": 1,
+        "bytes": 5521,
+        "active": 1,
+        "pending": 0
+      },
+      "reviews": {
+        "entries": 1,
+        "bytes": 885,
+        "active": 0,
+        "pending": 0
+      }
+    },
+    "after": {
+      "scripts": {
+        "entries": 1,
+        "bytes": 955,
+        "active": 0,
+        "pending": 0
+      },
+      "progress": {
+        "entries": 1,
+        "bytes": 5521,
+        "active": 1,
+        "pending": 0
+      },
+      "reviews": {
+        "entries": 1,
+        "bytes": 885,
+        "active": 0,
+        "pending": 0
+      }
+    }
+  },
+  {
+    "engine": "chromium",
+    "label": "short repeated use does not grow entries or exceed byte budgets",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "initial Scripts still waits for actual server data",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Scripts revisit 20000ms retains data with zero GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Scripts revisit 31000ms retains data with zero GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Scripts revisit 120000ms retains data with zero GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Home/Progress/My Takes share one fresh snapshot with zero revisit GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "five-minute elapsed time causes no timer fetch or screen removal",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "aged entry refreshes once in background without routine live announcement",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "manual refresh preserves Scripts DOM and unsaved create form",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "cached route return restores scroll position",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Progress selection survives bottom navigation",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "My Takes filter survives Review and Back",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "first Review requires fresh validation; prefetch and Play share one binary",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "cached Review keeps ordinary actions; only audio waits for one fresh GET, with no title GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "save during entry validation fences old data; explicit Play recovers fresh authorization without automatic GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Review A/B/A retains two correct metadata entries",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "name success patches Review/Home immediately without GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Favorite patch preserves canonical counts/latest/best without aggregate GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "scripts temporary error retains data, suppresses route retry, and recovers manually",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "review temporary error retains data, suppresses route retry, and recovers manually",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "progress temporary error retains data, suppresses route retry, and recovers manually",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Review 401 hides unavailable/untrusted data",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Review 403 hides unavailable/untrusted data",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Review 404 hides unavailable/untrusted data",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Review malformed hides unavailable/untrusted data",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "normal same-session token rotation preserves metadata and starts no GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "short background return confirms existing auth and reuses fresh metadata",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "offline recovery shares one GET across lifecycle and mounted hooks",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "logout/new login and account switch discard previous session snapshots",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "background keeps metadata, aborts audio, and never restarts prefetch automatically",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "unchanged 30-second binary expiry requires a new authorized download",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "retention samples",
+    "before": {
+      "scripts": {
+        "entries": 1,
+        "bytes": 955,
+        "active": 0,
+        "pending": 0
+      },
+      "progress": {
+        "entries": 1,
+        "bytes": 5521,
+        "active": 1,
+        "pending": 0
+      },
+      "reviews": {
+        "entries": 1,
+        "bytes": 870,
+        "active": 0,
+        "pending": 0
+      }
+    },
+    "after": {
+      "scripts": {
+        "entries": 1,
+        "bytes": 955,
+        "active": 0,
+        "pending": 0
+      },
+      "progress": {
+        "entries": 1,
+        "bytes": 5521,
+        "active": 1,
+        "pending": 0
+      },
+      "reviews": {
+        "entries": 1,
+        "bytes": 870,
+        "active": 0,
+        "pending": 0
+      }
+    }
+  },
+  {
+    "engine": "webkit",
+    "label": "short repeated use does not grow entries or exceed byte budgets",
+    "result": "PASS"
+  }
+]

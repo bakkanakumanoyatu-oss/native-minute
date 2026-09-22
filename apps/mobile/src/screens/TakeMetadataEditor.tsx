@@ -3,8 +3,9 @@ import type { MobileTakeMetadata, TakeMetadataPatch } from "../lib/api";
 import type { MobileReview, PracticeApi, PracticeRequestFailure } from "../practice/api";
 import { RequestError } from "./ScreenParts";
 
-export function TakeMetadataEditor({ api, review, onSaved, onReload, children }: {
+export function TakeMetadataEditor({ api, review, onSaved, onReload, children, disabled = false }: {
   children?: ReactNode;
+  disabled?: boolean;
   api: PracticeApi; review: MobileReview;
   onSaved: (metadata: MobileTakeMetadata) => void; onReload: () => void;
 }) {
@@ -20,7 +21,7 @@ export function TakeMetadataEditor({ api, review, onSaved, onReload, children }:
   }, [api, review.takeId]);
 
   async function save(input: TakeMetadataPatch) {
-    if (lock.current) return;
+    if (lock.current || disabled) return;
     lock.current = true;
     const current = generation.current;
     setSaving(true);
@@ -47,22 +48,22 @@ export function TakeMetadataEditor({ api, review, onSaved, onReload, children }:
     <h2 id="take-metadata-title">自分の録音</h2>
     {children}
     <div className="take-metadata-actions">
-      <button type="button" className="review-text-action" aria-pressed={review.favorite} disabled={saving || error !== null}
+      <button type="button" className="review-text-action" aria-pressed={review.favorite} disabled={disabled || saving || error !== null}
         onClick={() => void save({ favorite: !review.favorite })}>{review.favorite ? "♥ お気に入り" : "♡ お気に入り"}</button>
-      {!editing ? <button type="button" className="review-text-action" disabled={saving || error !== null}
+      {!editing ? <button type="button" className="review-text-action" disabled={disabled || saving || error !== null}
         onClick={() => { setName(review.displayName ?? ""); setEditing(true); }}>{review.displayName ? "名前を変更" : "名前をつける"}</button> : null}
     </div>
     {editing ? <form onSubmit={event => { event.preventDefault(); void save({ displayName: name }); }}>
       <label htmlFor="take-display-name">録音名（60文字まで）</label>
-      <input id="take-display-name" value={name} maxLength={60} disabled={saving || error !== null}
+      <input id="take-display-name" value={name} maxLength={60} disabled={disabled || saving || error !== null}
         onChange={event => setName(event.target.value)} aria-describedby="take-name-help" />
       <p id="take-name-help" className="review-meta">空欄で保存すると名前を消せます。台本名は変わりません。</p>
       <div className="take-metadata-actions">
-        <button type="submit" className="review-text-action" disabled={saving || error !== null}>保存</button>
-        <button type="button" className="review-text-action" disabled={saving} onClick={() => setEditing(false)}>キャンセル</button>
+        <button type="submit" className="review-text-action" disabled={disabled || saving || error !== null}>保存</button>
+        <button type="button" className="review-text-action" disabled={disabled || saving} onClick={() => setEditing(false)}>キャンセル</button>
       </div>
     </form> : null}
     {saving ? <p role="status">保存しています…</p> : null}
-    {error ? <><p role="status">保存を確認できませんでした。再読み込みして状態を確認してください。</p><RequestError error={error} onRetry={onReload} /></> : null}
+    {error ? <><p role="status">保存を確認できませんでした。再読み込みして状態を確認してください。</p><RequestError error={error} onRetry={() => { setError(null); onReload(); }} /></> : null}
   </section>;
 }

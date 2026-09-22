@@ -1,0 +1,35 @@
+{
+  "review": "Mainによる最後の差分レビュー1回。独立agent編集なし。",
+  "findingsResolved": [
+    "Review再検証中のexact write後、Playだけでfresh proofを回復",
+    "offline→onlineでhookのexit/enterによる重複・中断を防止",
+    "初回readをmutationでfenceした場合、missing dataを再照合",
+    "oversized mounted dataのage/Retry-Afterを維持",
+    "resume auth失敗後はonline eventで既存authorityへ再確認",
+    "既存APIの未知のbridge/Review例外をnetwork-errorへ誤分類しない"
+  ],
+  "tests": {
+    "affectedPassed": 228,
+    "skipped": 1,
+    "skipReason": "既存take-metadata-isolated testは隔離DB環境未設定。実DB検証PASSを主張しない。",
+    "browserPassed": 62,
+    "engines": [
+      "Chromium",
+      "WebKit"
+    ]
+  },
+  "checks": {
+    "workspace": "PASS",
+    "rootLint": "PASS",
+    "mobileLint": "PASS",
+    "mobileSourceAndTestsTypecheck": "PASS",
+    "rootTypecheck": "PASS",
+    "rootBuild": "PASS",
+    "stagingSyncBuild": "PASS",
+    "nativeBuild": "PASS",
+    "signatureAssetsSource": "PASS",
+    "releaseGuard": "NOT PASS (known three dirty source findings)"
+  },
+  "historicalTests": "previous-tests/*.ts.txtに旧testの本文を保存（root tscがtestとして拾わない拡張子）",
+  "checkedAt": "2026-09-22T15:44:26.033086+00:00"
+}
