@@ -1,0 +1,324 @@
+{
+  "before": {
+    "immediate": {
+      "reviewUsableMs": {
+        "n": 5,
+        "median": 1535,
+        "min": 1468,
+        "max": 2569
+      },
+      "tapToPlayingMs": {
+        "n": 5,
+        "median": 3931,
+        "min": 3484,
+        "max": 4492
+      },
+      "trueFirstFetchMs": {
+        "n": 5,
+        "median": 3815,
+        "min": 3370,
+        "max": 4342
+      },
+      "dwellMs": {
+        "n": 5,
+        "median": 0,
+        "min": 0,
+        "max": 1
+      },
+      "audioGetCounts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "completeBodyBytes": [
+        1285164,
+        1285164,
+        1285164,
+        1285164,
+        1285164
+      ],
+      "receivedAtAbort": [],
+      "aborted": 0,
+      "duplicates": 0,
+      "correctTake": true,
+      "correctAudioIdentity": true,
+      "sameAudio": true,
+      "prefetchStartVsUsableMs": {
+        "n": 5,
+        "median": 9,
+        "min": 6.0,
+        "max": 11
+      },
+      "inFlightAtPlay": 0,
+      "urlsAfterExit": []
+    },
+    "dwell": {
+      "reviewUsableMs": {
+        "n": 5,
+        "median": 2369,
+        "min": 2185,
+        "max": 3736
+      },
+      "tapToPlayingMs": {
+        "n": 5,
+        "median": 4310,
+        "min": 3919,
+        "max": 4565
+      },
+      "trueFirstFetchMs": {
+        "n": 5,
+        "median": 4191,
+        "min": 3795.0,
+        "max": 4451
+      },
+      "dwellMs": {
+        "n": 5,
+        "median": 2001,
+        "min": 2000,
+        "max": 2002
+      },
+      "audioGetCounts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "completeBodyBytes": [
+        1285164,
+        1285164,
+        1285164,
+        1285164,
+        1285164
+      ],
+      "receivedAtAbort": [],
+      "aborted": 0,
+      "duplicates": 0,
+      "correctTake": true,
+      "correctAudioIdentity": true,
+      "sameAudio": true,
+      "prefetchStartVsUsableMs": {
+        "n": 5,
+        "median": 2017,
+        "min": 2014,
+        "max": 2018.0
+      },
+      "inFlightAtPlay": 0,
+      "urlsAfterExit": []
+    },
+    "exit": {
+      "reviewUsableMs": {
+        "n": 5,
+        "median": 2152,
+        "min": 1635,
+        "max": 3703
+      },
+      "tapToPlayingMs": null,
+      "trueFirstFetchMs": null,
+      "dwellMs": null,
+      "audioGetCounts": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "completeBodyBytes": [],
+      "receivedAtAbort": [],
+      "aborted": 0,
+      "duplicates": 0,
+      "correctTake": true,
+      "correctAudioIdentity": true,
+      "sameAudio": true,
+      "prefetchStartVsUsableMs": null,
+      "inFlightAtPlay": 0,
+      "urlsAfterExit": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "reviewAllMs": {
+      "n": 15,
+      "median": 2252.0,
+      "min": 1468,
+      "max": 3736
+    }
+  },
+  "after": {
+    "immediate": {
+      "reviewUsableMs": {
+        "n": 5,
+        "median": 1902.0,
+        "min": 1735,
+        "max": 3486
+      },
+      "tapToPlayingMs": {
+        "n": 5,
+        "median": 4485,
+        "min": 3973,
+        "max": 10538
+      },
+      "trueFirstFetchMs": {
+        "n": 5,
+        "median": 4293,
+        "min": 3872.0,
+        "max": 10422
+      },
+      "dwellMs": {
+        "n": 5,
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "audioGetCounts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "completeBodyBytes": [
+        1285164,
+        1285164,
+        1285164,
+        1285164,
+        1285164
+      ],
+      "receivedAtAbort": [],
+      "aborted": 0,
+      "duplicates": 0,
+      "correctTake": true,
+      "correctAudioIdentity": true,
+      "sameAudio": true,
+      "prefetchStartVsUsableMs": {
+        "n": 5,
+        "median": 9,
+        "min": 4,
+        "max": 10
+      },
+      "inFlightAtPlay": 0,
+      "urlsAfterExit": []
+    },
+    "dwell": {
+      "reviewUsableMs": {
+        "n": 5,
+        "median": 2668,
+        "min": 1718,
+        "max": 3703
+      },
+      "tapToPlayingMs": {
+        "n": 5,
+        "median": 2365,
+        "min": 1417,
+        "max": 3563
+      },
+      "trueFirstFetchMs": {
+        "n": 5,
+        "median": 4250,
+        "min": 3292,
+        "max": 5434.0
+      },
+      "dwellMs": {
+        "n": 5,
+        "median": 2001,
+        "min": 2001,
+        "max": 2001
+      },
+      "audioGetCounts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "completeBodyBytes": [
+        1285164,
+        1285164,
+        1285164,
+        1285164,
+        1285164
+      ],
+      "receivedAtAbort": [],
+      "aborted": 0,
+      "duplicates": 0,
+      "correctTake": true,
+      "correctAudioIdentity": true,
+      "sameAudio": true,
+      "prefetchStartVsUsableMs": {
+        "n": 5,
+        "median": 26,
+        "min": 25,
+        "max": 28
+      },
+      "inFlightAtPlay": 5,
+      "urlsAfterExit": []
+    },
+    "exit": {
+      "reviewUsableMs": {
+        "n": 5,
+        "median": 2085.0,
+        "min": 1776,
+        "max": 3169
+      },
+      "tapToPlayingMs": null,
+      "trueFirstFetchMs": null,
+      "dwellMs": null,
+      "audioGetCounts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "completeBodyBytes": [],
+      "receivedAtAbort": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "aborted": 5,
+      "duplicates": 0,
+      "correctTake": true,
+      "correctAudioIdentity": true,
+      "sameAudio": true,
+      "prefetchStartVsUsableMs": {
+        "n": 5,
+        "median": 25.0,
+        "min": 25,
+        "max": 26
+      },
+      "inFlightAtPlay": 0,
+      "urlsAfterExit": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "reviewAllMs": {
+      "n": 15,
+      "median": 2252,
+      "min": 1718,
+      "max": 3703
+    }
+  },
+  "interpretation": {
+    "naturalDwellMedianReductionMs": 1945,
+    "naturalDwellMedianReductionPercent": 45.1,
+    "networkSpeedupClaimed": false,
+    "immediatePlayImproved": false,
+    "reviewOverallMedianUnchanged": true,
+    "humanAcceptance": "PENDING",
+    "immediateTapPrecedesNetworkRequestInAllFive": true,
+    "naturalDwellSharesInflightInAllFive": true,
+    "duplicateGets": 0
+  }
+}

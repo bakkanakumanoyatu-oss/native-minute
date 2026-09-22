@@ -91,3 +91,41 @@ describe("saved Take ephemeral binary authorization", () => {
     await f.memory.load(f.visit(), "session-a", f.download); expect(f.download).toHaveBeenCalledOnce(); f.memory.revoke();
   });
 });
+
+it("shares the exact pending promise between foreground prefetch and Play", async () => {
+  const f = fixture(), visit = f.visit();
+  let finish!: (audio: MobileTakeAudioDownloadState) => void;
+  const download = vi.fn(() => new Promise<MobileTakeAudioDownloadState>(r => { finish = r; }));
+  const prefetch = f.memory.load(visit, "session-a", download);
+  const play = f.memory.load(visit, "session-a", download);
+  expect(play).toBe(prefetch); expect(download).toHaveBeenCalledOnce();
+  finish(audio()); expect((await play).kind).toBe("success");
+  await f.memory.load(visit, "session-a", download); expect(download).toHaveBeenCalledOnce();
+  f.memory.revoke();
+});
+it.each(["exit", "route", "background", "offline", "logout", "delete", "session", "identity"])("aborts pending download on %s and rejects a late success", async reason => {
+  const f = fixture(), visit = f.visit();
+  let finish!: (audio: MobileTakeAudioDownloadState) => void, signal!: AbortSignal;
+  const pending = f.memory.load(visit, "session-a", s => { signal = s; return new Promise(r => { finish = r; }); });
+  if (reason === "exit") f.memory.endVisit(visit);
+  else if (reason === "route") f.memory.beginVisit("script", "b");
+  else if (reason === "background") f.memory.setForeground(false);
+  else if (reason === "offline") f.memory.setOnline(false);
+  else if (reason === "logout") f.memory.revoke();
+  else if (reason === "session") f.memory.authorize(visit, f.memory.validationEpoch(), "session-b", identity);
+  else if (reason === "identity") f.memory.authorize(visit, f.memory.validationEpoch(), "session-a", "b".repeat(64));
+  else f.memory.invalidate();
+  expect(signal.aborted).toBe(true);
+  finish(audio()); expect((await pending).kind).toBe("invalid-response");
+  expect(vi.getTimerCount()).toBe(0); f.memory.revoke();
+});
+it("a failed prefetch does not retry itself; fresh proof enables a later manual load", async () => {
+  const f = fixture(), visit = f.visit();
+  const failed = vi.fn(async () => ({ kind: "network-error" as const }));
+  expect((await f.memory.load(visit, "session-a", failed)).kind).toBe("network-error");
+  vi.advanceTimersByTime(60_000); expect(failed).toHaveBeenCalledOnce();
+  expect((await f.memory.load(visit, "session-a", f.download)).kind).toBe("invalid-response");
+  f.memory.authorize(visit, f.memory.validationEpoch(), "session-a", identity);
+  expect((await f.memory.load(visit, "session-a", f.download)).kind).toBe("success");
+  f.memory.revoke();
+});

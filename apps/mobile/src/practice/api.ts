@@ -79,6 +79,7 @@ export interface PracticeApi {
   readonly progressMemory?: ProgressMemory;
   readonly savedTakeAudioMemory?: SavedTakeAudioMemory;
   prepareSavedTakeAudio?(review: MobileReview): Promise<MobileTakeAudioDownloadState>;
+  prefetchSavedTakeAudio?(review: MobileReview): Promise<void>;
   listScripts(): Promise<ScriptsRequestState>;
   createScript(input: CreateMobileScriptInput): Promise<MobileScriptRequestState>;
   getScript(scriptId: string): Promise<MobileScriptRequestState>;
@@ -335,16 +336,42 @@ export function createPracticeApi({
         const validated = await validateAudioVisit(visit, token);
         if (validated.kind !== "success") return validated;
       }
-      return savedTakeAudioMemory.load(visit, session, async () => {
-        const audio = await downloadMobileTakeAudio(bffBaseUrl, token, visit.takeId, { onTiming });
-        const currentToken = await auth.getAccessToken();
-        if (!currentToken || await sessionFingerprint(currentToken) !== session) {
-          savedTakeAudioMemory.invalidate();
-          return { kind: "unauthorized", reasonCode: "session_changed" };
-        }
-        return audio;
-      });
+      return loadSavedTakeAudio(visit, session, token);
     }));
+  }
+
+  function loadSavedTakeAudio(visit: SavedTakeAudioVisit, session: string, token: string) {
+    return savedTakeAudioMemory.load(visit, session, async signal => {
+      const audio = await downloadMobileTakeAudio(bffBaseUrl, token, visit.takeId, { onTiming, signal });
+      if (signal.aborted) return { kind: "invalid-response" };
+      const currentToken = await auth.getAccessToken();
+      if (signal.aborted) return { kind: "invalid-response" };
+      if (!currentToken || await sessionFingerprint(currentToken) !== session) {
+        if (!signal.aborted) savedTakeAudioMemory.invalidate();
+        return { kind: "unauthorized", reasonCode: "session_changed" };
+      }
+      return audio;
+    });
+  }
+
+  async function prefetchSavedTakeAudio(review: MobileReview): Promise<void> {
+    const visit = review.audioVisit;
+    if (!visit || visit.takeId !== review.takeId || visit.scriptId !== review.scriptId || !savedTakeAudioMemory.current(visit)) return;
+    const epoch = savedTakeAudioMemory.validationEpoch();
+    try {
+      // Only consume the successful Review proof. No revalidation, auth refresh,
+      // automatic retry, or UI error transition from this speculative operation.
+      const token = await auth.getAccessToken();
+      const session = token ? await sessionFingerprint(token) : null;
+      if (epoch !== savedTakeAudioMemory.validationEpoch() || !savedTakeAudioMemory.current(visit)) return;
+      if (!token || !session || !savedTakeAudioMemory.authorized(visit, session)) {
+        savedTakeAudioMemory.invalidate();
+        return;
+      }
+      await loadSavedTakeAudio(visit, session, token);
+    } catch {
+      if (epoch === savedTakeAudioMemory.validationEpoch() && savedTakeAudioMemory.current(visit)) savedTakeAudioMemory.invalidate();
+    }
   }
 
   function requestListen(scriptId: string) {
@@ -370,6 +397,7 @@ export function createPracticeApi({
     progressMemory,
     savedTakeAudioMemory,
     prepareSavedTakeAudio,
+    prefetchSavedTakeAudio,
     listScripts: () => request((token) => fetchMobileScripts(bffBaseUrl, token, { onTiming })),
     createScript: (input) => mutate(() => request((token) => createMobileScript(bffBaseUrl, token, input, { onTiming }))),
     getScript: (scriptId) => request((token) => fetchMobileScript(bffBaseUrl, token, scriptId, { onTiming })),

@@ -23,7 +23,21 @@ export function SavedTakeAudio({ api, takeId, review, isOnline, sharing = takeSh
   const generation = useRef(0);
   const locked = useRef(false);
   const online = useRef(isOnline);
+  const prefetchedVisit = useRef<MobileReview["audioVisit"]>();
   useEffect(() => { online.current = isOnline; }, [isOnline]);
+  useEffect(() => {
+    if (!isOnline || !review?.audioVisit || !api.prefetchSavedTakeAudio || prefetchedVisit.current === review.audioVisit) return;
+    // This component mounts only with a usable, server-validated Review. Allow
+    // that UI to paint before starting its single foreground binary request.
+    let nextFrame: number | undefined;
+    const frame = requestAnimationFrame(() => {
+      nextFrame = requestAnimationFrame(() => {
+        prefetchedVisit.current = review.audioVisit;
+        void api.prefetchSavedTakeAudio!(review);
+      });
+    });
+    return () => { cancelAnimationFrame(frame); if (nextFrame !== undefined) cancelAnimationFrame(nextFrame); };
+  }, [api, isOnline, review]);
   useEffect(() => api.savedTakeAudioMemory?.subscribe(() => {
     generation.current++;
     locked.current = false;

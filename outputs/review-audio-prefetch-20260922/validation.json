@@ -1,0 +1,62 @@
+{
+  "affectedTests": {
+    "files": 11,
+    "passed": 231
+  },
+  "browser": {
+    "engines": [
+      "Chromium",
+      "WebKit"
+    ],
+    "conditions": 30,
+    "passed": 30
+  },
+  "checks": {
+    "workspace": "PASS",
+    "rootLint": "PASS",
+    "mobileLint": "PASS",
+    "mobileSourceAndTestTypes": "PASS",
+    "rootBuild": "PASS",
+    "rootTypecheckAfterBuild": "PASS",
+    "mobileStagingBuildSync": "PASS",
+    "nativeStagingBuild": "PASS",
+    "signatureAndSource": "PASS",
+    "diffCheck": "PASS"
+  },
+  "releaseGuard": {
+    "status": "NOT PASS",
+    "unchangedCategories": [
+      "staging_build_metadata_mismatch: dist sourceDirty",
+      "staging_build_metadata_mismatch: native sourceDirty",
+      "staging_source_tree_dirty"
+    ]
+  },
+  "notRun": [
+    "full test suite",
+    "expanded E2E",
+    "new recording/evaluation/voice generation",
+    "real external Share export"
+  ],
+  "bffChange": false,
+  "productInstrumentation": false,
+  "commitPush": "NOT DONE",
+  "actualDevice": {
+    "before": {
+      "immediate": 5,
+      "dwell": 5,
+      "exit": 5
+    },
+    "after": {
+      "immediate": 5,
+      "dwell": 5,
+      "exit": 5
+    },
+    "sameScreenReplayMs": 95,
+    "reentryMs": 88,
+    "reentryAudioGets": 0,
+    "freshReviewGetsOnReentry": 1,
+    "humanAcceptance": "PENDING"
+  },
+  "finalArtifactSourceStillMatches": true,
+  "existingWipPreserved": true
+}

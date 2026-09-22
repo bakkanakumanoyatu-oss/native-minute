@@ -1,0 +1,46 @@
+{
+  "info" : {
+    "arguments" : [
+      "devicectl",
+      "device",
+      "info",
+      "apps",
+      "--device",
+      "844A958E-D0A6-5751-BE5D-B12BFC054181",
+      "--bundle-id",
+      "com.nativeminutes.app.staging",
+      "--json-output",
+      "outputs/review-audio-prefetch-20260922/installed-app.json"
+    ],
+    "commandType" : "devicectl.device.info.apps",
+    "environment" : {
+      "TERM" : "dumb"
+    },
+    "jsonVersion" : 3,
+    "outcome" : "success",
+    "version" : "518.33"
+  },
+  "result" : {
+    "apps" : [
+      {
+        "appClip" : false,
+        "builtByDeveloper" : true,
+        "bundleIdentifier" : "com.nativeminutes.app.staging",
+        "bundleVersion" : "1",
+        "defaultApp" : false,
+        "hidden" : false,
+        "internalApp" : false,
+        "name" : "Native Minutes",
+        "removable" : true,
+        "url" : "file:///private/var/containers/Bundle/Application/524A8B92-D956-4613-B37E-5809B68906C3/App.app/",
+        "version" : "1.0"
+      }
+    ],
+    "defaultAppsIncluded" : false,
+    "deviceIdentifier" : "844A958E-D0A6-5751-BE5D-B12BFC054181",
+    "hiddenAppsIncluded" : false,
+    "internalAppsIncluded" : false,
+    "matchingBundleIdentifier" : "com.nativeminutes.app.staging",
+    "removableAppsIncluded" : true
+  }
+}

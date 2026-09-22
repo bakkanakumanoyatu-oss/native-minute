@@ -1,0 +1,724 @@
+{
+  "done": true,
+  "samples": [
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 3772977,
+          "receivedBytes": 0,
+          "headersAt": 3774719,
+          "status": 200,
+          "complete": 3774720.0000000005
+        },
+        {
+          "kind": "review",
+          "start": 3772980,
+          "receivedBytes": 0,
+          "headersAt": 3775475,
+          "status": 200,
+          "complete": 3775476,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "audio",
+          "start": 3775547,
+          "receivedBytes": 1285164,
+          "correctTake": true,
+          "headersAt": 3778136,
+          "status": 200,
+          "identityMatches": true,
+          "complete": 3779889,
+          "bytes": 1285164,
+          "sameAudio": true
+        },
+        {
+          "kind": "other",
+          "start": 3781059,
+          "receivedBytes": 0,
+          "headersAt": 3782440,
+          "status": 200,
+          "complete": 3782443
+        }
+      ],
+      "entry": 3772969,
+      "usable": 3775538,
+      "correctTake": true,
+      "kind": "immediate",
+      "n": 0,
+      "tap": 3775538,
+      "playing": 3780030,
+      "mediaTime": 0.6936690005287316,
+      "duration": 40.16,
+      "end": 3781062
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 3810940,
+          "receivedBytes": 0,
+          "headersAt": 3812340,
+          "status": 200,
+          "complete": 3812341
+        },
+        {
+          "kind": "review",
+          "start": 3810943,
+          "receivedBytes": 0,
+          "headersAt": 3813072,
+          "status": 200,
+          "complete": 3813073,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "audio",
+          "start": 3815135,
+          "receivedBytes": 1285164,
+          "correctTake": true,
+          "headersAt": 3817904,
+          "status": 200,
+          "identityMatches": true,
+          "complete": 3819326,
+          "bytes": 1285164,
+          "sameAudio": true
+        },
+        {
+          "kind": "other",
+          "start": 3820454,
+          "receivedBytes": 0,
+          "headersAt": 3821806,
+          "status": 200,
+          "complete": 3821807.0000000005
+        }
+      ],
+      "entry": 3810933,
+      "usable": 3813118,
+      "correctTake": true,
+      "kind": "dwell",
+      "n": 0,
+      "tap": 3815118,
+      "playing": 3819428,
+      "mediaTime": 0.673638834265807,
+      "duration": 40.16,
+      "end": 3820490.0000000005
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 3850371,
+          "receivedBytes": 0,
+          "headersAt": 3851557.0000000005,
+          "status": 200,
+          "complete": 3851557.0000000005
+        },
+        {
+          "kind": "review",
+          "start": 3850374.0000000005,
+          "receivedBytes": 0,
+          "headersAt": 3854015,
+          "status": 200,
+          "complete": 3854016,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "other",
+          "start": 3854240.0000000005,
+          "receivedBytes": 0,
+          "headersAt": 3855858,
+          "status": 200,
+          "complete": 3855859
+        }
+      ],
+      "entry": 3850364,
+      "usable": 3854067,
+      "correctTake": true,
+      "kind": "exit",
+      "n": 0,
+      "exit": 3854218.0000000005,
+      "urlsAfterExit": 0,
+      "audioElementsAfterExit": 0,
+      "end": 3856503
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 3856560,
+          "receivedBytes": 0,
+          "headersAt": 3857751,
+          "status": 200,
+          "complete": 3857752
+        },
+        {
+          "kind": "review",
+          "start": 3856563,
+          "receivedBytes": 0,
+          "headersAt": 3857971,
+          "status": 200,
+          "complete": 3857972,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "audio",
+          "start": 3858026.0000000005,
+          "receivedBytes": 1285164,
+          "correctTake": true,
+          "headersAt": 3860058,
+          "status": 200,
+          "identityMatches": true,
+          "complete": 3861704,
+          "bytes": 1285164,
+          "sameAudio": true
+        },
+        {
+          "kind": "other",
+          "start": 3862834.0000000005,
+          "receivedBytes": 0,
+          "headersAt": 3865176,
+          "status": 200,
+          "complete": 3865177
+        }
+      ],
+      "entry": 3856552,
+      "usable": 3858020,
+      "correctTake": true,
+      "kind": "immediate",
+      "n": 1,
+      "tap": 3858021,
+      "playing": 3861801,
+      "mediaTime": 0.6740764591529753,
+      "duration": 40.16,
+      "end": 3862858
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 3892758.0000000005,
+          "receivedBytes": 0,
+          "headersAt": 3894479.0000000005,
+          "status": 200,
+          "complete": 3894480
+        },
+        {
+          "kind": "review",
+          "start": 3892761,
+          "receivedBytes": 0,
+          "headersAt": 3895066.0000000005,
+          "status": 200,
+          "complete": 3895067,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "audio",
+          "start": 3897136,
+          "receivedBytes": 1285164,
+          "correctTake": true,
+          "headersAt": 3899707,
+          "status": 200,
+          "identityMatches": true,
+          "complete": 3901560,
+          "bytes": 1285164,
+          "sameAudio": true
+        },
+        {
+          "kind": "other",
+          "start": 3902694,
+          "receivedBytes": 0,
+          "headersAt": 3903902,
+          "status": 200,
+          "complete": 3903903.0000000005
+        }
+      ],
+      "entry": 3892750,
+      "usable": 3895119,
+      "correctTake": true,
+      "kind": "dwell",
+      "n": 1,
+      "tap": 3897120,
+      "playing": 3901664,
+      "mediaTime": 0.6752064166933938,
+      "duration": 40.16,
+      "end": 3902696
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 3932610,
+          "receivedBytes": 0,
+          "headersAt": 3934327,
+          "status": 200,
+          "complete": 3934328
+        },
+        {
+          "kind": "review",
+          "start": 3932613.0000000005,
+          "receivedBytes": 0,
+          "headersAt": 3934630,
+          "status": 200,
+          "complete": 3934631,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "other",
+          "start": 3934844,
+          "receivedBytes": 0,
+          "headersAt": 3936960,
+          "status": 200,
+          "complete": 3936961.0000000005
+        }
+      ],
+      "entry": 3932603,
+      "usable": 3934671.0000000005,
+      "correctTake": true,
+      "kind": "exit",
+      "n": 1,
+      "exit": 3934822,
+      "urlsAfterExit": 0,
+      "audioElementsAfterExit": 0,
+      "end": 3937590
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 3937632,
+          "receivedBytes": 0,
+          "headersAt": 3939009,
+          "status": 200,
+          "complete": 3939010
+        },
+        {
+          "kind": "review",
+          "start": 3937642.0000000005,
+          "receivedBytes": 0,
+          "headersAt": 3939041,
+          "status": 200,
+          "complete": 3939041,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "audio",
+          "start": 3939118,
+          "receivedBytes": 1285164,
+          "correctTake": true,
+          "headersAt": 3941671.0000000005,
+          "status": 200,
+          "identityMatches": true,
+          "complete": 3942997.0000000005,
+          "bytes": 1285164,
+          "sameAudio": true
+        },
+        {
+          "kind": "other",
+          "start": 3944128,
+          "receivedBytes": 0,
+          "headersAt": 3945358,
+          "status": 200,
+          "complete": 3945359
+        }
+      ],
+      "entry": 3937623,
+      "usable": 3939107,
+      "correctTake": true,
+      "kind": "immediate",
+      "n": 2,
+      "tap": 3939107,
+      "playing": 3943097,
+      "mediaTime": 0.6736851260301897,
+      "duration": 40.16,
+      "end": 3944145
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 4187520.0000000005,
+          "receivedBytes": 0,
+          "headersAt": 4188917.9999999995,
+          "status": 200,
+          "complete": 4188919
+        },
+        {
+          "kind": "review",
+          "start": 4187524.0000000005,
+          "receivedBytes": 0,
+          "headersAt": 4189708.0000000005,
+          "status": 200,
+          "complete": 4189709,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "audio",
+          "start": 4191783.0000000005,
+          "receivedBytes": 1285164,
+          "correctTake": true,
+          "headersAt": 4193852,
+          "status": 200,
+          "identityMatches": true,
+          "complete": 4195578,
+          "bytes": 1285164,
+          "sameAudio": true
+        },
+        {
+          "kind": "other",
+          "start": 4196719,
+          "receivedBytes": 0,
+          "headersAt": 4199317,
+          "status": 200,
+          "complete": 4199319
+        }
+      ],
+      "entry": 4187513,
+      "usable": 4189765.0000000005,
+      "correctTake": true,
+      "kind": "dwell",
+      "n": 2,
+      "tap": 4191767,
+      "playing": 4195686,
+      "mediaTime": 0.6771782075259599,
+      "duration": 40.16,
+      "end": 4196720
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 4226637,
+          "receivedBytes": 0,
+          "headersAt": 4228085,
+          "status": 200,
+          "complete": 4228085
+        },
+        {
+          "kind": "review",
+          "start": 4226640,
+          "receivedBytes": 0,
+          "headersAt": 4228722,
+          "status": 200,
+          "complete": 4228723,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "other",
+          "start": 4228964,
+          "receivedBytes": 0,
+          "headersAt": 4231120,
+          "status": 200,
+          "complete": 4231123.000000001
+        }
+      ],
+      "entry": 4226628,
+      "usable": 4228780,
+      "correctTake": true,
+      "kind": "exit",
+      "n": 2,
+      "exit": 4228931.000000001,
+      "urlsAfterExit": 0,
+      "audioElementsAfterExit": 0,
+      "end": 4229598
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 4229661,
+          "receivedBytes": 0,
+          "headersAt": 4231121,
+          "status": 200,
+          "complete": 4231123.000000001
+        },
+        {
+          "kind": "review",
+          "start": 4229665,
+          "receivedBytes": 0,
+          "headersAt": 4231121,
+          "status": 200,
+          "complete": 4231143,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "audio",
+          "start": 4231191,
+          "receivedBytes": 1285164,
+          "correctTake": true,
+          "headersAt": 4233232,
+          "status": 200,
+          "identityMatches": true,
+          "complete": 4234561,
+          "bytes": 1285164,
+          "sameAudio": true
+        },
+        {
+          "kind": "other",
+          "start": 4235700,
+          "receivedBytes": 0,
+          "headersAt": 4236944,
+          "status": 200,
+          "complete": 4236945
+        }
+      ],
+      "entry": 4229647,
+      "usable": 4231182,
+      "correctTake": true,
+      "kind": "immediate",
+      "n": 3,
+      "tap": 4231182,
+      "playing": 4234666,
+      "mediaTime": 0.6771232093625198,
+      "duration": 40.16,
+      "end": 4235719
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 4442577,
+          "receivedBytes": 0,
+          "headersAt": 4445062,
+          "status": 200,
+          "complete": 4445062
+        },
+        {
+          "kind": "review",
+          "start": 4442580,
+          "receivedBytes": 0,
+          "headersAt": 4445986,
+          "status": 200,
+          "complete": 4445986,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "audio",
+          "start": 4448054,
+          "receivedBytes": 1285164,
+          "correctTake": true,
+          "headersAt": 4451308,
+          "status": 200,
+          "identityMatches": true,
+          "complete": 4452505,
+          "bytes": 1285164,
+          "sameAudio": true
+        },
+        {
+          "kind": "other",
+          "start": 4453637,
+          "receivedBytes": 0,
+          "headersAt": 4455711,
+          "status": 200,
+          "complete": 4455711
+        }
+      ],
+      "entry": 4442570,
+      "usable": 4446040,
+      "correctTake": true,
+      "kind": "dwell",
+      "n": 3,
+      "tap": 4448042,
+      "playing": 4452607,
+      "mediaTime": 0.6706634993782,
+      "duration": 40.16,
+      "end": 4453663
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 4483560,
+          "receivedBytes": 0,
+          "headersAt": 4485119,
+          "status": 200,
+          "complete": 4485120
+        },
+        {
+          "kind": "review",
+          "start": 4483564,
+          "receivedBytes": 0,
+          "headersAt": 4485143,
+          "status": 200,
+          "complete": 4485143,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "other",
+          "start": 4485370,
+          "receivedBytes": 0,
+          "headersAt": 4487405,
+          "status": 200,
+          "complete": 4487414
+        }
+      ],
+      "entry": 4483553,
+      "usable": 4485188,
+      "correctTake": true,
+      "kind": "exit",
+      "n": 3,
+      "exit": 4485339,
+      "urlsAfterExit": 0,
+      "audioElementsAfterExit": 0,
+      "end": 4486006
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 4486070,
+          "receivedBytes": 0,
+          "headersAt": 4487120,
+          "status": 200,
+          "complete": 4487120
+        },
+        {
+          "kind": "review",
+          "start": 4486073,
+          "receivedBytes": 0,
+          "headersAt": 4488507.000000001,
+          "status": 200,
+          "complete": 4488508,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "audio",
+          "start": 4488551,
+          "receivedBytes": 1285164,
+          "correctTake": true,
+          "headersAt": 4490630,
+          "status": 200,
+          "identityMatches": true,
+          "complete": 4492366,
+          "bytes": 1285164,
+          "sameAudio": true
+        },
+        {
+          "kind": "other",
+          "start": 4493510,
+          "receivedBytes": 0,
+          "headersAt": 4494387,
+          "status": 200,
+          "complete": 4494388
+        }
+      ],
+      "entry": 4486055,
+      "usable": 4488541,
+      "correctTake": true,
+      "kind": "immediate",
+      "n": 4,
+      "tap": 4488541,
+      "playing": 4492472,
+      "mediaTime": 0.685068084280027,
+      "duration": 40.16,
+      "end": 4493515
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 4523408,
+          "receivedBytes": 0,
+          "headersAt": 4524628,
+          "status": 200,
+          "complete": 4524629
+        },
+        {
+          "kind": "review",
+          "start": 4523411,
+          "receivedBytes": 0,
+          "headersAt": 4527093,
+          "status": 200,
+          "complete": 4527094,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "audio",
+          "start": 4529154,
+          "receivedBytes": 1285164,
+          "correctTake": true,
+          "headersAt": 4531284,
+          "status": 200,
+          "identityMatches": true,
+          "complete": 4533071,
+          "bytes": 1285164,
+          "sameAudio": true
+        },
+        {
+          "kind": "other",
+          "start": 4534204,
+          "receivedBytes": 0,
+          "headersAt": 4535689,
+          "status": 200,
+          "complete": 4535690.000000001
+        }
+      ],
+      "entry": 4523401,
+      "usable": 4527137,
+      "correctTake": true,
+      "kind": "dwell",
+      "n": 4,
+      "tap": 4529138,
+      "playing": 4533174,
+      "mediaTime": 0.6715694993209753,
+      "duration": 40.16,
+      "end": 4535745
+    },
+    {
+      "requests": [
+        {
+          "kind": "other",
+          "start": 4564126,
+          "receivedBytes": 0,
+          "headersAt": 4565594,
+          "status": 200,
+          "complete": 4565595
+        },
+        {
+          "kind": "review",
+          "start": 4564129,
+          "receivedBytes": 0,
+          "headersAt": 4567022,
+          "status": 200,
+          "complete": 4567022,
+          "correctTake": true,
+          "identityMatches": true
+        },
+        {
+          "kind": "other",
+          "start": 4567245,
+          "receivedBytes": 0,
+          "headersAt": 4568661,
+          "status": 200,
+          "complete": 4568662
+        }
+      ],
+      "entry": 4564119,
+      "usable": 4567071,
+      "correctTake": true,
+      "kind": "exit",
+      "n": 4,
+      "exit": 4567222,
+      "urlsAfterExit": 0,
+      "audioElementsAfterExit": 0,
+      "end": 4569307
+    }
+  ],
+  "asset": "./assets/index-tMgN1PfB.js",
+  "objects": 0,
+  "probeInterruptions": 2,
+  "completedSamplesPreserved": true
+}

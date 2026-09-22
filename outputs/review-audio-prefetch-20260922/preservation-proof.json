@@ -1,0 +1,18 @@
+{
+  "checkedFiles": 2695,
+  "changesFromPreflight": [
+    "AGENTS.md",
+    "apps/mobile/src/audio/saved-take-memory.test.ts",
+    "apps/mobile/src/audio/saved-take-memory.ts",
+    "apps/mobile/src/lib/api.ts",
+    "apps/mobile/src/practice/api.ts",
+    "apps/mobile/src/practice/saved-take-audio-api.test.ts",
+    "apps/mobile/src/screens/SavedTakeAudio.tsx",
+    "docs/current-state.md"
+  ],
+  "unrelatedExistingFilesUnchanged": true,
+  "currentStateExistingContentUnchanged": true,
+  "indexStillEmpty": true,
+  "head": "02658924e1a4c2b182dcc1d0aeb73509d522f883",
+  "commitPush": "NOT DONE"
+}

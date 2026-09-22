@@ -1,0 +1,20 @@
+{
+  "sameDevice": "iPhone 14 Plus (iPhone14,8)",
+  "bundleId": "com.nativeminutes.app.staging",
+  "network": "Wi-Fi; cellular false verified by NWPathMonitor",
+  "targetSelection": "same first saved Take in My Takes; dataset unmodified; GET-only measurement",
+  "conditions": [
+    "immediate",
+    "dwell 2000 ms",
+    "No Play exit after 150 ms"
+  ],
+  "desiredN": 5,
+  "firstFetchIsolation": "wait until at least 31 seconds after last complete audio body; before every next condition",
+  "reviewUsableDefinition": "navigation click to rendered controls observed after two animation frames",
+  "networkDefinition": "audio GET start to full body completion, before diagnostic SHA-256 computation",
+  "playDefinition": "button click to HTMLAudioElement playing event; also sample currentTime after 1 second",
+  "bytesDefinition": "body bytes read by app; not transport wire bytes and not BFF-to-Storage traffic",
+  "beforeProbeStops": 2,
+  "beforeCompletedValidSamples": 15,
+  "probeStopsReason": "Home metadata refresh can remove the navigation button between its readiness check and the click. Atomic lookup/click added to temporary probe only. Completed measurements retained."
+}

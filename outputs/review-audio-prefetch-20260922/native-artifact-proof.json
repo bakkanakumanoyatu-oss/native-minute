@@ -1,0 +1,37 @@
+{
+  "checkedAt": "2026-09-22T12:08:56.338024+00:00",
+  "artifactPath": "/tmp/nm-prefetch-20260922/DerivedData/Build/Products/Staging-iphoneos/App.app",
+  "bundleId": "com.nativeminutes.app.staging",
+  "version": "1.0",
+  "build": "1",
+  "metadata": {
+    "profile": "staging",
+    "bundleId": "com.nativeminutes.app.staging",
+    "xcodeConfiguration": "Staging",
+    "capacitorProfile": "staging",
+    "bffOrigin": "https://native-minute-staging.vercel.app",
+    "authCallbackMode": "universal-link",
+    "authConfigured": true,
+    "authTargetFingerprint": "cfdbf57f7a1d3226019079df30e06c61276cb528f31779581fb6ae92592096b3",
+    "sourceRevision": "02658924e1a4c2b182dcc1d0aeb73509d522f883",
+    "sourceDirty": true
+  },
+  "executableSha256": "4fbf8b3324b89f5c709b64438b68e16daa71f5173f1be40ed387e7611dd849bf",
+  "webAssetsSha256": {
+    "mobile-build.json": "b38250fc46f00f429d83b58737402c22de18c80a3903241c1740f418f8239824",
+    "index.html": "bbe2d2dc595bf6d749d728a1fd96c95eb33b3c6c0e7e5cb8764101e8af43bc5d",
+    "assets/web-CGzCHh0W.js": "b21fe86eacd55f1c8d54390552970ce24b12c2aa80d0d243266f2ed37ee62077",
+    "assets/index-CMQlHLcF.css": "9c6ac6afe1ed064f151cd8fcbef5f13dd4954c022ec2854d981ba5b1fa0e83f8",
+    "assets/web-DYIwqwz2.js": "e3626169f7f523a2b92247a8172a631fd90038bb79b81d9da6036395ad987d1f",
+    "assets/web-45dD1wAa.js": "ae5b1874dda80b341516bbfb5a2a5490a7398cab786b7c29f4b9a4f5c2d360ac",
+    "assets/index-hNvc-lYN.js": "c22f7ceccf2a00fe3005d17f2a3d7994c14237524aec7f0611ae0374bf2e4a44"
+  },
+  "distSyncedSignedAssetsEqual": true,
+  "strictSignature": "PASS",
+  "provisioningMatchesDevice": true,
+  "associatedDomainMatchesStaging": true,
+  "noRemoteWebview": true,
+  "productThemeIncludedAndFixtureExcluded": true,
+  "sourceHashesUnchanged": true,
+  "releaseGuard": "NOT PASS: same three uncommitted-source findings; no bypass"
+}

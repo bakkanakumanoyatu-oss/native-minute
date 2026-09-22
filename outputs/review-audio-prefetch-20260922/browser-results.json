@@ -1,0 +1,152 @@
+[
+  {
+    "engine": "chromium",
+    "label": "no audio before validation; starts after Review rendered",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "completed prefetch and same-screen replay use one GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "30s re-entry revalidates Review and retains one completed binary",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "immediate Play joins unfinished prefetch",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "No Play exit aborts; no URL, retry or late playback",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "silent prefetch error; manual Play revalidates and recovers",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "background abort, no resume prefetch, manual recovery",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "session isolation",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "decode failure invalidates; manual recovery",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "changed version fetches its matching audio",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "max one entry A/B/A",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "deleted/not-found Review cannot prefetch or play",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "rapid route race rejects uncooperative old response",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "logout aborts without another GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "TTL expires binary; mounted replay preserved, re-entry fetches",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "no audio before validation; starts after Review rendered",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "completed prefetch and same-screen replay use one GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "30s re-entry revalidates Review and retains one completed binary",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "immediate Play joins unfinished prefetch",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "No Play exit aborts; no URL, retry or late playback",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "silent prefetch error; manual Play revalidates and recovers",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "background abort, no resume prefetch, manual recovery",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "session isolation",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "decode failure invalidates; manual recovery",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "changed version fetches its matching audio",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "max one entry A/B/A",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "deleted/not-found Review cannot prefetch or play",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "rapid route race rejects uncooperative old response",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "logout aborts without another GET",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "TTL expires binary; mounted replay preserved, re-entry fetches",
+    "result": "PASS"
+  }
+]

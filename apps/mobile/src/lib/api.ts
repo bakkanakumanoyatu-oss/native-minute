@@ -40,6 +40,7 @@ export type MobileApiRequestOptions = {
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   onTiming?: MobileApiTimingCallback;
+  signal?: AbortSignal;
 };
 
 export type MobileScript = {
@@ -787,6 +788,9 @@ async function executeBoundedRequest<T>(
 ): Promise<RequestAttempt<T>> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const controller = new AbortController();
+  const abort = () => controller.abort();
+  options.signal?.addEventListener("abort", abort, { once: true });
+  if (options.signal?.aborted) controller.abort();
   const startedAt = Date.now();
   const timeout = setTimeout(
     () => controller.abort(),
@@ -794,6 +798,7 @@ async function executeBoundedRequest<T>(
   );
 
   try {
+    if (controller.signal.aborted) return { kind: "timeout" };
     const response = await fetchImpl(url, {
       ...init,
       credentials: "omit",
@@ -813,6 +818,7 @@ async function executeBoundedRequest<T>(
     return { kind: "network-error" };
   } finally {
     clearTimeout(timeout);
+    options.signal?.removeEventListener("abort", abort);
     reportTiming(options.onTiming, "request", startedAt);
     if (operationTiming) {
       reportTiming(options.onTiming, operationTiming, startedAt);

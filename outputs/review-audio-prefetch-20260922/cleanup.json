@@ -1,0 +1,13 @@
+{
+  "done": true,
+  "objects": 0,
+  "audioElements": 0,
+  "home": true,
+  "asset": "./assets/index-hNvc-lYN.js",
+  "probeRemoved": true,
+  "regressionRemoved": true,
+  "deviceDiagnosticFilesRemoved": true,
+  "lldbDetached": true,
+  "browserFixtureServerStopped": true,
+  "productInstrumentation": false
+}
