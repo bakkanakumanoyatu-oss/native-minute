@@ -1,0 +1,13 @@
+{
+  "probePresent": false,
+  "home": true,
+  "audioElements": 0,
+  "online": true,
+  "visible": "visible",
+  "asset": "capacitor://localhost/assets/index-tMgN1PfB.js",
+  "lldbDetached": true,
+  "localBrowserFixtureStopped": true,
+  "diagnosticDeviceFilesRemovalAttempted": 7,
+  "diagnosticDeviceFilesRemoved": 7,
+  "remainingDiagnosticFiles": 0
+}

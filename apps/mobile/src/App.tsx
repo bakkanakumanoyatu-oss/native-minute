@@ -17,6 +17,7 @@ import {
 import { mobileEnvironment } from "./lib/environment";
 import { createPracticeApi } from "./practice/api";
 import { bindProgressMemory } from "./practice/progress-memory-lifecycle";
+import { bindSavedTakeAudioMemory } from "./audio/saved-take-memory-lifecycle";
 import { PracticeApp } from "./practice/PracticeApp";
 import { isPracticePath } from "./practice/routes";
 import { takeShareController } from "./audio/take-share";
@@ -420,6 +421,12 @@ export function App({ authController }: AppProps = {}) {
   useEffect(() => {
     if (practiceApi?.progressMemory && practiceOwnerUserId) {
       return bindProgressMemory(practiceApi.progressMemory, auth, practiceOwnerUserId);
+    }
+  }, [auth, practiceApi, practiceOwnerUserId]);
+
+  useEffect(() => {
+    if (practiceApi?.savedTakeAudioMemory && practiceOwnerUserId) {
+      return bindSavedTakeAudioMemory(practiceApi.savedTakeAudioMemory, auth, practiceOwnerUserId);
     }
   }, [auth, practiceApi, practiceOwnerUserId]);
 

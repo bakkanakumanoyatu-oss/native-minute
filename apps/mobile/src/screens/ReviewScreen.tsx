@@ -8,6 +8,7 @@ import type { PracticeRoute } from "../practice/routes";
 import { TakeMetadataEditor } from "./TakeMetadataEditor";
 import { SavedTakeAudio } from "./SavedTakeAudio";
 import { LoadingState, RequestError, formatReviewDate } from "./ScreenParts";
+import type { SavedTakeAudioVisit } from "../audio/saved-take-memory";
 
 type ReviewState =
   | { kind: "loading" }
@@ -148,28 +149,33 @@ export function ReviewScreen({
 
   useEffect(() => {
     let active = true;
+    let visit: SavedTakeAudioVisit | undefined;
     if (!isOnline) {
+      api.savedTakeAudioMemory?.invalidate();
       return () => {
         active = false;
       };
     }
 
     void Promise.all([api.getReview(scriptId, takeId), api.getScript(scriptId)]).then(([result, script]) => {
-      if (!active) return;
+      if (result.kind === "success") visit = result.review.audioVisit;
+      if (!active) { if (visit) api.savedTakeAudioMemory?.endVisit(visit); return; }
+      if (result.kind !== "success" || script.kind !== "success") api.savedTakeAudioMemory?.invalidate();
       setState(result.kind !== "success" ? { kind: "error", error: result }
         : script.kind !== "success" ? { kind: "error", error: script }
         : { kind: "ready", review: result.review, scriptTitle: script.script.title });
     }).catch(() => {
-      if (active) setState({ kind: "error", error: { kind: "network-error" } });
+      if (active) { api.savedTakeAudioMemory?.invalidate(); setState({ kind: "error", error: { kind: "network-error" } }); }
     });
 
     return () => {
       active = false;
+      if (visit) api.savedTakeAudioMemory?.endVisit(visit);
     };
   }, [api, isOnline, reloadKey, scriptId, takeId]);
 
   const visibleState: ReviewState = isOnline
-    ? state
+    ? state.kind === "ready" && (state.review.takeId !== takeId || state.review.scriptId !== scriptId) ? { kind: "loading" } : state
     : { kind: "error", error: { kind: "offline" } };
 
   return (
@@ -189,7 +195,7 @@ export function ReviewScreen({
               <p className="saved-take-name">{visibleState.review.displayName ?? visibleState.scriptTitle}</p>
               {visibleState.review.displayName ? <p className="review-meta">台本: {visibleState.scriptTitle}</p> : null}
               <p className="review-meta">{formatReviewDate(visibleState.review.reviewedAt ?? visibleState.review.createdAt)} · スコア {visibleState.review.evaluation.score}</p>
-              <SavedTakeAudio key={takeId} api={api} takeId={takeId} isOnline={isOnline} />
+              <SavedTakeAudio key={takeId} api={api} takeId={takeId} review={visibleState.review} isOnline={isOnline} />
             </TakeMetadataEditor>} />
         </>
       ) : (

@@ -1,0 +1,16 @@
+{
+  "readOnly": true,
+  "source": "existing Storage object metadata joined to reviewed Takes; aggregate only",
+  "savedTakes": 6,
+  "matchingObjects": 6,
+  "withVersion": 6,
+  "withEtag": 6,
+  "minBytes": 1285164,
+  "maxBytes": 1870444,
+  "targetDeviceDataset": {
+    "scripts": 5,
+    "takes": 2,
+    "favorites": 1
+  },
+  "rawIdentifiersSaved": false
+}

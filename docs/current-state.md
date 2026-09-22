@@ -1,5 +1,7 @@
 # 現在の状態
 
+2026-09-22 **保存Takeの30秒・1件ephemeral audio reuse HUMAN ACTUAL-DEVICE PASS / CLOSED**。Humanが「正しい録音が短い待ちで聞こえました」と最小1往復を受入。fresh Review所有権＋Storage id/version・owner/session一致後だけmemory-only・downloadから30秒・1件reuse。再入場3.912秒(N4)→0.074秒(N5)、全5回GET0／0 bytes。167 tests・実画面26条件・lint/typecheck/build/署名をsource一致で再利用し、今回差分のみcommit/normal pushでcloseout。初回全量取得・Review待ち、既知release guard3件NOT PASS・VP-01・R-INT-02・他WIP保持。追加製品変更/build/install/deploy/測定なし。[受入・検証・残件](saved-take-ephemeral-audio-reuse-20260922.md)。以下は履歴。
+
 2026-09-22 **30秒owner/session metadata memory reuse HUMAN ACTUAL-DEVICE PASS / CLOSED**。Human「画面移動はかなり速くなった」、表示内容PASSで採用。Home/成長/My Takesのmemory-only・最大30秒・毎再訪server revalidation・owner/session/lifecycle/mutation/error/TTL失効・古い応答防止を維持。141 tests・実画面20条件・lint/typecheck/build/署名のsource一致を確認し再利用。実測blocking中央値15.283→7.777秒、8→3回。Scripts/Review/保存Take初回再生の待ちは残件、音声18秒上限1件とrelease guard NOT PASS 3件・VP-01・R-INT-02・他acceptance WIPを保持。今回差分のみcommit/normal pushでcloseout、新性能修正なし。[採用結果・検証](metadata-memory-reuse-20260922.md)。以下は履歴。
 
 - 2026-09-18 **Dynamic Type HUMAN ACTUAL-DEVICE PASS / CLOSED**。iPhone14 Plus/iOS26.2.1で全体の実拡大・主要画面をHuman受入。原DT5件PASS、PS-X-01は部分証拠のみで全体未完了。既存検証・18:38 Stagingを再利用、rebuild/installなし。Stage B/Gate5/P1/P2/P3/J保持、VoiceOver/viewport未確認・Session D未開始。[closeout](qss-iphone14plus-acceptance-resume/dynamic-type-global-focused-fix.md)。次はHuman VoiceOver actual-device acceptance。以下は履歴。

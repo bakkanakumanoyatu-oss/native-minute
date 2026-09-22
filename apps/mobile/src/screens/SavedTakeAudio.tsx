@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AudioObjectUrl } from "../audio/object-url";
 import { takeShareController, type TakeShareController, type TakeShareResult } from "../audio/take-share";
-import type { PracticeApi } from "../practice/api";
+import type { MobileReview, PracticeApi } from "../practice/api";
 
 const shareCopy: Record<TakeShareResult, string> = {
   finished: "共有画面を閉じました。", cancelled: "共有をキャンセルしました。",
@@ -10,8 +10,8 @@ const shareCopy: Record<TakeShareResult, string> = {
   "cleanup-failed": "共有用の一時ファイルを片付けられませんでした。もう一度お試しください。"
 };
 
-export function SavedTakeAudio({ api, takeId, isOnline, sharing = takeShareController }: {
-  api: PracticeApi; takeId: string; isOnline: boolean; sharing?: TakeShareController;
+export function SavedTakeAudio({ api, takeId, review, isOnline, sharing = takeShareController }: {
+  api: PracticeApi; takeId: string; review?: MobileReview; isOnline: boolean; sharing?: TakeShareController;
 }) {
   const [state, setState] = useState<"idle" | "loading" | "ready" | "error" | "unavailable">("idle");
   const [shareBusy, setShareBusy] = useState(false);
@@ -24,6 +24,14 @@ export function SavedTakeAudio({ api, takeId, isOnline, sharing = takeShareContr
   const locked = useRef(false);
   const online = useRef(isOnline);
   useEffect(() => { online.current = isOnline; }, [isOnline]);
+  useEffect(() => api.savedTakeAudioMemory?.subscribe(() => {
+    generation.current++;
+    locked.current = false;
+    const element = media.current;
+    try { if (element) { element.pause(); element.removeAttribute("src"); element.load(); } }
+    catch { /* Release memory even if native media teardown fails. */ }
+    finally { objectUrl.current.clear(); setState(current => current === "loading" ? "error" : "idle"); setShareBusy(false); setMessage(null); setPlayHint(null); }
+  }), [api]);
   useEffect(() => {
     generation.current += 1;
     const urls = objectUrl.current;
@@ -47,7 +55,8 @@ export function SavedTakeAudio({ api, takeId, isOnline, sharing = takeShareContr
       if (!element) return;
       if (state !== "ready") {
         objectUrl.current.clear(); setState("loading");
-        const audio = await api.downloadTakeAudio(takeId);
+        const audio = review && api.prepareSavedTakeAudio
+          ? await api.prepareSavedTakeAudio(review) : await api.downloadTakeAudio(takeId);
         if (request !== generation.current) return;
         if (audio.kind !== "success") { setState(audio.kind === "not-found" ? "unavailable" : "error"); return; }
         const source = objectUrl.current.replace(audio.audio);
@@ -57,9 +66,14 @@ export function SavedTakeAudio({ api, takeId, isOnline, sharing = takeShareContr
       }
       try { await element.play(); }
       catch {
-        if (request === generation.current) setPlayHint("再生を開始できませんでした。「▶ 自分の録音を再生」をもう一度押してください。");
+        if (request === generation.current) {
+          api.savedTakeAudioMemory?.invalidate();
+          objectUrl.current.clear();
+          setState("error");
+          setPlayHint("再生を開始できませんでした。「▶ 自分の録音を再生」をもう一度押してください。");
+        }
       }
-    } catch { if (request === generation.current) setState("error"); }
+    } catch { if (request === generation.current) { api.savedTakeAudioMemory?.invalidate(); objectUrl.current.clear(); setState("error"); } }
     finally { if (request === generation.current) locked.current = false; }
   }
 
@@ -86,7 +100,7 @@ export function SavedTakeAudio({ api, takeId, isOnline, sharing = takeShareContr
         onClick={() => void share()}>{shareBusy ? "共有を準備しています…" : "共有"}</button>
     </div>
     <audio ref={element => { media.current = element; if (element) retainedMedia.current = element; }} controls hidden={state !== "ready"} preload="metadata" aria-label="保存済みの自分の録音"
-      onPlay={() => setPlayHint(null)} onError={() => { objectUrl.current.clear(); setPlayHint(null); setState("error"); }} />
+      onPlay={() => setPlayHint(null)} onError={() => { api.savedTakeAudioMemory?.invalidate(); objectUrl.current.clear(); setPlayHint(null); setState("error"); }} />
     {state === "error" ? <p role="status">録音を再生できませんでした。通信を確認して再試行してください。</p> : null}
     {state === "unavailable" ? <p role="status">この保存済み録音は現在利用できません。</p> : null}
     {state === "ready" && playHint ? <p role="status">{playHint}</p> : null}

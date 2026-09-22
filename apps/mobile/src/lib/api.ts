@@ -177,6 +177,9 @@ export type MobileCoachFeedback = {
 };
 
 export type MobileReview = {
+  audioIdentity?: string | null;
+  /** Local proof of this screen's fresh Review request, never deserialized. */
+  audioVisit?: import("../audio/saved-take-memory").SavedTakeAudioVisit;
   favorite: boolean;
   displayName: string | null;
   takeId: string;
@@ -694,7 +697,10 @@ function parseReviewPayload(value: unknown): MobileReview | null {
   }
 
   const review = isObject(data.review) ? data.review : data;
-  return isMobileReview(review) ? review : null;
+  if (!isMobileReview(review)) return null;
+  const safe = { ...review };
+  delete safe.audioVisit;
+  return safe;
 }
 
 function parseProgressPayload(value: unknown): MobileProgress | null {
@@ -1410,7 +1416,7 @@ async function readAudioResponse(response: Response): Promise<AudioResponseBody>
 }
 
 export type MobileTakeAudioDownloadState = Exclude<MobileAudioDownloadState, { kind: "success" }> |
-  { kind: "success"; audio: Blob; contentType: string; filename: string };
+  { kind: "success"; audio: Blob; contentType: string; filename: string; audioIdentity?: string };
 
 export async function downloadMobileTakeAudio(
   bffBaseUrl: string, accessToken: string, takeId: string, options: MobileApiRequestOptions = {}
@@ -1427,7 +1433,9 @@ export async function downloadMobileTakeAudio(
   try {
     const filename = decodeURIComponent(attempt.response.headers.get("content-disposition")?.match(/filename\*=UTF-8''([^;]+)/i)?.[1] ?? "");
     if (!/^[\p{L}\p{N} _-]{1,60}\.(wav|m4a|mp3|ogg|webm)$/u.test(filename)) return { kind: "invalid-response" };
-    return { kind: "success", audio: attempt.body.audio, contentType: attempt.body.contentType, filename };
+    const audioIdentity = attempt.response.headers.get("x-take-audio-identity");
+    return { kind: "success", audio: attempt.body.audio, contentType: attempt.body.contentType, filename,
+      ...(audioIdentity && /^[a-f0-9]{64}$/.test(audioIdentity) ? { audioIdentity } : {}) };
   } catch { return { kind: "invalid-response" }; }
 }
 

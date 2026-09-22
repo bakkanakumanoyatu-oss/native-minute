@@ -1,0 +1,15 @@
+{
+  "deploymentId": "dpl_Evxze3rYhAL4AwgT8i7rsoJYqEbB",
+  "alias": "native-minute-staging.vercel.app",
+  "projectId": "prj_RSxUzxugEIlH28tiQOyndjP365hw",
+  "sourceFiles": 659,
+  "sourceManifestSha256": "9fef99f8190ad7b790d47f4c0055871e120ca6def38a111202773056c32c8e05",
+  "sourceMatchesCandidate": true,
+  "changes": [
+    "lib/mobile/review-route.ts",
+    "lib/mobile/take-audio-route.ts",
+    "services/takes/take-audio.service.ts",
+    "services/takes/take-audio-identity.ts"
+  ],
+  "baseDeployment": "dpl_5Pxfw3X3KDVJmMw6w4oo13Nvum5L"
+}

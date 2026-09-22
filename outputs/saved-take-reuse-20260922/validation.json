@@ -1,0 +1,44 @@
+{
+  "targetedTests": {
+    "files": 11,
+    "passed": 167
+  },
+  "browser": {
+    "engines": [
+      "Chromium",
+      "WebKit"
+    ],
+    "conditions": 26,
+    "passed": 26
+  },
+  "checks": {
+    "workspace": "PASS",
+    "rootLint": "PASS",
+    "mobileLint": "PASS",
+    "mobileSourceAndTestTypes": "PASS via final Staging build",
+    "rootBuild": "PASS",
+    "rootTypecheckAfterBuild": "PASS",
+    "exactStagingBffBuild": "PASS",
+    "mobileStagingBuildSync": "PASS",
+    "nativeStagingBuild": "PASS",
+    "signatureAndSource": "PASS",
+    "diffCheck": "PASS"
+  },
+  "releaseGuard": {
+    "status": "NOT PASS",
+    "unchangedCategories": [
+      "staging_build_metadata_mismatch: dist sourceDirty",
+      "staging_build_metadata_mismatch: native sourceDirty",
+      "staging_source_tree_dirty"
+    ]
+  },
+  "notRun": [
+    "full test suite",
+    "expanded E2E",
+    "new recording/evaluation/voice generation",
+    "real external Share export"
+  ],
+  "sourceStillMatchesFinalBuild": true,
+  "productInstrumentation": false,
+  "commitPush": "NOT DONE"
+}

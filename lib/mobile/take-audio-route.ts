@@ -16,7 +16,8 @@ export async function handleTakeAudioGet(request: NextRequest, takeId: string, d
   if (!z.string().uuid().safeParse(takeId).success) return mobileApiError(origin, 400, "request_invalid");
   try {
     const audio = await dependencies.loadOwnedTakeAudio(client, userId, takeId);
-    const headers = buildMobileApiHeaders(origin, { exposedHeaders: ["Content-Length", "Content-Type", "Content-Disposition"] });
+    const headers = buildMobileApiHeaders(origin, { exposedHeaders: ["Content-Length", "Content-Type", "Content-Disposition", "X-Take-Audio-Identity"] });
+    if (audio.audioIdentity) headers.set("X-Take-Audio-Identity", audio.audioIdentity);
     headers.set("Content-Type", audio.contentType);
     headers.set("Content-Length", String(audio.bytes.byteLength));
     headers.set("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(audio.filename)}`);

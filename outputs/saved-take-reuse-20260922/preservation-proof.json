@@ -1,0 +1,23 @@
+{
+  "preExistingTrackedFiles": 958,
+  "changedSincePreflight": [
+    "AGENTS.md",
+    "apps/mobile/src/App.tsx",
+    "apps/mobile/src/lib/api.ts",
+    "apps/mobile/src/practice/api.ts",
+    "apps/mobile/src/screens/ReviewScreen.tsx",
+    "apps/mobile/src/screens/SavedTakeAudio.tsx",
+    "apps/mobile/tests/main-loop-routes.test.ts",
+    "apps/mobile/tests/take-audio.test.ts",
+    "docs/current-state.md",
+    "lib/mobile/review-route.ts",
+    "lib/mobile/take-audio-route.ts",
+    "services/takes/take-audio.service.ts"
+  ],
+  "unrelatedTrackedWipPreserved": true,
+  "metadataMemoryCoreUnchanged": true,
+  "head": "78ebcb5240cbce3b7ad97d88ea6bfb69f8ae6f56",
+  "indexEmpty": true,
+  "finalSourceMatchesBuild": true,
+  "currentStatePriorHistoryPreserved": true
+}

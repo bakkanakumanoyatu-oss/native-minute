@@ -1,0 +1,229 @@
+{
+  "before": {
+    "first": {
+      "n": 1,
+      "medianMs": 4169,
+      "rangeMs": [
+        4169,
+        4169
+      ],
+      "valuesMs": [
+        4169
+      ]
+    },
+    "reentry": {
+      "n": 4,
+      "medianMs": 3911.5,
+      "rangeMs": [
+        3360,
+        4767
+      ],
+      "valuesMs": [
+        4767,
+        3360,
+        4062,
+        3761
+      ]
+    },
+    "sameScreen": {
+      "n": 5,
+      "medianMs": 93,
+      "rangeMs": [
+        74.00000000093132,
+        103
+      ],
+      "valuesMs": [
+        93,
+        94,
+        81,
+        103,
+        74.00000000093132
+      ]
+    },
+    "reviewAll": {
+      "n": 5,
+      "medianMs": 1952,
+      "rangeMs": [
+        1284,
+        2486
+      ],
+      "valuesMs": [
+        2486,
+        1952,
+        1985.9999999990687,
+        1284,
+        1885
+      ]
+    },
+    "reviewReentry": {
+      "n": 4,
+      "medianMs": 1918.5,
+      "rangeMs": [
+        1284,
+        1985.9999999990687
+      ],
+      "valuesMs": [
+        1952,
+        1985.9999999990687,
+        1284,
+        1885
+      ]
+    },
+    "reentryAudioGETs": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "reentryAudioPayloadBytes": [
+      1285164,
+      1285164,
+      1285164,
+      1285164
+    ],
+    "reviewGETs": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "scriptTitleGETs": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "allCorrectTake": true
+  },
+  "after": {
+    "first": {
+      "n": 1,
+      "medianMs": 5058,
+      "rangeMs": [
+        5058,
+        5058
+      ],
+      "valuesMs": [
+        5058
+      ]
+    },
+    "reentry": {
+      "n": 5,
+      "medianMs": 74,
+      "rangeMs": [
+        72.00000000001455,
+        79
+      ],
+      "valuesMs": [
+        74,
+        72.00000000001455,
+        79,
+        76.00000000001455,
+        74
+      ]
+    },
+    "sameScreen": {
+      "n": 6,
+      "medianMs": 116.5,
+      "rangeMs": [
+        83,
+        132.99999999998545
+      ],
+      "valuesMs": [
+        89,
+        83,
+        113,
+        132.99999999998545,
+        130,
+        120
+      ]
+    },
+    "reviewAll": {
+      "n": 6,
+      "medianMs": 2735.0,
+      "rangeMs": [
+        1668,
+        3271
+      ],
+      "valuesMs": [
+        3101,
+        1668,
+        2369,
+        3119.9999999999854,
+        2169,
+        3271
+      ]
+    },
+    "reviewReentry": {
+      "n": 5,
+      "medianMs": 2369,
+      "rangeMs": [
+        1668,
+        3271
+      ],
+      "valuesMs": [
+        1668,
+        2369,
+        3119.9999999999854,
+        2169,
+        3271
+      ]
+    },
+    "reentryAudioGETs": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "reentryAudioPayloadBytes": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "reviewGETs": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "scriptTitleGETs": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "allCorrectTake": true
+  },
+  "afterSameBinaryAllSix": true,
+  "afterCreatedUrls": 6,
+  "afterRemainingUrls": 0,
+  "firstAudioBytes": 1285164,
+  "wireCompressionBytesMeasured": false,
+  "audibleOnsetMeasured": false,
+  "actualPlayingEventAndCurrentTime": true,
+  "asset": "capacitor://localhost/assets/index-tMgN1PfB.js",
+  "afterReentryAgesMs": [
+    2724,
+    6061,
+    10265,
+    13435,
+    17707
+  ],
+  "ttl": {
+    "ageFromFirstDownloadMs": 201345,
+    "binaryGETs": 1,
+    "audioPayloadBytes": 1285164,
+    "playingMs": 6023,
+    "sameScreenPlayingMs": 108,
+    "bothMediaTimesAdvanced": true
+  }
+}

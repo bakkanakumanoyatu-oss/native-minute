@@ -1,0 +1,132 @@
+[
+  {
+    "engine": "chromium",
+    "label": "first GET and same-screen single-tap replay",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "re-entry: fresh Review, zero audio GET, unmount URL revoked",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "one entry: A/B/A refetches",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "native background releases URL; resumed tap revalidates then downloads",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "same-owner session change clears and refetches",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "decode error clears retained blob and URL",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "audio version change never reuses old binary",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "deleted Review has no playable cached controls",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "play promise rejection clears cache and retry is one tap",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "stale A download cannot play in B",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "logout + final cleanup revoke every created object URL",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "failed audio fetch invalidates and preserves visible retry feedback",
+    "result": "PASS"
+  },
+  {
+    "engine": "chromium",
+    "label": "Share uses fresh binary and inactive sheet completion never strands playback busy",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "first GET and same-screen single-tap replay",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "re-entry: fresh Review, zero audio GET, unmount URL revoked",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "one entry: A/B/A refetches",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "native background releases URL; resumed tap revalidates then downloads",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "same-owner session change clears and refetches",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "decode error clears retained blob and URL",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "audio version change never reuses old binary",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "deleted Review has no playable cached controls",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "play promise rejection clears cache and retry is one tap",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "stale A download cannot play in B",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "logout + final cleanup revoke every created object URL",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "failed audio fetch invalidates and preserves visible retry feedback",
+    "result": "PASS"
+  },
+  {
+    "engine": "webkit",
+    "label": "Share uses fresh binary and inactive sheet completion never strands playback busy",
+    "result": "PASS"
+  }
+]

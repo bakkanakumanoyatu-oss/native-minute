@@ -1,6 +1,7 @@
 import type { MobileAuthController } from "../auth/mobile-auth";
 import type { MobileAuthState } from "../auth/state-machine";
 import { ProgressMemory } from "./progress-memory";
+import { SavedTakeAudioMemory, type SavedTakeAudioVisit } from "../audio/saved-take-memory";
 import {
   acceptMobilePronunciationConsent,
   acceptMobileVoiceConsent,
@@ -76,6 +77,8 @@ type RequestState = { kind: string; reasonCode?: string };
 
 export interface PracticeApi {
   readonly progressMemory?: ProgressMemory;
+  readonly savedTakeAudioMemory?: SavedTakeAudioMemory;
+  prepareSavedTakeAudio?(review: MobileReview): Promise<MobileTakeAudioDownloadState>;
   listScripts(): Promise<ScriptsRequestState>;
   createScript(input: CreateMobileScriptInput): Promise<MobileScriptRequestState>;
   getScript(scriptId: string): Promise<MobileScriptRequestState>;
@@ -190,11 +193,13 @@ export function createPracticeApi({
   const metadataWrites = new Set<Promise<TakeMetadataRequestState>>();
   const progressMemory = new ProgressMemory(() => afterMetadataWrites(() =>
     request(token => fetchMobileProgress(bffBaseUrl, token, { onTiming }))));
+  const savedTakeAudioMemory = new SavedTakeAudioMemory(ownerIsCurrent);
 
   async function mutate<T>(operation: () => Promise<T>): Promise<T> {
+    savedTakeAudioMemory.invalidate();
     const finish = progressMemory.beginMutation();
     try { return await operation(); }
-    finally { finish(); }
+    finally { savedTakeAudioMemory.invalidate(); finish(); }
   }
 
   function updateTakeMetadata(takeId: string, input: TakeMetadataPatch) {
@@ -217,6 +222,7 @@ export function createPracticeApi({
   }
 
   async function invalidateSession() {
+    savedTakeAudioMemory.invalidate();
     if (ownerIsCurrent()) {
       await onSessionInvalid?.();
     }
@@ -224,6 +230,7 @@ export function createPracticeApi({
 
   async function request<T extends RequestState>(operation: (accessToken: string) => Promise<T>): Promise<T> {
     if (!ownerIsCurrent()) {
+      savedTakeAudioMemory.revoke();
       return sessionFailure<T>("session_owner_changed");
     }
 
@@ -291,6 +298,55 @@ export function createPracticeApi({
     return state;
   }
 
+  async function sessionFingerprint(token: string) {
+    // Retain only a one-way credential fingerprint; never the raw token or a log.
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function validateAudioVisit(visit: SavedTakeAudioVisit, token: string): Promise<MobileReviewRequestState> {
+    const epoch = savedTakeAudioMemory.validationEpoch();
+    const session = await sessionFingerprint(token);
+    const result = await fetchMobileReview(bffBaseUrl, token, visit.scriptId, visit.takeId, { onTiming });
+    if (!savedTakeAudioMemory.current(visit) || epoch !== savedTakeAudioMemory.validationEpoch()) return { kind: "invalid-response" };
+    if (result.kind !== "success") { savedTakeAudioMemory.invalidate(); return result; }
+    savedTakeAudioMemory.authorize(visit, epoch, session, result.review.audioIdentity);
+    return { ...result, review: { ...result.review, audioVisit: visit } };
+  }
+
+  async function getReview(scriptId: string, takeId: string) {
+    const visit = savedTakeAudioMemory.beginVisit(scriptId, takeId);
+    try {
+      const result = await afterMetadataWrites(() => request(token => validateAudioVisit(visit, token)));
+      if (result.kind !== "success" && savedTakeAudioMemory.current(visit)) savedTakeAudioMemory.invalidate();
+      return result;
+    } catch {
+      if (savedTakeAudioMemory.current(visit)) savedTakeAudioMemory.invalidate();
+      return { kind: "network-error" as const };
+    }
+  }
+
+  async function prepareSavedTakeAudio(review: MobileReview): Promise<MobileTakeAudioDownloadState> {
+    const visit = review.audioVisit;
+    if (!visit || !savedTakeAudioMemory.current(visit) || visit.takeId !== review.takeId || visit.scriptId !== review.scriptId) return { kind: "invalid-response" };
+    return afterMetadataWrites(() => request(async token => {
+      const session = await sessionFingerprint(token);
+      if (!savedTakeAudioMemory.authorized(visit, session)) {
+        const validated = await validateAudioVisit(visit, token);
+        if (validated.kind !== "success") return validated;
+      }
+      return savedTakeAudioMemory.load(visit, session, async () => {
+        const audio = await downloadMobileTakeAudio(bffBaseUrl, token, visit.takeId, { onTiming });
+        const currentToken = await auth.getAccessToken();
+        if (!currentToken || await sessionFingerprint(currentToken) !== session) {
+          savedTakeAudioMemory.invalidate();
+          return { kind: "unauthorized", reasonCode: "session_changed" };
+        }
+        return audio;
+      });
+    }));
+  }
+
   function requestListen(scriptId: string) {
     const existing = listenRequests.get(scriptId);
     if (existing) {
@@ -312,6 +368,8 @@ export function createPracticeApi({
 
   return {
     progressMemory,
+    savedTakeAudioMemory,
+    prepareSavedTakeAudio,
     listScripts: () => request((token) => fetchMobileScripts(bffBaseUrl, token, { onTiming })),
     createScript: (input) => mutate(() => request((token) => createMobileScript(bffBaseUrl, token, input, { onTiming }))),
     getScript: (scriptId) => request((token) => fetchMobileScript(bffBaseUrl, token, scriptId, { onTiming })),
@@ -331,7 +389,7 @@ export function createPracticeApi({
     downloadTakeAudio: (takeId) => afterMetadataWrites(() => request((token) => downloadMobileTakeAudio(bffBaseUrl, token, takeId, { onTiming }))),
     uploadRecording: (input) => request((token) => uploadMobileRecording(bffBaseUrl, token, input, { onTiming })),
     evaluateRecording: (input) => mutate(() => request((token) => evaluateMobileRecording(bffBaseUrl, token, input, { onTiming }))),
-    getReview: (scriptId, takeId) => afterMetadataWrites(() => request((token) => fetchMobileReview(bffBaseUrl, token, scriptId, takeId, { onTiming }))),
+    getReview,
     updateTakeMetadata,
     getProgress: () => afterMetadataWrites(() => request((token) => fetchMobileProgress(bffBaseUrl, token, { onTiming })))
   };

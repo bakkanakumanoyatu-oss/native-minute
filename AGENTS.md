@@ -34,6 +34,7 @@
 - Stored review/progress data should keep reading from persisted take/review tables.
 - Be careful with history semantics: `takes` do not snapshot full script content, so in-place script editing can break old review/progress meaning.
 - `script_audios` and `recordings` must stay ownership-checked.
+- Saved Take audio reuse is memory-only, one item, 30 seconds from download. Every Review re-entry requires fresh server ownership and Storage object-version validation; auth/lifecycle/error invalidation is mandatory. Share always fetches fresh audio.
 
 ## Product defaults
 - Default locale is `en-US`.

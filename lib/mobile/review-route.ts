@@ -9,6 +9,7 @@ import {
 } from "@/services/review";
 import { mobileApiError, mobileApiOk } from "./api-response";
 import { toMobileReviewDto } from "./dto";
+import { getOwnedTakeAudioIdentity } from "@/services/takes/take-audio-identity";
 import {
   authenticateMobileRequest,
   defaultMobileRouteAuthDependencies,
@@ -21,6 +22,7 @@ import {
 const idSchema = z.string().uuid();
 
 export interface MobileReviewRouteDependencies extends MobileRouteAuthDependencies {
+  getOwnedTakeAudioIdentity: typeof getOwnedTakeAudioIdentity;
   getStoredReview(
     client: AppSupabaseClient,
     userId: string,
@@ -31,6 +33,7 @@ export interface MobileReviewRouteDependencies extends MobileRouteAuthDependenci
 
 const defaultDependencies: MobileReviewRouteDependencies = {
   ...defaultMobileRouteAuthDependencies,
+  getOwnedTakeAudioIdentity,
   getStoredReview
 };
 
@@ -68,7 +71,8 @@ export async function handleMobileReviewGet(
       return mobileApiError(origin, 404, "review_not_found");
     }
 
-    return mobileApiOk(origin, { review: toMobileReviewDto(hydrateStoredReview(stored)) });
+    const audioIdentity = await dependencies.getOwnedTakeAudioIdentity(client, userId, stored.take);
+    return mobileApiOk(origin, { review: { ...toMobileReviewDto(hydrateStoredReview(stored)), audioIdentity } });
   } catch (error) {
     return mapMobileServiceError(origin, error, {
       unavailable: "evaluation_unavailable",

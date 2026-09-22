@@ -737,7 +737,7 @@ describe("mobile evaluation, review, and progress adapters", () => {
       mobileRequest(`/api/mobile/scripts/${SCRIPT_ID}/reviews/${TAKE_ID}`),
       SCRIPT_ID,
       TAKE_ID,
-      { ...authDependencies(), getStoredReview: async () => stored }
+      { ...authDependencies(), getStoredReview: async () => stored, getOwnedTakeAudioIdentity: async () => "a".repeat(64) }
     );
     const serialized = JSON.stringify(await response.json());
 

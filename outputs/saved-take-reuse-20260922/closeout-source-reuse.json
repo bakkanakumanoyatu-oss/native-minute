@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-09-22T10:56:46.798892+00:00",
+  "status": "HUMAN ACTUAL-DEVICE PASS / CLOSED",
+  "humanEvidence": "保存Takeを再生し、音が出たらすぐHome→同じReview→再生。正しい録音が短い待ちで聞こえました",
+  "preCloseoutHead": "78ebcb5240cbce3b7ad97d88ea6bfb69f8ae6f56",
+  "mobileSourceFilesMatched": 89,
+  "bffChangedSourceFilesMatched": [
+    "lib/mobile/review-route.ts",
+    "lib/mobile/take-audio-route.ts",
+    "services/takes/take-audio.service.ts",
+    "services/takes/take-audio-identity.ts"
+  ],
+  "signedArtifactAssetsMatched": true,
+  "strictCodeSignature": "PASS",
+  "reusedValidation": {
+    "targetedTests": 167,
+    "browserConditions": 26,
+    "rootMobileLint": true,
+    "mobileRootTypecheck": true,
+    "rootExactBffMobileNativeBuild": true
+  },
+  "newProductChanges": false,
+  "newTestsBuildInstallDeployment": false,
+  "remainingFindings": [
+    "true first-play full download",
+    "fresh Review loading and extra version read",
+    "known release guard three NOT PASS",
+    "VP-01 intermittent FAIL",
+    "R-INT-02 copy finding",
+    "other acceptance WIP"
+  ],
+  "commitScope": "This accepted audio reuse only; unrelated WIP excluded"
+}
