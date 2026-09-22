@@ -1,0 +1,47 @@
+{
+  "mode": "QSS_R13_SIGNAL_GATE_EVIDENCE_RECONCILIATION",
+  "tests": {
+    "scoped": {
+      "passed": 42,
+      "files": 2,
+      "newCases": 4
+    },
+    "rootLint": "PASS",
+    "mobileLint": "PASS",
+    "mobileSourceAndTestTypecheck": "PASS",
+    "diffCheck": "PASS",
+    "focusedSelfReview": "PASS"
+  },
+  "evidenceBoundary": "Synthetic capture bytes traverse real PCM normalization/classification and real App/RecordScreen; auth/fetch/media capture mocked; CSP connect-src none and external browser requests aborted. New four cases never click evaluate; upload/evaluation mock invocations stay zero. No actual provider calls. Not physical iPhone branch observation.",
+  "changedTest": "apps/mobile/src/screens/record-state.test.ts",
+  "productManifestMismatches": [],
+  "testOnlyManifestMismatch": [
+    "apps/mobile/src/screens/record-state.test.ts"
+  ],
+  "runtimeFilesMatchHEAD": [
+    "lib/browser-pcm-wav.ts",
+    "apps/mobile/src/screens/RecordScreen.tsx",
+    "apps/mobile/src/audio/mobile-recorder.ts"
+  ],
+  "sourceHashes": {
+    "lib/browser-pcm-wav.ts": "170f35c533e6d779582b65e07364230bc066574b408c900b913bfb9a313a572f",
+    "apps/mobile/src/screens/RecordScreen.tsx": "dd3b1bc46403af4014414c1c56fe092b7f40999ed2465427adfdde425c9e05a2",
+    "apps/mobile/src/audio/mobile-recorder.ts": "91e11e1d8b1266de708c87e943d68f55f5bb78a5074edbb94522e8c610857a6f",
+    "apps/mobile/src/screens/record-state.test.ts": "b67867f9af09e7dce5674994759225e2200fa0ac975e7749623ad9a5b063b8da",
+    "apps/mobile/src/audio/pcm-wav.test.ts": "be185c5599a3ee7e1bcaa5d33ff5b168cb3fdd6dfc66c94ae2600d9e5978cf9d"
+  },
+  "originalContractHash": "1c3096b25ff424dbaf76bb54ddc097ba5b15aae5fbac3691eb0b28a526e3316d",
+  "newBuild": false,
+  "newInstall": false,
+  "providerCalls": 0,
+  "commit": false,
+  "push": false,
+  "closeout": {
+    "mode": "QSS_R13_COMBINED_EVIDENCE_HUMAN_DECISION_CLOSEOUT",
+    "validationReusedBecauseHashesMatch": true,
+    "status": "PASS by COMBINED DETERMINISTIC + HUMAN_DEVICE evidence",
+    "evidence_class": "deterministic test + actual-device supplemental evidence",
+    "directPhysicalDeviceSignalBranchesObserved": false,
+    "sessionD": "7/7 PASS"
+  }
+}

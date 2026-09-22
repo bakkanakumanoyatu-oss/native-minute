@@ -58,6 +58,7 @@ describe("active recording remains stoppable across connectivity changes", () =>
           const qa = window.__recordQA = {
             captureStarts: 0, trackStops: 0, liveTracks: 0, recorderStarts: 0, uploads: [], evaluations: [],
             consent: 'accepted', consentCalls: 0, evaluationSuccess: false, offline: location.search === '?offline',
+            signalFixture: 'ordinary',
             unexpected: []
           };
           Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => !qa.offline });
@@ -113,7 +114,13 @@ describe("active recording remains stoppable across connectivity changes", () =>
             start() { this.state = 'recording'; qa.recorderStarts++; }
             stop() {
               this.state = 'inactive';
-              const samples = Float32Array.from({length: 16000 * 60}, (_, i) => Math.sin(i / 12) * .12);
+              // Synthetic capture bytes, not a mocked classification: real normalization,
+              // signal analysis and RecordScreen gating all run below.
+              const samples = Float32Array.from({length: 16000 * 60}, (_, i) =>
+                qa.signalFixture === 'zero' ? 0 :
+                qa.signalFixture === 'near-zero' ? 1 / 32768 :
+                qa.signalFixture === 'quiet' ? (i % 2 === 0 ? .002 : -.002) :
+                Math.sin(i / 12) * .12);
               const data = new Blob([encodeMonoPcm16Wav(samples)], {type: 'audio/wav'});
               queueMicrotask(() => { this.ondataavailable?.({data}); this.onstop?.(); });
             }
@@ -177,6 +184,58 @@ describe("active recording remains stoppable across connectivity changes", () =>
   const stop = (page: Page) => page.getByRole("button", { name: "停止", exact: true });
   const cancel = (page: Page) => page.getByRole("button", { name: "この録音を破棄して、録り直す", exact: true });
   const stats = (page: Page) => page.evaluate(() => window.__recordQA);
+
+  it.each([
+    { fixture: "quiet", classification: "LOW_SIGNAL" },
+    { fixture: "ordinary", classification: "SIGNAL_PRESENT" }
+  ] as const)("wires $classification PCM to warning, preview and manual confirmation without submission", async ({ fixture, classification }) => {
+    const page = await mount();
+    await page.evaluate((fixture) => { window.__recordQA.signalFixture = fixture; }, fixture);
+    await start(page); await stop(page).click();
+    await page.getByText("録音の詳細", { exact: true }).click();
+    await browserExpect(page.getByText(`signalClassification: ${classification}`, { exact: true })).toBeVisible();
+    const warning = page.getByText("音声が小さめです。", { exact: true });
+    if (fixture === "quiet") await browserExpect(warning).toBeVisible();
+    else await browserExpect(warning).toHaveCount(0);
+    await browserExpect(page.getByText("音声信号を検出できませんでした。マイクを確認して、もう一度録音してください。", { exact: true })).toHaveCount(0);
+    const preview = page.getByLabel("自分の録音を再生", { exact: true });
+    const confirmation = page.getByRole("checkbox", { name: "録音を確認した", exact: true });
+    const evaluate = page.getByRole("button", { name: "この録音で評価する", exact: true });
+    await browserExpect(preview).toBeVisible();
+    await browserExpect(confirmation).not.toBeChecked();
+    await browserExpect(evaluate).toBeDisabled();
+    expect(await stats(page)).toMatchObject({ liveTracks: 0, uploads: [], evaluations: [], unexpected: [] });
+    await preview.evaluate(async (element) => { await (element as HTMLAudioElement).play(); });
+    await browserExpect.poll(() => preview.evaluate((element) => (element as HTMLAudioElement).currentTime)).toBeGreaterThan(0);
+    await preview.evaluate((element) => { (element as HTMLAudioElement).pause(); });
+    await browserExpect(confirmation).not.toBeChecked();
+    await browserExpect(evaluate).toBeDisabled();
+    await confirmation.check();
+    await browserExpect(evaluate).toBeEnabled();
+    expect(await stats(page)).toMatchObject({ uploads: [], evaluations: [], unexpected: [] });
+    await confirmation.uncheck();
+    await browserExpect(evaluate).toBeDisabled();
+    expect(await stats(page)).toMatchObject({ uploads: [], evaluations: [], unexpected: [] });
+  });
+
+  it.each(["zero", "near-zero"] as const)("rejects %s PCM and clears a previously confirmed preview without submission", async (fixture) => {
+    const page = await mount();
+    await start(page); await stop(page).click();
+    await page.getByRole("checkbox", { name: "録音を確認した", exact: true }).check();
+    await browserExpect(page.getByRole("button", { name: "この録音で評価する", exact: true })).toBeEnabled();
+    await page.evaluate((fixture) => { window.__recordQA.signalFixture = fixture; }, fixture);
+    await page.getByRole("button", { name: "録り直す", exact: true }).click();
+    await stop(page).click();
+    await page.getByText("録音の詳細", { exact: true }).click();
+    await browserExpect(page.getByText("signalClassification: DIGITAL_SILENCE", { exact: true })).toBeVisible();
+    await browserExpect(page.getByText("音声信号を検出できませんでした。マイクを確認して、もう一度録音してください。", { exact: true })).toBeVisible();
+    await browserExpect(page.getByText("音声が小さめです。", { exact: true })).toHaveCount(0);
+    await browserExpect(page.getByLabel("自分の録音を再生", { exact: true })).toHaveCount(0);
+    await browserExpect(page.getByRole("checkbox", { name: "録音を確認した", exact: true })).toHaveCount(0);
+    await browserExpect(page.getByRole("button", { name: "この録音で評価する", exact: true })).toHaveCount(0);
+    await browserExpect(page.getByRole("button", { name: "録音する", exact: true })).toBeEnabled();
+    expect(await stats(page)).toMatchObject({ captureStarts: 2, trackStops: 2, liveTracks: 0, uploads: [], evaluations: [], unexpected: [] });
+  });
 
   it.each([[428, 16], [428, 32], [320, 16], [320, 32]])("keeps stop in its dock and actually stops offline at %i/%i", async (width, fontSize) => {
     const page = await mount(width, fontSize);
@@ -318,6 +377,7 @@ describe("active recording remains stoppable across connectivity changes", () =>
 declare global {
   interface Window {
     __recordQA: {
+      signalFixture: "ordinary" | "quiet" | "zero" | "near-zero";
       offline: boolean;
       evaluationSuccess: boolean;
       consent: "accepted" | "pending" | "error" | "withdrawn" | "required";
