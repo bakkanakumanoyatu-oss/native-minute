@@ -25,6 +25,7 @@ let active = Array.from({ length: 8 }, (_, index) => script(index + 1));
 let archived: MobileScript[] = [{ ...script(9), archivedAt: "2026-09-23T01:00:00.000Z" }];
 const legacyHistory = ["take-before-revision"];
 const mutations: Array<{ scriptId: string; input: unknown }> = [];
+let nextMutationFailure: { kind: "conflict"; reasonCode: string } | null = null;
 const scriptsMemory = new DisplayMemory<MobileScript[]>(async () => ({ kind: "success", data: active }));
 scriptsMemory.seed("scripts", active);
 
@@ -35,6 +36,12 @@ const api = {
   getScript: async (id: string) => ({ kind: "success" as const, script: [...active, ...archived].find(item => item.id === id)! }),
   createScript: async () => ({ kind: "invalid-request" as const, reasonCode: "fixture" }),
   mutateScript: async (scriptId: string, input: { archived?: boolean }) => {
+    if (nextMutationFailure) {
+      const failure = nextMutationFailure;
+      nextMutationFailure = null;
+      active = active.map(item => item.id === scriptId ? { ...item, lockVersion: item.lockVersion + 1 } : item);
+      return failure;
+    }
     mutations.push({ scriptId, input });
     const base = [...active, ...archived].find(item => item.id === scriptId)!;
     const updated = { ...base, archivedAt: input.archived ? "2026-09-24T00:00:00.000Z" : null, lockVersion: base.lockVersion + 1 };
@@ -52,6 +59,7 @@ const api = {
 
 const qa = {
   mutations,
+  failNextMutation: () => { nextMutationFailure = { kind: "conflict", reasonCode: "script_edit_conflict" }; },
   get activeIds() { return active.map(item => item.id); },
   get archivedIds() { return archived.map(item => item.id); },
   get legacyHistory() { return legacyHistory; }

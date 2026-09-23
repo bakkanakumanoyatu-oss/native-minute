@@ -14,6 +14,7 @@ The server progress read model already includes legacy Takes in `takeHistory` an
 - Growth counts and picker labels use saved history for practice presence. Legacy-only details show historical records and links to Review while current-revision latest/best remain empty. The comparison heading explicitly says both results belong to the current version.
 - Review DTO exposes the Take's stored nullable title snapshot. The app validates legacy `NULL` title/snapshot and labels the live script title as **現在の台本名**; it never labels current content as the old evaluation target. Recording name, saved script title, and current script title have distinct labels in Home, My Takes, and Review.
 - Scripts' edit/delete action and delete confirmation scroll into view and receive focus. The confirmation says the active-list entry is removed while recording/evaluation history remains; the action is `削除する` and still calls archive. The archived list opens and closes, and restore remains explicit. No hard-delete path is added.
+- Human screenshots showed that the first `台本を削除` button stayed visible after confirmation opened. Pressing it again only repeated the already-open state. The follow-up hides edit/delete controls during confirmation, keeps any request error beside the confirmation, and names the archived-list entry `復元画面を開く` so the final restore action is distinct.
 
 No migration, legacy backfill, provider call, production operation, or historical data mutation is part of this change.
 
@@ -27,9 +28,9 @@ No migration, legacy backfill, provider call, production operation, or historica
 
 - **Future contract:** permanent deletion of an archived script needs an explicit decision and audit for Takes, Reviews, reference audio, Storage, quota, and Gate5. This remediation implements no permanent delete.
 - **UI consistency:** Home, Scripts, and Growth manual refresh controls differ. Compare whether a prominent button is needed, pull to refresh, a small common header action, and automatic background refresh in a separate task.
-- Human Staging retest: (1) Home previous practice/history, (2) Growth existing record, (3) open one reviewed legacy Review and play its recording, (4) delete/archive interaction, (5) close archived list, (6) restore. The six matching reviewed recording objects support the playback attempt, but actual device playback remains Human pending.
-- Resume title edit, then content edit acceptance only after this retest passes. New-revision provider E2E remains later and has not started.
+- Human Staging retest on the first installed candidate: (1) Home previous practice/history, (2) Growth existing record, (3) reviewed legacy Review recording playback, (4) delete/archive interaction, (5) archived-list close, and (6) restore were all reported successful. Screenshots confirmed the duplicate confirmation control; the follow-up UI change above needs its own device check after installation. Read-only Staging inspection after Human testing found the seven legacy Takes and their weak-word/coach row digests unchanged, with archive state transitions and no Take attached to the tested archived script.
+- Title edit, then content edit acceptance can resume after the follow-up UI check. New-revision provider E2E remains later and has not started.
 
 ## Deployment
 
-Local candidate ready; exact commit, Staging deployment/install identities, Production isolation proof, and Human verdict are pending below.
+The original remediation is commit `949423cf1aa89be7c49c0c74b97b55799cd87ef0`, deployed to dedicated Staging BFF `dpl_J7UQzVXJpKuJUNTpWMb1soK3b4uv` and installed on the same iPhone. Production remained unchanged. The task's operational completion report records the follow-up mobile build and installation identities.

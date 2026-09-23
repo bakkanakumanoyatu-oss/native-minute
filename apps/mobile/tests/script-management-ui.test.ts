@@ -50,7 +50,10 @@ for (const [engine, launcher] of Object.entries({ chromium, webkit })) describe(
     const confirm = page.getByRole("button", { name: "削除する", exact: true });
     await check(confirm).toBeInViewport();
     expect(await confirm.evaluate(element => document.activeElement === element)).toBe(true);
-    await check(page.getByRole("alert")).toContainText("録音・評価の履歴は残り、あとで復元できます");
+    await check(page.getByRole("button", { name: "台本を削除" })).toHaveCount(0);
+    await check(page.getByRole("button", { name: "変更を保存" })).toHaveCount(0);
+    await check(confirm).toHaveAccessibleDescription(/録音・評価の履歴は残り、あとで復元できます/);
+    await check(page.getByRole("group", { name: "台本削除の確認" })).toContainText("録音・評価の履歴は残り、あとで復元できます");
     await check(page.getByRole("button", { name: "一覧から外す" })).toHaveCount(0);
     await page.getByRole("button", { name: "キャンセル" }).click();
     await check(confirm).toHaveCount(0);
@@ -64,19 +67,38 @@ for (const [engine, launcher] of Object.entries({ chromium, webkit })) describe(
     expect(await page.evaluate(() => window.scriptsQA.legacyHistory)).toEqual(["take-before-revision"]);
   }));
 
+  it("shows an archive conflict beside the confirmation and allows retry", async () => mount(async page => {
+    await page.getByRole("button", { name: "編集・削除" }).first().click();
+    await page.getByRole("button", { name: "台本を削除" }).click();
+    await page.evaluate(() => window.scriptsQA.failNextMutation());
+    const confirmation = page.getByRole("group", { name: "台本削除の確認" });
+    await confirmation.getByRole("button", { name: "削除する" }).click();
+    const error = confirmation.getByRole("alert");
+    await check(error).toBeInViewport();
+    await check(confirmation.getByRole("button", { name: "下書きを残して最新状態を確認" })).toBeVisible();
+    expect(await page.evaluate(() => window.scriptsQA.mutations)).toEqual([]);
+    await confirmation.getByRole("button", { name: "下書きを残して最新状態を確認" }).click();
+    await check(error).toHaveCount(0);
+    await confirmation.getByRole("button", { name: "削除する" }).click();
+    await check(confirmation).toHaveCount(0);
+    expect(await page.evaluate(() => window.scriptsQA.mutations)).toEqual([
+      { scriptId: "script-1", input: { archived: true, expectedLockVersion: 2 } }
+    ]);
+  }));
+
   it("closes the archived list and restores through the archive mutation", async () => mount(async page => {
     const open = page.getByRole("button", { name: "削除済みの台本を見る" });
     await open.click();
     const close = page.getByRole("button", { name: "削除済みの台本を閉じる" });
     await check(close).toHaveAttribute("aria-expanded", "true");
     await check(close).toBeInViewport();
-    await check(page.getByRole("button", { name: "Practice 9 — 復元する" })).toBeVisible();
+    await check(page.getByRole("button", { name: "Practice 9 — 復元画面を開く" })).toBeVisible();
     await close.click();
     await check(open).toHaveAttribute("aria-expanded", "false");
-    await check(page.getByRole("button", { name: "Practice 9 — 復元する" })).toHaveCount(0);
+    await check(page.getByRole("button", { name: "Practice 9 — 復元画面を開く" })).toHaveCount(0);
 
     await open.click();
-    await page.getByRole("button", { name: "Practice 9 — 復元する" }).click();
+    await page.getByRole("button", { name: "Practice 9 — 復元画面を開く" }).click();
     const heading = page.getByRole("heading", { name: "削除済みの台本" });
     await check(heading).toBeInViewport();
     await check(page.getByRole("button", { name: "復元する", exact: true })).toBeVisible();
