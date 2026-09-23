@@ -10,6 +10,9 @@ import {
   createMobileAccountDeletionRequest,
   createMobileVoiceDeletionRequest,
   createMobileScript,
+  mutateMobileScript,
+  type ScriptMutationInput,
+  type PracticeIdentity,
   createMobileVoiceFromSample,
   downloadMobileScriptAudio,
   downloadMobileTakeAudio,
@@ -87,8 +90,10 @@ export interface PracticeApi {
   prefetchSavedTakeAudio?(review: MobileReview): Promise<void>;
   listScripts(signal?: AbortSignal): Promise<ScriptsRequestState>;
   createScript(input: CreateMobileScriptInput): Promise<MobileScriptRequestState>;
+  mutateScript?(scriptId: string, input: ScriptMutationInput): Promise<MobileScriptRequestState>;
+  listArchivedScripts?(): Promise<ScriptsRequestState>;
   getScript(scriptId: string, signal?: AbortSignal): Promise<MobileScriptRequestState>;
-  requestListen(scriptId: string): Promise<MobileListenRequestState>;
+  requestListen(scriptId: string, identity?: PracticeIdentity): Promise<MobileListenRequestState>;
   getVoiceSetup(): Promise<MobileVoiceSetupRequestState>;
   getPronunciationConsent(): Promise<MobileProcessingConsentRequestState>;
   getVoiceCloningConsent(): Promise<MobileProcessingConsentRequestState>;
@@ -195,6 +200,7 @@ export function createPracticeApi({
   onSessionInvalid,
   onTiming = recordMobileApiTiming
 }: PracticeApiOptions): PracticeApi {
+  let scriptMutationSequence = 0;
   const listenRequests = new Map<string, Promise<MobileListenRequestState>>();
   const metadataWrites = new Set<Promise<TakeMetadataRequestState>>();
   const progressMemory = new ProgressMemory(signal => afterMetadataWrites(() =>
@@ -222,7 +228,7 @@ export function createPracticeApi({
     progressMemory.memory.update((_key, progress) => progress.scripts.some(item =>
       [item.latestTake, item.bestTake, item.previousTake, ...item.takeHistory].some(differs)), progress => ({ ...progress,
       scripts: progress.scripts.map(item => ({ ...item, latestTake: patch(item.latestTake), bestTake: patch(item.bestTake),
-        previousTake: patch(item.previousTake), takeHistory: item.takeHistory.map(take => patch(take)!) })) }));
+        previousTake: patch(item.previousTake), revisionHistory: item.revisionHistory?.map(revision => ({ ...revision, latestTake: patch(revision.latestTake), bestTake: patch(revision.bestTake) })), takeHistory: item.takeHistory.map(take => patch(take)!) })) }));
   }
   function removeUnavailableReview(key: string, error: PracticeRequestFailure) {
     const [scriptId, takeId] = key.split("/");
@@ -236,14 +242,14 @@ export function createPracticeApi({
   }
   async function mutate<T extends RequestState>(operation: () => Promise<T>, scope: "take" | "script" | "evaluate" | "account" | "voice", takeId?: string, apply?: (result: T) => void): Promise<T> {
     savedTakeAudioMemory.invalidate();
-    const relevantReview = (key: string) => scope === "account" || ((scope === "take" || scope === "evaluate") && key.endsWith("/" + takeId));
+    const relevantReview = (key: string) => scope === "account" || (scope === "script" && !!takeId && key.startsWith(takeId + "/")) || ((scope === "take" || scope === "evaluate") && key.endsWith("/" + takeId));
     const finishProgress = scope !== "voice" ? progressMemory.beginMutation() : () => undefined;
     const finishScripts = scope === "script" || scope === "account" ? scriptsMemory.beginMutation() : () => undefined;
     const finishReview = scope !== "voice" ? reviewMemory.beginMutation(relevantReview) : () => undefined;
     const markUncertain = () => {
       if (scope !== "voice") progressMemory.memory.markDirty();
       if (scope === "script" || scope === "account") scriptsMemory.markDirty();
-      if (scope === "take" || scope === "account") reviewMemory.markDirty(relevantReview);
+      if (scope === "take" || scope === "script" || scope === "account") reviewMemory.markDirty(relevantReview);
     };
     try {
       const result = await operation();
@@ -253,7 +259,7 @@ export function createPracticeApi({
       if (uncertain || result.kind === "success") {
         if (scope === "script" || scope === "evaluate" || scope === "account" || (scope === "take" && uncertain)) progressMemory.memory.markDirty();
         if (scope === "account" || (scope === "script" && uncertain)) scriptsMemory.markDirty();
-        if (scope === "account" || (scope === "take" && uncertain)) reviewMemory.markDirty(relevantReview);
+        if (scope === "account" || scope === "script" || (scope === "take" && uncertain)) reviewMemory.markDirty(relevantReview);
       }
       if (scope === "take" && (result.kind === "not-found" || result.kind === "forbidden")) {
         for (const key of reviewMemory.keys().filter(relevantReview)) removeUnavailableReview(key, result as unknown as PracticeRequestFailure);
@@ -450,19 +456,20 @@ export function createPracticeApi({
     }
   }
 
-  function requestListen(scriptId: string) {
-    const existing = listenRequests.get(scriptId);
+  function requestListen(scriptId: string, identity?: PracticeIdentity) {
+    const requestKey = `${scriptId}/${identity?.expectedRevisionId}/${identity?.expectedPracticeEpoch}`;
+    const existing = listenRequests.get(requestKey);
     if (existing) {
       return existing;
     }
 
     const pending = request((token) =>
-      requestMobileScriptListen(bffBaseUrl, token, scriptId, { onTiming })
+      requestMobileScriptListen(bffBaseUrl, token, scriptId, { onTiming, ...identity })
     );
-    listenRequests.set(scriptId, pending);
+    listenRequests.set(requestKey, pending);
     const clearPending = () => {
-      if (listenRequests.get(scriptId) === pending) {
-        listenRequests.delete(scriptId);
+      if (listenRequests.get(requestKey) === pending) {
+        listenRequests.delete(requestKey);
       }
     };
     void pending.then(clearPending, clearPending);
@@ -477,6 +484,20 @@ export function createPracticeApi({
     prepareSavedTakeAudio,
     prefetchSavedTakeAudio,
     listScripts,
+    listArchivedScripts: () => request(token => fetchMobileScripts(bffBaseUrl, token, { onTiming, archived: true })),
+    mutateScript: (scriptId, input) => {
+      const sequence = ++scriptMutationSequence;
+      return mutate(() => request(token => mutateMobileScript(bffBaseUrl, token, scriptId, input, { onTiming })), "script", scriptId, result => {
+      if (result.kind !== "success") return;
+      if (sequence !== scriptMutationSequence) { scriptsMemory.markDirty(); return; }
+      scriptsMemory.update(() => true, scripts => {
+        const existing = scripts.find(script => script.id === scriptId);
+        if (existing && existing.lockVersion > result.script.lockVersion) return scripts;
+        return (result.script.archivedAt ? scripts.filter(script => script.id !== scriptId) : [result.script, ...scripts.filter(script => script.id !== scriptId)])
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      });
+    });
+    },
     createScript: (input) => mutate(() => request((token) => createMobileScript(bffBaseUrl, token, input, { onTiming })), "script", undefined, result => {
       if (result.kind === "success") scriptsMemory.update(() => true, scripts => [result.script, ...scripts.filter(script => script.id !== result.script.id)]
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
@@ -501,7 +522,7 @@ export function createPracticeApi({
       if (result.kind !== "success") return;
       const script = scriptsMemory.peek("scripts")?.find(script => script.id === input.scriptId);
       const progressScript = progressMemory.memory.peek("progress")?.scripts.find(item => item.script.id === input.scriptId)?.script;
-      reviewMemory.seed(`${input.scriptId}/${input.takeId}`, { review: result.review, scriptTitle: script?.title ?? progressScript?.title ?? "" });
+      reviewMemory.seed(`${input.scriptId}/${input.takeId}`, { review: result.review, scriptTitle: result.review.scriptSnapshot?.title ?? script?.title ?? progressScript?.title ?? "" });
     }),
     getReview,
     updateTakeMetadata,

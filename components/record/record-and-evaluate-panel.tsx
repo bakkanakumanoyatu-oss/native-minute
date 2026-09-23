@@ -60,6 +60,8 @@ const EVALUATE_WAIT_STAGES = [
 ] as const;
 
 type RecordAndEvaluatePanelProps = {
+  expectedRevisionId: string;
+  expectedPracticeEpoch: number;
   scriptId: string;
   targetSeconds: number;
   listenHref?: string;
@@ -195,6 +197,8 @@ function isLikelyWaveRecording(file: File) {
 
 export function RecordAndEvaluatePanel({
   scriptId,
+  expectedRevisionId,
+  expectedPracticeEpoch,
   targetSeconds,
   listenHref,
   pronunciationConsentStatus: initialPronunciationConsentStatus,
@@ -210,6 +214,9 @@ export function RecordAndEvaluatePanel({
   const chunksRef = useRef<BlobPart[]>([]);
   const startedAtRef = useRef<number | null>(null);
   const fileSelectionTokenRef = useRef(0);
+  const startGenerationRef = useRef(0);
+  const startingRef = useRef(false);
+  const takeIdRef = useRef<string | null>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -229,6 +236,19 @@ export function RecordAndEvaluatePanel({
   const [evaluateWaitStageIndex, setEvaluateWaitStageIndex] = useState(0);
   const [pronunciationConsentStatus, setPronunciationConsentStatus] = useState(initialPronunciationConsentStatus);
   const [isSavingPronunciationConsent, setIsSavingPronunciationConsent] = useState(false);
+
+  useEffect(() => () => {
+    startGenerationRef.current += 1;
+    fileSelectionTokenRef.current += 1;
+    startingRef.current = false;
+    const activeRecorder = recorderRef.current;
+    if (activeRecorder) {
+      activeRecorder.onstop = null;
+      activeRecorder.ondataavailable = null;
+      if (activeRecorder.state !== "inactive") activeRecorder.stop();
+      activeRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -261,6 +281,7 @@ export function RecordAndEvaluatePanel({
 
   function applySelectedFile(file: File, measuredDuration?: number | null) {
     fileSelectionTokenRef.current += 1;
+    takeIdRef.current = crypto.randomUUID();
     setSelectedFile(file);
     setDurationSeconds(measuredDuration ?? null);
     setUploadedRecording(null);
@@ -301,14 +322,29 @@ export function RecordAndEvaluatePanel({
   }
 
   async function handleStartRecording() {
-    if (pronunciationConsentStatus !== "accepted") {
+    if (startingRef.current || pronunciationConsentStatus !== "accepted") {
       return;
     }
-
+    startingRef.current = true;
+    const generation = ++startGenerationRef.current;
     clearMessage();
     setIsStartingRecording(true);
+    try {
+      const response = await fetch(`/api/scripts/${scriptId}`, { cache: "no-store" });
+      const fresh = await response.json();
+      if (generation !== startGenerationRef.current) return;
+      if (!response.ok || !fresh.data?.script || fresh.data.script.archivedAt || fresh.data.script.currentRevisionId !== expectedRevisionId || fresh.data.script.practiceEpoch !== expectedPracticeEpoch) {
+        setErrorMessage("台本が変更されました。ページを更新してから録音してください。", "record", 409);
+        startingRef.current = false; setIsStartingRecording(false); return;
+      }
+    } catch {
+      if (generation !== startGenerationRef.current) return;
+      startingRef.current = false;
+      setErrorMessage("台本の状態を確認できませんでした。", "record", 503); setIsStartingRecording(false); return;
+    }
 
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      startingRef.current = false;
       setIsStartingRecording(false);
       setErrorMessage("このブラウザでは録音に対応していません。下のファイル選択を使ってください。", "record");
       return;
@@ -316,6 +352,7 @@ export function RecordAndEvaluatePanel({
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (generation !== startGenerationRef.current) { stream.getTracks().forEach(track => track.stop()); return; }
       const recorder = new MediaRecorder(stream, {
         mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : undefined
       });
@@ -349,7 +386,7 @@ export function RecordAndEvaluatePanel({
     } catch {
       setErrorMessage("マイクの取得に失敗しました。権限を確認するか、音声ファイルを使ってください。", "record");
     } finally {
-      setIsStartingRecording(false);
+      if (generation === startGenerationRef.current) { startingRef.current = false; setIsStartingRecording(false); }
     }
   }
 
@@ -425,6 +462,8 @@ export function RecordAndEvaluatePanel({
 
         const uploadFormData = new FormData();
         uploadFormData.append("scriptId", scriptId);
+        uploadFormData.append("expectedRevisionId", expectedRevisionId);
+        uploadFormData.append("expectedPracticeEpoch", String(expectedPracticeEpoch));
         uploadFormData.append("file", fileToUpload);
 
         if (durationSeconds) {
@@ -458,6 +497,9 @@ export function RecordAndEvaluatePanel({
         },
         body: JSON.stringify({
           scriptId,
+          takeId: takeIdRef.current,
+          expectedRevisionId,
+          expectedPracticeEpoch,
           audioPath: recordingReference.audioPath,
           audioStorageKey: recordingReference.audioStorageKey,
           durationSeconds: durationSeconds ?? recordingReference.durationSeconds ?? undefined,

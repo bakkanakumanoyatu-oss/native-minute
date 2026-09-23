@@ -45,7 +45,7 @@ export default async function RecordPage({ params }: PageParams) {
   const practiceChunks = createPracticeChunks(script?.content ?? "");
   const practiceFocusWords = getPracticeFocusWords(progressItem);
 
-  if (!script) {
+  if (!script || script.archivedAt) {
     return (
       <section className="space-y-6">
         <StateStepSection
@@ -110,7 +110,10 @@ export default async function RecordPage({ params }: PageParams) {
         <div id="record-evaluate-panel" className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--studio-surface-secondary)] p-4 shadow-[var(--shadow-studio-soft)] sm:p-6">
           <div className="text-sm font-semibold">
             <RecordAndEvaluatePanel
-              scriptId={script.id}
+              key={`${script.currentRevisionId}/${script.practiceEpoch}`}
+              expectedRevisionId={script.currentRevisionId}
+          expectedPracticeEpoch={script.practiceEpoch}
+          scriptId={script.id}
               targetSeconds={script.targetSeconds}
               listenHref={listenHref}
               pronunciationConsentStatus={pronunciationConsent.status}

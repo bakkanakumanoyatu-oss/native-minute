@@ -4,11 +4,13 @@ import { timeAsync } from "@/lib/performance/timing";
 import { parseMobilePcmWav } from "@/lib/pcm-wav";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
-import { getScript } from "@/services/scripts/scripts.service";
+import { getScript, assertPracticeScript } from "@/services/scripts/scripts.service";
 import { createVoiceAssetWriteIntentRepository } from "@/services/voice/voice-asset-write-intent.repository";
 import { MAX_RECORDING_BYTES, RECORDINGS_BUCKET, RECORDING_MIME_TYPES } from "./constants";
 
 type StorageUploadInput = {
+  expectedRevisionId: string;
+  expectedPracticeEpoch: number;
   scriptId: string;
   recordingId?: string;
   file: File;
@@ -186,7 +188,8 @@ export async function uploadOwnedRecording(
   }
 ): Promise<UploadedRecording> {
   return timeAsync("recording.uploadOwned", async () => {
-    await ensureOwnedScript(client, userId, input.scriptId);
+    const script = await ensureOwnedScript(client, userId, input.scriptId);
+    assertPracticeScript(script, input);
 
     if (!input.file.size) {
       throw new AppError(400, "録音ファイルが空です。録音を確認してください。");
@@ -222,6 +225,8 @@ export async function uploadOwnedRecording(
       leaseToken: randomUUID(),
       leaseSeconds: 900,
       scriptId: input.scriptId,
+      scriptRevisionId: input.expectedRevisionId,
+      scriptPracticeEpoch: input.expectedPracticeEpoch,
       storageBucket: RECORDINGS_BUCKET,
       storageObjectKey: objectKey
     });

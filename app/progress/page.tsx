@@ -56,7 +56,7 @@ export default async function ProgressPage({ searchParams }: PageProps) {
   const supabase = createSupabaseServerClient();
   const overview = await timeAsync("progress.page.overview", () => getProgressOverview(supabase, user.id));
   const isPracticeEstimate = getPronunciationProviderName() === "mock";
-  const slots = getVisibleProgressSlots(overview.scripts, resolvedSearchParams?.scriptId);
+  const slots = getVisibleProgressSlots(overview.scripts);
   const selectedItem = slots.find((item) => item.script.id === resolvedSearchParams?.scriptId) ?? slots[0] ?? null;
   const selectedSlotNumber = selectedItem ? slots.findIndex((item) => item.script.id === selectedItem.script.id) + 1 : null;
   const selectedAudioLibrary = await timeAsync("progress.page.audioLibrary", () =>
@@ -65,7 +65,7 @@ export default async function ProgressPage({ searchParams }: PageProps) {
       : Promise.resolve(getEmptyProgressAudioLibraryState(false))
   );
 
-  if (overview.totalScripts === 0) {
+  if (overview.scripts.length === 0) {
     return (
       <section className="space-y-5">
         <ProgressHeader slotCount={0} />
@@ -101,7 +101,7 @@ function ProgressHeader({ slotCount }: { slotCount: number }) {
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">声のログ棚</h1>
-          <p className="mt-2 text-sm font-semibold text-ink-600">1分ストック {slotCount} / 5</p>
+          <p className="mt-2 text-sm font-semibold text-ink-600">台本の記録 {slotCount}件（削除済みを含む）</p>
         </div>
       </div>
     </div>
@@ -115,7 +115,7 @@ function ProgressSlotSelector({
   slots: ScriptProgressItem[];
   selectedScriptId: string | null;
 }) {
-  const slotCells = Array.from({ length: 5 }, (_, index) => slots[index] ?? null);
+  const slotCells = slots;
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-testid="progress-script-list">
@@ -150,7 +150,7 @@ function ProgressSlotSelector({
               <span>slot {index + 1}</span>
               {isSelected ? <span className="rounded-full bg-[rgba(111,82,54,0.12)] px-2 py-1 text-[11px] text-[#5f432b]">選択中</span> : null}
             </span>
-            <span className="mt-2 line-clamp-2 block text-sm font-semibold text-ink-900">{item.script.title}</span>
+            <span className="mt-2 line-clamp-2 block text-sm font-semibold text-ink-900">{item.script.title}{item.script.archivedAt ? "（削除済み）" : ""}</span>
             <span className="mt-3 block text-xs text-ink-600">{score === null ? "まだ録っていない" : `目安 ${score}`}</span>
           </Link>
         );
@@ -193,22 +193,27 @@ function ProgressSlotResult({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ResultCard
-          label="最新テイク"
+          label="現在版の最新テイク"
           take={latestTake}
-          scriptTitle={item.script.title}
+          scriptTitle={latestTake?.scriptTitleSnapshot ?? item.script.title}
           reviewHref={latestTake ? getScriptReviewPath(item.script.id, latestTake.id) : null}
           isPracticeEstimate={isPracticeEstimate}
         />
         <ResultCard
-          label="ベストテイク"
+          label="現在版のベストテイク"
           take={bestTake}
-          scriptTitle={item.script.title}
+          scriptTitle={bestTake?.scriptTitleSnapshot ?? item.script.title}
           reviewHref={bestTake ? getScriptReviewPath(item.script.id, bestTake.id) : null}
           showExport
           isPracticeEstimate={isPracticeEstimate}
         />
       </div>
 
+      <section><h3>全期間の記録{item.script.archivedAt ? "（削除済み台本）" : ""}</h3>
+        <p>現在版 {item.takeCount}回 / 全期間 {item.allTimeTakeCount}回 / 当時の台本が未保存 {item.legacyTakeCount}回 / 旧形式 {item.legacyRecordCount}件</p>
+        {item.revisionHistory.map(revision => <p key={revision.revisionId}>版 {revision.revisionId.slice(0, 8)} · {revision.takeCount}回 · 同じ版の最新 {revision.latestTake?.score ?? "—"} / ベスト {revision.bestTake?.score ?? "—"}</p>)}
+        <ul>{item.takeHistory.map(take => <li key={take.id}><Link href={getScriptReviewPath(item.script.id, take.id)}>{take.scriptTitleSnapshot ?? "当時の台本は未保存"} · {take.createdAt.slice(0, 10)}{take.recordStatus === "completed" ? " · 旧形式記録" : ""}</Link></li>)}</ul>
+      </section>
       <details className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-log-shelf)] p-6 shadow-[var(--shadow-studio-soft)]">
         <summary className="cursor-pointer text-sm font-semibold text-ink-800">声のログを開く</summary>
         <div className="mt-5 space-y-5">
@@ -412,20 +417,8 @@ function getEmptyProgressAudioLibraryState(loadFailed: boolean): ProgressAudioLi
   };
 }
 
-function getVisibleProgressSlots(items: ScriptProgressItem[], selectedScriptId: string | undefined) {
-  const firstSlots = items.slice(0, 5);
-
-  if (!selectedScriptId || firstSlots.some((item) => item.script.id === selectedScriptId)) {
-    return firstSlots;
-  }
-
-  const selectedItem = items.find((item) => item.script.id === selectedScriptId);
-
-  if (!selectedItem) {
-    return firstSlots;
-  }
-
-  return [selectedItem, ...firstSlots.filter((item) => item.script.id !== selectedScriptId)].slice(0, 5);
+function getVisibleProgressSlots(items: ScriptProgressItem[]) {
+  return items;
 }
 
 function getTakeForScript(take: ProgressTakeSummary | null, scriptId: string) {

@@ -35,8 +35,8 @@ vi.mock("@/providers/voice", () => ({
   getVoiceProviderStatus: voiceProviderMocks.getVoiceProviderStatus
 }));
 
-vi.mock("@/services/scripts/scripts.service", () => ({
-  getScript: scriptServiceMocks.getScript
+vi.mock("@/services/scripts/scripts.service", async importOriginal => ({
+  ...await importOriginal<typeof import("@/services/scripts/scripts.service")>(), getScript: scriptServiceMocks.getScript
 }));
 
 vi.mock("@/services/quota", () => quotaMocks);
@@ -50,7 +50,7 @@ const VOICE_ID = "33333333-3333-4333-8333-333333333333";
 const AUDIO_ID = "44444444-4444-4444-8444-444444444444";
 const PROVIDER_DETAIL = "private provider diagnostic must not reach the mobile response";
 
-const script: ScriptListItem = {
+const script: ScriptListItem = {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1,
   id: SCRIPT_ID,
   title: "Morning update",
   content: "A safe one-minute practice script.",
@@ -72,7 +72,7 @@ const voice = {
   created_at: "2026-08-13T00:00:00.000Z"
 };
 
-const cachedAudio = {
+const cachedAudio = {script_revision_id: "60000000-0000-4000-8000-000000000001", generation_key_version: 2, generation_preset: "natural", revision_binding: "generated",
   id: AUDIO_ID,
   script_id: SCRIPT_ID,
   voice_id: VOICE_ID,
@@ -138,6 +138,7 @@ function createVoiceCacheClient(input: {
 function mobileRequest(path: string) {
   return new NextRequest(`${BASE_URL}${path}`, {
     method: "POST",
+    body: JSON.stringify({ expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1 }),
     headers: {
       Origin: ORIGIN,
       Authorization: `Bearer ${ACCESS_TOKEN}`
@@ -246,7 +247,7 @@ describe("mobile listen cache before provider availability", () => {
     });
     scriptServiceMocks.getScript.mockResolvedValue(null);
 
-    await expect(speakScript(client, USER_ID, { scriptId: SCRIPT_ID })).rejects.toMatchObject({ status: 404 });
+    await expect(speakScript(client, USER_ID, { expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1, scriptId: SCRIPT_ID })).rejects.toMatchObject({ status: 404 });
 
     expect(scriptServiceMocks.getScript).toHaveBeenCalledWith(client, USER_ID, SCRIPT_ID);
     expect(audioLookup).not.toHaveBeenCalled();
@@ -260,8 +261,7 @@ describe("mobile listen cache before provider availability", () => {
       cachedAudio
     });
 
-    await expect(speakScript(unownedVoice.client, USER_ID, {
-      scriptId: SCRIPT_ID,
+    await expect(speakScript(unownedVoice.client, USER_ID, { expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1, scriptId: SCRIPT_ID,
       voiceId: foreignVoiceId
     })).rejects.toMatchObject({ status: 409 });
 
@@ -272,7 +272,7 @@ describe("mobile listen cache before provider availability", () => {
       cachedAudio
     });
 
-    await expect(speakScript(wrongProvider.client, USER_ID, { scriptId: SCRIPT_ID })).rejects.toMatchObject({ status: 409 });
+    await expect(speakScript(wrongProvider.client, USER_ID, { expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1, scriptId: SCRIPT_ID })).rejects.toMatchObject({ status: 409 });
 
     expect(wrongProvider.audioLookup).not.toHaveBeenCalled();
   });

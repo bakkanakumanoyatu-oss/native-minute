@@ -4,7 +4,7 @@ import type { MobileProgress, MobileProgressTake, MobileScriptProgress } from ".
 import { ProgressDetails as ProgressContent, ProgressContent as ProgressOverview } from "./ProgressScreen";
 
 function take(id: string, score: number): MobileProgressTake {
-  return {
+  return {scriptRevisionId: "60000000-0000-4000-8000-000000000001", scriptTitleSnapshot: "Saved title", historyStatus: "VERSIONED" as const, recordStatus: "reviewed",
       favorite: false, displayName: null,
     id, scriptId: "script-1", score, accuracyScore: score, fluencyScore: score, rhythmScore: score,
     reviewedAt: "2026-09-05T08:42:00+09:00", createdAt: "2026-09-05T08:40:00+09:00",
@@ -15,8 +15,8 @@ function take(id: string, score: number): MobileProgressTake {
 }
 
 function script(overrides: Partial<MobileScriptProgress> = {}): MobileScriptProgress {
-  return {
-    script: { id: "script-1", title: "Morning practice", content: "A fixed script.", locale: "en-US", targetSeconds: 60, updatedAt: "2026-09-05T00:00:00Z" },
+  return {legacyTakeCount: 0, legacyRecordCount: 0, revisionHistory: [],
+    script: {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, id: "script-1", title: "Morning practice", content: "A fixed script.", locale: "en-US", targetSeconds: 60, updatedAt: "2026-09-05T00:00:00Z" },
     takeCount: 2, latestTake: take("latest", 82), bestTake: take("best", 86), previousTake: null,
     takeHistory: [take("latest", 82), take("best", 86)], latestVsPrevious: null, latestVsBest: null, improvementTrend: "down",
     ...overrides
@@ -32,9 +32,9 @@ describe("Progress presentation preserves canonical results", () => {
   it("labels result scores and history status by canonical take identity", () => {
     const html = render([script()]);
     expect(html).toContain("次の練習では");
-    expect(html).toContain("最新の結果");
+    expect(html).toContain("現在版の最新");
     expect(html).toContain("ベスト結果");
-    expect(html).toContain("保存したTake（録音）の履歴");
+    expect(html).toContain("全期間");
     expect(html).toContain('aria-label="総合スコア 82 / 100"');
     expect(html).toContain('class="progress-take-status"><span>最新</span>');
     expect(html).toContain('class="progress-take-status"><span>ベスト</span>');
@@ -54,7 +54,7 @@ describe("Progress presentation preserves canonical results", () => {
       ]
     });
     const html = render([item]);
-    expect(html).toContain('<dt>最新の結果<span class="progress-score-label">総合スコア</span></dt><dd class="progress-score"><span>31</span>');
+    expect(html).toContain('<dt>現在版の最新<span class="progress-score-label">総合スコア</span></dt><dd class="progress-score"><span>31</span>');
     expect(html).toContain('<dt>ベスト結果<span class="progress-score-label">総合スコア</span></dt><dd class="progress-score"><span>74</span>');
     expect(html.indexOf('スコア 43')).toBeLessThan(html.indexOf('スコア 99'));
     expect(html).toContain('dateTime="2026-09-01T00:00:00Z"');
@@ -75,7 +75,7 @@ describe("Progress presentation preserves canonical results", () => {
     expect(html).not.toContain("fourth");
     expect(item.latestTake?.coach.focusWords).toHaveLength(4);
     expect(html.indexOf("保存された助言。")).toBeLessThan(html.indexOf('class="progress-focus"'));
-    expect(html.indexOf('class="progress-primary"')).toBeLessThan(html.indexOf('<dt>最新の結果'));
+    expect(html.indexOf('class="progress-primary"')).toBeLessThan(html.indexOf('<dt>現在版の最新'));
   });
 
   it("omits the focus group when the latest coach has no focus words", () => {
@@ -112,7 +112,7 @@ describe("Progress presentation preserves canonical results", () => {
 describe("Progress overview and selection", () => {
   it("distinguishes owned scripts from practiced scripts and uses the server take total", () => {
     const practiced = script();
-    const empty = script({ script: { ...practiced.script, id: "unpracticed" }, takeCount: 0, latestTake: null, bestTake: null, takeHistory: [] });
+    const empty = script({legacyTakeCount: 0, legacyRecordCount: 0, revisionHistory: [],  script: { ...practiced.script, id: "unpracticed" }, takeCount: 0, latestTake: null, bestTake: null, takeHistory: [] });
     const progress: MobileProgress = { scripts: [practiced, empty], totalScripts: 2, totalReviewedTakes: 19, bestTakeCount: 1 };
     const html = renderToStaticMarkup(<ProgressOverview progress={progress} onNavigate={() => undefined} />);
     expect(html).toContain("練習した台本</dt><dd>1<span>本");

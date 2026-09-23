@@ -11,6 +11,8 @@ export const createScriptSchema = z.object({
 
 const updateScriptFields = z.object({
   id: scriptIdSchema,
+  expectedRevisionId: z.string().uuid(),
+  expectedLockVersion: z.number().int().positive().safe(),
   title: z.string().trim().min(1, "タイトルを入力してください。").max(120, "タイトルは120文字以内にしてください。").optional(),
   content: z.string().trim().min(1, "台本を入力してください。").max(4000, "台本が長すぎます。").optional(),
   targetSeconds: z.coerce.number().int().min(15, "1分練習のため、15秒以上を推奨します。").max(120, "120秒以内で指定してください。").optional(),
@@ -18,7 +20,7 @@ const updateScriptFields = z.object({
 });
 
 export const updateScriptSchema = updateScriptFields.refine(
-  (input) => Object.entries(input).some(([key, value]) => key !== "id" && value !== undefined),
+  (input) => Object.entries(input).some(([key, value]) => !["id", "expectedRevisionId", "expectedLockVersion"].includes(key) && value !== undefined),
   {
     message: "少なくとも1項目を更新してください。"
   }
@@ -26,3 +28,6 @@ export const updateScriptSchema = updateScriptFields.refine(
 
 export type CreateScriptInput = z.infer<typeof createScriptSchema>;
 export type UpdateScriptInput = z.infer<typeof updateScriptSchema>;
+
+export const scriptArchiveSchema = z.object({ expectedLockVersion: z.number().int().positive().safe(), archived: z.boolean() }).strict();
+export const practiceIdentitySchema = z.object({ expectedRevisionId: z.string().uuid(), expectedPracticeEpoch: z.coerce.number().int().positive().safe() });

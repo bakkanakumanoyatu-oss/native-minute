@@ -12,13 +12,13 @@ const user='10000000-0000-4000-8000-000000000003', other='10000000-0000-4000-800
 const scriptId='20000000-0000-4000-8000-000000000003', takeId='30000000-0000-4000-8000-000000000003';
 const bytes=encodeMonoPcm16Wav(new Float32Array(1600).fill(.01));
 function fixture(overrides: Record<string, unknown> = {}, missing = false) {
-  const take={id:takeId,user_id:user,script_id:scriptId,status:'reviewed',audio_path:`storage://recordings/${user}/${scriptId}/capture.wav`,display_name:'朝の声',favorite:false,score:82,...overrides};
-  const script={id:scriptId,user_id:user,title:'A small pause',content:'Hello',locale:'en-US',target_seconds:60,created_at:'2026-09-17',updated_at:'2026-09-17'};
-  const calls: string[][]=[];
+  const take={script_revision_id: "60000000-0000-4000-8000-000000000001", script_title_snapshot: "Saved title", script_practice_epoch: 1, id:takeId,user_id:user,script_id:scriptId,status:'reviewed',audio_path:`storage://recordings/${user}/${scriptId}/capture.wav`,display_name:'朝の声',favorite:false,score:82,...overrides};
+  const script={current_revision_id: "60000000-0000-4000-8000-000000000001", archived_at: null, lock_version: 1, practice_epoch: 1, id:scriptId,user_id:user,title:'A small pause',content:'Hello',locale:'en-US',target_seconds:60,created_at:'2026-09-17',updated_at:'2026-09-17'};
+  const calls: unknown[][]=[];
   const download=vi.fn(async()=>missing?{data:null,error:{message:'private storage locator'}}:{data:new Blob([bytes],{type:'audio/wav'}),error:null});
   const info=vi.fn(async()=>missing?{data:null,error:{statusCode:'404'}}:{data:{id:'object-id',version:'object-version',etag:'content-etag',size:bytes.byteLength},error:null});
   const bucket=vi.fn(()=>({download,info}));
-  const client={from(table:string){const filters: [string,string][]=[];const query={select(){return query},eq(k:string,v:string){filters.push([k,v]);calls.push([table,k,v]);return query},async maybeSingle(){const row:Record<string,unknown>=table==='takes'?take:script;return {data:filters.every(([k,v])=>row[k]===v)?row:null,error:null}}};return query},storage:{from:bucket}} as unknown as AppSupabaseClient;
+  const client={from(table:string){const filters: [string,string|string[]][]=[];const query={select(){return query},eq(k:string,v:string){filters.push([k,v]);calls.push([table,k,v]);return query},in(k:string,v:string[]){filters.push([k,v]);calls.push([table,k,v]);return query},async maybeSingle(){const row:Record<string,unknown>=table==='takes'?take:script;return {data:filters.every(([k,v])=>Array.isArray(v)?v.includes(String(row[k])):row[k]===v)?row:null,error:null}}};return query},storage:{from:bucket}} as unknown as AppSupabaseClient;
   return {take,client,download,info,bucket,calls};
 }
 function req(owner=user, auth=true){return new NextRequest('https://fixture.test/api/mobile/takes/'+takeId+'/audio',{headers:{origin:'capacitor://localhost',...(auth?{authorization:'Bearer '+owner}:{})}})}
@@ -47,9 +47,10 @@ describe('owned Take playback/share binary boundary',()=>{
   expect(response.headers.get('access-control-expose-headers')).toContain('Content-Disposition');
   expect(Buffer.from(await response.arrayBuffer())).toEqual(Buffer.from(bytes));
   expect(f.bucket).toHaveBeenCalledWith('recordings');expect(f.download).toHaveBeenCalledWith(`${user}/${scriptId}/capture.wav`);
-  expect(f.calls).toContainEqual(['takes','status','reviewed']);expect(f.calls).toContainEqual(['takes','user_id',user]);
+  expect(f.calls).toContainEqual(['takes','status',['reviewed','completed']]);expect(f.calls).toContainEqual(['takes','user_id',user]);
   expect(JSON.stringify(f.take)).toBe(before);expect(JSON.stringify([...response.headers])).not.toContain(user);
  });
+ it('permits completed legacy recording without promoting it and uses saved title for versioned export',async()=>{ const legacy=fixture({status:'completed',script_revision_id:null,script_title_snapshot:null});expect((await handleTakeAudioGet(req(),takeId,deps(legacy))).status).toBe(200);expect(legacy.take.status).toBe('completed');const versioned=fixture({display_name:null});const audio=await loadOwnedTakeAudio(versioned.client,user,takeId);expect(audio.filename).toBe('Saved title.wav'); });
  it('rejects wrong owner and missing Bearer before Storage',async()=>{
   const f=fixture();expect((await handleTakeAudioGet(req(other),takeId,deps(f,other))).status).toBe(404);
   expect((await handleTakeAudioGet(req(user,false),takeId,deps(f))).status).toBe(401);expect(f.download).not.toHaveBeenCalled();

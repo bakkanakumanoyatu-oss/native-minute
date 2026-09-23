@@ -14,7 +14,7 @@ export function pickRecentScriptCandidate(items: ScriptListItem[]) {
     return null;
   }
 
-  return [...items].sort((left, right) => compareUpdatedAtDesc(left.updatedAt, right.updatedAt))[0] ?? null;
+  return items.filter(item => !item.archivedAt).sort((left, right) => compareUpdatedAtDesc(left.updatedAt, right.updatedAt))[0] ?? null;
 }
 
 export function getScriptsLaunchPriority(item: ScriptProgressItem, canRecord: boolean) {
@@ -43,7 +43,7 @@ export function pickScriptsLaunchCandidate(items: ScriptProgressItem[], canRecor
   }
 
   return (
-    [...items].sort((left, right) => {
+    items.filter(item => !item.script.archivedAt).sort((left, right) => {
       const leftPriority = getScriptsLaunchPriority(left, canRecord);
       const rightPriority = getScriptsLaunchPriority(right, canRecord);
 

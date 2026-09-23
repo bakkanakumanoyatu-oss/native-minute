@@ -1,7 +1,9 @@
 import { z } from "zod";
+import { practiceIdentitySchema } from "./script";
 
 export const uploadRecordingSchema = z.object({
-  scriptId: z.string().uuid("台本 ID を確認してください。"),
+  ...practiceIdentitySchema.shape,
+    scriptId: z.string().uuid("台本 ID を確認してください。"),
   durationSeconds: z.coerce.number().positive().max(600).optional()
 });
 

@@ -38,6 +38,8 @@ type PronunciationConsentState =
   | { kind: "error"; error: PracticeRequestFailure };
 
 type PreparedTake = Readonly<{
+  expectedRevisionId: string;
+  expectedPracticeEpoch: number;
   file: File;
   durationSeconds: number;
   takeId: string;
@@ -84,6 +86,8 @@ export function buildMobileEvaluationInput(
 ) {
   return {
     scriptId,
+    expectedRevisionId: take.expectedRevisionId,
+    expectedPracticeEpoch: take.expectedPracticeEpoch,
     takeId: take.takeId,
     recordingRef: recording.recordingRef
   };
@@ -159,6 +163,10 @@ export function RecordScreen({
   const [uploadedRecording, setUploadedRecording] = useState<UploadedMobileRecording | null>(null);
   const [previewConfirmed, setPreviewConfirmed] = useState(false);
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: "idle" });
+  const [checkingScript, setCheckingScript] = useState(false);
+  const startGeneration = useRef(0);
+  const starting = useRef(false);
+  const recordingIdentity = useRef<{ expectedRevisionId: string; expectedPracticeEpoch: number } | null>(null);
   const recorder = useRef<MobileAudioRecorder | null>(null);
   const [previewResource] = useState(() => new AudioObjectUrl());
   const previewElement = useRef<HTMLAudioElement | null>(null);
@@ -302,6 +310,8 @@ export function RecordScreen({
           file: normalized,
           durationSeconds,
           takeId: createStableMobileTakeId(),
+          expectedRevisionId: recordingIdentity.current!.expectedRevisionId,
+          expectedPracticeEpoch: recordingIdentity.current!.expectedPracticeEpoch,
           recordingRef: createStableMobileTakeId(),
           signalClassification: signal.classification
         };
@@ -332,6 +342,9 @@ export function RecordScreen({
     recorder.current = nextRecorder;
 
     const handleInactive = () => {
+        startGeneration.current += 1;
+        starting.current = false;
+        setCheckingScript(false);
         normalizationGeneration.current += 1;
         setNormalizing(false);
         const activeState = nextRecorder.getState();
@@ -384,6 +397,8 @@ export function RecordScreen({
     return () => {
       mounted = false;
       disposed = true;
+      startGeneration.current += 1;
+      starting.current = false;
       normalizationGeneration.current += 1;
       submissionGeneration.current += 1;
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -408,17 +423,37 @@ export function RecordScreen({
   }, [recorderState]);
 
   async function startRecording() {
-    if (scriptState.kind !== "ready" || pronunciationConsentState.kind !== "ready" || pronunciationConsentState.status !== "accepted") {
-      return;
+    if (starting.current || !isOnline || scriptState.kind !== "ready" || pronunciationConsentState.kind !== "ready" || pronunciationConsentState.status !== "accepted") return;
+    const activeRecorder = recorder.current;
+    if (!activeRecorder) return;
+    const generation = ++startGeneration.current;
+    starting.current = true;
+    setCheckingScript(true);
+    try {
+      const fresh = await api.getScript(scriptId);
+      if (generation !== startGeneration.current || recorder.current !== activeRecorder) return;
+      if (fresh.kind !== "success") { setScriptState({ kind: "error", error: fresh }); return; }
+      if (fresh.script.archivedAt || fresh.script.currentRevisionId !== scriptState.script.currentRevisionId || fresh.script.practiceEpoch !== scriptState.script.practiceEpoch) {
+        setScriptState({ kind: "error", error: { kind: "conflict", reasonCode: fresh.script.archivedAt ? "script_archived" : "script_revision_conflict" } }); return;
+      }
+      recordingIdentity.current = { expectedRevisionId: fresh.script.currentRevisionId, expectedPracticeEpoch: fresh.script.practiceEpoch };
+      clearPreparedTake();
+      setElapsedSeconds(0);
+      setLocalError(null);
+      activeRecorder.reset();
+      await activeRecorder.start();
+    } finally {
+      if (generation === startGeneration.current) {
+        starting.current = false;
+        setCheckingScript(false);
+      }
     }
-    clearPreparedTake();
-    setElapsedSeconds(0);
-    setLocalError(null);
-    recorder.current?.reset();
-    await recorder.current?.start();
   }
 
   function cancelRecording() {
+    startGeneration.current += 1;
+    starting.current = false;
+    setCheckingScript(false);
     recorder.current?.cancel();
     clearPreparedTake();
     setElapsedSeconds(0);
@@ -450,6 +485,8 @@ export function RecordScreen({
       setSubmitState({ kind: "uploading" });
       const upload = await api.uploadRecording({
         scriptId,
+        expectedRevisionId: take.expectedRevisionId,
+        expectedPracticeEpoch: take.expectedPracticeEpoch,
         recordingRef: take.recordingRef,
         file: take.file,
         durationSeconds: take.durationSeconds
@@ -509,7 +546,7 @@ export function RecordScreen({
   }
 
   const isRecording = recorderState.kind === "recording";
-  const busy = recorderState.kind === "requesting-permission" || isRecording || recorderState.kind === "stopping" || normalizing;
+  const busy = checkingScript || recorderState.kind === "requesting-permission" || isRecording || recorderState.kind === "stopping" || normalizing;
   const submitting = submitState.kind === "uploading" || submitState.kind === "evaluating";
   const savedTake = useRef(false);
   const hasUnsavedTake = busy || Boolean(preparedTake) || submitting;
@@ -666,7 +703,7 @@ export function RecordScreen({
               </>
             ) : (
               <button type="button" className="record-primary" onClick={() => void startRecording()} disabled={busy || submitting || visibleScriptState.kind !== "ready"}>
-                {recorderState.kind === "requesting-permission" ? "マイクを準備中…" : recorderState.kind === "stopping" ? "録音を停止中…" : normalizing ? "音声を整えています…" : "録音する"}
+                {checkingScript ? "台本を確認中…" : recorderState.kind === "requesting-permission" ? "マイクを準備中…" : recorderState.kind === "stopping" ? "録音を停止中…" : normalizing ? "音声を整えています…" : "録音する"}
               </button>
             )}
             <span className="record-sr-status" role="status">{submitState.kind === "uploading" ? "録音を保存中…" : submitState.kind === "evaluating" ? "評価中…" : recorderState.kind === "requesting-permission" ? "マイクを準備中…" : recorderState.kind === "stopping" ? "録音を停止中…" : normalizing ? "音声を整えています…" : ""}</span>

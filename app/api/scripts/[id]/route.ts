@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/route";
 import { requireCurrentUser } from "@/lib/supabase/auth";
-import { updateScriptSchema, scriptIdSchema } from "@/schemas/script";
+import { updateScriptSchema, scriptIdSchema, scriptArchiveSchema } from "@/schemas/script";
 import { jsonError, jsonOk } from "@/lib/http";
 import { getErrorMessage, getErrorStatus } from "@/lib/errors";
-import { deleteScript, getScript, updateScript } from "@/services/scripts/scripts.service";
+import { deleteScript, getScript, updateScript, setScriptArchived } from "@/services/scripts/scripts.service";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 
 type RouteParams = {
@@ -50,6 +50,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const user = await requireCurrentUser(supabase);
     const payload = await request.json().catch(() => null);
     const body = payload && typeof payload === "object" ? payload : {};
+    if ("archived" in body) {
+      const state = scriptArchiveSchema.safeParse(body);
+      if (!state.success) return jsonError("更新内容を確認してください。", 400);
+      return jsonOk({ script: await setScriptArchived(supabase, user.id, scriptIdSchema.parse(id), state.data.archived, state.data.expectedLockVersion) });
+    }
     const parsed = updateScriptSchema.safeParse({ ...body, id });
 
     if (!parsed.success) {
@@ -63,7 +68,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   if (!hasSupabaseConfig()) {
     return jsonError("Supabase の環境変数が未設定です。", 503);
   }
@@ -73,8 +78,11 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     const scriptId = scriptIdSchema.parse(id);
     const supabase = createSupabaseRouteClient();
     const user = await requireCurrentUser(supabase);
-    const result = await deleteScript(supabase, user.id, scriptId);
-    return jsonOk({ deleted: result });
+    const payload = await request.json().catch(() => null);
+    const expected = payload?.expectedLockVersion;
+    if (expected !== undefined && (!Number.isSafeInteger(expected) || expected < 1)) return jsonError("更新内容を確認してください。", 400);
+    const result = await deleteScript(supabase, user.id, scriptId, expected);
+    return jsonOk({ deleted: { id: result.id }, script: result, archivedScript: result });
   } catch (error) {
     return jsonError(getErrorMessage(error, "台本を削除できませんでした。"), getErrorStatus(error, 500));
   }

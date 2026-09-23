@@ -24,7 +24,7 @@ const BFF_BASE_URL = "https://native-minute.example";
 const ACCESS_TOKEN = "access-material-fixture";
 const RECORDING_REF_FIXTURE = "55555555-5555-4555-8555-555555555555";
 
-const SCRIPT_FIXTURE = {
+const SCRIPT_FIXTURE = {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1,
   id: "script-fixture",
   title: "Morning update",
   content: "A one-minute practice script.",
@@ -419,7 +419,7 @@ describe("uploadMobileRecording", () => {
       uploadMobileRecording(
         BFF_BASE_URL,
         ACCESS_TOKEN,
-        {
+        {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
           scriptId: SCRIPT_FIXTURE.id,
           recordingRef: RECORDING_REF_FIXTURE,
           file,
@@ -455,7 +455,7 @@ describe("uploadMobileRecording", () => {
     });
 
     await expect(
-      uploadMobileRecording(BFF_BASE_URL, ACCESS_TOKEN, {
+      uploadMobileRecording(BFF_BASE_URL, ACCESS_TOKEN, {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
         scriptId: SCRIPT_FIXTURE.id,
         recordingRef: RECORDING_REF_FIXTURE,
         file
@@ -471,7 +471,7 @@ describe("uploadMobileRecording", () => {
     const fetchImpl = vi.fn<typeof fetch>();
 
     await expect(
-      uploadMobileRecording(BFF_BASE_URL, ACCESS_TOKEN, {
+      uploadMobileRecording(BFF_BASE_URL, ACCESS_TOKEN, {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
         scriptId: SCRIPT_FIXTURE.id,
         recordingRef: "owner/script/path.wav",
         file: new Blob([new Uint8Array([1])], { type: "audio/wav" })
@@ -494,7 +494,7 @@ describe("evaluateMobileRecording", () => {
       evaluateMobileRecording(
         BFF_BASE_URL,
         ACCESS_TOKEN,
-        {
+        {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
           scriptId: SCRIPT_FIXTURE.id,
           takeId: REVIEW_FIXTURE.takeId,
           recordingRef: RECORDING_REF_FIXTURE
@@ -505,7 +505,7 @@ describe("evaluateMobileRecording", () => {
 
     expectBearerRequest(fetchImpl, "/api/mobile/evaluate", "POST");
     const payload = JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body));
-    expect(payload).toEqual({
+    expect(payload).toEqual({expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
       scriptId: SCRIPT_FIXTURE.id,
       takeId: REVIEW_FIXTURE.takeId,
       recordingRef: RECORDING_REF_FIXTURE
@@ -526,7 +526,7 @@ describe("evaluateMobileRecording", () => {
       evaluateMobileRecording(
         BFF_BASE_URL,
         ACCESS_TOKEN,
-        {
+        {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
           scriptId: SCRIPT_FIXTURE.id,
           takeId: REVIEW_FIXTURE.takeId,
           recordingRef: RECORDING_REF_FIXTURE
@@ -560,7 +560,7 @@ describe("review and progress", () => {
   });
 
   it("accepts server-ranked latest, best, and history without recalculating them", async () => {
-    const take = {
+    const take = {scriptRevisionId: "60000000-0000-4000-8000-000000000001", scriptTitleSnapshot: "Saved title", historyStatus: "VERSIONED" as const, recordStatus: "reviewed",
       id: REVIEW_FIXTURE.takeId,
       scriptId: SCRIPT_FIXTURE.id,
       score: 82,
@@ -577,8 +577,8 @@ describe("review and progress", () => {
     };
     const progress = {
       scripts: [
-        {
-          script: {
+        {allTimeTakeCount: 1, legacyTakeCount: 0, legacyRecordCount: 0, revisionHistory: [],
+          script: {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null,
             id: SCRIPT_FIXTURE.id,
             title: SCRIPT_FIXTURE.title,
             content: SCRIPT_FIXTURE.content,
@@ -617,8 +617,8 @@ describe("review and progress", () => {
         data: {
           progress: {
             scripts: [
-              {
-                script: {
+              {allTimeTakeCount: 1, legacyTakeCount: 0, legacyRecordCount: 0, revisionHistory: [],
+                script: {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null,
                   id: SCRIPT_FIXTURE.id,
                   title: SCRIPT_FIXTURE.title,
                   content: SCRIPT_FIXTURE.content,

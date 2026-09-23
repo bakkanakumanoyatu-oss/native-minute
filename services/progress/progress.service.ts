@@ -6,7 +6,7 @@ import type { CoachFeedback } from "@/services/coach";
 import type { ScriptListItem } from "@/services/scripts/types";
 import { listScripts } from "@/services/scripts/scripts.service";
 import type { HydratedTakeReview, StoredTakeReview } from "@/services/review";
-import { hydrateStoredReview } from "@/services/review";
+import { hydrateStoredReview, getReviewScriptSnapshot } from "@/services/review";
 import type {
   ProgressOverview,
   ProgressTakeSummary,
@@ -41,6 +41,10 @@ function toStoredTakeReview(
 
 function toProgressTakeSummary(review: HydratedTakeReview): ProgressTakeSummary {
   return {
+    recordStatus: review.take.status,
+    scriptRevisionId: review.take.script_revision_id ?? null,
+    scriptTitleSnapshot: review.take.script_title_snapshot ?? null,
+    historyStatus: review.take.script_revision_id ? "VERSIONED" : "UNVERIFIED_LEGACY",
     id: review.take.id,
     favorite: review.take.favorite,
     displayName: review.take.display_name,
@@ -151,7 +155,7 @@ async function getHydratedReviews(client: AppSupabaseClient, userId: string) {
           .from("takes")
           .select("*")
           .eq("user_id", userId)
-          .eq("status", "reviewed")
+          .in("status", ["reviewed", "completed"])
           .order("created_at", { ascending: false }),
         client
           .from("weak_words")
@@ -223,7 +227,7 @@ async function getHydratedReviewsForScript(client: AppSupabaseClient, userId: st
         .select("*")
         .eq("user_id", userId)
         .eq("script_id", scriptId)
-        .eq("status", "reviewed")
+        .in("status", ["reviewed", "completed"])
         .order("created_at", { ascending: false }),
       client
         .from("weak_words")
@@ -296,13 +300,18 @@ async function getHydratedReviewsForScript(client: AppSupabaseClient, userId: st
 
 export function buildScriptProgressItem(script: ScriptListItem, reviews: HydratedTakeReview[]): ScriptProgressItem {
   const takeHistory = sortProgressTakeHistory(reviews.map(toProgressTakeSummary));
-  const latest = takeHistory[0] ?? null;
-  const previous = takeHistory[1] ?? null;
-  const best = pickBestTake(reviews);
+  const currentReviews = reviews.filter(review => Boolean(script.currentRevisionId) && review.take.script_revision_id === script.currentRevisionId && review.take.status === "reviewed");
+  const currentHistory = sortProgressTakeHistory(currentReviews.map(toProgressTakeSummary));
+  const revisionIds = [...new Set(reviews.map(review => review.take.script_revision_id).filter((id): id is string => Boolean(id)))];
+  const latest = currentHistory[0] ?? null;
+  const previous = currentHistory[1] ?? null;
+  const best = pickBestTake(currentReviews);
   const bestSummary = best ? toProgressTakeSummary(best) : null;
 
   return {
     script: {
+      archivedAt: script.archivedAt,
+      currentRevisionId: script.currentRevisionId,
       id: script.id,
       title: script.title,
       content: script.content,
@@ -310,7 +319,16 @@ export function buildScriptProgressItem(script: ScriptListItem, reviews: Hydrate
       targetSeconds: script.targetSeconds,
       updatedAt: script.updatedAt
     },
-    takeCount: reviews.length,
+    takeCount: currentReviews.length,
+    allTimeTakeCount: reviews.filter(review => review.take.status === "reviewed").length,
+    legacyTakeCount: reviews.filter(review => !review.take.script_revision_id && review.take.status === "reviewed").length,
+    legacyRecordCount: reviews.filter(review => review.take.status !== "reviewed").length,
+    revisionHistory: revisionIds.map(revisionId => {
+      const same = reviews.filter(review => review.take.script_revision_id === revisionId && review.take.status === "reviewed");
+      const history = sortProgressTakeHistory(same.map(toProgressTakeSummary));
+      const best = pickBestTake(same);
+      return { revisionId, takeCount: same.length, latestTake: history[0] ?? null, bestTake: best ? toProgressTakeSummary(best) : null };
+    }),
     latestTake: latest,
     bestTake: bestSummary,
     previousTake: previous,
@@ -328,7 +346,8 @@ function getScriptTakeComparisonFromReviews(reviews: HydratedTakeReview[], takeI
     return null;
   }
 
-  const best = pickBestTake(reviews);
+  const comparable = current.take.script_revision_id ? reviews.filter(review => review.take.script_revision_id === current.take.script_revision_id && review.take.status === "reviewed") : [];
+  const best = pickBestTake(comparable);
   const currentSummary = toProgressTakeSummary(current);
   const bestSummary = best ? toProgressTakeSummary(best) : null;
 
@@ -337,7 +356,7 @@ function getScriptTakeComparisonFromReviews(reviews: HydratedTakeReview[], takeI
     best: bestSummary,
     isBest: Boolean(bestSummary && bestSummary.id === currentSummary.id),
     diff: bestSummary && bestSummary.id !== currentSummary.id ? buildTakeDiff(currentSummary, bestSummary) : null,
-    takeCount: reviews.length
+    takeCount: comparable.length
   };
 }
 
@@ -356,7 +375,7 @@ export async function getScriptReviewProgressSummary(client: AppSupabaseClient, 
     }
 
     return {
-      review,
+      review: { ...review, scriptSnapshot: await getReviewScriptSnapshot(client, review.take) },
       comparison,
       progressItem: buildScriptProgressItem(script, reviews)
     };
@@ -365,7 +384,7 @@ export async function getScriptReviewProgressSummary(client: AppSupabaseClient, 
 
 export async function getProgressOverview(client: AppSupabaseClient, userId: string): Promise<ProgressOverview> {
   return timeAsync("progress.overview", async () => {
-    const [scripts, hydratedReviews] = await Promise.all([listScripts(client, userId), getHydratedReviews(client, userId)]);
+    const [scripts, hydratedReviews] = await Promise.all([listScripts(client, userId, "all"), getHydratedReviews(client, userId)]);
     const reviewsByScriptId = new Map<string, HydratedTakeReview[]>();
 
     for (const review of hydratedReviews) {
@@ -378,8 +397,8 @@ export async function getProgressOverview(client: AppSupabaseClient, userId: str
 
     return {
       scripts: scriptItems,
-      totalScripts: scripts.length,
-      totalReviewedTakes: hydratedReviews.length,
+      totalScripts: scripts.filter(script => !script.archivedAt).length,
+      totalReviewedTakes: hydratedReviews.filter(review => review.take.status === "reviewed").length,
       bestTakeCount: scriptItems.filter((item) => item.bestTake).length
     };
   });

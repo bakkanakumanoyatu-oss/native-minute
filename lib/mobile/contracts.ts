@@ -10,6 +10,12 @@ export type MobileApiReasonCode =
   | "scripts_unavailable"
   | "script_not_found"
   | "script_limit_reached"
+  | "script_archived"
+  | "script_edit_conflict"
+  | "script_revision_conflict"
+  | "practice_state_conflict"
+  | "recording_revision_conflict"
+  | "review_claim_conflict"
   | "listen_unavailable"
   | "voice_setup_required"
   | "voice_setup_unavailable"
@@ -47,6 +53,9 @@ export interface MobileApiSuccessBody<T> {
 }
 
 export interface MobileReviewDto {
+  recordStatus: string;
+  historyStatus: "VERSIONED" | "UNVERIFIED_LEGACY";
+  scriptSnapshot: { revisionId: string; revisionNo: number; title: string; content: string; locale: string; targetSeconds: number } | null;
   favorite: boolean;
   displayName: string | null;
   takeId: string;

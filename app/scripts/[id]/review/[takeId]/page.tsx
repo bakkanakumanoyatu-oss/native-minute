@@ -47,7 +47,7 @@ export default async function ReviewPage({ params }: PageParams) {
   }
 
   const supabase = createSupabaseServerClient();
-  const script = await timeAsync("review.page.script", () => getScript(supabase, user.id, id));
+  let script = await timeAsync("review.page.script", () => getScript(supabase, user.id, id));
 
   if (!script) {
     return (
@@ -119,7 +119,7 @@ export default async function ReviewPage({ params }: PageParams) {
     );
   }
 
-  const reviewProgressSummary = await timeAsync("review.page.progressSummary", () => getScriptReviewProgressSummary(supabase, user.id, script, takeId));
+  const reviewProgressSummary = await timeAsync("review.page.progressSummary", () => getScriptReviewProgressSummary(supabase, user.id, script!, takeId));
 
   if (!reviewProgressSummary) {
     return (
@@ -152,18 +152,22 @@ export default async function ReviewPage({ params }: PageParams) {
   }
 
   const review = reviewProgressSummary.review;
+  const snapshot = review.scriptSnapshot;
+  script = { ...script, title: snapshot?.title ?? `現在の台本名: ${script.title}`, content: snapshot?.content ?? "当時の台本は未保存です（未検証の旧形式記録）。", locale: snapshot?.locale ?? "", targetSeconds: snapshot?.targetSeconds ?? 0 };
+
   const evaluation = review.evaluation;
   const coach = review.coach;
   const weakWords = review.weakWords;
   const comparison = reviewProgressSummary.comparison;
   const isPracticeEstimate = getPronunciationProviderName() === "mock";
   const progressItem = reviewProgressSummary.progressItem;
-  const latestReviewHref = progressItem.latestTake ? getScriptReviewPath(script.id, progressItem.latestTake.id) : null;
-  const bestReviewHref = progressItem.bestTake ? getScriptReviewPath(script.id, progressItem.bestTake.id) : null;
-  const isCurrentLatest = progressItem?.latestTake?.id === review.take.id;
-  const isCurrentBest = progressItem?.bestTake?.id === review.take.id;
+  const revisionHistory = progressItem.revisionHistory.find(item => item.revisionId === review.take.script_revision_id);
+  const latestReviewHref = revisionHistory?.latestTake ? getScriptReviewPath(script.id, revisionHistory.latestTake.id) : null;
+  const bestReviewHref = comparison.best ? getScriptReviewPath(script.id, comparison.best.id) : null;
+  const isCurrentLatest = revisionHistory?.latestTake?.id === review.take.id;
+  const isCurrentBest = comparison.isBest;
   const canPlaybackRecording = Boolean(parseRecordingAudioReference({ audioPath: review.take.audio_path }));
-  const practiceChunks = createPracticeChunks(script.content);
+  const practiceChunks = snapshot ? createPracticeChunks(snapshot.content) : [];
   const weakWordLabels = weakWords.map((word) => word.word);
   const coachFocusWords = coach.focusWords.slice(0, 3);
   const weakWordChunkFocus = findWeakWordPracticeChunks({
@@ -201,7 +205,9 @@ export default async function ReviewPage({ params }: PageParams) {
 
   return (
     <section data-testid="review-root" className="space-y-6">
+      <p className="rounded-2xl bg-[var(--surface-secondary)] p-4">{snapshot ? "保存時の台本の版で表示・比較しています。" : "当時の台本は未保存です。現在の台本や他のTakeとは比較しません。"}{script.archivedAt ? " 削除済みの台本です。練習を再開するには復元してください。" : ""}</p>
       <ReviewSummaryFirst
+        canPractice={!script.archivedAt}
         scriptTitle={script.title}
         score={evaluation.score}
         focusPoints={reviewFocusPoints}
@@ -211,7 +217,7 @@ export default async function ReviewPage({ params }: PageParams) {
         bestReviewHref={!isCurrentBest ? bestReviewHref : null}
         isCurrentLatest={isCurrentLatest}
         isCurrentBest={isCurrentBest}
-        takeCount={progressItem?.takeCount ?? 0}
+        takeCount={comparison.takeCount}
         canPlaybackRecording={canPlaybackRecording}
         takeId={review.take.id}
         reviewedAt={review.take.reviewed_at ?? review.take.created_at}
@@ -252,7 +258,7 @@ export default async function ReviewPage({ params }: PageParams) {
 
       <ScriptLoopStatusCard
         currentStep="review"
-        takeCount={progressItem?.takeCount ?? 0}
+        takeCount={comparison.takeCount}
         improvementTrend={progressItem?.improvementTrend ?? "insufficient_data"}
         listenHref={listenHref}
         recordHref={recordHref}
@@ -437,13 +443,13 @@ export default async function ReviewPage({ params }: PageParams) {
         comparisonSectionTitle={comparisonSectionTitle}
       />
 
-      <ReviewNextActionSection
+      {!script.archivedAt ? <ReviewNextActionSection
         guidance={practiceGuidance}
         listenHref={listenHref}
         recordHref={recordHref}
         progressHref="/progress"
         latestReviewHref={!isCurrentLatest ? latestReviewHref : null}
-      />
+      /> : null}
 
       <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-log-shelf)] p-6">
         <h2 className="text-lg font-semibold text-ink-900">{comparisonSectionTitle}</h2>
@@ -604,6 +610,7 @@ export default async function ReviewPage({ params }: PageParams) {
 }
 
 function ReviewSummaryFirst({
+  canPractice,
   scriptTitle,
   score,
   focusPoints,
@@ -620,6 +627,7 @@ function ReviewSummaryFirst({
   exportComment,
   isPracticeEstimate
 }: {
+  canPractice: boolean;
   scriptTitle: string;
   score: number;
   focusPoints: string[];
@@ -695,9 +703,9 @@ function ReviewSummaryFirst({
       <div className="mt-6 rounded-[1.75rem] border border-[var(--line-dark)] bg-[var(--control-panel)] p-4 text-sm font-semibold shadow-[var(--shadow-studio-soft)]">
         <p className="mb-3 text-xs uppercase tracking-[0.18em] text-[rgba(255,241,221,0.62)]">次の操作</p>
         <div className="flex flex-wrap gap-3">
-        <Link href={recordHref} className="inline-flex w-full justify-center rounded-2xl bg-[var(--record-accent)] px-5 py-3 text-white shadow-sm sm:w-auto">
+        {canPractice ? <Link href={recordHref} className="inline-flex w-full justify-center rounded-2xl bg-[var(--record-accent)] px-5 py-3 text-white shadow-sm sm:w-auto">
           もう一度録る
-        </Link>
+        </Link> : <Link href="/scripts/archived">台本を復元する</Link>}
         <Link href={brushUpHref} className="inline-flex w-full justify-center rounded-2xl border border-[var(--line-dark)] bg-white/10 px-5 py-3 text-[var(--cta-primary-text)] sm:w-auto">
           この台本を磨く
         </Link>

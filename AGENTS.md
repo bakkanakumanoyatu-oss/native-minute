@@ -32,7 +32,8 @@
 - `/api/evaluate` is audio-first.
 - Canonical script data comes from the server-owned `scripts` row, not client request payloads.
 - Stored review/progress data should keep reading from persisted take/review tables.
-- Be careful with history semantics: `takes` do not snapshot full script content, so in-place script editing can break old review/progress meaning.
+- Script identity is stable; content/locale/duration changes create immutable `script_revisions`. Title-only edits keep the revision and reference audio. Take title is snapped at claim; legacy NULL revision never means current.
+- Normal script deletion is archive; retain history/audio and restore through the owner-locked active-10 RPC. Practice writes require expected revision + epoch; edits require expected revision + lock version.
 - `script_audios` and `recordings` must stay ownership-checked.
 - Display metadata is bounded, owner/session-scoped, process-memory-only: one Scripts snapshot, one shared Home/Progress/My Takes snapshot, and up to five Reviews. Five minutes is a revalidation age, never a deletion timer. Fresh revisits, short background, and normal token refresh preserve data; meaningful entry/resume/manual/mutation/recovery events refresh only related data. Temporary failures retain safe successful display; logout/owner change and detected resource loss remove it. Mutation responses patch exact fields; stale reads are fenced. Cached Review metadata carries no audio authorization.
 - Saved Take audio reuse is memory-only, one item, 30 seconds from download. Every Review re-entry requires fresh server ownership and Storage object-version validation; auth/lifecycle/error invalidation is mandatory. Share always fetches fresh audio. Only the validated, rendered Review may foreground-prefetch its one saved Take through that same entry; Play shares the in-flight request. Exit cancels pending fetch; failure never retries automatically.

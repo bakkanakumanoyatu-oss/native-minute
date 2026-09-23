@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { practiceIdentitySchema } from "./script";
 import { VOICE_STYLE_PRESETS } from "@/lib/voice-style";
 
 export const voiceConsentRequestSchema = z.object({
@@ -30,6 +31,7 @@ export const createVoiceRequestSchema = z.object({
 });
 
 export const speakScriptRequestSchema = z.object({
+  ...practiceIdentitySchema.shape,
   scriptId: z.string().uuid("script ID を確認してください。"),
   voiceId: z.string().uuid("voice ID を確認してください。").optional(),
   // Current public listen API remains on the original four presets.

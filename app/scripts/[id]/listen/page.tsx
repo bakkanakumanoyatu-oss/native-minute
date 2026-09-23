@@ -49,7 +49,7 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
   const supabase = createSupabaseServerClient();
   const script = await timeAsync("listen.page.script", () => getScript(supabase, user.id, id));
 
-  if (!script) {
+  if (!script || script.archivedAt) {
     return (
       <section className="space-y-6">
         <StateStepSection
@@ -80,7 +80,7 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
 
   const [voiceSetup, cachedAudio, progressItem] = await Promise.all([
     timeAsync("listen.page.voiceSetup", () => getVoiceSetupState(supabase, user.id)),
-    timeAsync("listen.page.cachedAudio", () => getCachedListenAudio(supabase, user.id, script.id)),
+    timeAsync("listen.page.cachedAudio", () => getCachedListenAudio(supabase, user.id, script.id, { expectedRevisionId: script.currentRevisionId, expectedPracticeEpoch: script.practiceEpoch })),
     timeAsync("listen.page.progressSummary", () => getScriptProgressSummary(supabase, user.id, script))
   ]);
   const latestReviewHref = progressItem?.latestTake ? getScriptReviewPath(script.id, progressItem.latestTake.id) : null;
@@ -154,7 +154,7 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
               {cachedAudio ? (
                 <div id="listen-panel-shell" data-testid="listen-panel-shell" className="mt-6">
                   <ListenPanel
-                    scriptId={script.id}
+                    scriptId={script.id} expectedRevisionId={script.currentRevisionId} expectedPracticeEpoch={script.practiceEpoch}
                     initialAudioUrl={cachedAudio.audioUrl}
                     initialHasSavedAudio
                     initialVoiceLabel={voiceSetup.defaultVoice?.label ?? cachedAudio.voice.label}
@@ -172,7 +172,7 @@ export default async function ListenPage({ params, searchParams }: PageParams) {
           ) : (
             <div id="listen-panel-shell" data-testid="listen-panel-shell">
               <ListenPanel
-                scriptId={script.id}
+                scriptId={script.id} expectedRevisionId={script.currentRevisionId} expectedPracticeEpoch={script.practiceEpoch}
                 initialAudioUrl={cachedAudio?.audioUrl ?? null}
                 initialHasSavedAudio={Boolean(cachedAudio)}
                 initialVoiceLabel={voiceSetup.defaultVoice.label}

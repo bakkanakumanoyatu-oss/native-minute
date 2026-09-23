@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { timeAsync } from "@/lib/performance/timing";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
-import { scriptIdSchema } from "@/schemas/script";
-import { getScript } from "@/services/scripts/scripts.service";
+import { scriptIdSchema, updateScriptSchema, scriptArchiveSchema } from "@/schemas/script";
+import { getScript, updateScript, setScriptArchived } from "@/services/scripts/scripts.service";
 import type { ScriptListItem } from "@/services/scripts/types";
 import { mobileApiError, mobileApiOk } from "./api-response";
 import {
@@ -64,7 +64,32 @@ export async function handleMobileScriptDetailGet(
 }
 
 export function handleMobileScriptDetailOptions(request: NextRequest) {
-  return handleMobileOptions(request, ["GET"]);
+  return handleMobileOptions(request, ["GET", "PATCH", "DELETE"]);
 }
 
 export const handleMobileScriptDetailUnsupportedMethod = handleMobileUnsupportedMethod;
+
+export async function handleMobileScriptMutation(request: NextRequest, scriptId: string) {
+  const auth = await authenticateMobileRequest(request, defaultDependencies);
+  if (!auth.ok) return auth.response;
+  const { origin, client, userId } = auth.context;
+  if (!scriptIdSchema.safeParse(scriptId).success) return mobileApiError(origin, 400, "request_invalid");
+  const payload = await request.json().catch(() => null);
+  try {
+    if (request.method === "DELETE") {
+      const parsed = scriptArchiveSchema.omit({ archived: true }).safeParse(payload);
+      if (!parsed.success) return mobileApiError(origin, 400, "request_invalid");
+      return mobileApiOk(origin, { script: await setScriptArchived(client, userId, scriptId, true, parsed.data.expectedLockVersion) });
+    }
+    if (payload && typeof payload.archived === "boolean") {
+      const parsed = scriptArchiveSchema.safeParse(payload);
+      if (!parsed.success) return mobileApiError(origin, 400, "request_invalid");
+      return mobileApiOk(origin, { script: await setScriptArchived(client, userId, scriptId, parsed.data.archived, parsed.data.expectedLockVersion) });
+    }
+    const parsed = updateScriptSchema.safeParse({ ...payload, id: scriptId });
+    if (!parsed.success) return mobileApiError(origin, 400, "request_invalid");
+    return mobileApiOk(origin, { script: await updateScript(client, userId, parsed.data) });
+  } catch (error) {
+    return mapMobileServiceError(origin, error, { unavailable: "scripts_unavailable" });
+  }
+}

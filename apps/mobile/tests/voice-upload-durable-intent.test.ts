@@ -18,7 +18,7 @@ const RESERVATION = {
   intentId: "33333333-3333-4333-8333-333333333333",
   leaseToken: "44444444-4444-4444-8444-444444444444"
 };
-const COMPLETED_INTENT = {
+const COMPLETED_INTENT = {script_revision_id: null, script_practice_epoch: null, generation_preset: null,
   id: RESERVATION.intentId,
   user_id: USER_ID,
   kind: "voice_sample_upload" as const,

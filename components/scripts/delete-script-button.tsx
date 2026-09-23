@@ -18,8 +18,13 @@ export function DeleteScriptButton({ scriptId, scriptTitle }: { scriptId: string
     setMessage(null);
 
     try {
+      const current = await fetch(`/api/scripts/${scriptId}`, { cache: "no-store" });
+      const detail = await current.json();
+      if (!current.ok || !detail.data?.script) { setMessage("台本の状態を確認できませんでした。"); return; }
       const response = await fetch(`/api/scripts/${scriptId}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expectedLockVersion: detail.data.script.lockVersion })
       });
 
       const payload = (await response.json()) as { ok: boolean; message?: string };
@@ -55,7 +60,7 @@ export function DeleteScriptButton({ scriptId, scriptTitle }: { scriptId: string
       ) : (
         <div className="space-y-2 rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-notice)] p-3">
           <p className="text-xs leading-5 text-amber-900">
-            「{scriptTitle}」を削除すると、関連する保存済み結果とお手本ボイスもまとめて消えます。
+            「{scriptTitle}」を一覧から外します。録音・結果は残り、あとで復元できます。
           </p>
           <div className="flex flex-wrap gap-2">
             <button

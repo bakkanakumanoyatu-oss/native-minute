@@ -72,6 +72,7 @@ export function ProgressDetails({
 
           {/* An overview keeps every script equal, without repeating filled Primary actions. */}
           <button
+            disabled={!!item.script.archivedAt}
             type="button"
             className={visibleScripts.length === 1 ? "progress-primary" : "progress-text-action progress-resume"}
             onClick={() => onNavigate({ name: "listen", scriptId: item.script.id })}
@@ -80,25 +81,27 @@ export function ProgressDetails({
             <span className="progress-arrow" aria-hidden="true">→</span>
           </button>
 
-          {item.latestTake ? (
+          {item.takeHistory.length > 0 ? (
             <>
               <section className="progress-comparison" aria-label="最新とベストの結果">
                 <dl className="progress-score-pair">
-                  <ProgressResult label="最新の結果" take={item.latestTake} />
+                  <ProgressResult label="現在版の最新" take={item.latestTake} />
                   <ProgressResult label="ベスト結果" take={item.bestTake} />
                 </dl>
-                {item.latestTake.id === item.bestTake?.id ? <p className="progress-meta progress-same-take">最新とベストは同じTake（録音）です。</p> : null}
+                {item.latestTake && item.latestTake.id === item.bestTake?.id ? <p className="progress-meta progress-same-take">最新とベストは同じTake（録音）です。</p> : null}
               </section>
 
               <section className="progress-history" aria-labelledby={`progress-history-${item.script.id}`}>
                 <h3 id={`progress-history-${item.script.id}`}>これまでの練習</h3>
-                <p className="progress-meta">保存したTake（録音）の履歴</p>
+                <p className="progress-meta">現在版 {item.takeCount}回 · 全期間 {item.allTimeTakeCount ?? item.takeCount}回{item.script.archivedAt ? " · 削除済み" : ""}</p>
+                {item.revisionHistory?.map(revision => <p key={revision.revisionId}>版 {revision.revisionId.slice(0, 8)} · {revision.takeCount}回 · 同じ版の最新 {revision.latestTake?.score ?? "—"} / ベスト {revision.bestTake?.score ?? "—"}</p>)}
                 {item.takeHistory.length > 0 ? (
                   <ol className="progress-take-list">
                     {item.takeHistory.map((take) => (
                       <li key={take.id}>
                         <button className="progress-take-row" type="button" onClick={() => onNavigate({ name: "review", scriptId: item.script.id, takeId: take.id })}>
                           <span className="progress-take-identity">
+                            <span>{take.historyStatus === "UNVERIFIED_LEGACY" ? "当時の台本は未保存" : "保存時の版"}{take.recordStatus === "completed" ? " · 旧形式記録" : ""}</span>
                             <time dateTime={take.reviewedAt ?? take.createdAt}>{formatReviewDate(take.reviewedAt ?? take.createdAt)}</time>
                             {take.id === item.latestTake?.id || take.id === item.bestTake?.id ? <span className="progress-take-status">
                               {take.id === item.latestTake?.id ? <span>最新</span> : null}

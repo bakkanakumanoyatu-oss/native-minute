@@ -597,11 +597,14 @@ export interface Database {
       voice_source_uses: {
         Row: { source_upload_intent_id: string; registration_intent_id: string; user_id: string; requires_audio: boolean };
         Insert: { source_upload_intent_id: string; registration_intent_id: string; user_id: string; requires_audio: boolean };
-        Update: never;
+        Update: { id?: string };
         Relationships: [];
       };
       voice_asset_write_intents: {
         Row: {
+          script_revision_id: string | null;
+          script_practice_epoch: number | null;
+          generation_preset: string | null;
           provider_effect: "occurred" | "possible" | null;
           storage_outcome: "failed" | "unknown" | null;
           orphan_possible: boolean | null;
@@ -639,6 +642,9 @@ export interface Database {
           updated_at: string;
         };
         Insert: {
+          script_revision_id?: string | null;
+          script_practice_epoch?: number | null;
+          generation_preset?: string | null;
           provider_effect?: "occurred" | "possible" | null;
           storage_outcome?: "failed" | "unknown" | null;
           orphan_possible?: boolean | null;
@@ -894,8 +900,18 @@ export interface Database {
         };
         Relationships: [];
       };
+      script_revisions: {
+        Row: { id: string; script_id: string; revision_no: number; content: string; locale: string; target_seconds: number; origin: string; created_at: string };
+        Insert: { id?: string; script_id: string; revision_no: number; content: string; locale: string; target_seconds: number; origin: string; created_at?: string };
+        Update: { id?: string };
+        Relationships: [];
+      };
       scripts: {
         Row: {
+          current_revision_id: string;
+          archived_at: string | null;
+          lock_version: number;
+          practice_epoch: number;
           id: string;
           user_id: string;
           title: string;
@@ -906,6 +922,10 @@ export interface Database {
           updated_at: string;
         };
         Insert: {
+          current_revision_id?: string;
+          archived_at?: string | null;
+          lock_version?: number;
+          practice_epoch?: number;
           id?: string;
           user_id: string;
           title: string;
@@ -916,6 +936,10 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
+          current_revision_id?: string;
+          archived_at?: string | null;
+          lock_version?: number;
+          practice_epoch?: number;
           id?: string;
           user_id?: string;
           title?: string;
@@ -929,6 +953,10 @@ export interface Database {
       };
       script_audios: {
         Row: {
+          script_revision_id: string | null;
+          generation_key_version: number;
+          generation_preset: string | null;
+          revision_binding: "legacy_unbound" | "baseline_compatible" | "generated";
           id: string;
           script_id: string;
           voice_id: string | null;
@@ -940,6 +968,10 @@ export interface Database {
           created_at: string;
         };
         Insert: {
+          script_revision_id?: string | null;
+          generation_key_version?: number;
+          generation_preset?: string | null;
+          revision_binding?: "legacy_unbound" | "baseline_compatible" | "generated";
           id?: string;
           script_id: string;
           voice_id?: string | null;
@@ -951,6 +983,10 @@ export interface Database {
           created_at?: string;
         };
         Update: {
+          script_revision_id?: string | null;
+          generation_key_version?: number;
+          generation_preset?: string | null;
+          revision_binding?: "legacy_unbound" | "baseline_compatible" | "generated";
           id?: string;
           script_id?: string;
           voice_id?: string | null;
@@ -1136,6 +1172,9 @@ export interface Database {
       };
       takes: {
         Row: {
+          script_revision_id: string | null;
+          script_title_snapshot: string | null;
+          script_practice_epoch: number | null;
           id: string;
           script_id: string;
           user_id: string;
@@ -1158,6 +1197,9 @@ export interface Database {
           created_at: string;
         };
         Insert: {
+          script_revision_id?: string | null;
+          script_title_snapshot?: string | null;
+          script_practice_epoch?: number | null;
           id?: string;
           script_id: string;
           user_id: string;
@@ -1180,6 +1222,9 @@ export interface Database {
           created_at?: string;
         };
         Update: {
+          script_revision_id?: string | null;
+          script_title_snapshot?: string | null;
+          script_practice_epoch?: number | null;
           id?: string;
           script_id?: string;
           user_id?: string;
@@ -1269,6 +1314,12 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      create_script: { Args: { p_title: string; p_content: string; p_locale: string; p_target_seconds: number }; Returns: Database["public"]["Tables"]["scripts"]["Row"] };
+      edit_script: { Args: { p_script_id: string; p_expected_revision_id: string; p_expected_lock_version: number; p_patch: Json }; Returns: Database["public"]["Tables"]["scripts"]["Row"] };
+      set_script_archived: { Args: { p_script_id: string; p_archived: boolean; p_expected_lock_version: number }; Returns: Database["public"]["Tables"]["scripts"]["Row"] };
+      claim_review_take: { Args: { p_take_id: string; p_script_id: string; p_audio_path: string; p_revision_id: string; p_epoch: number }; Returns: string };
+      release_review_take_claim: { Args: { p_take_id: string; p_script_id: string; p_audio_path: string }; Returns: undefined };
+
       routine_purge_retained_evidence: {
         Args: { p_resource: string; p_after_id?: string | null };
         Returns: {
@@ -1622,6 +1673,9 @@ export interface Database {
       finish_voice_source_cleanup: { Args: { p_source_id: string; p_token: string; p_result: string }; Returns: boolean };
       reserve_voice_asset_write_intent: {
         Args: {
+          p_script_revision_id?: string | null;
+          p_script_practice_epoch?: number | null;
+          p_generation_preset?: string | null;
           p_user_id: string;
           p_kind: VoiceAssetWriteIntentKind;
           p_lease_token: string;

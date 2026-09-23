@@ -1,14 +1,14 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { createPracticeApi } from "./api";
 import type { MobileAuthController } from "../auth/mobile-auth";
-import type { MobileProgress, MobileProgressTake, MobileReview } from "../lib/api";
+import type { MobileProgress, MobileProgressTake, MobileReview, MobileScript } from "../lib/api";
 const identity="a".repeat(64), flush=async()=>{for(let i=0;i<16;i++)await Promise.resolve();};
 const review:MobileReview={takeId:"take",scriptId:"script",favorite:false,displayName:null,createdAt:"2026-09-23T00:00:00Z",reviewedAt:null,transcriptText:"Hello",audioIdentity:identity,
  evaluation:{score:80,accuracyScore:80,fluencyScore:80,rhythmScore:80,summaryJa:"Good",strengthsJa:[],weakWords:[],scriptWordCount:1,transcriptWordCount:1},coach:{titleJa:"Next",summaryJa:"Next",bulletPointsJa:[],nextStepJa:"Next",focusWords:[]}};
 function fixture(){
- const script={id:"script",title:"Canonical",content:"Hello",targetSeconds:60,locale:"en-US",createdAt:"2026-09-23T00:00:00Z",updatedAt:"2026-09-23T00:00:00Z"};
+ const script={currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1, id:"script",title:"Canonical",content:"Hello",targetSeconds:60,locale:"en-US",createdAt:"2026-09-23T00:00:00Z",updatedAt:"2026-09-23T00:00:00Z"};
  const take:MobileProgressTake={...review,id:"take",score:80,accuracyScore:80,fluencyScore:80,rhythmScore:80,weakWords:[]};
- const progress:MobileProgress={totalScripts:1,totalReviewedTakes:1,bestTakeCount:1,scripts:[{script,takeCount:1,latestTake:take,bestTake:take,previousTake:null,takeHistory:[take],latestVsPrevious:null,latestVsBest:null,improvementTrend:"insufficient_data"}]};
+ const progress:MobileProgress={totalScripts:1,totalReviewedTakes:1,bestTakeCount:1,scripts:[{allTimeTakeCount: 0, legacyTakeCount: 0, legacyRecordCount: 0, revisionHistory: [], script,takeCount:1,latestTake:take,bestTake:take,previousTake:null,takeHistory:[take],latestVsPrevious:null,latestVsBest:null,improvementTrend:"insufficient_data"}]};
  let status=200,writeStatus=200,malformed=false,version:unknown=identity,hold:((path:string)=>Promise<void>)|undefined;
  const fetchImpl=vi.fn(async(input:string|URL|Request,init?:RequestInit)=>{
   const path=new URL(String(input)).pathname,isWrite=!!init?.method&&init.method!=="GET";
@@ -24,7 +24,7 @@ function fixture(){
  const count=(path:string)=>fetchImpl.mock.calls.filter(([u,init])=>String(u).endsWith(path)&&(!init?.method||init.method==="GET")).length;
  const open=async()=>{const s=api.scriptsMemory!,p=api.progressMemory!,r=api.reviewMemory!;s.enter("scripts");p.enter();r.enter("script/take");await Promise.all([s.revalidate(),p.revalidate(),r.revalidate()]);};
  const stop=()=>{api.scriptsMemory!.revoke();api.reviewMemory!.revoke();api.progressMemory!.revoke();api.savedTakeAudioMemory!.revoke();};
- return{api,fetchImpl,count,open,stop,access,setStatus:(v:number)=>{status=v;},setWriteStatus:(v:number)=>{writeStatus=v;},setMalformed:()=>{malformed=true;},setVersion:(v:unknown)=>{version=v;},hold:(v:typeof hold)=>{hold=v;}};
+ return{api,fetchImpl,count,open,stop,access,setScript:(patch:Partial<MobileScript>)=>Object.assign(script,patch),setStatus:(v:number)=>{status=v;},setWriteStatus:(v:number)=>{writeStatus=v;},setMalformed:()=>{malformed=true;},setVersion:(v:unknown)=>{version=v;},hold:(v:typeof hold)=>{hold=v;}};
 }
 afterEach(()=>vi.unstubAllGlobals());
 it("Review revisit shares its fresh audio validation, skips fresh title GET, and reuses one binary",async()=>{
@@ -51,7 +51,7 @@ it("script create patches owned list order and refreshes shared aggregate only",
  const f=fixture();await f.open();const scripts=f.count("/scripts"),reviews=f.count("/reviews/take");await f.api.createScript({title:"Created",content:"Hello"});await f.api.progressMemory!.revalidate();expect(f.api.scriptsMemory!.peek("scripts")!.map(s=>s.id)).toEqual(["created","script"]);expect(f.count("/scripts")).toBe(scripts);expect(f.count("/reviews/take")).toBe(reviews);f.stop();
 });
 it("evaluation seeds exact saved Review and marks aggregate dirty without refreshing Scripts",async()=>{
- const f=fixture();await f.open();const scripts=f.count("/scripts"),reviews=f.count("/reviews/take");await f.api.evaluateRecording({scriptId:"script",takeId:"take",recordingRef:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"});await f.api.progressMemory!.revalidate();expect(f.api.reviewMemory!.peek("script/take")!.review.evaluation.score).toBe(80);expect(f.count("/scripts")).toBe(scripts);expect(f.count("/reviews/take")).toBe(reviews);f.stop();
+ const f=fixture();await f.open();const scripts=f.count("/scripts"),reviews=f.count("/reviews/take");await f.api.evaluateRecording({expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1, scriptId:"script",takeId:"take",recordingRef:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"});await f.api.progressMemory!.revalidate();expect(f.api.reviewMemory!.peek("script/take")!.review.evaluation.score).toBe(80);expect(f.count("/scripts")).toBe(scripts);expect(f.count("/reviews/take")).toBe(reviews);f.stop();
 });
 it.each([403,404])("detected resource %i removes related aggregates and Review; unrelated Scripts remain",async status=>{
  const f=fixture();await f.open();f.setStatus(status);await f.api.reviewMemory!.revalidate();expect(f.api.reviewMemory!.getSnapshot("script/take").kind).toBe("error");expect(f.api.progressMemory!.memory.peek("progress")).toBeUndefined();expect(f.api.scriptsMemory!.peek("scripts")).toHaveLength(1);f.stop();
@@ -76,4 +76,35 @@ it("audio-only visits do not renew the separately confirmed script title age",as
 });
 it("unknown auth bridge exception is not mislabeled as a temporary connection failure",async()=>{
  const f=fixture();await f.open();f.access.mockRejectedValue(Error("unknown bridge fault"));await Promise.all([f.api.scriptsMemory!.revalidate(),f.api.progressMemory!.revalidate(),f.api.reviewMemory!.revalidate()]);for(const state of [f.api.scriptsMemory!.getSnapshot("scripts"),f.api.progressMemory!.getSnapshot(),f.api.reviewMemory!.getSnapshot("script/take")])expect(state).toMatchObject({kind:"error",error:{kind:"invalid-response"}});f.stop();
+});
+
+it.each(["edit", "archive", "restore"])("script %s retains unrelated Review and patches only active list metadata", async operation => {
+ const f=fixture(); await f.open();
+ const memory=f.api.reviewMemory!;
+ memory.seed("other/other",{review:{...review,scriptId:"other",takeId:"other"},scriptTitle:"Other"});
+ const before=f.count("/reviews/other");
+ const archivedAt=operation==="archive"?"2026-09-24T00:00:00Z":null;
+ f.setScript({title:"Changed",archivedAt,lockVersion:2});
+ const result=await f.api.mutateScript!("script",operation==="edit"?{title:"Changed",content:"Hello",expectedRevisionId:"60000000-0000-4000-8000-000000000001",expectedLockVersion:1}:{archived:operation==="archive",expectedLockVersion:1});
+ expect(result.kind).toBe("success");
+ expect(memory.peek("other/other")?.scriptTitle).toBe("Other");
+ expect(f.count("/reviews/other")).toBe(before);
+ expect(f.api.scriptsMemory!.peek("scripts")).toHaveLength(operation==="archive"?0:1);
+ expect(memory.getSnapshot("script/take").kind).toBe("ready");
+ await Promise.all([memory.revalidate(),f.api.progressMemory!.revalidate()]);
+ expect(memory.peek("script/take")?.scriptArchived).toBe(operation==="archive");
+ f.stop();
+});
+it("late edit response cannot reinsert a script archived by a newer mutation", async()=>{
+ const f=fixture();await f.open();let release!:()=>void,held=false;
+ f.setScript({title:"Edited",lockVersion:2});
+ f.hold(path=>path.endsWith("/script")&&!held?(held=true,new Promise<void>(r=>{release=r;})):Promise.resolve());
+ const edit=f.api.mutateScript!("script",{title:"Edited",content:"Hello",expectedRevisionId:"60000000-0000-4000-8000-000000000001",expectedLockVersion:1});
+ await vi.waitFor(()=>expect(release).toBeTypeOf("function"));
+ f.setScript({archivedAt:"2026-09-24T00:00:00Z",lockVersion:3});
+ await f.api.mutateScript!("script",{archived:true,expectedLockVersion:2});
+ expect(f.api.scriptsMemory!.peek("scripts")).toHaveLength(0);
+ release();await edit;
+ expect(f.api.scriptsMemory!.peek("scripts")).toHaveLength(0);
+ f.stop();
 });

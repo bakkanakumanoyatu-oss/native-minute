@@ -39,7 +39,7 @@ function scriptAudioRow(input: {
   provider?: string;
   storedAsset?: Record<string, unknown>;
 }) {
-  return {
+  return {script_revision_id: "60000000-0000-4000-8000-000000000001", generation_key_version: 2, generation_preset: "natural", revision_binding: "generated",
     id: input.id,
     script_id: input.scriptId,
     voice_id: input.voiceId,

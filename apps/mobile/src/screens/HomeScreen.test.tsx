@@ -7,12 +7,12 @@ import type { PracticeApi } from "../practice/api";
 function take(id: string, score: number, createdAt: string): MobileProgressTake {
   const coach = { titleJa: "保存された助言", summaryJa: "要約", nextStepJa: "ゆっくり", focusWords: [], bulletPointsJa: [] };
   const evaluation = { score, accuracyScore: score, fluencyScore: score, rhythmScore: score, summaryJa: "結果", strengthsJa: [], weakWords: [], scriptWordCount: 1, transcriptWordCount: 1 };
-  return { favorite: false, displayName: null, id, scriptId: "s1", score, accuracyScore: score, fluencyScore: score, rhythmScore: score, createdAt, reviewedAt: null, transcriptText: null, weakWords: [], coach, evaluation };
+  return {scriptRevisionId: "60000000-0000-4000-8000-000000000001", scriptTitleSnapshot: null, historyStatus: "VERSIONED" as const, recordStatus: "reviewed",  favorite: false, displayName: null, id, scriptId: "s1", score, accuracyScore: score, fluencyScore: score, rhythmScore: score, createdAt, reviewedAt: null, transcriptText: null, weakWords: [], coach, evaluation };
 }
 const latest = take("latest", 61, "2026-09-17T00:00:00Z");
 const best = take("best", 88, "2026-09-16T00:00:00Z");
-const item: MobileScriptProgress = {
-  script: { id: "s1", title: "Persisted title", content: "Hello.", locale: "en-US", targetSeconds: 60, updatedAt: "2026-09-17T00:00:00Z" },
+const item: MobileScriptProgress = {legacyTakeCount: 0, legacyRecordCount: 0, revisionHistory: [],
+  script: {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, id: "s1", title: "Persisted title", content: "Hello.", locale: "en-US", targetSeconds: 60, updatedAt: "2026-09-17T00:00:00Z" },
   takeCount: 2, latestTake: latest, bestTake: best, previousTake: best, takeHistory: [best, latest], latestVsPrevious: null, latestVsBest: null, improvementTrend: "down"
 };
 const empty: MobileProgress = { scripts: [], totalScripts: 0, totalReviewedTakes: 0, bestTakeCount: 0 };
@@ -66,7 +66,7 @@ describe("Personal Space uses persisted results", () => {
     }
   });
   it("previews at most three owned scripts in server order with duration, locale and practice actions", () => {
-    const scripts = [1, 2, 3, 4].map(n => ({ ...item, script: { ...item.script, id: `s${n}`, title: `Owned script ${n}`, locale: n === 2 ? "en-GB" : "en-US", targetSeconds: n === 2 ? 45 : 60 }, takeCount: 0, latestTake: null, bestTake: null, takeHistory: [] }));
+    const scripts = [1, 2, 3, 4].map(n => ({legacyTakeCount: 0, legacyRecordCount: 0, revisionHistory: [],  ...item, script: { ...item.script, id: `s${n}`, title: `Owned script ${n}`, locale: n === 2 ? "en-GB" : "en-US", targetSeconds: n === 2 ? 45 : 60 }, takeCount: 0, latestTake: null, bestTake: null, takeHistory: [] }));
     const html = render({ ...empty, scripts, totalScripts: 4 });
     expect(html).not.toContain("<h1>Home</h1>");
     expect(html).toContain("台本から選ぶ");
@@ -116,7 +116,7 @@ describe("Personal Space uses persisted results", () => {
     expect(render({ ...empty, totalReviewedTakes: 5 })).not.toContain('space-preview-count');
   });
   it("counts practiced scripts only, and never fabricates favorites", () => {
-    const html = render({ scripts: [item, { ...item, script: { ...item.script, id: "s2" }, takeCount: 0, latestTake: null, bestTake: null, takeHistory: [] }], totalScripts: 2, totalReviewedTakes: 2, bestTakeCount: 1 });
+    const html = render({ scripts: [item, {legacyTakeCount: 0, legacyRecordCount: 0, revisionHistory: [],  ...item, script: { ...item.script, id: "s2" }, takeCount: 0, latestTake: null, bestTake: null, takeHistory: [] }], totalScripts: 2, totalReviewedTakes: 2, bestTakeCount: 1 });
     expect(html).not.toContain("前回 <strong>");
     expect(html).not.toContain("最高点");
     expect(html).toContain('<strong>1</strong><span>練習した<wbr/>台本</span>');

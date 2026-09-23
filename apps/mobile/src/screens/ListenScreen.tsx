@@ -216,7 +216,8 @@ function ListenSession({ api, scriptId, isOnline, onNavigate }: ListenScreenProp
       // Only explicit initial preparation can reach the generation-capable API.
       if (!reference.current) {
         if (resume || hasPreparedReferenceAudio) return;
-        const requested = await api.requestListen(scriptId);
+        if (scriptState.kind !== "ready" || scriptState.script.archivedAt) { setListenState({ kind: "error", error: { kind: "conflict", reasonCode: "script_archived" } }); return; }
+        const requested = await api.requestListen(scriptId, { expectedRevisionId: scriptState.script.currentRevisionId, expectedPracticeEpoch: scriptState.script.practiceEpoch });
         if (!current()) return;
         if (requested.kind !== "success") {
           setListenState({ kind: "error", error: requested });

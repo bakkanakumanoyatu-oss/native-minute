@@ -23,6 +23,8 @@ type SpeakResponse = {
 };
 
 type ListenPanelProps = {
+  expectedRevisionId: string;
+  expectedPracticeEpoch: number;
   scriptId: string;
   initialAudioUrl?: string | null;
   initialHasSavedAudio?: boolean;
@@ -64,6 +66,8 @@ function clampTime(value: number, duration: number | null) {
 
 export function ListenPanel({
   scriptId,
+  expectedRevisionId,
+  expectedPracticeEpoch,
   initialAudioUrl = null,
   initialVoiceLabel = null,
   initialVoiceId = null,
@@ -119,6 +123,8 @@ export function ListenPanel({
         },
         body: JSON.stringify({
           scriptId,
+          expectedRevisionId,
+          expectedPracticeEpoch,
           voiceId: initialVoiceId ?? undefined,
           voiceStylePreset: DEFAULT_VOICE_STYLE_PRESET
         })

@@ -17,6 +17,7 @@ export type StoredCoachFeedback = Database["public"]["Tables"]["coach_feedback"]
 
 export interface StoredTakeReview {
   take: StoredTake;
+  scriptSnapshot?: { revisionId: string; revisionNo: number; title: string; content: string; locale: string; targetSeconds: number } | null;
   weakWords: StoredWeakWord[];
   coachFeedback: StoredCoachFeedback | null;
 }

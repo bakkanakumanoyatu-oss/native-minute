@@ -1,4 +1,4 @@
-export const ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION = "g5d-2h.account-db.v1" as const;
+export const ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION = "script-revision.account-db.v2" as const;
 
 export type AccountDeletionDatabaseDisposition =
   | "DELETE"
@@ -14,12 +14,12 @@ export type AccountDeletionDatabaseTableContract = {
   authority: string;
 };
 
-// Exact current public-table authority after migration 0023. This is deliberately
-// concrete rather than a generic retention framework; the next focused atomic DB
-// finalizer must consume this exact version and all 18 entries.
+// v2 includes revision text and registered-source cascade children. v1 evidence is retained.
 export const ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT = [
   { table: "profiles", disposition: "DELETE", authority: "owned profile; delete explicitly before Auth" },
   { table: "scripts", disposition: "DELETE", authority: "owned scripts after Storage absence" },
+  { table: "script_revisions", disposition: "CASCADE", authority: "all immutable revisions cascade from owned scripts, including archives" },
+  { table: "voice_source_uses", disposition: "CASCADE", authority: "registered-source links cascade from owned write intents" },
   { table: "script_audios", disposition: "CASCADE", authority: "cascade from classified script deletion" },
   { table: "takes", disposition: "DELETE", authority: "owned takes after recording absence" },
   { table: "weak_words", disposition: "CASCADE", authority: "cascade from classified take deletion" },

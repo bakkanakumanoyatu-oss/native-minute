@@ -7,7 +7,7 @@ import type { CoachFeedback } from "@/services/coach";
 import { createMockCoachFeedback, type CoachInput } from "@/services/coach";
 import type { EvaluateRequestInput } from "@/schemas/evaluate";
 import { createPronunciationEvaluator, type EvaluateResult } from "@/services/pronunciation";
-import { getScript } from "@/services/scripts/scripts.service";
+import { getScript, assertPracticeScript, mapScriptStateError, ScriptStateError } from "@/services/scripts/scripts.service";
 import { assertCurrentProcessingConsent } from "@/services/consent";
 import { createTranscriptionProvider } from "@/services/transcription";
 import { createRecordingAudioPath, loadOwnedRecordingForEvaluation } from "@/services/storage";
@@ -22,21 +22,6 @@ type PersistReviewRpcClient = {
     args: PersistReviewBundleArgs
   ): Promise<{ data: string | null; error: { message: string } | null }>;
 };
-type PostgrestErrorLike = { message: string; code?: string };
-type ReviewTakeClaimRow = Pick<TakeRow, "script_id" | "audio_path" | "status">;
-type ReviewTakeClaimTable = {
-  insert(values: Database["public"]["Tables"]["takes"]["Insert"]): Promise<{
-    error: PostgrestErrorLike | null;
-  }>;
-  select(columns: string): {
-    eq(column: string, value: string): ReturnType<ReviewTakeClaimTable["select"]>;
-    maybeSingle(): Promise<{
-      data: ReviewTakeClaimRow | null;
-      error: PostgrestErrorLike | null;
-    }>;
-  };
-};
-
 export type ReviewTakeClaimResult =
   | "claimed"
   | "processing"
@@ -44,6 +29,8 @@ export type ReviewTakeClaimResult =
   | "conflict";
 
 export type ReviewTakeClaimInput = {
+  expectedRevisionId: string;
+  expectedPracticeEpoch: number;
   takeId: string;
   scriptId: string;
   audioPath: string;
@@ -152,6 +139,7 @@ export async function createReviewArtifacts(
       throw new AppError(404, "台本が見つかりませんでした。");
     }
 
+    assertPracticeScript(script, input);
     const recording = await timeAsync("evaluate.audioInput", () =>
       loadOwnedRecordingForEvaluation(client, userId, input.scriptId, {
         audioPath: input.audioPath,
@@ -172,7 +160,7 @@ export async function createReviewArtifacts(
         audioPath: recording?.audioPath ?? input.audioPath,
         audioStorageKey: recording?.audioStorageKey ?? input.audioStorageKey,
         transcriptText: input.transcriptText,
-        locale: input.locale
+        locale: script.locale
       })
     );
 
@@ -250,7 +238,7 @@ async function persistReviewBundle(
   const { data, error } = await timeAsync("evaluate.persistenceRpc", () => rpcClient.rpc("persist_review_bundle", rpcArgs));
 
   if (error) {
-    throw new AppError(500, `review の保存に失敗しました。${error.message}`);
+    throw mapScriptStateError(error);
   }
 
   if (!data) {
@@ -276,15 +264,40 @@ async function loadStoredReview(client: AppSupabaseClient, take: TakeRow): Promi
     throw new AppError(500, `coach_feedback の取得に失敗しました。${coachFeedbackError.message}`);
   }
 
+  const scriptSnapshot = await getReviewScriptSnapshot(client, take);
   return {
     take,
+    scriptSnapshot,
     weakWords: (weakWords ?? []).map(toStoredWeakWord),
     coachFeedback
   };
 }
 
-export async function createPersistedReview(client: AppSupabaseClient, userId: string, input: EvaluateRequestInput) {
+export async function getReviewScriptSnapshot(client: AppSupabaseClient, take: TakeRow) {
+  let scriptSnapshot: StoredTakeReview["scriptSnapshot"] = null;
+  if (take.script_revision_id) {
+    const { data: revision, error } = await client.from("script_revisions").select("*").eq("script_id", take.script_id).eq("id", take.script_revision_id).maybeSingle() as unknown as { data: Database["public"]["Tables"]["script_revisions"]["Row"] | null; error: unknown };
+    if (error || !revision) throw new AppError(500, "保存時の台本を確認できませんでした。");
+    scriptSnapshot = { revisionId: revision.id, revisionNo: revision.revision_no, title: take.script_title_snapshot ?? "保存時の台本", content: revision.content, locale: revision.locale, targetSeconds: revision.target_seconds };
+  }
+  return scriptSnapshot;
+}
+
+export async function createPersistedReview(client: AppSupabaseClient, userId: string, input: EvaluateRequestInput, alreadyClaimed = false) {
   return timeAsync("evaluate.persistedReview", async () => {
+    input = { ...input, takeId: input.takeId ?? randomUUID() };
+    const claimInput = { takeId: input.takeId!, scriptId: input.scriptId, audioPath: toAudioPath(input, input.takeId!), expectedRevisionId: input.expectedRevisionId, expectedPracticeEpoch: input.expectedPracticeEpoch };
+    if (!alreadyClaimed) {
+      const claim = await claimReviewTake(client, userId, claimInput);
+      if (claim === "reviewed") {
+        const stored = await getStoredReview(client, userId, input.scriptId, input.takeId!);
+        if (!stored) throw new ScriptStateError("review_claim_conflict");
+        const hydrated = hydrateStoredReview(stored);
+        return { takeId: hydrated.take.id, transcriptText: hydrated.take.transcript_text ?? "", evaluation: hydrated.evaluation, coach: hydrated.coach, storedReview: hydrated };
+      }
+      if (claim !== "claimed") throw new ScriptStateError("review_claim_conflict");
+    }
+    try {
     const reviewArtifacts = await createReviewArtifacts(client, userId, input);
     const takeId = await persistReviewBundle(client, input, reviewArtifacts);
     const storedReview = await timeAsync("evaluate.refetchStoredReview", () => getStoredReview(client, userId, input.scriptId, takeId));
@@ -302,75 +315,25 @@ export async function createPersistedReview(client: AppSupabaseClient, userId: s
       coach: hydrated.coach,
       storedReview: hydrated
     };
+    } catch (error) {
+      if (!alreadyClaimed) await releaseReviewTakeClaim(client, userId, claimInput);
+      throw error;
+    }
   });
 }
 
-export async function claimReviewTake(
-  client: AppSupabaseClient,
-  userId: string,
-  input: ReviewTakeClaimInput
-): Promise<ReviewTakeClaimResult> {
-  return timeAsync("evaluate.claim", async () => {
-    const takes = client.from("takes") as unknown as ReviewTakeClaimTable;
-    const { error: insertError } = await takes.insert({
-      id: input.takeId,
-      script_id: input.scriptId,
-      user_id: userId,
-      audio_path: input.audioPath,
-      status: "pending"
-    });
-
-    if (!insertError) {
-      return "claimed";
-    }
-
-    if (insertError.code !== "23505") {
-      throw new AppError(500, `take claim の保存に失敗しました。${insertError.message}`);
-    }
-
-    const { data: existing, error: existingError } = await takes
-      .select("script_id, audio_path, status")
-      .eq("id", input.takeId)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (existingError) {
-      throw new AppError(500, `take claim の確認に失敗しました。${existingError.message}`);
-    }
-
-    if (
-      !existing ||
-      existing.script_id !== input.scriptId ||
-      existing.audio_path !== input.audioPath
-    ) {
-      return "conflict";
-    }
-
-    if (existing.status === "reviewed") {
-      return "reviewed";
-    }
-
-    return existing.status === "pending" ? "processing" : "conflict";
-  });
+export async function claimReviewTake(client: AppSupabaseClient, _userId: string, input: ReviewTakeClaimInput): Promise<ReviewTakeClaimResult> {
+  const rpc = client as unknown as { rpc(name: "claim_review_take", args: Database["public"]["Functions"]["claim_review_take"]["Args"]): Promise<{ data: string; error: { message: string } | null }> };
+  const { data, error } = await rpc.rpc("claim_review_take", { p_take_id: input.takeId, p_script_id: input.scriptId,
+    p_audio_path: input.audioPath, p_revision_id: input.expectedRevisionId, p_epoch: input.expectedPracticeEpoch });
+  if (error) throw mapScriptStateError(error);
+  if (!["claimed", "processing", "reviewed", "conflict"].includes(data)) throw new AppError(500, "録音の保存状態を確認できませんでした。");
+  return data as ReviewTakeClaimResult;
 }
-
-export async function releaseReviewTakeClaim(
-  client: AppSupabaseClient,
-  userId: string,
-  input: ReviewTakeClaimInput
-) {
-  const { error } = await client
-    .from("takes")
-    .delete()
-    .eq("id", input.takeId)
-    .eq("user_id", userId)
-    .eq("script_id", input.scriptId)
-    .eq("audio_path", input.audioPath)
-    .eq("status", "pending");
-
-  if (error) {
-    console.warn("Pending review take claim could not be released");
-  }
+export async function releaseReviewTakeClaim(client: AppSupabaseClient, _userId: string, input: ReviewTakeClaimInput) {
+  const rpc = client as unknown as { rpc(name: "release_review_take_claim", args: Database["public"]["Functions"]["release_review_take_claim"]["Args"]): Promise<{ error: unknown }> };
+  const { error } = await rpc.rpc("release_review_take_claim", { p_take_id: input.takeId, p_script_id: input.scriptId, p_audio_path: input.audioPath });
+  if (error) console.warn("Pending review take claim could not be released");
 }
 
 export async function getStoredReview(client: AppSupabaseClient, userId: string, scriptId: string, takeId: string): Promise<StoredTakeReview | null> {
@@ -381,7 +344,7 @@ export async function getStoredReview(client: AppSupabaseClient, userId: string,
       .eq("id", takeId)
       .eq("user_id", userId)
       .eq("script_id", scriptId)
-      .eq("status", "reviewed")
+      .in("status", ["reviewed", "completed"])
       .maybeSingle();
 
     if (error) {
@@ -403,7 +366,7 @@ export async function getStoredReviewByTakeId(client: AppSupabaseClient, userId:
       .select("*")
       .eq("id", takeId)
       .eq("user_id", userId)
-      .eq("status", "reviewed")
+      .in("status", ["reviewed", "completed"])
       .maybeSingle();
 
     if (error) {

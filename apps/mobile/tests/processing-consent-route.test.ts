@@ -148,6 +148,8 @@ describe("pronunciation consent fail-closed boundaries", () => {
   it("permits an owned upload after the current pronunciation consent check succeeds", async () => {
     const formData = new FormData();
     formData.set("scriptId", SCRIPT_ID);
+    formData.set("expectedRevisionId", "60000000-0000-4000-8000-000000000001");
+    formData.set("expectedPracticeEpoch", "1");
     formData.set("recordingRef", RECORDING_ID);
     formData.set("file", new File([createPcmWave()], "take.wav", { type: "audio/wav" }));
     const assertPronunciationConsent = vi.fn(async () => undefined);
@@ -176,6 +178,8 @@ describe("pronunciation consent fail-closed boundaries", () => {
   it("blocks mobile recording storage before any upload when consent is missing", async () => {
     const formData = new FormData();
     formData.set("scriptId", SCRIPT_ID);
+    formData.set("expectedRevisionId", "60000000-0000-4000-8000-000000000001");
+    formData.set("expectedPracticeEpoch", "1");
     formData.set("recordingRef", RECORDING_ID);
     formData.set("file", new File([createPcmWave()], "take.wav", { type: "audio/wav" }));
     const uploadOwnedRecording = vi.fn();
@@ -205,14 +209,14 @@ describe("pronunciation consent fail-closed boundaries", () => {
       mobileRequest("/api/mobile/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scriptId: SCRIPT_ID, takeId: TAKE_ID, recordingRef: RECORDING_ID })
+        body: JSON.stringify({expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,  scriptId: SCRIPT_ID, takeId: TAKE_ID, recordingRef: RECORDING_ID })
       }),
       {
         ...authDependencies(),
         assertPronunciationConsent: async () => {
           throw new AppError(409, "consent required");
         },
-        getOwnedScript: async () => ({
+        getOwnedScript: async () => ({currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1,
           id: SCRIPT_ID,
           title: "Owned script",
           content: "A safe script.",

@@ -42,12 +42,13 @@ describe("G5D-2J atomic database finalizer contract", () => {
     expect(recordedMigrationSha256).toBe(computedMigrationSha256);
   });
 
-  it("keeps one exact static 18-table inventory and version", () => {
-    expect(ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION).toBe("g5d-2h.account-db.v1");
-    expect(ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT).toHaveLength(18);
+  it("keeps one exact static 20-table inventory and version", () => {
+    expect(ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION).toBe("script-revision.account-db.v2");
+    expect(ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT).toHaveLength(20);
 
     for (const { table } of ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT) {
-      expect(migration).toContain(`from public.${table}`);
+      const currentMigration = readFileSync(fileURLToPath(new URL("../../../supabase/migrations/0034_script_revision_deletion_inventory.sql", import.meta.url)), "utf8");
+      expect(currentMigration).toContain(`from public.${table}`);
     }
 
     expect(migration).not.toMatch(/\bexecute\s+(format\s*\(|v_)/i);
@@ -59,7 +60,7 @@ describe("G5D-2J atomic database finalizer contract", () => {
   it("exposes only the focused service-role RPC with generated-compatible types", () => {
     expect(ACCOUNT_DELETION_DATABASE_FINALIZER_RPC).toEqual({
       name: "finalize_account_deletion_database_stage",
-      inventoryVersion: "g5d-2h.account-db.v1",
+      inventoryVersion: "script-revision.account-db.v2",
       arguments: [
         "p_deletion_request_id",
         "p_expected_user_id",

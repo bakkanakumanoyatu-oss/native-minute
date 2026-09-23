@@ -148,7 +148,7 @@ describe("ScriptsView", () => {
         state={{
           kind: "ready",
           scripts: [
-            {
+            {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1,
               id: "script-fixture",
               title: "Morning update",
               content: "A one-minute practice script.",
@@ -182,7 +182,7 @@ describe("ScriptsView", () => {
     const priorUserState = {
       kind: "ready" as const,
       scripts: [
-        {
+        {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1,
           id: "user-a-script",
           title: "Private A",
           content: "Owned by user A.",

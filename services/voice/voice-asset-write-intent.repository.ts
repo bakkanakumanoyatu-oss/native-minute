@@ -1,3 +1,4 @@
+import { mapScriptStateError } from "@/services/scripts/scripts.service";
 import { AppError } from "@/lib/errors";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServiceRoleKey } from "@/lib/supabase/config";
@@ -20,6 +21,7 @@ function asRpcResult<TRow>(value: unknown) {
 
 function mapIntentError(error: RpcError) {
   const message = error.message.toLowerCase();
+  if (/script_archived|script_revision_conflict|practice_state_conflict/.test(message)) return mapScriptStateError(error);
 
   if (
     message.includes("voice_deletion_active")
@@ -58,6 +60,9 @@ export function createVoiceAssetWriteIntentRepository(
     leaseToken: string;
     leaseSeconds: number;
     scriptId?: string | null;
+    scriptRevisionId?: string | null;
+    scriptPracticeEpoch?: number | null;
+    generationPreset?: string | null;
     voiceId?: string | null;
     cacheKey?: string | null;
     storageBucket?: string | null;
@@ -69,6 +74,9 @@ export function createVoiceAssetWriteIntentRepository(
       p_lease_token: input.leaseToken,
       p_lease_seconds: input.leaseSeconds,
       p_script_id: input.scriptId ?? null,
+      p_script_revision_id: input.scriptRevisionId ?? null,
+      p_script_practice_epoch: input.scriptPracticeEpoch ?? null,
+      p_generation_preset: input.generationPreset ?? null,
       p_voice_id: input.voiceId ?? null,
       p_cache_key: input.cacheKey ?? null,
       p_storage_bucket: input.storageBucket ?? null,

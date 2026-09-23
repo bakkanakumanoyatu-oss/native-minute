@@ -93,7 +93,7 @@ export default async function ScriptsPage() {
   ]);
   const transcriptionStatus = getTranscriptionProviderStatus();
   const canRecord = transcriptionStatus.supported;
-  const scripts = overview.scripts;
+  const scripts = overview.scripts.filter(item => !item.script.archivedAt);
   const visibleScripts = scripts.slice(0, MAX_PRACTICE_SLOTS);
   const hiddenScriptCount = Math.max(0, scripts.length - visibleScripts.length);
   const candidateScript = pickScriptsLaunchCandidate(scripts, canRecord);
@@ -105,6 +105,7 @@ export default async function ScriptsPage() {
 
   return (
     <section className="space-y-6">
+      <Link href="/scripts/archived">削除済みの台本・復元</Link>
       <div className="overflow-hidden rounded-[2rem] border border-[var(--line-inset)] bg-[linear-gradient(135deg,var(--studio-surface-secondary),var(--studio-surface-inset)_62%,var(--booth-wall-deep))] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8 lg:p-10">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
           <div>
@@ -115,20 +116,20 @@ export default async function ScriptsPage() {
             </div>
             <p className="text-sm font-semibold text-[var(--studio-accent-strong)]">1分ストック</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-ink-900 sm:text-5xl">今日録る1本を選ぶ</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-ink-700">5本まで置いて、今日の Take を残す1本を選びます。</p>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-ink-700">10本まで置いて、今日の Take を残す1本を選びます。</p>
           </div>
           <div className="rounded-[1.75rem] border border-[var(--line-dark)] bg-[var(--control-panel)] p-6 text-[var(--cta-primary-text)] shadow-[0_18px_44px_rgba(24,23,34,0.22)]">
             <p className="text-sm font-semibold text-[rgba(255,241,221,0.78)]">棚の空き</p>
             <p className="mt-2 text-4xl font-semibold tracking-tight text-[var(--cta-primary-text)]">1分ストック {Math.min(scripts.length, MAX_PRACTICE_SLOTS)} / {MAX_PRACTICE_SLOTS}</p>
             <p className="mt-1 text-sm leading-6 text-[rgba(255,241,221,0.68)]">
-              {scripts.length === 0 ? "まず1テイク用の1本を作ります。" : hiddenScriptCount > 0 ? `表示は5個まで。ほか ${hiddenScriptCount} 件は絞っています。` : "5本まで置けます。"}
+              {scripts.length === 0 ? "まず1テイク用の1本を作ります。" : hiddenScriptCount > 0 ? `表示は10個まで。ほか ${hiddenScriptCount} 件は絞っています。` : "10本まで置けます。"}
             </p>
           </div>
         </div>
         <div className="mt-8 flex flex-col gap-3 text-sm font-semibold sm:flex-row sm:items-center">
           <p className="text-sm leading-6 text-ink-700">
             {scripts.length >= MAX_PRACTICE_SLOTS
-              ? "5本あります。不要な台本を削除すると、新しい台本を追加できます。"
+              ? "10本あります。不要な台本を削除すると、新しい台本を追加できます。"
               : scripts.length > 0
                 ? "今ある1分から選びます。"
                 : "まずは新しい1分を作ります。"}
@@ -200,6 +201,7 @@ export default async function ScriptsPage() {
                   <Link href={primaryHref} className="inline-flex w-full justify-center rounded-2xl bg-[var(--cta-primary-bg)] px-5 py-4 text-[var(--cta-primary-text)] shadow-[0_12px_28px_rgba(24,23,34,0.18)] transition hover:opacity-90 sm:w-auto">
                     {primaryLabel}
                   </Link>
+                  <Link href={`/scripts/${item.script.id}/edit`}>編集</Link>
                   <DeleteScriptButton scriptId={item.script.id} scriptTitle={item.script.title} />
                 </div>
                 <details className="mt-4 rounded-2xl border border-[var(--line-subtle)] bg-[rgba(223,197,170,0.58)] px-4 py-3">

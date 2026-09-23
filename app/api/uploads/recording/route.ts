@@ -26,6 +26,8 @@ export async function POST(request: Request) {
     }
 
     const parsed = uploadRecordingSchema.safeParse({
+      expectedRevisionId: formData.get("expectedRevisionId"),
+      expectedPracticeEpoch: formData.get("expectedPracticeEpoch"),
       scriptId: typeof formData.get("scriptId") === "string" ? formData.get("scriptId") : undefined,
       durationSeconds: typeof formData.get("durationSeconds") === "string" ? formData.get("durationSeconds") : undefined
     });
@@ -35,6 +37,7 @@ export async function POST(request: Request) {
     }
 
     const uploaded = await uploadOwnedRecording(supabase, user.id, {
+      ...parsed.data,
       scriptId: parsed.data.scriptId,
       file,
       durationSeconds: parsed.data.durationSeconds

@@ -17,7 +17,7 @@ import {
 } from "./route-context";
 
 export interface MobileScriptsRouteDependencies extends MobileRouteAuthDependencies {
-  listOwnedScripts(client: AppSupabaseClient, userId: string): Promise<ScriptListItem[]>;
+  listOwnedScripts(client: AppSupabaseClient, userId: string, scope?: "active" | "archived" | "all"): Promise<ScriptListItem[]>;
   createOwnedScript?(
     client: AppSupabaseClient,
     userId: string,
@@ -65,7 +65,7 @@ export async function handleMobileScriptsGet(
 
   try {
     const scripts = await timeAsync("mobile.scripts.list", () =>
-      dependencies.listOwnedScripts(client, userId)
+      dependencies.listOwnedScripts(client, userId, request.nextUrl.searchParams.get("scope") === "archived" ? "archived" : "active")
     );
     return mobileApiOk(origin, { scripts });
   } catch (error) {

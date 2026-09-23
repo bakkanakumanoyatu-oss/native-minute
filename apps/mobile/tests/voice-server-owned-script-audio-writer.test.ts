@@ -31,7 +31,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: mocks.createSupabaseAdminClient }));
 vi.mock("@/lib/supabase/config", () => ({ getSupabaseServiceRoleKey: mocks.getSupabaseServiceRoleKey }));
 vi.mock("@/lib/supabase/auth", () => ({ requireCurrentUser: mocks.requireCurrentUser }));
-vi.mock("@/services/scripts/scripts.service", () => ({ getScript: mocks.getScript }));
+vi.mock("@/services/scripts/scripts.service", async importOriginal => ({
+  ...await importOriginal<typeof import("@/services/scripts/scripts.service")>(), getScript: mocks.getScript
+}));
 vi.mock("@/providers/voice", () => ({
   createConfiguredVoiceProvider: mocks.createConfiguredVoiceProvider,
   getVoiceProviderName: () => "elevenlabs",
@@ -45,7 +47,7 @@ vi.mock("@/services/quota", () => mocks.quota);
 
 import { speakScript } from "@/services/voice/voice.service";
 
-const script = {
+const script = {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1,
   id: SCRIPT_ID,
   title: "Morning update",
   content: "A safe one-minute practice script.",
@@ -105,7 +107,7 @@ function createClient(finalAudio: { current: Record<string, unknown> | null }) {
 
 function configureHappyPath(input: { reservationError?: { message: string } | null } = {}) {
   const finalAudio = { current: null as Record<string, unknown> | null };
-  const inserted = {
+  const inserted = {script_revision_id: "60000000-0000-4000-8000-000000000001", generation_key_version: 2, generation_preset: "natural", revision_binding: "generated",
     id: AUDIO_ID,
     script_id: SCRIPT_ID,
     voice_id: VOICE_ID,
@@ -124,7 +126,7 @@ function configureHappyPath(input: { reservationError?: { message: string } | nu
 
       inserted.cache_key = String(args.p_cache_key);
       return {
-        data: {
+        data: {script_revision_id: null, script_practice_epoch: null, generation_preset: null,
           id: "55555555-5555-4555-8555-555555555555",
           user_id: USER_ID,
           kind: "script_audio_create",
@@ -168,7 +170,7 @@ describe("G5C-B4 server-owned Listen cache writer", () => {
   it("re-authenticates, validates owned script/voice/cache identity, and writes through the server client", async () => {
     const { client, rpc } = configureHappyPath();
 
-    await expect(speakScript(client, USER_ID, { scriptId: SCRIPT_ID })).resolves.toMatchObject({ cached: false, voice });
+    await expect(speakScript(client, USER_ID, { expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1, scriptId: SCRIPT_ID })).resolves.toMatchObject({ cached: false, voice });
     expect(mocks.requireCurrentUser).toHaveBeenCalled();
     expect(rpc).toHaveBeenNthCalledWith(1, "reserve_voice_asset_write_intent", expect.objectContaining({
       p_user_id: USER_ID,
@@ -189,7 +191,7 @@ describe("G5C-B4 server-owned Listen cache writer", () => {
   it("rejects before synthesis or Storage when deletion is active", async () => {
     const { client } = configureHappyPath({ reservationError: { message: "voice_deletion_active" } });
 
-    await expect(speakScript(client, USER_ID, { scriptId: SCRIPT_ID })).rejects.toMatchObject({ status: 409 });
+    await expect(speakScript(client, USER_ID, { expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1, scriptId: SCRIPT_ID })).rejects.toMatchObject({ status: 409 });
     expect(mocks.createConfiguredVoiceProvider).not.toHaveBeenCalled();
     expect(mocks.stageScriptAudioForReplay).not.toHaveBeenCalled();
   });

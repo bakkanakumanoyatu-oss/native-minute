@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { practiceIdentitySchema } from "@/schemas/script";
 import { NextRequest } from "next/server";
 import { timeAsync } from "@/lib/performance/timing";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
@@ -30,6 +31,7 @@ import {
 
 const mobileEvaluatePayloadSchema = z
   .object({
+    ...practiceIdentitySchema.shape,
     scriptId: z.string().uuid(),
     takeId: z.string().uuid(),
     recordingRef: z.string().uuid(),
@@ -75,7 +77,7 @@ const defaultDependencies: MobileEvaluateRouteDependencies = {
     assertCurrentProcessingConsent(client, userId, "pronunciation_processing"),
   getStoredReview,
   getOwnedScript: getScript,
-  createPersistedReview,
+  createPersistedReview: (client, userId, input) => createPersistedReview(client, userId, input, true),
   claimReviewTake,
   releaseReviewTakeClaim
 };
@@ -99,6 +101,8 @@ export async function handleMobileEvaluatePost(
   }
 
   const parsed = evaluateRequestSchema.safeParse({
+    expectedRevisionId: mobilePayload.data.expectedRevisionId,
+    expectedPracticeEpoch: mobilePayload.data.expectedPracticeEpoch,
     scriptId: mobilePayload.data.scriptId,
     takeId: mobilePayload.data.takeId,
     audioStorageKey: `${userId}/${mobilePayload.data.scriptId}/${mobilePayload.data.recordingRef}.wav`,
@@ -131,6 +135,8 @@ export async function handleMobileEvaluatePost(
     );
 
     const claimInput: ReviewTakeClaimInput = {
+      expectedRevisionId: parsed.data.expectedRevisionId,
+      expectedPracticeEpoch: parsed.data.expectedPracticeEpoch,
       takeId: mobilePayload.data.takeId,
       scriptId: parsed.data.scriptId,
       audioPath: createRecordingAudioPath(audioStorageKey)

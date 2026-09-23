@@ -22,14 +22,17 @@ function Score({ label, value }: { label: string; value: number }) {
 export function ReviewContent({
   review,
   onNavigate,
-  metadataActions
+  metadataActions,
+  scriptArchived = false
 }: {
   review: MobileReview;
   metadataActions?: ReactNode;
+  scriptArchived?: boolean;
   onNavigate: (route: PracticeRoute) => void;
 }) {
   return (
     <>
+      <section className="review-section"><h2>保存時の台本{review.recordStatus === "completed" ? "（旧形式記録）" : ""}</h2><p>{review.scriptSnapshot?.content ?? "当時の台本は未保存です（未検証の旧形式記録）。"}</p></section>
       <p className="review-date">{formatReviewDate(review.reviewedAt ?? review.createdAt)}</p>
       <section className="review-next-step" aria-labelledby="review-next-title">
         <h2 id="review-next-title">次の一歩</h2>
@@ -45,12 +48,13 @@ export function ReviewContent({
             ))}
           </ul>
         ) : null}
+        {scriptArchived ? <p>削除済みの台本です。練習を再開するには台本一覧から復元してください。</p> : null}
         <p className="review-advice">{review.coach.nextStepJa}</p>
-        <button type="button" className="review-primary" onClick={() => onNavigate({ name: "record", scriptId: review.scriptId })}>
+        <button type="button" className="review-primary" disabled={scriptArchived} onClick={() => onNavigate({ name: "record", scriptId: review.scriptId })}>
           <span>次のTakeを録る</span><span className="review-arrow" aria-hidden="true">→</span>
         </button>
         <div className="review-listen">
-          <button type="button" className="review-text-action" onClick={() => onNavigate({ name: "listen", scriptId: review.scriptId })}>
+          <button type="button" className="review-text-action" disabled={scriptArchived} onClick={() => onNavigate({ name: "listen", scriptId: review.scriptId })}>
             お手本を聞き直す
           </button>
         </div>
@@ -150,7 +154,7 @@ export function ReviewScreen({
             <h1 className={visibleState.data.review.displayName ? "take-name" : "take-script-title"}>{visibleState.data.review.displayName ?? (visibleState.data.scriptTitle || "練習結果")}</h1>
             {visibleState.data.review.displayName ? <p className="review-meta">台本: <span lang="en">{visibleState.data.scriptTitle}</span></p> : null}
           </div>
-          <ReviewContent review={visibleState.data.review} onNavigate={onNavigate} metadataActions={<TakeMetadataEditor key={takeId} api={api} review={visibleState.data.review} onReload={reload}
+          <ReviewContent scriptArchived={visibleState.data.scriptArchived} review={visibleState.data.review} onNavigate={onNavigate} metadataActions={<TakeMetadataEditor key={takeId} api={api} review={visibleState.data.review} onReload={reload}
             disabled={!isOnline} onSaved={metadata => memory.update((_key, data) => data.review.takeId === metadata.takeId &&
               (data.review.favorite !== metadata.favorite || data.review.displayName !== metadata.displayName), data => ({ ...data, review: { ...data.review, ...metadata } }))}>
               <p className="saved-take-name">{visibleState.data.review.displayName ?? visibleState.data.scriptTitle}</p>

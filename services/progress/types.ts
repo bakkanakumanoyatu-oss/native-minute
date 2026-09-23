@@ -3,6 +3,10 @@ import type { EvaluateResult } from "@/services/pronunciation";
 import type { HydratedTakeReview } from "@/services/review";
 
 export interface ProgressTakeSummary {
+  recordStatus: string;
+  scriptRevisionId: string | null;
+  scriptTitleSnapshot: string | null;
+  historyStatus: "VERSIONED" | "UNVERIFIED_LEGACY";
   favorite: boolean;
   displayName: string | null;
   id: string;
@@ -35,6 +39,8 @@ export interface TakeDiffSummary {
 
 export interface ScriptProgressItem {
   script: {
+    archivedAt: string | null;
+    currentRevisionId: string;
     id: string;
     title: string;
     content: string;
@@ -43,6 +49,10 @@ export interface ScriptProgressItem {
     updatedAt: string;
   };
   takeCount: number;
+  allTimeTakeCount: number;
+  legacyTakeCount: number;
+  legacyRecordCount: number;
+  revisionHistory: Array<{ revisionId: string; takeCount: number; latestTake: ProgressTakeSummary | null; bestTake: ProgressTakeSummary | null }>;
   latestTake: ProgressTakeSummary | null;
   bestTake: ProgressTakeSummary | null;
   previousTake: ProgressTakeSummary | null;

@@ -65,7 +65,7 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
         {isFull ? (
           <div className="rounded-[1.75rem] border border-[var(--line-inset)] bg-[var(--coach-note)] p-5 text-sm leading-6 text-ink-700 shadow-[var(--shadow-studio-soft)] sm:p-6">
             <p className="text-xs font-semibold text-ink-500">1分ストック {Math.min(scripts.length, MAX_PRACTICE_SLOTS)} / {MAX_PRACTICE_SLOTS}</p>
-            <h2 className="mt-2 text-2xl font-semibold text-ink-900">5本あります。整理してから追加できます。</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-ink-900">10本あります。整理してから追加できます。</h2>
             <p className="mt-3">
               新しい練習を作るには、1分ストックで不要な練習を削除して空きを作ってください。削除した練習は一覧と進捗から外れます。
             </p>

@@ -46,7 +46,7 @@ const AUDIO_ID = "44444444-4444-4444-8444-444444444444";
 const RECORDING_ID = "55555555-5555-4555-8555-555555555555";
 const RECORDING_REF = `${USER_ID}/${SCRIPT_ID}/${RECORDING_ID}.wav`;
 
-const script = {
+const script = {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1,
   id: SCRIPT_ID,
   title: "Morning update",
   content: "A safe one-minute practice script.",
@@ -78,27 +78,6 @@ function reviewClaimDependencies() {
   };
 }
 
-function createReviewClaimClient(input: {
-  insertError: { code?: string; message: string } | null;
-  existing?: {
-    script_id: string;
-    audio_path: string;
-    status: string;
-  } | null;
-}) {
-  const selectQuery = {
-    eq: vi.fn(),
-    maybeSingle: vi.fn(async () => ({ data: input.existing ?? null, error: null }))
-  };
-  selectQuery.eq.mockReturnValue(selectQuery);
-
-  return {
-    from: vi.fn(() => ({
-      insert: vi.fn(async () => ({ error: input.insertError })),
-      select: vi.fn(() => selectQuery)
-    }))
-  } as unknown as AppSupabaseClient;
-}
 
 function mobileRequest(
   path: string,
@@ -112,6 +91,7 @@ function mobileRequest(
   headers.set("Origin", ORIGIN);
   headers.set("Authorization", `Bearer ${ACCESS_TOKEN}`);
 
+  if (path.endsWith("/listen") && init.method === "POST" && !init.body) init.body = JSON.stringify({ expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1 });
   return new NextRequest(`${BASE_URL}${path}`, { ...init, headers });
 }
 
@@ -164,7 +144,7 @@ function createPcmWave(options?: {
 
 function createStoredReview(): StoredTakeReview {
   return {
-    take: {
+    take: {script_revision_id: "60000000-0000-4000-8000-000000000001", script_title_snapshot: "Saved title", script_practice_epoch: 1,
       favorite: false, display_name: null,
       id: TAKE_ID,
       script_id: SCRIPT_ID,
@@ -212,7 +192,7 @@ function createStoredReview(): StoredTakeReview {
 function createProgressTake(id = TAKE_ID, createdAt = "2026-08-13T00:02:00.000Z"): ProgressTakeSummary {
   const stored = hydrateStoredReview(createStoredReview());
 
-  return {
+  return {scriptRevisionId: "60000000-0000-4000-8000-000000000001", scriptTitleSnapshot: "Saved title", historyStatus: "VERSIONED" as const, recordStatus: "reviewed",
     favorite: false, displayName: null,
     id,
     scriptId: SCRIPT_ID,
@@ -272,7 +252,7 @@ describe("mobile script create/detail/listen adapters", () => {
   });
 
   it.each([
-    { title: "Title", content: "Content", targetSeconds: 90 },
+    {title: "Title", content: "Content", targetSeconds: 90 },
     { title: "Title", content: "Content", locale: "ja-JP" },
     { title: "Title", content: "Content", extra: "not-allowed" }
   ])("rejects non-fixed or extra script creation fields", async (body) => {
@@ -333,6 +313,7 @@ describe("mobile script create/detail/listen adapters", () => {
 
     expect(response.status).toBe(200);
     expect(speakOwnedScript).toHaveBeenCalledWith(expect.anything(), USER_ID, {
+      expectedRevisionId: script.currentRevisionId, expectedPracticeEpoch: script.practiceEpoch,
       scriptId: SCRIPT_ID
     });
     expect(payload).toEqual({ ok: true, data: { audioId: AUDIO_ID, cached: false } });
@@ -421,6 +402,7 @@ describe("mobile audio and recording adapters", () => {
     });
     const formData = new FormData();
     formData.set("scriptId", SCRIPT_ID);
+    formData.set("expectedRevisionId", "60000000-0000-4000-8000-000000000001"); formData.set("expectedPracticeEpoch", "1");
     formData.set("recordingRef", RECORDING_ID);
     formData.set("durationSeconds", "60");
     formData.set("file", new File([wave], "attacker.exe", { type: "audio/wav" }));
@@ -443,6 +425,7 @@ describe("mobile audio and recording adapters", () => {
     expect(response.status).toBe(201);
     expect(uploadOwnedRecording).toHaveBeenCalledWith(expect.anything(), USER_ID, {
       scriptId: SCRIPT_ID,
+      expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
       recordingId: RECORDING_ID,
       file: expect.any(File),
       durationSeconds: 60
@@ -463,6 +446,7 @@ describe("mobile audio and recording adapters", () => {
   it("rejects declared WAV with invalid bytes before storage", async () => {
     const formData = new FormData();
     formData.set("scriptId", SCRIPT_ID);
+    formData.set("expectedRevisionId", "60000000-0000-4000-8000-000000000001"); formData.set("expectedPracticeEpoch", "1");
     formData.set("recordingRef", RECORDING_ID);
     formData.set("file", new File(["not-wave"], "recording.wav", { type: "audio/wav" }));
     const uploadOwnedRecording = vi.fn();
@@ -482,6 +466,7 @@ describe("mobile audio and recording adapters", () => {
   it("rejects a materially inconsistent reported duration before storage", async () => {
     const formData = new FormData();
     formData.set("scriptId", SCRIPT_ID);
+    formData.set("expectedRevisionId", "60000000-0000-4000-8000-000000000001"); formData.set("expectedPracticeEpoch", "1");
     formData.set("recordingRef", RECORDING_ID);
     formData.set("durationSeconds", "60");
     formData.set(
@@ -528,7 +513,7 @@ describe("mobile evaluation, review, and progress adapters", () => {
     const stored = createStoredReview();
     const createPersistedReview = vi.fn();
     const response = await handleMobileEvaluatePost(
-      jsonRequest("/api/mobile/evaluate", {
+      jsonRequest("/api/mobile/evaluate", {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
         scriptId: SCRIPT_ID,
         takeId: TAKE_ID,
         recordingRef: RECORDING_ID
@@ -546,7 +531,7 @@ describe("mobile evaluation, review, and progress adapters", () => {
 
     expect(response.status).toBe(200);
     expect(createPersistedReview).not.toHaveBeenCalled();
-    expect(payload.data.review).toEqual({
+    expect(payload.data.review).toMatchObject({
       favorite: false, displayName: null,
       takeId: TAKE_ID,
       scriptId: SCRIPT_ID,
@@ -570,7 +555,7 @@ describe("mobile evaluation, review, and progress adapters", () => {
       storedReview: stored
     }));
     const response = await handleMobileEvaluatePost(
-      jsonRequest("/api/mobile/evaluate", {
+      jsonRequest("/api/mobile/evaluate", {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
         scriptId: SCRIPT_ID,
         takeId: TAKE_ID,
         recordingRef: RECORDING_ID
@@ -585,7 +570,7 @@ describe("mobile evaluation, review, and progress adapters", () => {
     );
 
     expect(response.status).toBe(201);
-    expect(createPersistedReview).toHaveBeenCalledWith(expect.anything(), USER_ID, {
+    expect(createPersistedReview).toHaveBeenCalledWith(expect.anything(), USER_ID, {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
       scriptId: SCRIPT_ID,
       takeId: TAKE_ID,
       audioStorageKey: RECORDING_REF,
@@ -596,7 +581,7 @@ describe("mobile evaluation, review, and progress adapters", () => {
   it("rejects path-like or foreign recording references before provider work", async () => {
     const createPersistedReview = vi.fn();
     const response = await handleMobileEvaluatePost(
-      jsonRequest("/api/mobile/evaluate", {
+      jsonRequest("/api/mobile/evaluate", {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
         scriptId: SCRIPT_ID,
         takeId: TAKE_ID,
         recordingRef: `99999999-9999-4999-8999-999999999999/${SCRIPT_ID}/${RECORDING_ID}.wav`
@@ -646,7 +631,7 @@ describe("mobile evaluation, review, and progress adapters", () => {
       getStoredReview: async () => null,
       createPersistedReview
     };
-    const body = {
+    const body = {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
       scriptId: SCRIPT_ID,
       takeId: TAKE_ID,
       recordingRef: RECORDING_ID
@@ -683,7 +668,7 @@ describe("mobile evaluation, review, and progress adapters", () => {
   it("rejects reuse of a take id with a different recording identity", async () => {
     const createPersistedReview = vi.fn();
     const response = await handleMobileEvaluatePost(
-      jsonRequest("/api/mobile/evaluate", {
+      jsonRequest("/api/mobile/evaluate", {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
         scriptId: SCRIPT_ID,
         takeId: TAKE_ID,
         recordingRef: RECORDING_ID
@@ -705,7 +690,7 @@ describe("mobile evaluation, review, and progress adapters", () => {
   it("releases an owned pending claim after provider failure", async () => {
     const releaseReviewTakeClaim = vi.fn(async () => undefined);
     const response = await handleMobileEvaluatePost(
-      jsonRequest("/api/mobile/evaluate", {
+      jsonRequest("/api/mobile/evaluate", {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
         scriptId: SCRIPT_ID,
         takeId: TAKE_ID,
         recordingRef: RECORDING_ID
@@ -723,7 +708,7 @@ describe("mobile evaluation, review, and progress adapters", () => {
     );
 
     expect(response.status).toBe(500);
-    expect(releaseReviewTakeClaim).toHaveBeenCalledWith(expect.anything(), USER_ID, {
+    expect(releaseReviewTakeClaim).toHaveBeenCalledWith(expect.anything(), USER_ID, {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
       takeId: TAKE_ID,
       scriptId: SCRIPT_ID,
       audioPath: `storage://recordings/${RECORDING_REF}`
@@ -758,8 +743,8 @@ describe("mobile evaluation, review, and progress adapters", () => {
     );
     const progress: ProgressOverview = {
       scripts: [
-        {
-          script: {
+        {allTimeTakeCount: 0, legacyTakeCount: 0, legacyRecordCount: 0, revisionHistory: [],
+          script: {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null,
             id: SCRIPT_ID,
             title: script.title,
             content: script.content,
@@ -792,58 +777,11 @@ describe("mobile evaluation, review, and progress adapters", () => {
 });
 
 describe("backend main-loop hardening helpers", () => {
-  it("claims a fresh take and classifies exact pending/reviewed duplicates", async () => {
-    const claim = {
-      takeId: TAKE_ID,
-      scriptId: SCRIPT_ID,
-      audioPath: `storage://recordings/${RECORDING_REF}`
-    };
-
-    await expect(claimReviewTake(
-      createReviewClaimClient({ insertError: null }),
-      USER_ID,
-      claim
-    )).resolves.toBe("claimed");
-
-    for (const [status, expected] of [
-      ["pending", "processing"],
-      ["reviewed", "reviewed"]
-    ] as const) {
-      await expect(claimReviewTake(
-        createReviewClaimClient({
-          insertError: { code: "23505", message: "duplicate" },
-          existing: {
-            script_id: SCRIPT_ID,
-            audio_path: claim.audioPath,
-            status
-          }
-        }),
-        USER_ID,
-        claim
-      )).resolves.toBe(expected);
-    }
-  });
-
-  it("rejects conflicting or noncanonical take rows at the claim boundary", async () => {
-    const claim = {
-      takeId: TAKE_ID,
-      scriptId: SCRIPT_ID,
-      audioPath: `storage://recordings/${RECORDING_REF}`
-    };
-
-    for (const existing of [
-      { script_id: SCRIPT_ID, audio_path: "storage://recordings/other.wav", status: "reviewed" },
-      { script_id: SCRIPT_ID, audio_path: claim.audioPath, status: "failed" }
-    ]) {
-      await expect(claimReviewTake(
-        createReviewClaimClient({
-          insertError: { code: "23505", message: "duplicate" },
-          existing
-        }),
-        USER_ID,
-        claim
-      )).resolves.toBe("conflict");
-    }
+  it.each(["claimed", "processing", "reviewed", "conflict"] as const)("returns the transactional claim result %s and binds practice identity", async outcome => {
+    const rpc = vi.fn(async () => ({ data: outcome, error: null }));
+    const input = { takeId: TAKE_ID, scriptId: SCRIPT_ID, audioPath: `storage://recordings/${RECORDING_REF}`, expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1 };
+    await expect(claimReviewTake({ rpc } as unknown as AppSupabaseClient, USER_ID, input)).resolves.toBe(outcome);
+    expect(rpc).toHaveBeenCalledWith("claim_review_take", { p_take_id: TAKE_ID, p_script_id: SCRIPT_ID, p_audio_path: input.audioPath, p_revision_id: input.expectedRevisionId, p_epoch: 1 });
   });
 
   it("attaches canonical latest, best, and history with each take's weak words and coach", () => {
@@ -922,7 +860,7 @@ describe("backend main-loop hardening helpers", () => {
       return { error: null };
     });
     const maybeSingle = vi.fn(async () => ({
-      data: {
+      data: {current_revision_id: "60000000-0000-4000-8000-000000000001", archived_at: null, lock_version: 1, practice_epoch: 1,
         id: SCRIPT_ID,
         user_id: USER_ID,
         title: script.title,
@@ -952,6 +890,7 @@ describe("backend main-loop hardening helpers", () => {
 
     await uploadOwnedRecording(client, USER_ID, {
       scriptId: SCRIPT_ID,
+      expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
       file: new File([createPcmWave()], "attacker.exe", { type: "audio/wav" }),
       durationSeconds: 60
     }, {
@@ -976,7 +915,7 @@ describe("backend main-loop hardening helpers", () => {
       error: null
     }));
     const maybeSingle = vi.fn(async () => ({
-      data: {
+      data: {current_revision_id: "60000000-0000-4000-8000-000000000001", archived_at: null, lock_version: 1, practice_epoch: 1,
         id: SCRIPT_ID,
         user_id: USER_ID,
         title: script.title,
@@ -1006,6 +945,7 @@ describe("backend main-loop hardening helpers", () => {
 
     const result = await uploadOwnedRecording(client, USER_ID, {
       scriptId: SCRIPT_ID,
+      expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
       recordingId: RECORDING_ID,
       file: new File([wave], "take.wav", { type: "audio/wav" }),
       durationSeconds: 1

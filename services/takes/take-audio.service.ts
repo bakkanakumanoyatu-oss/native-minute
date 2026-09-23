@@ -8,10 +8,10 @@ import { getOwnedTakeAudioIdentity } from "./take-audio-identity";
 
 export async function loadOwnedTakeAudio(client: AppSupabaseClient, userId: string, takeId: string) {
   const { data: takeData, error } = await client.from("takes")
-    .select("id, script_id, audio_path, display_name")
-    .eq("id", takeId).eq("user_id", userId).eq("status", "reviewed").maybeSingle();
+    .select("id, script_id, audio_path, display_name, script_title_snapshot")
+    .eq("id", takeId).eq("user_id", userId).in("status", ["reviewed", "completed"]).maybeSingle();
   if (error) throw new AppError(500, "録音を取得できませんでした。");
-  const take = takeData as Pick<Database["public"]["Tables"]["takes"]["Row"], "id" | "script_id" | "audio_path" | "display_name"> | null;
+  const take = takeData as Pick<Database["public"]["Tables"]["takes"]["Row"], "id" | "script_id" | "audio_path" | "display_name" | "script_title_snapshot"> | null;
   if (!take) throw new AppError(404, "保存済み録音が見つかりません。");
   const { data: scriptData, error: scriptError } = await client.from("scripts")
     .select("title").eq("id", take.script_id).eq("user_id", userId).maybeSingle();
@@ -30,5 +30,5 @@ export async function loadOwnedTakeAudio(client: AppSupabaseClient, userId: stri
   const audioIdentity = await getOwnedTakeAudioIdentity(client, userId, take);
   if (audioIdentity !== identityBefore) throw new AppError(404, "この録音は利用できません。");
   return { bytes: audio.bytes, contentType: format.contentType, audioIdentity,
-    filename: takeExportFilename(take.display_name, script.title, format.extension) };
+    filename: takeExportFilename(take.display_name, take.script_title_snapshot ?? script.title, format.extension) };
 }

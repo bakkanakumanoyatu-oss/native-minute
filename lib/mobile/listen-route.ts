@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { timeAsync } from "@/lib/performance/timing";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import { parseScriptAudioPlaybackPath } from "@/lib/voice-playback-path";
-import { scriptIdSchema } from "@/schemas/script";
+import { scriptIdSchema, practiceIdentitySchema } from "@/schemas/script";
 import type { SpeakScriptRequestInput } from "@/schemas/voice";
 import { getScript } from "@/services/scripts/scripts.service";
 import type { ScriptListItem } from "@/services/scripts/types";
@@ -56,6 +56,8 @@ export async function handleMobileListenPost(
     return mobileApiError(origin, 400, "request_invalid");
   }
 
+  const identity = practiceIdentitySchema.strict().safeParse(await request.json().catch(() => null));
+  if (!identity.success) return mobileApiError(origin, 400, "request_invalid");
   try {
     const script = await timeAsync("mobile.listen.ownership", () =>
       dependencies.getOwnedScript(client, userId, parsedId.data)
@@ -66,7 +68,7 @@ export async function handleMobileListenPost(
     }
 
     const result = await timeAsync("mobile.listen.service", () =>
-      dependencies.speakOwnedScript(client, userId, { scriptId: script.id })
+      dependencies.speakOwnedScript(client, userId, { scriptId: script.id, ...identity.data })
     );
     const audioId = parseScriptAudioPlaybackPath(result.audioUrl);
 

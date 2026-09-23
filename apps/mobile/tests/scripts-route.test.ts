@@ -23,7 +23,7 @@ const ACCESS_TOKEN_SENTINEL = "header.payload.signature";
 const VERIFIED_USER_ID = "verified-user";
 
 const ownedScripts = [
-  {
+  {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1,
     id: "script-owned",
     title: "Morning update",
     content: "A safe one-minute practice script.",
@@ -102,13 +102,17 @@ describe("GET /api/mobile/scripts", () => {
     expect(response.status).toBe(200);
     expect(createClient).toHaveBeenCalledWith(ACCESS_TOKEN_SENTINEL);
     expect(validateUser).toHaveBeenCalledWith(client, ACCESS_TOKEN_SENTINEL);
-    expect(listOwnedScripts).toHaveBeenCalledWith(client, VERIFIED_USER_ID);
+    expect(listOwnedScripts).toHaveBeenCalledWith(client, VERIFIED_USER_ID, "active");
     expect(payload).toEqual({ ok: true, data: { scripts: ownedScripts } });
     expect(Object.keys(payload.data.scripts[0]).sort()).toEqual([
+      "archivedAt",
       "content",
       "createdAt",
+      "currentRevisionId",
       "id",
       "locale",
+      "lockVersion",
+      "practiceEpoch",
       "targetSeconds",
       "title",
       "updatedAt"
@@ -131,7 +135,7 @@ describe("GET /api/mobile/scripts", () => {
 
   it("uses the verified owner filter so a second user's row is not returned", async () => {
     const rows = [
-      {
+      {current_revision_id: "60000000-0000-4000-8000-000000000001", archived_at: null, lock_version: 1, practice_epoch: 1,
         id: "script-user-a",
         user_id: VERIFIED_USER_ID,
         title: "Owned A",
@@ -141,7 +145,7 @@ describe("GET /api/mobile/scripts", () => {
         created_at: "2026-07-18T00:00:00.000Z",
         updated_at: "2026-07-19T00:00:00.000Z"
       },
-      {
+      {current_revision_id: "60000000-0000-4000-8000-000000000001", archived_at: null, lock_version: 1, practice_epoch: 1,
         id: "script-user-b",
         user_id: "different-user",
         title: "Private B",
@@ -153,10 +157,10 @@ describe("GET /api/mobile/scripts", () => {
       }
     ];
     const ownerEq = vi.fn((_column: "user_id", userId: string) => ({
-      order: vi.fn(async () => ({
-        data: rows.filter((row) => row.user_id === userId),
+      is: vi.fn(() => ({ order: vi.fn(async () => ({
+        data: rows.filter((row) => row.user_id === userId && row.archived_at === null),
         error: null
-      }))
+      })) }))
     }));
     const client = {
       auth: {},

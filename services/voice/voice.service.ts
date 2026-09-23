@@ -17,7 +17,7 @@ import {
   resolveOwnedVoiceConsentRecordingInput,
   resolveOwnedVoiceSampleInput
 } from "@/services/storage";
-import { getScript } from "@/services/scripts/scripts.service";
+import { getScript, assertPracticeScript } from "@/services/scripts/scripts.service";
 import {
   acceptCurrentProcessingConsent,
   assertCurrentProcessingConsent,
@@ -631,7 +631,8 @@ async function getCachedScriptAudio(
   client: AppSupabaseClient,
   scriptId: string,
   voiceId: string,
-  cacheKey: string
+  cacheKey: string,
+  revisionId: string
 ) {
   const { data, error } = asMaybeSingle<ScriptAudioRow>(
     await client
@@ -640,6 +641,7 @@ async function getCachedScriptAudio(
       .eq("script_id", scriptId)
       .eq("voice_id", voiceId)
       .eq("cache_key", cacheKey)
+      .eq("script_revision_id", revisionId)
       .maybeSingle()
   );
 
@@ -672,7 +674,9 @@ async function assertServerOwnedScriptAudioWrite(
     throw new AppError(409, "見本音声の所有者または provider を確認できませんでした。");
   }
 
+  assertPracticeScript(script);
   const expectedCacheKey = buildScriptAudioCacheKey({
+    revisionId: script.currentRevisionId,
     provider: voice.provider,
     voiceId: voice.id,
     scriptLocale: script.locale,
@@ -726,7 +730,7 @@ async function ensureServerOwnedScriptAudioPlaybackPath(
   return data;
 }
 
-export async function getCachedListenAudio(client: AppSupabaseClient, userId: string, scriptId: string) {
+export async function getCachedListenAudio(client: AppSupabaseClient, userId: string, scriptId: string, expected?: { expectedRevisionId: string; expectedPracticeEpoch: number }) {
   return timeAsync("voice.cachedListenAudio", async () => {
     const [script, voice] = await Promise.all([getScript(client, userId, scriptId), getDefaultVoice(client, userId)]);
 
@@ -734,7 +738,10 @@ export async function getCachedListenAudio(client: AppSupabaseClient, userId: st
       return null;
     }
 
+    if (expected && (script.archivedAt || script.currentRevisionId !== expected.expectedRevisionId || script.practiceEpoch !== expected.expectedPracticeEpoch)) return null;
+    assertPracticeScript(script, expected);
     const cacheKey = buildScriptAudioCacheKey({
+    revisionId: script.currentRevisionId,
       provider: voice.provider,
       voiceId: voice.id,
       scriptLocale: script.locale,
@@ -742,7 +749,7 @@ export async function getCachedListenAudio(client: AppSupabaseClient, userId: st
       scriptContent: script.content
     });
 
-    const cachedAudio = await timeAsync("voice.cachedListenAudio.cacheLookup", () => getCachedScriptAudio(client, script.id, voice.id, cacheKey));
+    const cachedAudio = await timeAsync("voice.cachedListenAudio.cacheLookup", () => getCachedScriptAudio(client, script.id, voice.id, cacheKey, script.currentRevisionId));
 
     if (!cachedAudio) {
       return null;
@@ -791,6 +798,7 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
     throw new AppError(404, "台本が見つかりませんでした。");
   }
 
+  assertPracticeScript(script, input);
   if (!selectedVoice) {
     await recordFailedVoiceQuotaEvent(
       createVoiceQuotaContext({
@@ -828,6 +836,7 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   }
 
   const cacheKey = buildScriptAudioCacheKey({
+    revisionId: script.currentRevisionId,
     provider: selectedVoice.provider,
     voiceId: selectedVoice.id,
     scriptLocale: script.locale,
@@ -849,7 +858,7 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   let cachedAudio: ScriptAudioRow | null;
 
   try {
-    cachedAudio = await timeAsync("voice.speakScript.cacheLookup", () => getCachedScriptAudio(client, script.id, selectedVoice.id, cacheKey));
+    cachedAudio = await timeAsync("voice.speakScript.cacheLookup", () => getCachedScriptAudio(client, script.id, selectedVoice.id, cacheKey, script.currentRevisionId));
   } catch (error) {
     await recordFailedVoiceQuotaEvent(quotaContext, "cache_lookup");
     throw error;
@@ -905,6 +914,9 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   const reservation = await writeIntents.reserve({
     userId,
     kind: "script_audio_create",
+    scriptRevisionId: script.currentRevisionId,
+    scriptPracticeEpoch: script.practiceEpoch,
+    generationPreset: voiceStylePreset,
     leaseToken: randomUUID(),
     leaseSeconds: 900,
     scriptId: script.id,
@@ -995,7 +1007,7 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   let storedAudio: ScriptAudioRow | null;
 
   try {
-    storedAudio = await timeAsync("voice.speakScript.finalCacheLookup", () => getCachedScriptAudio(client, script.id, selectedVoice.id, cacheKey));
+    storedAudio = await timeAsync("voice.speakScript.finalCacheLookup", () => getCachedScriptAudio(client, script.id, selectedVoice.id, cacheKey, script.currentRevisionId));
   } catch (error) {
     await markFailedVoiceQuotaEvent(quotaEvent, quotaContext, "cache_lookup", {
       replayAsset,

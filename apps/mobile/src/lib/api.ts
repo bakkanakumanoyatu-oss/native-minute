@@ -44,6 +44,10 @@ export type MobileApiRequestOptions = {
 };
 
 export type MobileScript = {
+  currentRevisionId: string;
+  archivedAt: string | null;
+  lockVersion: number;
+  practiceEpoch: number;
   id: string;
   title: string;
   content: string;
@@ -132,7 +136,10 @@ export type MobileVoiceDeletionStatus = {
   retryAfterSeconds?: number;
 };
 
-export type UploadMobileRecordingInput = {
+export type PracticeIdentity = { expectedRevisionId: string; expectedPracticeEpoch: number };
+export type ScriptMutationInput = { expectedLockVersion: number; archived: boolean } | { expectedLockVersion: number; expectedRevisionId: string; title: string; content: string };
+
+export type UploadMobileRecordingInput = PracticeIdentity & {
   scriptId: string;
   recordingRef: string;
   file: Blob;
@@ -145,7 +152,7 @@ export type UploadedMobileRecording = {
   contentType: string;
 };
 
-export type EvaluateMobileRecordingInput = {
+export type EvaluateMobileRecordingInput = PracticeIdentity & {
   scriptId: string;
   takeId: string;
   recordingRef: string;
@@ -178,6 +185,9 @@ export type MobileCoachFeedback = {
 };
 
 export type MobileReview = {
+  recordStatus?: string;
+  historyStatus?: "VERSIONED" | "UNVERIFIED_LEGACY";
+  scriptSnapshot?: { revisionId: string; revisionNo: number; title: string; content: string; locale: string; targetSeconds: number } | null;
   audioIdentity?: string | null;
   /** Local proof of this screen's fresh Review request, never deserialized. */
   audioVisit?: import("../audio/saved-take-memory").SavedTakeAudioVisit;
@@ -193,6 +203,10 @@ export type MobileReview = {
 };
 
 export type MobileProgressTake = {
+  scriptRevisionId?: string | null;
+  scriptTitleSnapshot?: string | null;
+  historyStatus?: "VERSIONED" | "UNVERIFIED_LEGACY";
+  recordStatus?: string;
   favorite: boolean;
   displayName: string | null;
   id: string;
@@ -224,7 +238,13 @@ export type MobileTakeDiff = {
 };
 
 export type MobileScriptProgress = {
+  allTimeTakeCount?: number;
+  legacyTakeCount?: number;
+  legacyRecordCount?: number;
+  revisionHistory?: Array<{ revisionId: string; takeCount: number; latestTake: MobileProgressTake | null; bestTake: MobileProgressTake | null }>;
   script: {
+    archivedAt?: string | null;
+    currentRevisionId?: string;
     id: string;
     title: string;
     content: string;
@@ -406,6 +426,10 @@ function isMobileScript(value: unknown): value is MobileScript {
   }
 
   return (
+    isUuid(value.currentRevisionId) &&
+    (value.archivedAt === null || isTimestamp(value.archivedAt)) &&
+    Number.isSafeInteger(value.lockVersion) && Number(value.lockVersion) > 0 &&
+    Number.isSafeInteger(value.practiceEpoch) && Number(value.practiceEpoch) > 0 &&
     isNonEmptyString(value.id) &&
     typeof value.title === "string" &&
     typeof value.content === "string" &&
@@ -455,6 +479,14 @@ function isMobileCoachFeedback(value: unknown): value is MobileCoachFeedback {
 function isMobileReview(value: unknown): value is MobileReview {
   return (
     isObject(value) &&
+    (value.historyStatus === undefined || (
+      value.historyStatus === "UNVERIFIED_LEGACY" ? value.scriptSnapshot === null :
+      value.historyStatus === "VERSIONED" && isObject(value.scriptSnapshot) &&
+      isUuid(value.scriptSnapshot.revisionId) && isNonNegativeInteger(value.scriptSnapshot.revisionNo) &&
+      value.scriptSnapshot.revisionNo > 0 && typeof value.scriptSnapshot.title === "string" &&
+      typeof value.scriptSnapshot.content === "string" && typeof value.scriptSnapshot.locale === "string" &&
+      isFiniteNumber(value.scriptSnapshot.targetSeconds)
+    )) &&
     isTakeMetadata(value) &&
     isNonEmptyString(value.takeId) &&
     isNonEmptyString(value.scriptId) &&
@@ -531,8 +563,17 @@ function isMobileScriptProgress(value: unknown): value is MobileScriptProgress {
     Array.isArray(takeHistory) &&
     takeHistory.every(isMobileProgressTake) &&
     takeHistory.every((take) => take.scriptId === script.id);
-  const historyCountMatches =
-    Array.isArray(takeHistory) && value.takeCount === takeHistory.length;
+  const versionedContract = Array.isArray(value.revisionHistory) && Array.isArray(takeHistory) && takeHistory.every(take =>
+    isObject(take) && (take.recordStatus === "reviewed" || take.recordStatus === "completed") &&
+    (take.scriptRevisionId === null || isUuid(take.scriptRevisionId)));
+  // Current-revision comparisons are a subset of the complete historical list.
+  // The old shape is accepted only with its original count invariant.
+  const historyCountMatches = Array.isArray(takeHistory) && (versionedContract
+    ? value.takeCount === takeHistory.filter(take => take.recordStatus === "reviewed" && take.scriptRevisionId === script.currentRevisionId).length &&
+      value.allTimeTakeCount === takeHistory.filter(take => take.recordStatus === "reviewed").length &&
+      value.legacyTakeCount === takeHistory.filter(take => take.recordStatus === "reviewed" && take.scriptRevisionId === null).length &&
+      value.legacyRecordCount === takeHistory.filter(take => take.recordStatus === "completed").length
+    : value.takeCount === takeHistory.length);
 
   return (
     validScript &&
@@ -1004,11 +1045,11 @@ export async function fetchHealth(
 export async function fetchMobileScripts(
   bffBaseUrl: string,
   accessToken: string,
-  options: MobileApiRequestOptions = {}
+  options: MobileApiRequestOptions & { archived?: boolean } = {}
 ): Promise<ScriptsRequestState> {
   const attempt = await requestJson(
     bffBaseUrl,
-    MOBILE_API_PATHS.scripts,
+    MOBILE_API_PATHS.scripts + (options.archived ? "?scope=archived" : ""),
     accessToken,
     { method: "GET" },
     options
@@ -1037,6 +1078,33 @@ export async function createMobileScript(
     MOBILE_API_PATHS.scripts,
     accessToken,
     { method: "POST", body: JSON.stringify(input) },
+    options
+  );
+
+  if (attempt.kind !== "response") {
+    return mapAttemptFailure(attempt);
+  }
+
+  if (!attempt.response.ok) {
+    return mapFailure(attempt.response, attempt.body);
+  }
+
+  const script = parseScriptPayload(attempt.body);
+  return script ? { kind: "success", script } : { kind: "invalid-response" };
+}
+
+export async function mutateMobileScript(
+  bffBaseUrl: string,
+  accessToken: string,
+  scriptId: string,
+  input: ScriptMutationInput,
+  options: MobileApiRequestOptions = {}
+): Promise<MobileScriptRequestState> {
+  const attempt = await requestJson(
+    bffBaseUrl,
+    `${MOBILE_API_PATHS.scripts}/${encodeURIComponent(scriptId)}`,
+    accessToken,
+    { method: "PATCH", body: JSON.stringify(input) },
     options
   );
 
@@ -1084,13 +1152,13 @@ export async function requestMobileScriptListen(
   bffBaseUrl: string,
   accessToken: string,
   scriptId: string,
-  options: MobileApiRequestOptions = {}
+  options: MobileApiRequestOptions & Partial<PracticeIdentity> = {}
 ): Promise<MobileListenRequestState> {
   const attempt = await requestJson(
     bffBaseUrl,
     MOBILE_API_PATHS.listen(scriptId),
     accessToken,
-    { method: "POST" },
+    { method: "POST", body: JSON.stringify({ expectedRevisionId: options.expectedRevisionId, expectedPracticeEpoch: options.expectedPracticeEpoch }) },
     options,
     DEFAULT_LISTEN_TIMEOUT_MS
   );
@@ -1523,6 +1591,8 @@ export async function uploadMobileRecording(
 
   const formData = new FormData();
   formData.append("scriptId", input.scriptId);
+  formData.append("expectedRevisionId", input.expectedRevisionId);
+  formData.append("expectedPracticeEpoch", String(input.expectedPracticeEpoch));
   formData.append("recordingRef", input.recordingRef);
   if (input.durationSeconds !== undefined) {
     formData.append("durationSeconds", String(input.durationSeconds));

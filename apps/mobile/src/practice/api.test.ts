@@ -260,7 +260,7 @@ it.each([
     const write = mutation === 'favorite' ? api.updateTakeMetadata('t', { favorite: true })
       : mutation === 'name' ? api.updateTakeMetadata('t', { displayName: 'New name' })
       : mutation === 'create-script' ? api.createScript({ title: 'New', content: 'Hello.' })
-      : mutation === 'evaluate' ? api.evaluateRecording({ scriptId: 's', takeId: 't', recordingRef: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' })
+      : mutation === 'evaluate' ? api.evaluateRecording({expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,  scriptId: 's', takeId: 't', recordingRef: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' })
       : mutation === 'account-delete' ? api.createAccountDeletionRequest()
       : mutation === 'voice-delete' ? api.createVoiceDeletionRequest() : api.advanceVoiceDeletion();
     expect(memory.getSnapshot()).toMatchObject({ kind: 'ready', progress: { totalScripts: 5 } });

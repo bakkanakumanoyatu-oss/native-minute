@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import {
+  handleMobileScriptMutation,
   handleMobileScriptDetailGet,
   handleMobileScriptDetailOptions,
   handleMobileScriptDetailUnsupportedMethod
@@ -21,5 +22,5 @@ export function OPTIONS(request: NextRequest) {
 export const HEAD = handleMobileScriptDetailUnsupportedMethod;
 export const POST = handleMobileScriptDetailUnsupportedMethod;
 export const PUT = handleMobileScriptDetailUnsupportedMethod;
-export const PATCH = handleMobileScriptDetailUnsupportedMethod;
-export const DELETE = handleMobileScriptDetailUnsupportedMethod;
+export async function PATCH(request: NextRequest, { params }: RouteParams) { return handleMobileScriptMutation(request, (await params).id); }
+export async function DELETE(request: NextRequest, { params }: RouteParams) { return handleMobileScriptMutation(request, (await params).id); }

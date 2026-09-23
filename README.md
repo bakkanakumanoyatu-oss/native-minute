@@ -2,12 +2,16 @@
 
 固定1分の英語練習に絞った MVP です。
 
+Revision/archive foundation は **local実装のみ**（0033/0034 未適用・未deploy）です。本文・locale・目標秒数の編集は不変のrevisionを作り、titleのみの変更はrevisionを増やしません。通常の削除はarchiveで、録音・結果・Favoriteを保持します。作成と復元はDBの同一ownerロック内でactive最大10本です。Reviewと比較は保存時のrevision、全期間件数には旧版・削除済みの評価済みTakeも含みます。従来7件はrevision=NULLのUNVERIFIED_LEGACY（reviewed 6 / completed 1）で保持します。
+
+Practice requestはexpectedRevisionId / expectedPracticeEpoch、編集はexpectedRevisionId / expectedLockVersionが必須です。0033と0034、新BFF、Web/Mobileは同一メンテナンス窓で切り替えます。進行中v1 account deletionがあればmigrationは停止します。新規env/dependencyはありません。[実装・検証・適用前提](docs/script-revision-archive-foundation-implementation-20260923.md) を確認してください。
+
 この repo では、同じ台本を
 
 1. `listen` で見本確認する
 2. `record` で録音する
 3. `review` で保存済み結果を確認する
-4. `progress` で5本までの練習スロットから成果を見る
+4. `progress` でactive 10本までの台本と保存済みの履歴から成果を見る
 
 という main loop を最短で回すことを優先しています。
 
@@ -163,7 +167,7 @@ npm run typecheck
 - `record` で録音をアップロードし、文字起こし・評価・保存を行う
 - Azure Speech pronunciation assessment は live manual smoke で `record -> evaluate -> review -> progress` が通り、review に score / weak words が保存されるところまで確認済み
 - `review` で保存済み結果と保存済み録音を確認する
-- `progress` で5本までの練習スロットを切り替え、最新結果、ベスト結果、保存済み録音を見る
+- `progress` でactive 10本までの台本と保存済みの履歴を切り替え、最新結果、ベスト結果、保存済み録音を見る
 - `scripts` と `progress` は、不足前提があるときに `voice 設定` や `listen` 側へ戻す launchpad として使える
 - `scripts` は page 上部で `初回導線 / 再開導線` をまとめ、複製は card 側の補助導線に寄せている
 - `scripts` の各 card では、一覧のまま `最新結果の要点` を確認してから `listen / record / 結果確認` を選べる
@@ -302,7 +306,7 @@ directな`simctl install` / `simctl launch`は、同checkerをPASSした`.app`�
 4. `/scripts/[id]/listen` で見本音声を生成または再利用し、見本確認をする
 5. `/scripts/[id]/record` で録音をアップロードし、評価して保存する
 6. `/scripts/[id]/review/[takeId]` で保存済み結果を確認する
-7. `/progress` で5本までの練習スロットから成果を見る
+7. `/progress` でactive 10本までの台本と保存済みの履歴から成果を見る
 
 Mobile Gate 3のcanonical learning loopは`CLOSED_COMMITTED_PASS`です。source `b93ea20d9e04486bf9f7cbe614f78fb8edf35d67`を固定stagingへ載せ、iPhone 14 Plus / iOS 26.2.1でElevenLabs Listen/cache、16 kHz mono/16-bit WAV録音、OpenAI transcription、Azure pronunciation、persisted Review、3 intentional Takesのcanonical Progress、offline/reconnect、logout/relaunchを確認しました。これはcurrent Mobile UIをfinal product shellとして承認するものではなく、official 100-template library、final script selection、rich Listen/Review/Progress、fresh-user Mobile voice setupなどは後続gateです。pre-remediation silent audioの原因は`UNKNOWN`のままです。詳細は[Gate 3 Mobile main-loop final result](./docs/g3-mobile-main-loop-final-result.md)を参照してください。なお、これはStore-release provider-readiness Gate 3のhistorical `WARN`とは別の実装gateです。
 
@@ -310,7 +314,7 @@ Gate 4 provider freezeは`CLOSED_COMMITTED_PASS`です。implementation source `
 
 ## 操作画面の方針
 
-主要画面は、説明より操作を先に見せます。Home は Practice / Progress への入口、Practice は5本までの練習スロット選択、Progress は成果確認です。setup/voice は自分の声の登録と再アップロードに絞り、provider/debug 詳細は主導線から外します。listen は単一の hidden audio element で protected replay URL を直接再生し、見えている音声操作は下部固定 audio bar に一本化します。record はマイク録音と評価操作を中心にします。主要ボタンは押下、処理中、disabled が分かる表示に寄せています。
+主要画面は、説明より操作を先に見せます。Home は Practice / Progress への入口、Practice はactive 10本までの台本と保存済みの履歴選択、Progress は成果確認です。setup/voice は自分の声の登録と再アップロードに絞り、provider/debug 詳細は主導線から外します。listen は単一の hidden audio element で protected replay URL を直接再生し、見えている音声操作は下部固定 audio bar に一本化します。record はマイク録音と評価操作を中心にします。主要ボタンは押下、処理中、disabled が分かる表示に寄せています。
 
 ## mock と実装済みの境界
 
@@ -467,7 +471,7 @@ Mobile Personal Space P2（Favorite / 録音名 / My Takes）は `0031_take_pers
 6. 声や評価の準備が不足しているときは、その場の案内から `voice 設定` や `scripts` に戻る
 7. `/scripts/[id]/record` で録音を作り、評価して保存する
 8. `/scripts/[id]/review/[takeId]` で保存済み結果と保存済み録音を確認する
-9. `/progress` で5本までの練習スロットから成果を見る
+9. `/progress` でactive 10本までの台本と保存済みの履歴から成果を見る
 
 ### 実 transcription を通す
 

@@ -124,7 +124,7 @@ function createServerWriter(input: { reservationError?: { message: string } } = 
       }
 
       return {
-        data: {
+        data: {script_revision_id: null, script_practice_epoch: null, generation_preset: null,
           id: "55555555-5555-4555-8555-555555555555",
           user_id: USER_A,
           kind: "voice_create",

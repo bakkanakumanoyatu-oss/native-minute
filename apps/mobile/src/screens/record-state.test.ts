@@ -62,7 +62,7 @@ describe("active recording remains stoppable across connectivity changes", () =>
             unexpected: []
           };
           Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => !qa.offline });
-          const script = { id: 'test-script', title: 'A quiet morning',
+          const script = { currentRevisionId: '60000000-0000-4000-8000-000000000001', archivedAt: null, lockVersion: 1, practiceEpoch: 1, id: 'test-script', title: 'A quiet morning',
             content: Array(16).fill('I take a quiet moment to practice speaking clearly.').join('\\n\\n'),
             locale: 'en-US', targetSeconds: 60, createdAt: '2026-09-05T00:00:00Z', updatedAt: '2026-09-05T00:00:00Z' };
           const ok = data => new Response(JSON.stringify({ok: true, data}), {headers: {'Content-Type': 'application/json'}});
@@ -402,7 +402,7 @@ describe("record take identity", () => {
   });
 
   it("reuses the exact client take ID and server recording reference on evaluation retry", () => {
-    const take = {
+    const take = {expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1,
       file: new File(["wav"], "take.wav", { type: "audio/wav" }),
       durationSeconds: 42,
       takeId: "take-stable",

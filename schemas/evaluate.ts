@@ -1,7 +1,9 @@
 import { z } from "zod";
+import { practiceIdentitySchema } from "./script";
 
 export const evaluateRequestSchema = z
   .object({
+    ...practiceIdentitySchema.shape,
     scriptId: z.string().uuid("台本 ID を確認してください。"),
     takeId: z.string().uuid("take ID を確認してください。").optional(),
     audioPath: z.string().trim().min(1, "audioPath を確認してください。").max(500).optional(),

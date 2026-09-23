@@ -65,7 +65,7 @@ describe.skipIf(!container)("metadata connected DB / service / route", () => {
     const review = await getStoredReview(db(), uid, sid, tid);
     expect(review?.take).toMatchObject({ favorite: true, display_name: "My voice", score: 70 });
     const best = await getStoredReview(db(), uid, sid, bestId);
-    const progress = buildScriptProgressItem({ id: sid, title: "Script title", content: "Hello.", locale: "en-US", targetSeconds: 60, createdAt: "2026-09-17T00:00:00Z", updatedAt: "2026-09-17T00:00:00Z" }, [hydrateStoredReview(review!), hydrateStoredReview(best!)]);
+    const progress = buildScriptProgressItem({currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1,  id: sid, title: "Script title", content: "Hello.", locale: "en-US", targetSeconds: 60, createdAt: "2026-09-17T00:00:00Z", updatedAt: "2026-09-17T00:00:00Z" }, [hydrateStoredReview(review!), hydrateStoredReview(best!)]);
     expect(progress.bestTake?.id).toBe(bestId);
     expect(progress.takeHistory.find(take => take.id === tid)).toMatchObject({ favorite: true, displayName: "My voice" });
     expect(sql(`select to_jsonb(takes) - 'favorite' - 'display_name' from public.takes where id='${tid}'`)).toBe(before);

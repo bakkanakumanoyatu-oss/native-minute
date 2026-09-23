@@ -68,7 +68,7 @@ describe("mobile practice static screens", () => {
   });
 
   it("renders script selection actions", () => {
-    const script: MobileScript = {
+    const script: MobileScript = {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1,
       id: "script-1",
       title: "Morning update",
       content: "A fixed one-minute practice script.",
@@ -94,7 +94,7 @@ describe("mobile practice static screens", () => {
   });
 
   it("keeps all five scripts in server order with their own metadata and excerpt", () => {
-    const scripts = ["Zulu", "Alpha", "Morning", "Evening", "Afternoon"].map((title, index) => ({
+    const scripts = ["Zulu", "Alpha", "Morning", "Evening", "Afternoon"].map((title, index) => ({currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null, lockVersion: 1, practiceEpoch: 1,
       id: `script-${index}`,
       title,
       content: `Opening for ${title}. The rest stays available in practice.`,
@@ -120,7 +120,7 @@ describe("mobile practice static screens", () => {
   });
 
   it("preserves the server-provided progress and take-history order", () => {
-    const take = {
+    const take = {scriptRevisionId: "60000000-0000-4000-8000-000000000001", scriptTitleSnapshot: "Saved title", historyStatus: "VERSIONED" as const, recordStatus: "reviewed",
       favorite: false, displayName: null,
       id: "take-1",
       scriptId: "script-1",
@@ -139,8 +139,8 @@ describe("mobile practice static screens", () => {
       totalScripts: 1,
       totalReviewedTakes: 1,
       bestTakeCount: 1,
-      scripts: [{
-        script: {
+      scripts: [{legacyTakeCount: 0, legacyRecordCount: 0, revisionHistory: [],
+        script: {currentRevisionId: "60000000-0000-4000-8000-000000000001", archivedAt: null,
           id: "script-1",
           title: "Morning update",
           content: "A fixed one-minute practice script.",
@@ -159,7 +159,7 @@ describe("mobile practice static screens", () => {
       }]
     };
     const html = renderToStaticMarkup(<ProgressContent progress={progress} onNavigate={() => undefined} />);
-    expect(html).toContain("最新の結果");
+    expect(html).toContain("現在版の最新");
     expect(html).toContain("ベスト結果");
     expect(html).toContain("これまでの練習");
     expect(html).toContain("82");

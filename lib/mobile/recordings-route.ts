@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { practiceIdentitySchema } from "@/schemas/script";
 import { NextRequest } from "next/server";
 import { assertCostGuardEnabled } from "@/lib/cost-guard";
 import { timeAsync } from "@/lib/performance/timing";
@@ -21,6 +22,7 @@ import {
 } from "./route-context";
 
 const recordingFormSchema = z.object({
+  ...practiceIdentitySchema.shape,
   scriptId: z.string().uuid(),
   recordingRef: z.string().uuid(),
   durationSeconds: z.coerce.number().int().positive().max(120).optional()
@@ -38,6 +40,8 @@ export interface MobileRecordingsRouteDependencies extends MobileRouteAuthDepend
     input: {
       scriptId: string;
       recordingId: string;
+      expectedRevisionId: string;
+      expectedPracticeEpoch: number;
       file: File;
       durationSeconds?: number;
     }
@@ -75,7 +79,7 @@ export function parseOwnedMobileRecordingId(
 }
 
 function hasOnlyRecordingFields(formData: FormData) {
-  const allowed = new Set(["file", "scriptId", "recordingRef", "durationSeconds"]);
+  const allowed = new Set(["expectedRevisionId", "expectedPracticeEpoch", "file", "scriptId", "recordingRef", "durationSeconds"]);
   const keys = Array.from(formData.keys());
 
   return (
@@ -132,6 +136,7 @@ export async function handleMobileRecordingsPost(
   }
 
   const parsed = recordingFormSchema.safeParse({
+    ...Object.fromEntries(["expectedRevisionId", "expectedPracticeEpoch"].map(key => [key, formData.get(key)])),
     scriptId: formData.get("scriptId"),
     recordingRef: formData.get("recordingRef"),
     durationSeconds: formData.get("durationSeconds") ?? undefined
@@ -156,6 +161,8 @@ export async function handleMobileRecordingsPost(
     dependencies.assertUploadEnabled();
     const uploaded = await timeAsync("mobile.recording.upload", () =>
       dependencies.uploadOwnedRecording(client, userId, {
+        expectedRevisionId: parsed.data.expectedRevisionId,
+        expectedPracticeEpoch: parsed.data.expectedPracticeEpoch,
         scriptId: parsed.data.scriptId,
         recordingId: parsed.data.recordingRef,
         file,

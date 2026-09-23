@@ -3,6 +3,9 @@ import type { MobileReviewDto } from "./contracts";
 
 export function toMobileReviewDto(review: HydratedTakeReview): MobileReviewDto {
   return {
+    recordStatus: review.take.status,
+    historyStatus: review.take.script_revision_id ? "VERSIONED" : "UNVERIFIED_LEGACY",
+    scriptSnapshot: review.scriptSnapshot ?? null,
     takeId: review.take.id,
     favorite: review.take.favorite,
     displayName: review.take.display_name,

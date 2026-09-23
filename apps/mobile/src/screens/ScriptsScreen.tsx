@@ -1,3 +1,4 @@
+import { ScriptManagement, ArchivedScripts } from "./ScriptManagement";
 import { scriptsDisplayMemory } from "../practice/display-loaders";
 import { MetadataRefresh } from "./MetadataRefresh";
 import { useDisplayMemory } from "../practice/use-display-memory";
@@ -23,8 +24,10 @@ export function getScriptExcerpt(content: string) {
 
 export function ScriptsList({
   scripts,
-  onNavigate
+  onNavigate,
+  onManage
 }: {
+  onManage?: (script: MobileScript) => void;
   scripts: MobileScript[];
   onNavigate: (route: PracticeRoute) => void;
 }) {
@@ -48,7 +51,7 @@ export function ScriptsList({
             >
               <span>練習する</span><span aria-hidden="true">→</span>
             </button>
-
+            {onManage ? <button type="button" className="scripts-text-action" onClick={() => onManage(script)}>編集・削除</button> : null}
           </div>
         </li>
       ))}
@@ -67,6 +70,8 @@ export function ScriptsScreen({
 }) {
   const memory = useMemo(() => api.scriptsMemory ?? scriptsDisplayMemory(api), [api]);
   const { state, retry: reload } = useDisplayMemory(memory, "scripts", isOnline);
+  const [editing, setEditing] = useState<MobileScript | null>(null);
+  const [archiveKey, setArchiveKey] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -222,7 +227,9 @@ export function ScriptsScreen({
           </button>
         </EmptyState>
       ) : null}
-      {visibleState.kind === "ready" && !isEmpty ? <ScriptsList scripts={visibleState.data} onNavigate={onNavigate} /> : null}
+      {visibleState.kind === "ready" && !isEmpty ? <ScriptsList scripts={visibleState.data} onNavigate={onNavigate} onManage={api.mutateScript ? setEditing : undefined} /> : null}
+      {editing ? <ScriptManagement key={editing.id} api={api} script={editing} onClose={() => { setEditing(null); setArchiveKey(value => value + 1); }} /> : null}
+      {api.listArchivedScripts ? <ArchivedScripts key={archiveKey} api={api} onManage={setEditing} /> : null}
     </section>
   );
 }
