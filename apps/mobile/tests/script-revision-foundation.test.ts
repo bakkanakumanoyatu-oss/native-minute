@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { AppSupabaseClient } from "../../../lib/supabase/client";
 import type { StoredTake } from "../../../services/review/types";
 import type { ScriptListItem } from "../../../services/scripts/types";
-import { getReviewScriptSnapshot, hydrateStoredReview } from "../../../services/review/review.service";
-import { buildScriptProgressItem, getScriptTakeComparison } from "../../../services/progress/progress.service";
+import { getReviewScriptSnapshot, getStoredReview, hydrateStoredReview } from "../../../services/review/review.service";
+import { buildScriptProgressItem, getProgressOverview, getScriptTakeComparison } from "../../../services/progress/progress.service";
 import { assertPracticeScript, deleteScript } from "../../../services/scripts/scripts.service";
 import { buildScriptAudioCacheKey } from "../../../services/voice/cache";
 import { fetchMobileProgress, fetchMobileReview } from "../src/lib/api";
@@ -44,6 +44,53 @@ describe("revision and legacy display boundaries", () => {
     expect(await getReviewScriptSnapshot(f.client, reviews[0])).toBeNull();
     expect(f.from).not.toHaveBeenCalled();
     await expect(getReviewScriptSnapshot(f.client, reviews[2])).rejects.toThrow("保存時の台本");
+  });
+  it.each([reviews[0], reviews[1]])("reads an owned legacy $status Review without inventing a historical title or content", async legacy => {
+    const f = clientFor({ takes: legacy, weak_words: [], coach_feedback: null });
+    const stored = await getStoredReview(f.client, "owner", script.id, legacy.id);
+    expect(stored?.take.id).toBe(legacy.id);
+    expect(stored?.scriptSnapshot).toBeNull();
+    expect(f.filters).toContainEqual(["takes", "user_id", "owner"]);
+    expect(f.filters).toContainEqual(["takes", "script_id", script.id]);
+    expect(f.filters).not.toContainEqual(["takes", "script_revision_id", script.currentRevisionId]);
+    expect(f.from).not.toHaveBeenCalledWith("script_revisions");
+    const dto = toMobileReviewDto(hydrateStoredReview(stored!));
+    expect(dto).toMatchObject({
+      takeId: legacy.id,
+      historyStatus: "UNVERIFIED_LEGACY",
+      scriptSnapshot: null,
+      scriptTitleSnapshot: null
+    });
+    expect(JSON.stringify(dto)).not.toContain(script.content);
+  });
+  it("keeps legacy-only practice in overview history across edits and archive", async () => {
+    const row = { id: script.id, user_id: "owner", title: script.title, content: script.content,
+      locale: script.locale, target_seconds: script.targetSeconds, current_revision_id: script.currentRevisionId,
+      lock_version: script.lockVersion, practice_epoch: script.practiceEpoch, archived_at: null as string | null,
+      created_at: script.createdAt, updated_at: script.updatedAt };
+    const legacy = reviews[0];
+    const f = clientFor({ scripts: [row], takes: [legacy, reviews[1]], weak_words: [], coach_feedback: [] });
+    const before = await getProgressOverview(f.client, "owner");
+    expect(before).toMatchObject({ totalScripts: 1, totalReviewedTakes: 1, bestTakeCount: 0 });
+    expect(before.scripts[0]).toMatchObject({
+      takeCount: 0, allTimeTakeCount: 1, legacyTakeCount: 1, legacyRecordCount: 1,
+      latestTake: null, bestTake: null, latestVsBest: null, improvementTrend: "insufficient_data"
+    });
+    expect(before.scripts[0].takeHistory.map(take => take.id)).toEqual(["completed", "legacy"]);
+    expect(before.scripts[0].takeHistory.find(take => take.id === "legacy")?.scriptTitleSnapshot).toBeNull();
+    row.title = "Edited current title";
+    row.content = "Edited current content";
+    row.current_revision_id = "60000000-0000-4000-8000-000000000003";
+    row.archived_at = "2026-09-08";
+    const archived = await getProgressOverview(f.client, "owner");
+    expect(archived.totalScripts).toBe(0);
+    expect(archived.scripts[0].script.archivedAt).toBe("2026-09-08");
+    expect(archived.scripts[0].takeHistory).toEqual(before.scripts[0].takeHistory);
+    expect(archived.scripts[0].latestTake).toBeNull();
+    row.archived_at = null;
+    const restored = await getProgressOverview(f.client, "owner");
+    expect(restored.totalScripts).toBe(1);
+    expect(restored.scripts[0].takeHistory).toEqual(before.scripts[0].takeHistory);
   });
   it.each(["legacy", "completed"])("never compares %s to another NULL or current revision", async id => {
     const f = clientFor({ takes: reviews });

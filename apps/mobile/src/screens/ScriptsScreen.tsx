@@ -71,6 +71,7 @@ export function ScriptsScreen({
   const memory = useMemo(() => api.scriptsMemory ?? scriptsDisplayMemory(api), [api]);
   const { state, retry: reload } = useDisplayMemory(memory, "scripts", isOnline);
   const [editing, setEditing] = useState<MobileScript | null>(null);
+  const [managementKey, setManagementKey] = useState(0);
   const [archiveKey, setArchiveKey] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState("");
@@ -139,6 +140,11 @@ export function ScriptsScreen({
     ? state
     : { kind: "error", error: { kind: "offline" } };
   const isEmpty = visibleState.kind === "ready" && visibleState.data.length === 0;
+
+  function openManagement(script: MobileScript) {
+    setEditing(script);
+    setManagementKey(value => value + 1);
+  }
 
   return (
     <section className="scripts-screen" lang="ja" aria-label="Scripts">
@@ -227,9 +233,9 @@ export function ScriptsScreen({
           </button>
         </EmptyState>
       ) : null}
-      {visibleState.kind === "ready" && !isEmpty ? <ScriptsList scripts={visibleState.data} onNavigate={onNavigate} onManage={api.mutateScript ? setEditing : undefined} /> : null}
-      {editing ? <ScriptManagement key={editing.id} api={api} script={editing} onClose={() => { setEditing(null); setArchiveKey(value => value + 1); }} /> : null}
-      {api.listArchivedScripts ? <ArchivedScripts key={archiveKey} api={api} onManage={setEditing} /> : null}
+      {visibleState.kind === "ready" && !isEmpty ? <ScriptsList scripts={visibleState.data} onNavigate={onNavigate} onManage={api.mutateScript ? openManagement : undefined} /> : null}
+      {editing ? <ScriptManagement key={managementKey} api={api} script={editing} onClose={() => { setEditing(null); setArchiveKey(value => value + 1); }} /> : null}
+      {api.listArchivedScripts ? <ArchivedScripts key={archiveKey} api={api} onManage={openManagement} /> : null}
     </section>
   );
 }

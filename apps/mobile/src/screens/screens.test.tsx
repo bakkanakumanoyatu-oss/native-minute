@@ -119,6 +119,15 @@ describe("mobile practice static screens", () => {
     expect(html).not.toContain("phoneme");
   });
 
+  it("keeps legacy saved Review content reachable without claiming the current script was evaluated", () => {
+    const legacy = { ...review, historyStatus: "UNVERIFIED_LEGACY" as const, scriptSnapshot: null, scriptTitleSnapshot: null };
+    const html = renderToStaticMarkup(<ReviewContent review={legacy} onNavigate={() => undefined} />);
+    expect(html).toContain("録音時の台本本文は保存されていません。");
+    expect(html).toContain("This is the persisted transcript.");
+    expect(html).toContain("native");
+    expect(html).not.toContain("保存時の台本</h2>");
+  });
+
   it("preserves the server-provided progress and take-history order", () => {
     const take = {scriptRevisionId: "60000000-0000-4000-8000-000000000001", scriptTitleSnapshot: "Saved title", historyStatus: "VERSIONED" as const, recordStatus: "reviewed",
       favorite: false, displayName: null,
@@ -160,7 +169,7 @@ describe("mobile practice static screens", () => {
     };
     const html = renderToStaticMarkup(<ProgressContent progress={progress} onNavigate={() => undefined} />);
     expect(html).toContain("現在版の最新");
-    expect(html).toContain("ベスト結果");
+    expect(html).toContain("現在版のベスト");
     expect(html).toContain("これまでの練習");
     expect(html).toContain("82");
   });

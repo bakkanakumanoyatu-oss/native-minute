@@ -188,6 +188,7 @@ export type MobileReview = {
   recordStatus?: string;
   historyStatus?: "VERSIONED" | "UNVERIFIED_LEGACY";
   scriptSnapshot?: { revisionId: string; revisionNo: number; title: string; content: string; locale: string; targetSeconds: number } | null;
+  scriptTitleSnapshot?: string | null;
   audioIdentity?: string | null;
   /** Local proof of this screen's fresh Review request, never deserialized. */
   audioVisit?: import("../audio/saved-take-memory").SavedTakeAudioVisit;
@@ -480,13 +481,14 @@ function isMobileReview(value: unknown): value is MobileReview {
   return (
     isObject(value) &&
     (value.historyStatus === undefined || (
-      value.historyStatus === "UNVERIFIED_LEGACY" ? value.scriptSnapshot === null :
+      value.historyStatus === "UNVERIFIED_LEGACY" ? value.scriptSnapshot === null && value.scriptTitleSnapshot === null :
       value.historyStatus === "VERSIONED" && isObject(value.scriptSnapshot) &&
       isUuid(value.scriptSnapshot.revisionId) && isNonNegativeInteger(value.scriptSnapshot.revisionNo) &&
       value.scriptSnapshot.revisionNo > 0 && typeof value.scriptSnapshot.title === "string" &&
       typeof value.scriptSnapshot.content === "string" && typeof value.scriptSnapshot.locale === "string" &&
       isFiniteNumber(value.scriptSnapshot.targetSeconds)
     )) &&
+    (value.scriptTitleSnapshot === undefined || value.scriptTitleSnapshot === null || typeof value.scriptTitleSnapshot === "string") &&
     isTakeMetadata(value) &&
     isNonEmptyString(value.takeId) &&
     isNonEmptyString(value.scriptId) &&

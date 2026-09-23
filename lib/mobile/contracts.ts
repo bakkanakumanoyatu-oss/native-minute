@@ -56,6 +56,7 @@ export interface MobileReviewDto {
   recordStatus: string;
   historyStatus: "VERSIONED" | "UNVERIFIED_LEGACY";
   scriptSnapshot: { revisionId: string; revisionNo: number; title: string; content: string; locale: string; targetSeconds: number } | null;
+  scriptTitleSnapshot: string | null;
   favorite: boolean;
   displayName: string | null;
   takeId: string;

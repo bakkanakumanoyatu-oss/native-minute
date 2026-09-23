@@ -559,6 +559,16 @@ describe("review and progress", () => {
     );
   });
 
+  it("accepts a saved legacy Review without inventing a revision or historical title", async () => {
+    const legacy = { ...REVIEW_FIXTURE, historyStatus: "UNVERIFIED_LEGACY", scriptSnapshot: null, scriptTitleSnapshot: null };
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({ ok: true, data: { review: legacy } }));
+    await expect(fetchMobileReview(BFF_BASE_URL, ACCESS_TOKEN, SCRIPT_FIXTURE.id, legacy.takeId, { fetchImpl }))
+      .resolves.toEqual({ kind: "success", review: legacy });
+    fetchImpl.mockResolvedValue(jsonResponse({ ok: true, data: { review: { ...legacy, scriptTitleSnapshot: SCRIPT_FIXTURE.title } } }));
+    await expect(fetchMobileReview(BFF_BASE_URL, ACCESS_TOKEN, SCRIPT_FIXTURE.id, legacy.takeId, { fetchImpl }))
+      .resolves.toEqual({ kind: "invalid-response" });
+  });
+
   it("accepts server-ranked latest, best, and history without recalculating them", async () => {
     const take = {scriptRevisionId: "60000000-0000-4000-8000-000000000001", scriptTitleSnapshot: "Saved title", historyStatus: "VERSIONED" as const, recordStatus: "reviewed",
       id: REVIEW_FIXTURE.takeId,

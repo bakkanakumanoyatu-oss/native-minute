@@ -64,6 +64,8 @@ export function ProgressDetails({
                 </ul>
               ) : null}
             </section>
+          ) : item.takeHistory.length > 0 ? (
+            <p className="progress-meta">過去の練習記録があります。現在版の評価結果はまだありません。</p>
           ) : (
             <EmptyState title="この台本の練習記録はまだありません">
               <p>最初の録音を評価すると、ここで振り返れます。</p>
@@ -77,7 +79,7 @@ export function ProgressDetails({
             className={visibleScripts.length === 1 ? "progress-primary" : "progress-text-action progress-resume"}
             onClick={() => onNavigate({ name: "listen", scriptId: item.script.id })}
           >
-            <span>{item.latestTake ? <><span className="progress-phrase">もう一度</span><span className="progress-phrase">練習する</span></> : "練習する"}</span>
+            <span>{item.takeHistory.length > 0 ? <><span className="progress-phrase">もう一度</span><span className="progress-phrase">練習する</span></> : "練習する"}</span>
             <span className="progress-arrow" aria-hidden="true">→</span>
           </button>
 
@@ -86,14 +88,14 @@ export function ProgressDetails({
               <section className="progress-comparison" aria-label="最新とベストの結果">
                 <dl className="progress-score-pair">
                   <ProgressResult label="現在版の最新" take={item.latestTake} />
-                  <ProgressResult label="ベスト結果" take={item.bestTake} />
+                  <ProgressResult label="現在版のベスト" take={item.bestTake} />
                 </dl>
                 {item.latestTake && item.latestTake.id === item.bestTake?.id ? <p className="progress-meta progress-same-take">最新とベストは同じTake（録音）です。</p> : null}
               </section>
 
               <section className="progress-history" aria-labelledby={`progress-history-${item.script.id}`}>
                 <h3 id={`progress-history-${item.script.id}`}>これまでの練習</h3>
-                <p className="progress-meta">現在版 {item.takeCount}回 · 全期間 {item.allTimeTakeCount ?? item.takeCount}回{item.script.archivedAt ? " · 削除済み" : ""}</p>
+                <p className="progress-meta">現在版の評価 {item.takeCount}件 · 全期間の保存記録 {item.takeHistory.length}件{item.script.archivedAt ? " · 削除済み" : ""}</p>
                 {item.revisionHistory?.map(revision => <p key={revision.revisionId}>版 {revision.revisionId.slice(0, 8)} · {revision.takeCount}回 · 同じ版の最新 {revision.latestTake?.score ?? "—"} / ベスト {revision.bestTake?.score ?? "—"}</p>)}
                 {item.takeHistory.length > 0 ? (
                   <ol className="progress-take-list">
@@ -137,7 +139,7 @@ export function ProgressContent({ progress, scriptId, onNavigate }: {
     });
     return () => cancelAnimationFrame(frame);
   }, [scriptId]);
-  const practiced = new Set(progress.scripts.filter(item => item.takeCount > 0).map(item => item.script.id)).size;
+  const practiced = new Set(progress.scripts.filter(item => item.takeHistory.length > 0).map(item => item.script.id)).size;
   return <>
     <section className="progress-overview-summary" aria-labelledby="growth-title">
       <p className="section-kicker">これまでの積み重ね</p>
@@ -147,9 +149,9 @@ export function ProgressContent({ progress, scriptId, onNavigate }: {
     </section>
     <section className="progress-script-picker" aria-labelledby="select-script-title">
       <h2 id="select-script-title">台本ごとに振り返る</h2>
-      <p>保存済みの台本 {progress.totalScripts}本</p>
+      <p>台本 {progress.scripts.length}本{progress.scripts.some(item => item.script.archivedAt) ? "（削除済みを含む）" : ""}</p>
       <ul>{progress.scripts.map(item => <li key={item.script.id}><button type="button" aria-current={scriptId === item.script.id ? "true" : undefined} onClick={() => onNavigate({ name: "progress", scriptId: item.script.id })}>
-        <span><strong lang={item.script.locale}>{item.script.title}</strong><small>{item.takeCount ? `録音・評価済み ${item.takeCount}件` : "まだ練習記録がありません"}</small></span><span className="progress-selected">{scriptId === item.script.id ? "表示中" : "見る →"}</span>
+        <span><strong lang={item.script.locale}>{item.script.title}</strong><small>{item.takeHistory.length > 0 ? `保存済み記録 ${item.takeHistory.length}件` : "まだ練習記録がありません"}</small></span><span className="progress-selected">{scriptId === item.script.id ? "表示中" : "見る →"}</span>
       </button></li>)}</ul>
     </section>
     {scriptId ? <section id="progress-selected-detail" tabIndex={-1} className="progress-detail" aria-label="選んだ台本の記録"><p className="section-kicker">この台本の記録</p><ProgressDetails progress={progress} scriptId={scriptId} onNavigate={onNavigate} /></section> : <p className="progress-selection-note">台本を選ぶと、次の練習・最新とベスト・履歴を確認できます。</p>}

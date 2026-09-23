@@ -23,7 +23,7 @@ export function reviewDisplayMemory(api: Pick<PracticeApi, "getReview" | "getScr
       if (result.kind === "success" && result.review.audioVisit) api.savedTakeAudioMemory?.endVisit(result.review.audioVisit);
       return result.kind !== "success" ? result : script! as PracticeRequestFailure;
     }
-    return { kind: "success", data: { review: result.review, scriptTitle: result.review.scriptSnapshot?.title ?? (script?.kind === "success" ? `現在の台本名: ${script.script.title}` : previous!.scriptTitle),
+    return { kind: "success", data: { review: result.review, scriptTitle: result.review.scriptSnapshot?.title ?? result.review.scriptTitleSnapshot ?? (script?.kind === "success" ? script.script.title : previous!.scriptTitle),
       scriptArchived: script?.kind === "success" ? Boolean(script.script.archivedAt) : previous?.scriptArchived,
       titleConfirmedAt: script?.kind === "success" ? performance.now() : previous!.titleConfirmedAt } };
   }, {

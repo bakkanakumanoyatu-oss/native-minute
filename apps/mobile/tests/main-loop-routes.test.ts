@@ -732,6 +732,25 @@ describe("mobile evaluation, review, and progress adapters", () => {
     expect(serialized).not.toContain("must-not-leak");
   });
 
+  it("returns a legacy saved Review without a fabricated snapshot", async () => {
+    const stored = createStoredReview();
+    stored.take.script_revision_id = null;
+    stored.take.script_title_snapshot = null;
+    stored.take.script_practice_epoch = null;
+    stored.scriptSnapshot = null;
+    const getStoredReview = vi.fn(async () => stored);
+    const response = await handleMobileReviewGet(
+      mobileRequest(`/api/mobile/scripts/${SCRIPT_ID}/reviews/${TAKE_ID}`), SCRIPT_ID, TAKE_ID,
+      { ...authDependencies(), getStoredReview, getOwnedTakeAudioIdentity: async () => "a".repeat(64) }
+    );
+    const payload = await response.json();
+    expect(response.status).toBe(200);
+    expect(getStoredReview).toHaveBeenCalledWith(expect.anything(), USER_ID, SCRIPT_ID, TAKE_ID);
+    expect(payload.data.review).toMatchObject({ takeId: TAKE_ID, historyStatus: "UNVERIFIED_LEGACY",
+      scriptSnapshot: null, scriptTitleSnapshot: null, audioIdentity: "a".repeat(64) });
+    expect(JSON.stringify(payload)).not.toContain(script.content);
+  });
+
   it("returns the server-canonical overview with attached newest-first take history", async () => {
     const latest = createProgressTake(
       "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",

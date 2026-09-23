@@ -19,12 +19,15 @@ const empty: MobileProgress = { scripts: [], totalScripts: 0, totalReviewedTakes
 const render = (progress: MobileProgress) => renderToStaticMarkup(<HomeContent progress={progress} onNavigate={() => undefined} />);
 
 describe("Personal Space uses persisted results", () => {
-  it("selects the hero from server latest Takes by creation time then ID, independent of script order, update time, best and history", () => {
-    const scripts = ["a", "z", "m"].map(id => ({ ...item,
-      script: { ...item.script, id, title: `Script ${id}`, updatedAt: id === "a" ? "2026-09-20T00:00:00Z" : item.script.updatedAt },
-      latestTake: { ...latest, id, scriptId: id, reviewedAt: id === "a" ? "2026-09-20T00:00:00Z" : latest.createdAt },
-      takeHistory: [take("history-newer", 99, "2026-09-21T00:00:00Z")]
-    }));
+  it("selects the hero from newest saved history by creation time then ID, independent of script order and edit time", () => {
+    const scripts = ["a", "z", "m"].map(id => {
+      const current = { ...latest, id, scriptId: id, reviewedAt: id === "a" ? "2026-09-20T00:00:00Z" : latest.createdAt };
+      return { ...item,
+        script: { ...item.script, id, title: `Script ${id}`, updatedAt: id === "a" ? "2026-09-20T00:00:00Z" : item.script.updatedAt },
+        latestTake: current,
+        takeHistory: [{ ...take(`old-${id}`, 99, "2026-09-16T00:00:00Z"), scriptId: id }, current]
+      };
+    });
     for (const ordered of [scripts, [...scripts].reverse()]) {
       const html = render({ ...empty, scripts: ordered, totalReviewedTakes: 3 });
       const hero = html.split('aria-labelledby="space-practice-title"')[1].split('</section>')[0];
@@ -33,15 +36,44 @@ describe("Personal Space uses persisted results", () => {
       expect(hero).toContain("最近練習した台本");
       expect(hero).not.toContain("評価して保存した録音から");
     }
-    scripts[0].latestTake.createdAt = "2026-09-18T00:00:00Z";
+    scripts[0].takeHistory[1].createdAt = "2026-09-18T00:00:00Z";
     expect(render({ ...empty, scripts, totalReviewedTakes: 3 }).split('id="space-practice-title"')[1].split('</h2>')[0]).toContain("Script a");
   });
 
-  it("does not invent a selected script when saved count exists but latest is missing", () => {
-    const html = render({ ...empty, scripts: [{ ...item, latestTake: null }], totalReviewedTakes: 2 });
-    expect(html).toContain("前回の台本を表示できません");
+  it("does not invent a selected script when a summary count exists but history is missing", () => {
+    const html = render({ ...empty, scripts: [{ ...item, latestTake: null, takeHistory: [] }], totalReviewedTakes: 2 });
+    expect(html).toContain("練習すると、ここに結果と録音が残ります。");
     expect(html).not.toContain("最新の録音の台本");
     expect(html).toContain("練習する");
+  });
+
+  it("keeps a legacy-only active script in recent practice without showing current content as recorded content", () => {
+    const legacy = { ...latest, scriptRevisionId: null, scriptTitleSnapshot: null, historyStatus: "UNVERIFIED_LEGACY" as const, displayName: "My recording" };
+    const legacyOnly = { ...item, takeCount: 0, allTimeTakeCount: 1, legacyTakeCount: 1,
+      latestTake: null, bestTake: null, previousTake: null, takeHistory: [legacy] };
+    const html = render({ ...empty, scripts: [legacyOnly], totalReviewedTakes: 1 });
+    expect(html).toContain('id="space-practice-title" lang="en-US">Persisted title</h2>');
+    expect(html).toContain('<strong>1</strong><span>練習した<wbr/>台本</span>');
+    expect(html).toContain("録音名: My recording");
+    expect(html).toContain("現在の台本名: Persisted title");
+    expect(html).toContain("前回の結果を見る");
+    expect(html.split('aria-label="最近練習した台本"')[1].split('</ol>')[0]).not.toContain("Hello.");
+    expect(render({ ...empty, scripts: [{ ...legacyOnly, script: { ...legacyOnly.script, archivedAt: "2026-09-24T00:00:00Z" } }], totalReviewedTakes: 1 })).toContain("前回の台本は削除済みです。録音履歴は残っています。");
+  });
+
+  it("keeps a completed-only archived recording reachable without counting it as evaluated", () => {
+    const completed = { ...latest, scriptRevisionId: null, scriptTitleSnapshot: null,
+      historyStatus: "UNVERIFIED_LEGACY" as const, recordStatus: "completed" };
+    const archived = { ...item, script: { ...item.script, archivedAt: "2026-09-24T00:00:00Z" },
+      takeCount: 0, allTimeTakeCount: 0, legacyTakeCount: 0, legacyRecordCount: 1,
+      latestTake: null, bestTake: null, previousTake: null, takeHistory: [completed] };
+    const html = render({ ...empty, scripts: [archived], totalReviewedTakes: 0 });
+    expect(html).toContain("前回の台本は削除済みです。録音履歴は残っています。");
+    expect(html).toContain('<strong>1</strong><span>練習した<wbr/>台本</span>');
+    expect(html).toContain('<strong>0</strong><span>録音・<wbr/>評価済み</span>');
+    expect(html).toContain("履歴へ");
+    expect(html).not.toContain("録音・評価済み <span class=\"space-preview-count\"");
+    expect(html).not.toContain("練習すると、ここに結果と録音が残ります。");
   });
 
   it("places practice and recent before results and counts, keeping primary and secondary actions distinct", () => {
@@ -136,8 +168,11 @@ describe("Personal Space uses persisted results", () => {
     expect(recent).not.toContain("99点");
   });
   it("shows at most three recent scripts in practice order, without detailed results", () => {
-    const scripts = [1, 4, 2, 3].map(n => ({ ...item, script: { ...item.script, id: `s${n}`, title: `Title ${n}` },
-      latestTake: { ...latest, id: `t${n}`, scriptId: `s${n}`, createdAt: `2026-09-1${n}T00:00:00Z` }, bestTake: { ...best, scriptId: `s${n}`, score: 80 + n } }));
+    const scripts = [1, 4, 2, 3].map(n => {
+      const current = { ...latest, id: `t${n}`, scriptId: `s${n}`, createdAt: `2026-09-1${n}T00:00:00Z` };
+      return { ...item, script: { ...item.script, id: `s${n}`, title: `Title ${n}` },
+        latestTake: current, bestTake: { ...best, scriptId: `s${n}`, score: 80 + n }, takeHistory: [current] };
+    });
     const recent = render({ ...empty, scripts, totalReviewedTakes: 8 }).split('aria-label="最近練習した台本"')[1].split('</ol>')[0];
     expect(recent.match(/<li>/g)).toHaveLength(3);
     expect(recent.indexOf("Title 4")).toBeLessThan(recent.indexOf("Title 3"));

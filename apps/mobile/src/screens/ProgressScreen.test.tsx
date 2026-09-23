@@ -33,7 +33,7 @@ describe("Progress presentation preserves canonical results", () => {
     const html = render([script()]);
     expect(html).toContain("次の練習では");
     expect(html).toContain("現在版の最新");
-    expect(html).toContain("ベスト結果");
+    expect(html).toContain("現在版のベスト");
     expect(html).toContain("全期間");
     expect(html).toContain('aria-label="総合スコア 82 / 100"');
     expect(html).toContain('class="progress-take-status"><span>最新</span>');
@@ -55,7 +55,7 @@ describe("Progress presentation preserves canonical results", () => {
     });
     const html = render([item]);
     expect(html).toContain('<dt>現在版の最新<span class="progress-score-label">総合スコア</span></dt><dd class="progress-score"><span>31</span>');
-    expect(html).toContain('<dt>ベスト結果<span class="progress-score-label">総合スコア</span></dt><dd class="progress-score"><span>74</span>');
+    expect(html).toContain('<dt>現在版のベスト<span class="progress-score-label">総合スコア</span></dt><dd class="progress-score"><span>74</span>');
     expect(html.indexOf('スコア 43')).toBeLessThan(html.indexOf('スコア 99'));
     expect(html).toContain('dateTime="2026-09-01T00:00:00Z"');
     expect(item.takeHistory.map((entry) => entry.id)).toEqual(["first", "second"]);
@@ -106,6 +106,24 @@ describe("Progress presentation preserves canonical results", () => {
     expect(render([])).toContain("練習記録はまだありません");
     expect(render([script()], "missing")).toContain("この台本の記録を表示できません");
   });
+
+  it("shows legacy-only history while leaving current-revision latest and best empty", () => {
+    const legacy = { ...take("legacy", 82), scriptRevisionId: null, scriptTitleSnapshot: null,
+      historyStatus: "UNVERIFIED_LEGACY" as const };
+    const item = script({ takeCount: 0, allTimeTakeCount: 1, legacyTakeCount: 1,
+      latestTake: null, bestTake: null, previousTake: null, takeHistory: [legacy] });
+    const detail = render([item], "script-1");
+    expect(detail).toContain("過去の練習記録があります。現在版の評価結果はまだありません。");
+    expect(detail).toContain("全期間の保存記録 1件");
+    expect(detail).toContain("当時の台本は未保存");
+    expect(detail).toContain("結果を見る");
+    expect(detail).not.toContain("この台本の練習記録はまだありません");
+    expect(detail).not.toContain('<span>82</span><span class="progress-meta">/ 100</span>');
+    const overview = renderToStaticMarkup(<ProgressOverview progress={{ scripts: [item], totalScripts: 1, totalReviewedTakes: 1, bestTakeCount: 0 }} onNavigate={() => undefined} />);
+    expect(overview).toContain("練習した台本</dt><dd>1<span>本");
+    expect(overview).toContain("保存済み記録 1件");
+    expect(overview).not.toContain("まだ練習記録がありません");
+  });
 });
 
 
@@ -117,7 +135,7 @@ describe("Progress overview and selection", () => {
     const html = renderToStaticMarkup(<ProgressOverview progress={progress} onNavigate={() => undefined} />);
     expect(html).toContain("練習した台本</dt><dd>1<span>本");
     expect(html).toContain("録音・評価済み</dt><dd>19<span>件");
-    expect(html).toContain("保存済みの台本 2本");
+    expect(html).toContain("台本 2本");
     expect(html).not.toContain("progress-next-step");
     expect(html).not.toContain("progress-score-pair");
   });
@@ -131,5 +149,11 @@ describe("Progress overview and selection", () => {
     expect(html).toContain('aria-current="true"');
     expect(html).toContain("Second practice");
     expect(html.match(/class="progress-script-title"/g)).toHaveLength(1);
+  });
+  it("counts archived scripts in the picker without labeling them active", () => {
+    const archived = script({ script: { ...script().script, archivedAt: "2026-09-24T00:00:00Z" } });
+    const html = renderToStaticMarkup(<ProgressOverview progress={{ scripts: [archived], totalScripts: 0, totalReviewedTakes: 2, bestTakeCount: 0 }} onNavigate={() => undefined} />);
+    expect(html).toContain("台本 1本（削除済みを含む）");
+    expect(html).toContain("保存済み記録 2件");
   });
 });

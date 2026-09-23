@@ -32,7 +32,7 @@ export function ReviewContent({
 }) {
   return (
     <>
-      <section className="review-section"><h2>保存時の台本{review.recordStatus === "completed" ? "（旧形式記録）" : ""}</h2><p>{review.scriptSnapshot?.content ?? "当時の台本は未保存です（未検証の旧形式記録）。"}</p></section>
+      <section className="review-section"><h2>{review.scriptSnapshot ? "保存時の台本" : "録音時の台本"}{review.recordStatus === "completed" ? "（旧形式記録）" : ""}</h2><p>{review.scriptSnapshot?.content ?? "録音時の台本本文は保存されていません。"}</p></section>
       <p className="review-date">{formatReviewDate(review.reviewedAt ?? review.createdAt)}</p>
       <section className="review-next-step" aria-labelledby="review-next-title">
         <h2 id="review-next-title">次の一歩</h2>
@@ -141,6 +141,8 @@ export function ReviewScreen({
 }) {
   const memory = useMemo(() => api.reviewMemory ?? reviewDisplayMemory(api), [api]);
   const { state: visibleState, retry: reload } = useDisplayMemory(memory, `${scriptId}/${takeId}`, isOnline);
+  const titleLabel = visibleState.kind === "ready" && (visibleState.data.review.scriptSnapshot || visibleState.data.review.scriptTitleSnapshot)
+    ? "保存時の台本名" : "現在の台本名";
 
   return (
     <section className="review-screen">
@@ -151,14 +153,15 @@ export function ReviewScreen({
       {visibleState.kind === "ready" ? (
         <>
           <div className="take-identity">
+            <p className="review-meta">{visibleState.data.review.displayName ? "録音名" : titleLabel}</p>
             <h1 className={visibleState.data.review.displayName ? "take-name" : "take-script-title"}>{visibleState.data.review.displayName ?? (visibleState.data.scriptTitle || "練習結果")}</h1>
-            {visibleState.data.review.displayName ? <p className="review-meta">台本: <span lang="en">{visibleState.data.scriptTitle}</span></p> : null}
+            {visibleState.data.review.displayName ? <p className="review-meta">{titleLabel}: <span lang="en">{visibleState.data.scriptTitle}</span></p> : null}
           </div>
           <ReviewContent scriptArchived={visibleState.data.scriptArchived} review={visibleState.data.review} onNavigate={onNavigate} metadataActions={<TakeMetadataEditor key={takeId} api={api} review={visibleState.data.review} onReload={reload}
             disabled={!isOnline} onSaved={metadata => memory.update((_key, data) => data.review.takeId === metadata.takeId &&
               (data.review.favorite !== metadata.favorite || data.review.displayName !== metadata.displayName), data => ({ ...data, review: { ...data.review, ...metadata } }))}>
-              <p className="saved-take-name">{visibleState.data.review.displayName ?? visibleState.data.scriptTitle}</p>
-              {visibleState.data.review.displayName ? <p className="review-meta">台本: {visibleState.data.scriptTitle}</p> : null}
+              <p className="saved-take-name">{visibleState.data.review.displayName ? `録音名: ${visibleState.data.review.displayName}` : `${titleLabel}: ${visibleState.data.scriptTitle}`}</p>
+              {visibleState.data.review.displayName ? <p className="review-meta">{titleLabel}: {visibleState.data.scriptTitle}</p> : null}
               <p className="review-meta">{formatReviewDate(visibleState.data.review.reviewedAt ?? visibleState.data.review.createdAt)} · スコア {visibleState.data.review.evaluation.score}</p>
               <SavedTakeAudio key={takeId} api={api} takeId={takeId} review={visibleState.data.review} isOnline={isOnline && (!visibleState.refreshing || !!visibleState.data.review.audioVisit)} prefetchEnabled={visibleState.prefetchAllowed} />
             </TakeMetadataEditor>} />

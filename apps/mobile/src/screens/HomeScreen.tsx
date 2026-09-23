@@ -11,6 +11,12 @@ export function recentPractice(progress: MobileProgress) {
     .sort((a, b) => b.take.createdAt.localeCompare(a.take.createdAt) || b.take.id.localeCompare(a.take.id));
 }
 
+function takeScriptTitle(take: MobileProgress["scripts"][number]["takeHistory"][number], item: MobileProgress["scripts"][number]) {
+  return take.scriptTitleSnapshot
+    ? { label: "保存時の台本名", title: take.scriptTitleSnapshot }
+    : { label: "現在の台本名", title: item.script.title };
+}
+
 // Preview only the actual English script; blank/missing content has no invented fallback.
 export function scriptFirstLine(content: string | null | undefined) {
   return content?.split(/\r\n|[\n\r\u2028\u2029]/).map(line => line.trim()).find(Boolean);
@@ -19,14 +25,19 @@ export function scriptFirstLine(content: string | null | undefined) {
 type Navigation = { onNavigate: (route: PracticeRoute) => void };
 
 export function HomeContent({ progress, onNavigate }: { progress: MobileProgress } & Navigation) {
-  // One row per practiced script; latest/best stay server-selected.
-  const recent = progress.scripts.flatMap(item => !item.script.archivedAt && item.latestTake ? [{ item, take: item.latestTake }] : [])
+  // One row per practiced active script, including history from earlier and unverified versions.
+  const recent = progress.scripts.flatMap(item => {
+    if (item.script.archivedAt) return [];
+    const take = item.takeHistory.reduce<typeof item.takeHistory[number] | null>((newest, row) =>
+      !newest || row.createdAt > newest.createdAt || (row.createdAt === newest.createdAt && row.id > newest.id) ? row : newest, null);
+    return take ? [{ item, take }] : [];
+  })
     .sort((a, b) => b.take.createdAt.localeCompare(a.take.createdAt) || b.take.id.localeCompare(a.take.id));
   const latest = recent[0];
   const allTakes = recentPractice(progress);
-  const savedTakes = allTakes.slice(0, 2);
+  const savedTakes = allTakes.filter(row => row.take.recordStatus !== "completed").slice(0, 2);
   const favorites = allTakes.filter(row => row.take.favorite);
-  if (!latest && progress.totalReviewedTakes === 0) return <section className="space-first">
+  if (!latest && allTakes.length === 0) return <section className="space-first">
     <p className="space-meta">練習すると、ここに結果と録音が残ります。</p>
     <button className="space-primary" onClick={() => onNavigate({ name: "scripts" })}>
       練習する <span aria-hidden="true">→</span>
@@ -53,12 +64,12 @@ export function HomeContent({ progress, onNavigate }: { progress: MobileProgress
       <p className="space-selection-reason">最近練習した台本</p>
       <h2 id="space-practice-title" lang={latest.item.script.locale}>{latest.item.script.title}</h2>
       <button className="space-primary" onClick={() => onNavigate({ name: "listen", scriptId: latest.item.script.id })}>練習する <span aria-hidden="true">→</span></button>
-    </section> : <><p>前回の台本を表示できません。台本から練習を始められます。</p><button className="space-primary" onClick={() => onNavigate({ name: "scripts" })}>練習する <span aria-hidden="true">→</span></button></>}
+    </section> : <><p>{allTakes.length > 0 ? "前回の台本は削除済みです。録音履歴は残っています。" : "前回の台本を表示できません。台本から練習を始められます。"}</p><button className="space-primary" onClick={() => onNavigate({ name: "scripts" })}>練習する <span aria-hidden="true">→</span></button></>}
     <section className="space-section space-recent-section"><div className="space-section-heading"><h2>最近の練習</h2><button className="space-text" onClick={() => onNavigate({ name: "takes" })}>履歴へ →</button></div><ol className="space-takes space-recent" aria-label="最近練習した台本">
       {recent.slice(0, 3).map(({ item, take }) => <li key={item.script.id}>
         <div className="space-recent-info">
           <strong className="space-script-title" lang={item.script.locale}>{item.script.title}</strong>
-          {scriptFirstLine(item.script.content) ? <p className="space-script-preview-line" lang={item.script.locale}>{scriptFirstLine(item.script.content)}</p> : null}
+          {take.scriptRevisionId === item.script.currentRevisionId && scriptFirstLine(item.script.content) ? <p className="space-script-preview-line" lang={item.script.locale}>{scriptFirstLine(item.script.content)}</p> : null}
         </div>
         <div className="space-recent-actions">
         <button className="space-practice" aria-label={`${item.script.title}を練習する`} onClick={() => onNavigate({ name: "listen", scriptId: item.script.id })}>練習する <span aria-hidden="true">→</span></button>
@@ -66,7 +77,7 @@ export function HomeContent({ progress, onNavigate }: { progress: MobileProgress
         </div>
       </li>)}
     </ol></section>
-    <div className="space-counts"><button onClick={() => onNavigate({ name: "progress" })}><strong>{new Set(progress.scripts.filter(item => (item.allTimeTakeCount ?? item.takeCount) > 0).map(item => item.script.id)).size}</strong><span>練習した<wbr />台本</span></button><button onClick={() => onNavigate({ name: "takes" })}><strong>{progress.totalReviewedTakes}</strong><span>録音・<wbr />評価済み</span></button><button onClick={() => onNavigate({ name: "takes", favorites: true })}><strong>{favorites.length}</strong><span>お気に入り</span></button></div>
+    <div className="space-counts"><button onClick={() => onNavigate({ name: "progress" })}><strong>{new Set(progress.scripts.filter(item => item.takeHistory.length > 0).map(item => item.script.id)).size}</strong><span>練習した<wbr />台本</span></button><button onClick={() => onNavigate({ name: "takes" })}><strong>{progress.totalReviewedTakes}</strong><span>録音・<wbr />評価済み</span></button><button onClick={() => onNavigate({ name: "takes", favorites: true })}><strong>{favorites.length}</strong><span>お気に入り</span></button></div>
     {favorites.length > 0 ? <section className="space-section space-favorites" aria-labelledby="space-favorites-title">
       <div className="space-section-heading"><h2 id="space-favorites-title">お気に入りの録音</h2>
         <button className="space-text" onClick={() => onNavigate({ name: "takes", favorites: true })}>すべて見る →</button></div>
@@ -84,20 +95,25 @@ export function HomeContent({ progress, onNavigate }: { progress: MobileProgress
 }
 
 function HomeTakeRows({ rows, variant, onNavigate }: { rows: ReturnType<typeof recentPractice>; variant: "favorite" | "history" } & Navigation) {
-  return <ol className={`space-takes space-recordings-${variant}`}>{rows.map(({ take, item }) => <li key={take.id}>
+  return <ol className={`space-takes space-recordings-${variant}`}>{rows.map(({ take, item }) => {
+    const scriptTitle = takeScriptTitle(take, item);
+    return <li key={take.id}>
     <button className="space-text space-recording-row" onClick={() => onNavigate({ name: "review", scriptId: item.script.id, takeId: take.id })}>
-      <strong lang={take.displayName ? undefined : item.script.locale}>{take.displayName ?? take.scriptTitleSnapshot ?? `現在の台本名: ${item.script.title}`}</strong>
-      {take.displayName ? <span className="space-recording-script" lang={item.script.locale}>{item.script.title}</span> : null}
+      <strong>{take.displayName ? `録音名: ${take.displayName}` : `${scriptTitle.label}: ${scriptTitle.title}`}</strong>
+      {take.displayName ? <span className="space-recording-script">{scriptTitle.label}: {scriptTitle.title}</span> : null}
       <span className="space-recording-detail">
         {variant === "history" ? <><span>スコア {take.score}</span><time dateTime={take.reviewedAt ?? take.createdAt}>{formatReviewDate(take.reviewedAt ?? take.createdAt)}</time></> : null}
         <span className="space-recording-result">結果を見る →</span>
       </span>
     </button>
-  </li>)}</ol>;
+  </li>; })}</ol>;
 }
 
 export function TakeRows({ rows, onNavigate }: { rows: ReturnType<typeof recentPractice> } & Navigation) {
-  return <ol className="space-takes">{rows.map(({ take, item }) => <li key={take.id}><button className="space-text" onClick={() => onNavigate({ name: "review", scriptId: item.script.id, takeId: take.id })}><span className="space-meta">{formatReviewDate(take.reviewedAt ?? take.createdAt)}</span><strong>{take.displayName ?? take.scriptTitleSnapshot ?? `現在の台本名: ${item.script.title}`}</strong>{take.displayName ? <span className="space-meta">台本: {item.script.title}</span> : null}{take.favorite ? <span className="space-meta">♥ お気に入り</span> : null}<span className="space-meta">スコア {take.score} · 結果を見る →</span></button></li>)}</ol>;
+  return <ol className="space-takes">{rows.map(({ take, item }) => {
+    const scriptTitle = takeScriptTitle(take, item);
+    return <li key={take.id}><button className="space-text" onClick={() => onNavigate({ name: "review", scriptId: item.script.id, takeId: take.id })}><span className="space-meta">{formatReviewDate(take.reviewedAt ?? take.createdAt)}</span><strong>{take.displayName ? `録音名: ${take.displayName}` : `${scriptTitle.label}: ${scriptTitle.title}`}</strong>{take.displayName ? <span className="space-meta">{scriptTitle.label}: {scriptTitle.title}</span> : null}{take.favorite ? <span className="space-meta">♥ お気に入り</span> : null}<span className="space-meta">スコア {take.score} · 結果を見る →</span></button></li>;
+  })}</ol>;
 }
 
 export function HomeScreen({ api, isOnline, onNavigate }: { api: PracticeApi; isOnline: boolean } & Navigation) {
