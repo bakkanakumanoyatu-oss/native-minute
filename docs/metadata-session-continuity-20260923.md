@@ -1,6 +1,6 @@
 # 表示metadataのsession継続と必要時更新
 
-2026-09-23。Closeout MODE: `NATIVE_MINUTES_METADATA_SESSION_CONTINUITY_HUMAN_PASS_COMMIT_PUSH`。**HUMAN ACTUAL-DEVICE PASS / CLOSED、正式採用。** 実装MODEは `NATIVE_MINUTES_METADATA_SESSION_CONTINUITY_AND_EVENT_DRIVEN_REFRESH`。
+2026-09-23。Final closeout MODE: `NATIVE_MINUTES_METADATA_SESSION_CONTINUITY_FINAL_HUMAN_PASS_COMMIT_PUSH`。**HUMAN ACTUAL-DEVICE PASS / CLOSED、正式採用。** 実装MODEは `NATIVE_MINUTES_METADATA_SESSION_CONTINUITY_AND_EVENT_DRIVEN_REFRESH`。
 
 ## 1. Source / installed / BFF identity
 
@@ -98,13 +98,15 @@ VP-01間欠FAIL、R-INT-02文言finding、release guard3件NOT PASS、既存Stag
 
 Human verdict: **PASS**。時間制限を意識しない自然な利用で、Home → 台本 → 履歴 → Review → 録音再生 → 戻る、の一連操作がすべて問題なくスムーズだったと確認。頻繁な全面「読み込んでいます」は気にならず、再訪・表示内容に問題なし。正しい保存録音の再生を確認し、今回のmetadata session continuityを正式採用する旨の指示を受領した。
 
+最終Human actual-device acceptanceでも、時間制限を意識せず「全体的にすべてスムーズ」と再確認。一度見た台本・履歴・Reviewへの再訪、表示内容、正しい保存録音の再生をPASSとし、`NATIVE_MINUTES_METADATA_SESSION_CONTINUITY_AND_EVENT_DRIVEN_REFRESH`の正式採用を確認した。**主要な体感performance問題は、このcheckpointで一度close候補（最終Human PASS）として記録する。** 初回取得・true first audio fetch待ちを解消済みとせず、release guard NOT PASS 3件・VP-01 intermittent FAIL・R-INT-02 copy finding・その他acceptance WIPを維持する。Gate8全体・原58完了は宣言しない。
+
 今回の受入はmetadata navigationの範囲。初回取得・true first audio fetch wait、既知FAIL/NOT PASS、他acceptance WIPを自動closeしない。追加のHuman再試行は不要。
 
 ## 11. Closeout scope / validation reuse
 
-受入済みのmetadata store・lifecycle・hook・mutation API・対象UI接続、直接tests、AGENTSのmetadata契約、本書と今回の関連証拠をcommit/normal push対象として確定。前30秒Scripts/Review WIPを統合した最終実装を採用し、旧仕様を独立closeoutしない。
+受入済みのmetadata store・lifecycle・hook・mutation API・対象UI接続、直接tests、AGENTSのmetadata契約、本書と関連証拠は `a625d795314088443bb3aabc504fc4aa27e28e66`（`perf(mobile): preserve metadata across session navigation`）でcommit・normal push済み。今回の最終PASS追記の開始時点でHEAD / upstream / remoteはそのcommitに一致し、ahead/behind=0/0、indexは空。依頼中の `54b58de2163cc1e1797168843caffbeaa49b88c5` は実装前のbaseとして扱い、実装を重複commitしない。今回の追加commitは本書の最終受入・checkpoint記録だけを対象とする。前30秒Scripts/Review WIPを統合した最終実装を採用し、旧仕様を独立closeoutしない。
 
-closeout時にsource **107件のhash一致**、同じ署名artifactの実行fileと全Web資産の一致、`index-DeMYF9z6.js`、製品source/同梱JSの一時diagnostic不在を確認。端末probe/timer/fileの除去証拠も一致。既報の228 tests PASS / isolated DB 1 SKIP、browser62、lint・mobile/root typecheck・関連build・signingのPASSを同一sourceで再利用した。今回tests/build/install/deployの再実行や新しいperformance修正はしていない。workspace checkとdiff checkはcloseout時に実行。
+最終PASS追記時にもsource **107件のhash一致**、同じ署名artifactの実行fileと全Web資産の一致、`index-DeMYF9z6.js`、製品source/同梱JSの一時diagnostic不在を確認。端末probe/timer/fileの除去証拠も一致。既報の228 tests PASS / isolated DB 1 SKIP、browser62、lint・mobile/root typecheck・関連build・signingのPASSを同一sourceで再利用した。今回tests/build/install/deployの再実行や新しいperformance修正はしていない。workspace checkとdiff checkはcloseout時に実行。
 
 styles.css、current-state、受入mapping/checklist、他の既存tracked/untracked WIPは変更・stageしない。protected fileのhashと既存fileのsize/mtimeを照合する。current-state内の受入待ち表記は、この明示的な保全指示に従ってそのまま残し、本書を今回のHuman PASS記録とする。
 
