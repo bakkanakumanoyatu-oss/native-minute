@@ -33,6 +33,7 @@
 - Canonical script data comes from the server-owned `scripts` row, not client request payloads.
 - Stored review/progress data should keep reading from persisted take/review tables.
 - Script identity is stable; content/locale/duration changes create immutable `script_revisions`. Title-only edits keep the revision and reference audio. Take title is snapped at claim; legacy NULL revision never means current.
+- New script bodies and changed bodies have a server-checked maximum of 200 whitespace-separated words and 2,000 trimmed JavaScript characters. Keep over-limit drafts intact; existing long bodies remain readable and title-only editable.
 - Normal script deletion is archive; retain history/audio and restore through the owner-locked active-10 RPC. Practice writes require expected revision + epoch; edits require expected revision + lock version.
 - `script_audios` and `recordings` must stay ownership-checked.
 - Display metadata is bounded, owner/session-scoped, process-memory-only: one Scripts snapshot, one shared Home/Progress/My Takes snapshot, and up to five Reviews. Five minutes is a revalidation age, never a deletion timer. Fresh revisits, short background, and normal token refresh preserve data; meaningful entry/resume/manual/mutation/recovery events refresh only related data. Temporary failures retain safe successful display; logout/owner change and detected resource loss remove it. Mutation responses patch exact fields; stale reads are fenced. Cached Review metadata carries no audio authorization.

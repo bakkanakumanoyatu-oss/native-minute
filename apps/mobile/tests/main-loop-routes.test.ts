@@ -270,6 +270,21 @@ describe("mobile script create/detail/listen adapters", () => {
     expect(createOwnedScript).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { content: Array.from({ length: 200 }, () => "word").join(" "), expectedStatus: 201 },
+    { content: Array.from({ length: 201 }, () => "word").join(" "), expectedStatus: 400 },
+    { content: "a".repeat(2000), expectedStatus: 201 },
+    { content: "a".repeat(2001), expectedStatus: 400 }
+  ])("enforces the owned script length boundary on direct mobile POST ($expectedStatus)", async ({ content, expectedStatus }) => {
+    const createOwnedScript = vi.fn(async () => script);
+    const response = await handleMobileScriptsPost(
+      jsonRequest("/api/mobile/scripts", { title: "Title", content }),
+      { ...authDependencies(), listOwnedScripts: async () => [], createOwnedScript }
+    );
+    expect(response.status).toBe(expectedStatus);
+    expect(createOwnedScript).toHaveBeenCalledTimes(expectedStatus === 201 ? 1 : 0);
+  });
+
   it("returns only an owned canonical detail and collapses foreign/missing to 404", async () => {
     const getOwnedScript = vi.fn(async () => null);
     const response = await handleMobileScriptDetailGet(

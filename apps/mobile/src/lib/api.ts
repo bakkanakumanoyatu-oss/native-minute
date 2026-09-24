@@ -137,7 +137,7 @@ export type MobileVoiceDeletionStatus = {
 };
 
 export type PracticeIdentity = { expectedRevisionId: string; expectedPracticeEpoch: number };
-export type ScriptMutationInput = { expectedLockVersion: number; archived: boolean } | { expectedLockVersion: number; expectedRevisionId: string; title: string; content: string };
+export type ScriptMutationInput = { expectedLockVersion: number; archived: boolean } | { expectedLockVersion: number; expectedRevisionId: string; title: string; content?: string };
 
 export type UploadMobileRecordingInput = PracticeIdentity & {
   scriptId: string;

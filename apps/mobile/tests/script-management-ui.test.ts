@@ -109,4 +109,38 @@ for (const [engine, launcher] of Object.entries({ chromium, webkit })) describe(
     expect(await page.evaluate(() => window.scriptsQA.legacyHistory)).toEqual(["take-before-revision"]);
     expect(await page.evaluate(() => window.scriptsQA.activeIds)).toContain("script-9");
   }));
+
+  it("keeps over-limit pasted text and blocks create with exact excess feedback", async () => mount(async page => {
+    await page.getByRole("button", { name: "台本を作る" }).click();
+    await page.locator("#script-title").fill("New script");
+    const body = page.locator("#script-content");
+    const pasted = Array.from({ length: 201 }, () => "abcdefghij").join(" ");
+    await body.focus();
+    await page.keyboard.insertText(pasted);
+    await check(body).toHaveValue(pasted);
+    await check(page.getByRole("alert")).toContainText("200語を1語");
+    await check(page.getByRole("alert")).toContainText("2,000文字を210文字");
+    await check(page.getByRole("button", { name: "台本を保存して聴く" })).toBeDisabled();
+    expect(await page.evaluate(() => window.scriptsQA.createCalls)).toEqual([]);
+  }));
+
+  it("blocks an over-limit body edit but permits a legacy long body's title-only edit", async () => mount(async page => {
+    await page.getByRole("button", { name: "編集・削除" }).last().click();
+    const body = page.getByRole("textbox", { name: "英語台本" });
+    const original = await body.inputValue();
+    await check(page.getByText("既存本文は上限を超えています。本文を変えないタイトル編集は保存できます。")).toBeVisible();
+    await page.getByRole("textbox", { name: "タイトル" }).fill("Renamed legacy");
+    await page.getByRole("button", { name: "変更を保存" }).click();
+    expect(await page.evaluate(() => window.scriptsQA.mutations)).toEqual([{
+      scriptId: "script-8", input: { title: "Renamed legacy", expectedRevisionId: "60000000-0000-4000-8000-000000000008", expectedLockVersion: 1 }
+    }]);
+    expect(await page.evaluate(() => window.scriptsQA.activeScripts.find(item => item.id === "script-8")?.content)).toBe(original);
+    await page.getByRole("button", { name: "編集・削除" }).last().click();
+    const replacement = "a".repeat(2001);
+    await body.fill(replacement);
+    await check(body).toHaveValue(replacement);
+    await check(page.getByRole("alert")).toContainText("2,000文字を1文字");
+    await check(page.getByRole("button", { name: "変更を保存" })).toBeDisabled();
+    expect(await page.evaluate(() => window.scriptsQA.mutations)).toHaveLength(1);
+  }));
 });

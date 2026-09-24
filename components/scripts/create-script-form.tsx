@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getScriptLength, getScriptLengthError, MAX_SCRIPT_CHARACTERS, MAX_SCRIPT_WORDS } from "@/lib/script-length";
 
 export type ScriptFormInitialValues = {
   title: string;
@@ -33,9 +34,10 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
   const trimmedTitle = title.trim();
   const trimmedContent = content.trim();
   const trimmedLocale = locale.trim();
-  const wordCount = trimmedContent ? trimmedContent.split(/\s+/).filter(Boolean).length : 0;
-  const estimatedSeconds = Math.max(1, Math.round(wordCount / 2.2));
-  const showLengthWarning = wordCount > 0 && estimatedSeconds > targetSeconds;
+  const length = getScriptLength(content);
+  const lengthError = getScriptLengthError(content);
+  const estimatedSeconds = Math.max(1, Math.round(length.wordCount / 2.2));
+  const showLengthWarning = length.wordCount > 0 && estimatedSeconds > targetSeconds;
   const isMissingRequiredFields = trimmedTitle.length === 0 || trimmedContent.length === 0 || trimmedLocale.length < 2;
   const canResetToInitial =
     Boolean(initialValues) &&
@@ -58,6 +60,7 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (lengthError) return;
     setLoading(true);
     setMessage(null);
 
@@ -125,12 +128,19 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
         <textarea
           value={content}
           onChange={(event) => setContent(event.target.value)}
+          aria-describedby="script-length-note"
           required
           rows={8}
           placeholder="ここに1分で話したい英文を入れます。"
           className="w-full rounded-2xl border border-[var(--line-inset)] bg-[var(--script-paper)] px-4 py-3 text-base leading-7 shadow-[0_10px_24px_rgba(45,38,31,0.08)] outline-none transition focus:border-[var(--studio-accent)]"
         />
       </label>
+
+      <div id="script-length-note" className="space-y-1 text-sm text-ink-600">
+        <p>{length.wordCount} / {MAX_SCRIPT_WORDS} words · {length.characterCount} / {MAX_SCRIPT_CHARACTERS.toLocaleString("en-US")}文字</p>
+        <p>60秒目標の目安は約100〜130語。200語は保存上限で、60秒に収まる保証ではありません。</p>
+        {lengthError ? <p role="alert" className="text-amber-700">{lengthError} 入力は残ります。短くしてから保存してください。</p> : null}
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block space-y-2">
@@ -180,7 +190,7 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
       <div className="rounded-2xl border border-[var(--line-dark)] bg-[var(--control-panel)] px-4 py-4 text-[var(--cta-primary-text)]">
         <button
           type="submit"
-          disabled={loading || isMissingRequiredFields}
+          disabled={loading || isMissingRequiredFields || length.exceedsLimit}
           aria-busy={loading}
           className="inline-flex w-full items-center justify-center rounded-2xl bg-[var(--cta-primary-text)] px-4 py-3 text-sm font-semibold text-[var(--control-panel)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >

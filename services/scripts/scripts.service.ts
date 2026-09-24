@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import { getScriptLengthError } from "@/lib/script-length";
 import type { Database } from "@/types/database";
 import type { CreateScriptInput, UpdateScriptInput } from "@/schemas/script";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
@@ -50,12 +51,22 @@ export function assertPracticeScript(script: ScriptListItem, expected?: { expect
   if (expected && script.currentRevisionId !== expected.expectedRevisionId) throw new ScriptStateError("script_revision_conflict");
   if (expected && script.practiceEpoch !== expected.expectedPracticeEpoch) throw new ScriptStateError("practice_state_conflict");
 }
+function assertScriptLength(content: string) {
+  const message = getScriptLengthError(content);
+  if (message) throw new AppError(400, message);
+}
 export async function createScript(client: AppSupabaseClient, _userId: string, input: CreateScriptInput) {
+  assertScriptLength(input.content);
   const { data, error } = await scriptRpc(client, "create_script", { p_title: input.title, p_content: input.content, p_locale: input.locale, p_target_seconds: input.targetSeconds });
   if (error) throw mapScriptStateError(error);
   return toScriptListItem(data);
 }
-export async function updateScript(client: AppSupabaseClient, _userId: string, input: UpdateScriptInput) {
+export async function updateScript(client: AppSupabaseClient, userId: string, input: UpdateScriptInput) {
+  if (input.content !== undefined) {
+    const current = await getScript(client, userId, input.id);
+    if (!current) throw new ScriptStateError("script_not_found", 404);
+    if (input.content !== current.content) assertScriptLength(input.content);
+  }
   const { data, error } = await scriptRpc(client, "edit_script", { p_script_id: input.id, p_expected_revision_id: input.expectedRevisionId,
     p_expected_lock_version: input.expectedLockVersion, p_patch: { title: input.title, content: input.content, locale: input.locale, target_seconds: input.targetSeconds } });
   if (error) throw mapScriptStateError(error);

@@ -1,6 +1,8 @@
 # 現在の状態
 
-2026-09-24 **revision/archive/active-10 foundation Staging / Human / target revision provider E2E CLOSED**。0033/0034適用、legacy 7 Take保全、対象revision 2の新89点Takeと旧88点all-time履歴の分離をread-only確認。Production変更なし。quota / script-length / AI-generation disable / recording guide / brand-logoは別WIP。[最終closeout](script-revision-archive-foundation-final-closeout-20260924.md)。以下は当時の履歴。
+2026-09-25 **script-length mainline source integrated／0035 Staging NOT APPLIED**。foundation CLOSED の `b2ffe84` を維持し、`c1092818` → `8e80a78` の200語・trim後JavaScript文字長2,000上限とauthenticated直RPC guardを統合。0035はlocal隔離PostgreSQLでのみ検証し、Staging適用・BFF配備・native install・provider実行は未実施。Production変更なし。
+
+2026-09-24 **revision/archive/active-10 foundation Staging / Human / target revision provider E2E CLOSED**。0033/0034適用、legacy 7 Take保全、対象revision 2の新89点Takeと旧88点all-time履歴の分離をread-only確認。Production変更なし。quota / AI-generation disable / recording guide / brand-logoは別WIP。[最終closeout](script-revision-archive-foundation-final-closeout-20260924.md)。以下は当時の履歴。
 
 2026-09-23 **revision/archive/active-10 foundation候補保存／Staging切替はpush前STOP**。検証済み87ファイルsource一致、506 tests等を再利用。Vercel同ブランチpushがStaging以外の`native-minute` Previewにも自動配備され、DB/provider環境変数があるためStaging限定を保証できない。push・0033/0034・deploy/install・live smoke未実施。現DBは0001–0032、13 Scripts/7 Takes（reviewed6/completed1）/7 audioをread-only再確認。既存metadata正式Human PASS維持。foundation Human受入・新revision provider E2EはPENDING。[切替checkpoint・停止の一点](foundation-staging-safe-cutover-20260923.md)。以下は既存履歴。
 

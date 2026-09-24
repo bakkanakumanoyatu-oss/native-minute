@@ -46,6 +46,14 @@ try:
   helpers=helpers[helpers.index('create or replace function pg_temp.create_provider_terminal_request'):helpers.index('-- Clean migration history')]
   result=sql(suite.read_text()+helpers+(ROOT/'scripts/script-revision-account-test.sql').read_text())
   print('DOMAIN_SECURITY_HISTORY_ACCOUNT_PASS',flush=True)
+  cases=json.loads(subprocess.check_output(
+   ['node','--import','tsx','scripts/script-length-rpc-cases.mjs'],cwd=ROOT,text=True))
+  cases_literal=json.dumps(cases,ensure_ascii=True).replace("'","''")
+  length_fixture=ROOT/'scripts/script-length-rpc-isolated-test.sql'
+  sql("create temp table script_length_rpc_cases as select * from jsonb_to_recordset('"+
+      cases_literal+"'::jsonb) as c(label text,content text,word_count integer,character_count integer,allowed boolean);\n"+
+      length_fixture.read_text())
+  print(f'JS_POSTGRES_COUNT_PARITY_AND_AUTHENTICATED_RPC_PASS {len(cases)}_CASES',flush=True)
   sql("do $$ begin if (select evidence from test_revision.closed_v1) is distinct from (select to_jsonb(r) from public.account_deletion_requests r where id='70000000-0000-4000-8000-000000000040') then raise exception 'v1 evidence rewritten'; end if; end $$; select public.finalize_account_deletion_database_stage('70000000-0000-4000-8000-000000000040','10000000-0000-4000-8000-000000000040','g5d-2h.account-db.v1');")
   print('V1_ACTIVE_CUTOVER_BLOCKED_CLOSED_EVIDENCE_PRESERVED_PASS',flush=True)
  # Independent client transactions compete for the same owner advisory lock.

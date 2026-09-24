@@ -126,7 +126,7 @@ describe("practice and mutation boundaries", () => {
     expect(rpc).toHaveBeenCalledWith("set_script_archived", { p_script_id: script.id, p_archived: true, p_expected_lock_version: 3 });
     expect(f.filters).toContainEqual(["scripts", "user_id", "owner"]);
   });
-  it("requires edit concurrency fields while retaining the existing length allowance", () => {
+  it("requires edit concurrency fields while leaving existing content validation to the owned edit service", () => {
     const draft = { id: script.id, title: "New title", content: "a".repeat(3000) };
     expect(updateScriptSchema.safeParse(draft).success).toBe(false);
     expect(updateScriptSchema.safeParse({ ...draft, expectedRevisionId: script.currentRevisionId, expectedLockVersion: 3 }).success).toBe(true);

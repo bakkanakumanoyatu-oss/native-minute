@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { MobileScript, PracticeApi, PracticeRequestFailure } from "../practice/api";
 import { RequestError } from "./ScreenParts";
+import { getScriptLength, getScriptLengthError, MAX_SCRIPT_CHARACTERS, MAX_SCRIPT_WORDS } from "../../../../lib/script-length";
 
 export function ScriptManagement({ api, script, onClose }: { api: PracticeApi; script: MobileScript; onClose(): void }) {
   const [base, setBase] = useState(script);
@@ -14,6 +15,10 @@ export function ScriptManagement({ api, script, onClose }: { api: PracticeApi; s
   const confirmButton = useRef<HTMLButtonElement>(null);
   const errorRegion = useRef<HTMLDivElement>(null);
   const archiveMessageId = useId();
+  const lengthNoteId = useId();
+  const bodyChanged = content.trim() !== base.content.trim();
+  const length = getScriptLength(content);
+  const lengthError = bodyChanged ? getScriptLengthError(content) : null;
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
     heading.current?.scrollIntoView({ block: "start" });
@@ -33,10 +38,11 @@ export function ScriptManagement({ api, script, onClose }: { api: PracticeApi; s
   }, [error]);
   async function save(archived?: boolean) {
     if (!api.mutateScript || busy) return;
+    if (archived === undefined && lengthError) return;
     setBusy(true); setError(null);
     try {
       const result = await api.mutateScript(base.id, archived === undefined
-        ? { title, content, expectedRevisionId: base.currentRevisionId, expectedLockVersion: base.lockVersion }
+        ? { title, ...(bodyChanged ? { content } : {}), expectedRevisionId: base.currentRevisionId, expectedLockVersion: base.lockVersion }
         : { archived, expectedLockVersion: base.lockVersion });
       if (!mounted.current) return;
       setBusy(false);
@@ -61,12 +67,18 @@ export function ScriptManagement({ api, script, onClose }: { api: PracticeApi; s
   return <section className="script-create-form" aria-label={base.archivedAt ? "台本の復元" : "台本の編集・削除"}>
     <h2 ref={heading} tabIndex={-1}>{base.archivedAt ? "削除済みの台本" : "台本を編集・削除"}</h2>
     <label>タイトル<input value={title} onChange={event => setTitle(event.target.value)} maxLength={120} disabled={!!base.archivedAt || busy} /></label>
-    <label>英語台本<textarea value={content} onChange={event => setContent(event.target.value)} rows={8} disabled={!!base.archivedAt || busy} /></label>
+    <label>英語台本<textarea value={content} onChange={event => setContent(event.target.value)} aria-describedby={lengthNoteId} rows={8} disabled={!!base.archivedAt || busy} /></label>
+    <div id={lengthNoteId} className="length-note">
+      <p>{length.wordCount} / {MAX_SCRIPT_WORDS} words · {length.characterCount} / {MAX_SCRIPT_CHARACTERS.toLocaleString("en-US")}文字</p>
+      <p>60秒目標の目安は約100〜130語。200語は保存上限です。</p>
+      {lengthError ? <p className="length-warning" role="alert">{lengthError} 入力は残ります。短くしてから保存してください。</p> : null}
+      {!bodyChanged && length.exceedsLimit ? <p>既存本文は上限を超えています。本文を変えないタイトル編集は保存できます。</p> : null}
+    </div>
     <p>本文を変更しても、以前の録音・評価履歴は残ります。</p>
     {!confirmArchive ? errorFeedback : null}
     {base.archivedAt ? <button type="button" disabled={busy} onClick={() => void save(false)}>復元する</button> : <>
       {!confirmArchive ? <>
-        <button type="button" disabled={busy || !title.trim() || !content.trim()} onClick={() => void save()}>変更を保存</button>
+        <button type="button" disabled={busy || !title.trim() || !content.trim() || !!lengthError} onClick={() => void save()}>変更を保存</button>
         <button type="button" disabled={busy} onClick={() => { setError(null); setConfirmArchive(true); }}>台本を削除</button>
       </> : <div role="group" aria-label="台本削除の確認">
         <p id={archiveMessageId}>「{base.title}」を削除しますか？練習する台本の一覧から消えます。録音・評価の履歴は残り、あとで復元できます。</p>

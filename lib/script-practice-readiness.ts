@@ -1,4 +1,5 @@
 import { createPracticeChunks } from "@/lib/script-practice-chunks";
+import { countScriptWords } from "@/lib/script-length";
 
 export type ScriptPracticeReadinessTone = "empty" | "steady" | "notice" | "alert";
 export type ScriptManualRevisionHintKind = "length" | "breath" | "chunk" | "focus";
@@ -35,8 +36,7 @@ const LONG_SENTENCE_WORDS = 24;
 export function analyzeScriptPracticeReadiness(scriptContent: string, targetSeconds = 60): ScriptPracticeReadiness {
   const normalizedContent = scriptContent.replace(/\s+/g, " ").trim();
   const safeTargetSeconds = Number.isFinite(targetSeconds) && targetSeconds > 0 ? targetSeconds : 60;
-  const words = normalizedContent ? normalizedContent.split(/\s+/).filter(Boolean) : [];
-  const wordCount = words.length;
+  const wordCount = countScriptWords(normalizedContent);
   const sentenceInfos = getSentenceInfos(normalizedContent);
   const sentenceWordCounts = sentenceInfos.map((sentence) => sentence.wordCount);
   const breathGroups = getBreathGroups(normalizedContent);
@@ -152,7 +152,7 @@ function countBreathPoints(content: string) {
 }
 
 function countWords(value: string) {
-  return value.split(/\s+/).filter(Boolean).length;
+  return countScriptWords(value);
 }
 
 function getReadinessTone(input: {

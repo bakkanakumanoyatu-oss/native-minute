@@ -21,10 +21,13 @@ const script = (index: number): MobileScript => ({
   updatedAt: "2026-09-23T00:00:00.000Z"
 });
 
-let active = Array.from({ length: 8 }, (_, index) => script(index + 1));
+let active = Array.from({ length: 8 }, (_, index) => index === 7
+  ? { ...script(index + 1), content: "legacy ".repeat(201).trim() }
+  : script(index + 1));
 let archived: MobileScript[] = [{ ...script(9), archivedAt: "2026-09-23T01:00:00.000Z" }];
 const legacyHistory = ["take-before-revision"];
 const mutations: Array<{ scriptId: string; input: unknown }> = [];
+const createCalls: unknown[] = [];
 let nextMutationFailure: { kind: "conflict"; reasonCode: string } | null = null;
 const scriptsMemory = new DisplayMemory<MobileScript[]>(async () => ({ kind: "success", data: active }));
 scriptsMemory.seed("scripts", active);
@@ -34,8 +37,8 @@ const api = {
   listScripts: async () => ({ kind: "success" as const, scripts: active }),
   listArchivedScripts: async () => ({ kind: "success" as const, scripts: archived }),
   getScript: async (id: string) => ({ kind: "success" as const, script: [...active, ...archived].find(item => item.id === id)! }),
-  createScript: async () => ({ kind: "invalid-request" as const, reasonCode: "fixture" }),
-  mutateScript: async (scriptId: string, input: { archived?: boolean }) => {
+  createScript: async (input: unknown) => { createCalls.push(input); return { kind: "invalid-request" as const, reasonCode: "fixture" }; },
+  mutateScript: async (scriptId: string, input: { archived?: boolean; title?: string; content?: string }) => {
     if (nextMutationFailure) {
       const failure = nextMutationFailure;
       nextMutationFailure = null;
@@ -44,7 +47,8 @@ const api = {
     }
     mutations.push({ scriptId, input });
     const base = [...active, ...archived].find(item => item.id === scriptId)!;
-    const updated = { ...base, archivedAt: input.archived ? "2026-09-24T00:00:00.000Z" : null, lockVersion: base.lockVersion + 1 };
+    const updated = { ...base, title: input.title ?? base.title, content: input.content ?? base.content,
+      archivedAt: input.archived ? "2026-09-24T00:00:00.000Z" : null, lockVersion: base.lockVersion + 1 };
     if (input.archived === true) {
       active = active.filter(item => item.id !== scriptId);
       archived = [updated, ...archived];
@@ -59,8 +63,10 @@ const api = {
 
 const qa = {
   mutations,
+  createCalls,
   failNextMutation: () => { nextMutationFailure = { kind: "conflict", reasonCode: "script_edit_conflict" }; },
   get activeIds() { return active.map(item => item.id); },
+  get activeScripts() { return active; },
   get archivedIds() { return archived.map(item => item.id); },
   get legacyHistory() { return legacyHistory; }
 };

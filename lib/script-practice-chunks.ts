@@ -1,3 +1,5 @@
+import { countScriptWords } from "@/lib/script-length";
+
 export type PracticeChunk = {
   index: number;
   text: string;
@@ -178,7 +180,7 @@ function pushSegment(segments: string[], segment: string) {
 }
 
 function countWords(text: string) {
-  return text.split(/\s+/).filter(Boolean).length;
+  return countScriptWords(text);
 }
 
 function getPracticeChunkCue(index: number, total: number) {

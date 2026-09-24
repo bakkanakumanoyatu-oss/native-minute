@@ -3,6 +3,7 @@ import { scriptsDisplayMemory } from "../practice/display-loaders";
 import { MetadataRefresh } from "./MetadataRefresh";
 import { useDisplayMemory } from "../practice/use-display-memory";
 import { MAX_PRACTICE_SLOTS } from "../../../../lib/practice-limits";
+import { getScriptLength, getScriptLengthError, MAX_SCRIPT_CHARACTERS, MAX_SCRIPT_WORDS } from "../../../../lib/script-length";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { PracticeRoute } from "../practice/routes";
 import {
@@ -83,6 +84,8 @@ export function ScriptsScreen({
   >({ kind: "idle" });
   const createGeneration = useRef(0);
   const titleInput = useRef<HTMLInputElement>(null);
+  const length = getScriptLength(content);
+  const lengthError = getScriptLengthError(content);
 
   useEffect(() => {
     if (showCreate) {
@@ -110,6 +113,7 @@ export function ScriptsScreen({
       });
       return;
     }
+    if (lengthError) return;
 
     setCreateState({ kind: "submitting" });
     const generation = ++createGeneration.current;
@@ -135,7 +139,6 @@ export function ScriptsScreen({
     onNavigate({ name: "listen", scriptId: result.script.id });
   }
 
-  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
   const visibleState: typeof state = isOnline || state.kind === "ready"
     ? state
     : { kind: "error", error: { kind: "offline" } };
@@ -183,15 +186,17 @@ export function ScriptsScreen({
             lang="en-US"
             aria-describedby="script-length-note"
             value={content}
-            maxLength={4_000}
             rows={8}
             onChange={(event) => setContent(event.target.value)}
             placeholder="Write the English script you want to practice."
             required
           />
-          <p id="script-length-note" className={wordCount > 150 ? "length-note length-warning" : "length-note"}>
-            {wordCount} words · 目標60秒{wordCount > 150 ? "（長めの可能性があります）" : ""}
+          <p id="script-length-note" className={length.wordCount > 150 || length.exceedsLimit ? "length-note length-warning" : "length-note"}>
+            {length.wordCount} / {MAX_SCRIPT_WORDS} words · {length.characterCount} / {MAX_SCRIPT_CHARACTERS.toLocaleString("en-US")}文字
+            <br />60秒目標の目安は約100〜130語。200語は保存上限です。
+            {length.wordCount > 150 && !length.exceedsLimit ? " 長めの可能性があります。" : ""}
           </p>
+          {lengthError ? <p className="length-note length-warning" role="alert">{lengthError} 入力は残ります。短くしてから保存してください。</p> : null}
           {createState.kind === "error" ? (
             createState.error.kind === "conflict" && createState.error.reasonCode === "script_limit_reached" ? (
               <div className="auth-error" role="alert">
@@ -200,7 +205,7 @@ export function ScriptsScreen({
               </div>
             ) : <RequestError error={createState.error} />
           ) : null}
-          <button className="scripts-primary" type="submit" disabled={createState.kind === "submitting"}>
+          <button className="scripts-primary" type="submit" disabled={createState.kind === "submitting" || length.exceedsLimit}>
             {createState.kind === "submitting" ? "保存中…" : "台本を保存して聴く"}
           </button>
         </form>
