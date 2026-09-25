@@ -80,6 +80,7 @@ export function VoiceSetupScreen({
   const [previewConfirmed, setPreviewConfirmed] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const creatingVoiceRef = useRef(false);
   const recorder = useRef<MobileAudioRecorder | null>(null);
   const previewElement = useRef<HTMLAudioElement | null>(null);
   const retainedPreviewElement = useRef<HTMLAudioElement | null>(null);
@@ -146,6 +147,8 @@ export function VoiceSetupScreen({
       nextRecorder.cancel();
       setPreviewConfirmed(false);
       releasePreview();
+      setSample(null);
+      setSampleSeconds(0);
     };
     const onVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
@@ -192,7 +195,7 @@ export function VoiceSetupScreen({
   }
 
   async function startRecording() {
-    if (!isOnline || actionState.kind === "creating_voice") {
+    if (!isOnline || actionState.kind === "creating_voice" || recorder.current?.getState().kind === "requesting-permission" || recorder.current?.getState().kind === "stopping") {
       return;
     }
 
@@ -216,21 +219,28 @@ export function VoiceSetupScreen({
   }
 
   async function createVoice() {
-    if (!sample || !previewConfirmed || !isOnline || actionState.kind === "creating_voice") {
+    if (!sample || !previewUrl || !previewConfirmed || !isOnline || creatingVoiceRef.current) {
       return;
     }
 
+    creatingVoiceRef.current = true;
     setActionState({ kind: "creating_voice" });
-    const result = await api.createVoiceFromSample(sample);
-    setSetupState(toSetupState(result));
+    try {
+      const result = await api.createVoiceFromSample(sample);
+      setSetupState(toSetupState(result));
 
-    if (result.kind !== "success") {
-      setActionState({ kind: "error", error: result });
-      return;
+      if (result.kind !== "success") {
+        setActionState({ kind: "error", error: result });
+        return;
+      }
+
+      setActionState({ kind: "idle" });
+      clearSample();
+    } catch {
+      setActionState({ kind: "error", error: { kind: "network-error" } });
+    } finally {
+      creatingVoiceRef.current = false;
     }
-
-    setActionState({ kind: "idle" });
-    clearSample();
   }
 
   const setup = setupState.kind === "ready" ? setupState.setup : null;
@@ -256,6 +266,7 @@ export function VoiceSetupScreen({
 
       {setup?.status === "consent_required" ? (
         <div className="voice-setup-step">
+          <h2>声を使う同意</h2>
           <label className="voice-consent-check">
             <input
               type="checkbox"
@@ -273,11 +284,18 @@ export function VoiceSetupScreen({
 
       {setup?.status === "sample_required" ? (
         <div className="voice-setup-step">
+          <h2>お手本ボイスの元声を録音</h2>
           <p className="scope-note">10〜45秒ほど、普段の英語練習に近い声で話してください。録音は送信前に確認できます。</p>
+          <div className="voice-recording-guide" data-testid="voice-sample-recording-guide">
+            <strong>元声を録るコツ</strong>
+            <p>静かで反響の少ない場所で、一人の声だけを録音します。テレビや音楽も入れないでください。</p>
+            <p>マイクとの距離と音量をなるべく一定にし、無理に演技せず、聞き取りやすい普段の声で話してください。</p>
+            <p>元声の録り方や周囲の音は、お手本ボイスの品質に影響することがあります。発音・アクセント・感情の出し方も声に反映されます。</p>
+          </div>
           {recorderState.kind === "recording" ? (
             <button type="button" className="danger-button" onClick={stopRecording}>録音を止める</button>
           ) : (
-            <button type="button" disabled={actionState.kind === "creating_voice"} onClick={() => void startRecording()}>
+            <button type="button" disabled={actionState.kind === "creating_voice" || recorderState.kind === "requesting-permission" || recorderState.kind === "stopping"} onClick={() => void startRecording()}>
               声を録音する
             </button>
           )}
@@ -288,11 +306,12 @@ export function VoiceSetupScreen({
           {localError ? <div className="auth-error" role="alert">{localError}</div> : null}
           {sample && previewUrl ? (
             <div className="audio-card">
-              <p>{sampleSeconds}秒の声を録音しました。再生して自分の声か確認してください。</p>
+              <p>{sampleSeconds}秒の元声を録音しました。聞き取りやすさや周囲の音を再生して確認してください。</p>
               <audio
                 controls
                 preload="metadata"
                 src={previewUrl}
+                aria-label="お手本ボイス用の元声を確認"
                 ref={(element) => {
                   if (element) {
                     previewElement.current = element;
@@ -303,13 +322,13 @@ export function VoiceSetupScreen({
                 }}
               />
               <label className="voice-consent-check">
-                <input type="checkbox" checked={previewConfirmed} onChange={(event) => setPreviewConfirmed(event.target.checked)} />
-                <span>再生して、自分の声であることを確認しました。</span>
+                <input type="checkbox" checked={previewConfirmed} disabled={actionState.kind === "creating_voice"} onChange={(event) => setPreviewConfirmed(event.target.checked)} />
+                <span>再生して、この元声が自分の声であることを確認しました。</span>
               </label>
-              <button type="button" className="secondary-button" onClick={clearSample}>録音し直す</button>
               <button type="button" disabled={!previewConfirmed || actionState.kind === "creating_voice"} onClick={() => void createVoice()}>
-                {actionState.kind === "creating_voice" ? "お手本ボイスを作成中…" : "この声でお手本ボイスを作る"}
+                {actionState.kind === "creating_voice" ? "お手本ボイスを作成中…" : "この録音を使ってお手本ボイスを作る"}
               </button>
+              <button type="button" className="secondary-button" disabled={actionState.kind === "creating_voice"} onClick={clearSample}>録り直す</button>
             </div>
           ) : null}
         </div>

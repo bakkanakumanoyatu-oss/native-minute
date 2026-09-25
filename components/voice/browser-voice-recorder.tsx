@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type BrowserVoiceRecorderProps = {
   id: string;
@@ -14,7 +14,7 @@ type BrowserVoiceRecorderProps = {
   fallbackHint?: string;
 };
 
-type RecorderStatus = "idle" | "starting" | "recording" | "recorded";
+type RecorderStatus = "idle" | "starting" | "recording" | "stopping" | "recorded";
 
 function getSupportedMimeType() {
   if (typeof MediaRecorder === "undefined") {
@@ -64,11 +64,13 @@ export function BrowserVoiceRecorder({
   selectedFile,
   onUseRecording,
   disabled = false,
-  fallbackHint = "マイクが使えない場合は、下のファイル選択を使えます。録音の中身や保存先の詳細は画面に表示しません。"
+  fallbackHint = "マイクが使えない場合は、下のファイル選択を使えます。選んだ音声も作成前に再生できます。"
 }: BrowserVoiceRecorderProps) {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const previewElementRef = useRef<HTMLAudioElement | null>(null);
   const previewUrlRef = useRef<string | null>(null);
+  const recordingGenerationRef = useRef(0);
   const chunksRef = useRef<BlobPart[]>([]);
   const startedAtRef = useRef<number | null>(null);
   const [status, setStatus] = useState<RecorderStatus>("idle");
@@ -81,21 +83,27 @@ export function BrowserVoiceRecorder({
 
   useEffect(() => {
     return () => {
+      recordingGenerationRef.current += 1;
       if (previewUrlRef.current) {
         URL.revokeObjectURL(previewUrlRef.current);
       }
 
+      if (recorderRef.current) {
+        recorderRef.current.ondataavailable = null;
+        recorderRef.current.onstop = null;
+        if (recorderRef.current.state !== "inactive") {
+          try {
+            recorderRef.current.stop();
+          } catch {
+            // Releasing the tracks below still ends capture.
+          }
+        }
+      }
       streamRef.current?.getTracks().forEach((track) => track.stop());
       recorderRef.current = null;
       streamRef.current = null;
     };
   }, []);
-
-  useEffect(() => {
-    if (!selectedFile || (pendingFile && selectedFile !== pendingFile)) {
-      setHasConfirmedRecording(false);
-    }
-  }, [pendingFile, selectedFile]);
 
   function setInfo(nextMessage: string) {
     setMessage(nextMessage);
@@ -107,14 +115,29 @@ export function BrowserVoiceRecorder({
     setMessageKind("error");
   }
 
-  function replacePreviewUrl(nextPreviewUrl: string | null) {
+  const replacePreviewUrl = useCallback((nextPreviewUrl: string | null) => {
     if (previewUrlRef.current) {
+      previewElementRef.current?.pause();
       URL.revokeObjectURL(previewUrlRef.current);
     }
 
     previewUrlRef.current = nextPreviewUrl;
     setPreviewUrl(nextPreviewUrl);
-  }
+  }, []);
+
+  useEffect(() => {
+    if (pendingFile && selectedFile && selectedFile !== pendingFile) {
+      setPendingFile(null);
+      setDurationSeconds(null);
+      setStatus("idle");
+      setMessage(null);
+      replacePreviewUrl(null);
+    }
+
+    if (!selectedFile || (pendingFile && selectedFile !== pendingFile)) {
+      setHasConfirmedRecording(false);
+    }
+  }, [pendingFile, selectedFile, replacePreviewUrl]);
 
   function clearPendingRecording() {
     setPendingFile(null);
@@ -127,7 +150,12 @@ export function BrowserVoiceRecorder({
   }
 
   async function handleStartRecording() {
-    setMessage(null);
+    if (status === "starting" || status === "recording" || status === "stopping") {
+      return;
+    }
+
+    const generation = ++recordingGenerationRef.current;
+    clearPendingRecording();
     setStatus("starting");
 
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
@@ -136,8 +164,15 @@ export function BrowserVoiceRecorder({
       return;
     }
 
+    let acquiredStream: MediaStream | null = null;
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      acquiredStream = stream;
+      if (generation !== recordingGenerationRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       const supportedMimeType = getSupportedMimeType();
       const recorder = supportedMimeType
         ? new MediaRecorder(stream, { mimeType: supportedMimeType })
@@ -147,11 +182,6 @@ export function BrowserVoiceRecorder({
       recorderRef.current = recorder;
       chunksRef.current = [];
       startedAtRef.current = Date.now();
-      setPendingFile(null);
-      setDurationSeconds(null);
-      setHasConfirmedRecording(false);
-      onUseRecording(null);
-      replacePreviewUrl(null);
 
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -197,7 +227,7 @@ export function BrowserVoiceRecorder({
     } catch {
       setStatus("idle");
       setError("マイクを使えませんでした。ブラウザのマイク許可を確認するか、ファイル選択を使ってください。");
-      streamRef.current?.getTracks().forEach((track) => track.stop());
+      acquiredStream?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
       recorderRef.current = null;
     }
@@ -209,18 +239,18 @@ export function BrowserVoiceRecorder({
     }
 
     recorderRef.current.stop();
-    setStatus("idle");
+    setStatus("stopping");
   }
 
   function handleUseRecording() {
-    if (!pendingFile) {
+    if (!pendingFile || (selectedFile && selectedFile !== pendingFile)) {
       setError("先に録音してください。");
       return;
     }
 
     onUseRecording(pendingFile);
     setHasConfirmedRecording(true);
-    setInfo("録音を選択しました。保存へ進むには、必要な項目を確認してください。");
+    setInfo("この録音を選びました。お手本ボイスを作るときに送信します。");
   }
 
   const durationLabel = formatSeconds(durationSeconds);
@@ -242,15 +272,23 @@ export function BrowserVoiceRecorder({
         <button
           type="button"
           onClick={status === "recording" ? handleStopRecording : handleStartRecording}
-          disabled={disabled || status === "starting"}
+          disabled={disabled || status === "starting" || status === "stopping"}
           aria-busy={status === "starting"}
           className="inline-flex items-center justify-center rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {status === "recording" ? "停止する" : status === "starting" ? "マイクを準備中..." : "録音を開始"}
+          {status === "recording" ? "停止する" : status === "starting" ? "マイクを準備中..." : status === "stopping" ? "録音を保存中..." : "録音を開始"}
         </button>
 
         {pendingFile ? (
           <>
+            <button
+              type="button"
+              onClick={handleUseRecording}
+              disabled={disabled || status === "recording" || Boolean(selectedFile && selectedFile !== pendingFile)}
+              className="inline-flex items-center justify-center rounded-2xl bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {hasConfirmedRecording ? "この録音を選択済み" : "この録音を使う"}
+            </button>
             <button
               type="button"
               onClick={clearPendingRecording}
@@ -259,21 +297,13 @@ export function BrowserVoiceRecorder({
             >
               録り直す
             </button>
-            <button
-              type="button"
-              onClick={handleUseRecording}
-              disabled={disabled || status === "recording"}
-              className="inline-flex items-center justify-center rounded-2xl bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {hasConfirmedRecording ? "この録音を選択済み" : "この録音を使う"}
-            </button>
           </>
         ) : null}
       </div>
 
       {previewUrl ? (
         <div className="space-y-2">
-          <audio controls src={previewUrl} className="w-full" />
+          <audio ref={previewElementRef} controls src={previewUrl} className="w-full" aria-label="お手本ボイス用の元声を確認" />
           <p className="text-xs leading-5 text-ink-600">
             {durationLabel ? `録音時間: ${durationLabel}。` : null}
             再生して、声が聞こえることを確認してください。

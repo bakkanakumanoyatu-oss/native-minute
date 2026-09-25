@@ -190,6 +190,21 @@ button:disabled {
   margin-top: 1rem;
 }
 
+.voice-recording-guide {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(68, 57, 43, 0.16);
+  border-radius: 0.9rem;
+  color: #33493e;
+  background: #fff1dd;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.voice-recording-guide p {
+  margin: 0.35rem 0 0;
+}
+
 .voice-consent-check {
   display: flex;
   align-items: flex-start;

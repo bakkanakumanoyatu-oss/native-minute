@@ -1,12 +1,13 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { VoiceProviderRequirements } from "@/providers/voice";
 import { BrowserVoiceRecorder } from "./browser-voice-recorder";
 
 type VoiceInputMode = "all" | "record" | "file";
+type VoiceSampleSource = "recording" | "file" | null;
 
 function isOpenAiEntitlementMessage(message: string | null) {
   if (!message) {
@@ -88,7 +89,9 @@ export function CreateVoiceForm({
   const router = useRouter();
   const [label, setLabel] = useState("自分の声");
   const [sampleAudioFile, setSampleAudioFile] = useState<File | null>(null);
+  const [sampleAudioSource, setSampleAudioSource] = useState<VoiceSampleSource>(null);
   const [loading, setLoading] = useState(false);
+  const submittingRef = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
   const trimmedLabel = label.trim();
   const isMissingRequiredLabel = trimmedLabel.length === 0;
@@ -110,14 +113,14 @@ export function CreateVoiceForm({
     ? `その場で録り直す (${requiresSampleSelection ? "必須" : "任意"})`
     : `その場で自分の声を録音する (${requiresSampleSelection ? "必須" : "任意"})`;
   const recorderDescription = isRerecord
-    ? "録り方を変えて、もう一度お手本ボイスを作れます。10秒以上、自然な声で話してください。"
-    : "お手本ボイスに使う声をこの場で録音します。10秒以上、自然な声で話してください。";
+    ? "お手本ボイスの元声を録り直します。同意音声とは別の録音です。10秒以上話してください。"
+    : "お手本ボイスの元声を録音します。同意音声とは別の録音です。10秒以上話してください。";
   const submitLabel =
     inputMode === "file"
       ? "このファイルで新しいお手本ボイスを作る"
       : isRerecord
         ? "この録音で新しいお手本ボイスを作る"
-        : "自分の声を録音してお手本ボイスを作る";
+        : "この声でお手本ボイスを作る";
   const successMessage = isRerecord
     ? "新しいお手本ボイスを作りました。次からこの声を使います。"
     : "お手本ボイスを作りました。次の入口から練習へ進めます。";
@@ -125,6 +128,11 @@ export function CreateVoiceForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submittingRef.current) {
+      return;
+    }
+
+    submittingRef.current = true;
     setLoading(true);
     setMessage(null);
 
@@ -198,6 +206,7 @@ export function CreateVoiceForm({
     } catch {
       setMessage("通信に失敗しました。少し待ってからお試しください。");
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   }
@@ -217,21 +226,32 @@ export function CreateVoiceForm({
       </label>
 
       {showRecorder ? (
-        <BrowserVoiceRecorder
-          id="voice-create"
-          title={recorderTitle}
-          description={recorderDescription}
-          filePrefix="voice-sample-recording"
-          minSeconds={10}
-          selectedFile={sampleAudioFile}
-          disabled={loading}
-          fallbackHint={
-            inputMode === "record"
-              ? "マイクが使えない場合は、上の選択肢から録音済みファイルを選べます。録音の中身や保存先の詳細は画面に表示しません。"
-              : undefined
-          }
-          onUseRecording={setSampleAudioFile}
-        />
+        <>
+          <div data-testid="voice-sample-recording-guide" className="rounded-2xl border border-[var(--line)] bg-[var(--surface-paper)] px-4 py-3 text-sm leading-6 text-ink-700">
+            <p className="font-semibold text-ink-900">元声を録るコツ</p>
+            <p className="mt-1">静かで反響の少ない場所で、一人の声だけを録音します。テレビや音楽も入れないでください。</p>
+            <p>マイクとの距離と音量をなるべく一定にし、無理に演技せず、聞き取りやすい普段の声で話してください。</p>
+            <p>元声の録り方や周囲の音は、お手本ボイスの品質に影響することがあります。発音・アクセント・感情の出し方も声に反映されます。</p>
+          </div>
+          <BrowserVoiceRecorder
+            id="voice-create"
+            title={recorderTitle}
+            description={recorderDescription}
+            filePrefix="voice-sample-recording"
+            minSeconds={10}
+            selectedFile={sampleAudioFile}
+            disabled={loading}
+            fallbackHint={
+              inputMode === "record"
+                ? "マイクが使えない場合は、上の選択肢から録音済みファイルを選べます。選んだ音声も作成前に再生できます。"
+                : undefined
+            }
+            onUseRecording={(file) => {
+              setSampleAudioFile(file);
+              setSampleAudioSource(file ? "recording" : null);
+            }}
+          />
+        </>
       ) : null}
 
       {showFilePicker ? (
@@ -240,16 +260,22 @@ export function CreateVoiceForm({
             <summary className="cursor-pointer text-sm font-semibold text-ink-800">録音済みファイルを選ぶ</summary>
             <VoiceSampleFileInput
               label={fileInputLabel}
-              sampleAudioFile={sampleAudioFile}
-              onSelectFile={setSampleAudioFile}
+              sampleAudioFile={sampleAudioSource === "file" ? sampleAudioFile : null}
+              onSelectFile={(file) => {
+                setSampleAudioFile(file);
+                setSampleAudioSource(file ? "file" : null);
+              }}
             />
           </details>
         ) : (
           <div className="rounded-2xl border border-[var(--line)] bg-ink-50 px-4 py-4">
             <VoiceSampleFileInput
               label={fileInputLabel}
-              sampleAudioFile={sampleAudioFile}
-              onSelectFile={setSampleAudioFile}
+              sampleAudioFile={sampleAudioSource === "file" ? sampleAudioFile : null}
+              onSelectFile={(file) => {
+                setSampleAudioFile(file);
+                setSampleAudioSource(file ? "file" : null);
+              }}
             />
           </div>
         )
@@ -340,20 +366,41 @@ function VoiceSampleFileInput({
   sampleAudioFile: File | null;
   onSelectFile: (file: File | null) => void;
 }) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!sampleAudioFile) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(sampleAudioFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [sampleAudioFile]);
+
   return (
-    <label className="mt-3 block space-y-2">
-      <span className="text-sm font-medium text-ink-700">{label}</span>
-      <input
-        data-testid="voice-create-sample-file"
-        type="file"
-        accept="audio/webm,audio/wav,audio/wave,audio/x-wav,audio/mp4,audio/x-m4a,audio/mpeg,audio/ogg"
-        onChange={(event) => onSelectFile(event.target.files?.[0] ?? null)}
-        className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-ink-100 file:px-3 file:py-2 file:text-sm file:font-medium focus:border-[var(--accent)]"
-      />
+    <div className="mt-3 space-y-2">
+      <label className="block space-y-2">
+        <span className="text-sm font-medium text-ink-700">{label}</span>
+        <input
+          data-testid="voice-create-sample-file"
+          type="file"
+          accept="audio/webm,audio/wav,audio/wave,audio/x-wav,audio/mp4,audio/x-m4a,audio/mpeg,audio/ogg"
+          onChange={(event) => onSelectFile(event.target.files?.[0] ?? null)}
+          className="w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm shadow-sm outline-none transition file:mr-4 file:rounded-xl file:border-0 file:bg-ink-100 file:px-3 file:py-2 file:text-sm file:font-medium focus:border-[var(--accent)]"
+        />
+      </label>
       {sampleAudioFile ? <span className="block text-xs font-semibold text-[var(--accent-strong)]">選択済みの音声があります</span> : null}
+      {previewUrl ? (
+        <div className="space-y-2">
+          <audio data-testid="voice-create-file-preview" controls src={previewUrl} className="w-full" aria-label="選択した元声音声を確認" />
+          <span className="block text-xs leading-5 text-ink-600">この音声を聞いて確認できます。変更する場合は別のファイルを選んでください。</span>
+        </div>
+      ) : null}
       <span className="block text-xs leading-5 text-ink-600">
         この音声サンプルは通常のお手本ボイス用です。保存済みベスト録音を、別機能の音声素材として自動送信することはありません。
       </span>
-    </label>
+    </div>
   );
 }
