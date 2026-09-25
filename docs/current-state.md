@@ -1,6 +1,8 @@
 # 現在の状態
 
-2026-09-25 **script-length mainline source integrated／0035 Staging NOT APPLIED**。foundation CLOSED の `b2ffe84` を維持し、`c1092818` → `8e80a78` の200語・trim後JavaScript文字長2,000上限とauthenticated直RPC guardを統合。0035はlocal隔離PostgreSQLでのみ検証し、Staging DB適用・手動BFF配備・native install・provider実行は未実施。pushに伴うStaging Vercelの自動デプロイは完了、非Staging PreviewはIgnored Build StepでCANCELED。Production変更なし。
+2026-09-25 **小人数βのAI台本生成をmainlineに統合**。`NATIVE_MINUTE_ENABLE_AI_SCRIPT_GENERATION` はserver側で既定OFF。WebのAI入口を隠し、生成APIとserviceはprovider選択前に403で拒否する。ONでは既存mock/local生成経路を維持。production preflightはOFF時に生成providerを要求せず、ON時だけ`SCRIPT_GENERATION_PROVIDER=openai`を要求する。OpenAI transcriptionのprovider・`OPENAI_API_KEY`と他のrelease guardは維持。テンプレ・手動作成編集・保存済み履歴には影響しない。DB・provider・native app・Productionは未変更。
+
+2026-09-25 **script-length 0035 Staging APPLIED / VERIFIED**。`52431b64` の0035だけを専用Stagingへ通常のlinked CLI経路で1回適用。ledgerは0001–0035連続、live 3関数の本体はsourceと字句一致、権限維持。authenticated直RPCの200語/2,000 JS文字境界、拒否時のrevision等不変、既存長文のtitle-only編集をtransactional smoke + ROLLBACKで確認。既存scripts/revisionsの全行digest不変、合成Authユーザー残存0。手動BFF配備・native install・provider実行・Production変更なし。Staging Vercelの`52431b64` source自動配備と非Staging PreviewのCANCELEDは先行済み。
 
 2026-09-24 **revision/archive/active-10 foundation Staging / Human / target revision provider E2E CLOSED**。0033/0034適用、legacy 7 Take保全、対象revision 2の新89点Takeと旧88点all-time履歴の分離をread-only確認。Production変更なし。quota / AI-generation disable / recording guide / brand-logoは別WIP。[最終closeout](script-revision-archive-foundation-final-closeout-20260924.md)。以下は当時の履歴。
 

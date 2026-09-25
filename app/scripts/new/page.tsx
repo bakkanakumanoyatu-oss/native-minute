@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { buildLoginHref } from "@/lib/navigation";
+import { isAiScriptGenerationEnabled } from "@/lib/script-studio/generation-capability";
 import { getScriptListenPath } from "@/lib/script-routes";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { NewScriptWorkspace } from "@/components/scripts/new-script-workspace";
@@ -29,6 +30,7 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
     listScripts(supabase, user.id)
   ]);
   const sourceScriptMissing = Boolean(sourceScriptId) && !sourceScript;
+  const aiScriptGenerationEnabled = isAiScriptGenerationEnabled();
   const isFull = scripts.length >= MAX_PRACTICE_SLOTS;
   const initialValues = sourceScript
     ? {
@@ -44,7 +46,11 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
       <div className="border-b border-[var(--line-subtle)] bg-[radial-gradient(circle_at_top_left,rgba(200,121,63,0.18),transparent_34%),linear-gradient(135deg,var(--studio-surface-secondary),var(--booth-wall-soft)_58%,var(--studio-surface-inset))] p-6 sm:p-8">
         <p className="text-sm font-semibold text-[var(--studio-accent-strong)]">今日の台本</p>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">1分スタジオに置く台本を用意する</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-700">テンプレート、自分の言葉、AI下書きから選んで、最後は自分が話す1分に整えます。</p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-700">
+          {aiScriptGenerationEnabled
+            ? "テンプレート、自分の言葉、AI下書きから選んで、最後は自分が話す1分に整えます。"
+            : "テンプレートか自分の言葉から選んで、最後は自分が話す1分に整えます。"}
+        </p>
         <div className="mt-5 grid gap-2 text-sm font-semibold sm:max-w-xs">
           <Link href="/scripts" className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-ink-800 transition hover:bg-[var(--surface-inset-strong)]">
             1分ストックへ戻る
@@ -74,7 +80,7 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
             </Link>
           </div>
         ) : (
-          <NewScriptWorkspace initialValues={initialValues} sourceTitle={sourceScript?.title ?? null} />
+          <NewScriptWorkspace initialValues={initialValues} sourceTitle={sourceScript?.title ?? null} aiScriptGenerationEnabled={aiScriptGenerationEnabled} />
         )}
       </div>
     </section>

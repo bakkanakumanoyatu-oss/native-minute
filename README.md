@@ -300,6 +300,8 @@ directな`simctl install` / `simctl launch`は、同checkerをPASSした`.app`�
 
 ## main loop
 
+小人数βではAI台本生成を既定で停止しています。`/scripts/new` はテンプレと手動作成を表示し、生成APIへの直接POSTも403で拒否します。server側の `NATIVE_MINUTE_ENABLE_AI_SCRIPT_GENERATION=1` を明示した場合だけ、既存の生成経路を再公開できます。この設定はOpenAI transcriptionや保存済み台本に影響しません。production preflightは生成OFFなら `SCRIPT_GENERATION_PROVIDER` を要求せず、生成ONなら従来どおり `openai` を要求します。`OPENAI_API_KEY` はtranscriptionのため生成OFFでも必要です。
+
 1. `login` する
 2. 必要なときだけ `/setup/voice` で同意と既定の voice を整える
 3. `/scripts` で固定1分台本を作る
@@ -427,13 +429,14 @@ Mobile Personal Space P2（Favorite / 録音名 / My Takes）は `0031_take_pers
 3. 必要に応じて provider env を設定する
    - Web production / production-like check は `npm run production:preflight` を実行する
    - production guard は `VERCEL_ENV=production`、`NATIVE_MINUTE_ENV=production`、または `NATIVE_MINUTE_PRODUCTION_GUARD=1` で有効になる
-   - production では `VOICE_PROVIDER=elevenlabs`、`TRANSCRIPTION_PROVIDER=openai`、`PRONUNCIATION_PROVIDER=azure`、`SCRIPT_GENERATION_PROVIDER=openai` を要求し、mock provider と `E2E_TEST_*` env は blocked にする
+   - production では `VOICE_PROVIDER=elevenlabs`、`TRANSCRIPTION_PROVIDER=openai`、`PRONUNCIATION_PROVIDER=azure` を要求する。AI台本生成を明示的に有効化した場合だけ `SCRIPT_GENERATION_PROVIDER=openai` も要求し、対象となるmock provider と `E2E_TEST_*` env は blocked にする
    - Supabase / Storage / RLS の production 前確認は [docs/gate1b-supabase-storage-rls-runbook.md](./docs/gate1b-supabase-storage-rls-runbook.md) に従い、non-destructive checker として `npm run supabase:storage-rls:check` を使う
    - `VOICE_PROVIDER=mock`
    - `VOICE_PROVIDER=elevenlabs` (v1 mainline の voice provider)
    - `VOICE_PROVIDER=openai` (v1 mainline では使わない experimental voice provider)
    - `SCRIPT_GENERATION_PROVIDER=mock`
    - `SCRIPT_GENERATION_PROVIDER=openai` (Script Studio live smoke 時だけ)
+   - `NATIVE_MINUTE_ENABLE_AI_SCRIPT_GENERATION=0` (β既定。serverで明示的に `1` にした場合だけAI台本生成を有効化)
    - `TRANSCRIPTION_PROVIDER=mock`
    - `TRANSCRIPTION_PROVIDER=openai`
    - `PRONUNCIATION_PROVIDER=mock`

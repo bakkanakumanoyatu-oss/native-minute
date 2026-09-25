@@ -1,6 +1,7 @@
 import { AppError } from "@/lib/errors";
 import { getCostGuardIssue } from "@/lib/cost-guard";
 import { getProductionProviderGuardIssue } from "@/lib/production-guard";
+import { assertAiScriptGenerationEnabled } from "@/lib/script-studio/generation-capability";
 import {
   createMockScriptGenerationProvider,
   runAsyncScriptGenerationPipeline,
@@ -71,6 +72,8 @@ export async function generateScriptStudioDrafts(
   input: ScriptStudioGenerationRequestInput,
   context: { userId: string }
 ): Promise<SafeScriptStudioGenerationResponse> {
+  assertAiScriptGenerationEnabled();
+
   const request = toScriptGenerationRequest(input);
   const providerSelection = getScriptGenerationProviderSelection();
   const providerModel = getScriptGenerationProviderModel(providerSelection.providerName);

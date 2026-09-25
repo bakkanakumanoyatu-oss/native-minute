@@ -16,7 +16,7 @@ const REQUIRED_PRODUCTION_ENV = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "OPENAI_API_KEY",
+  "OPENAI_API_KEY", // OpenAI transcription still requires this when script generation is off.
   "AZURE_SPEECH_KEY",
   "AZURE_SPEECH_REGION",
   "ELEVENLABS_API_KEY",
@@ -78,6 +78,7 @@ function printCheck(label, ok, okMessage, failMessage) {
 }
 
 const strictProduction = isStrictProductionRuntime();
+const scriptGenerationEnabled = isTruthy(process.env.NATIVE_MINUTE_ENABLE_AI_SCRIPT_GENERATION);
 let blocked = false;
 
 console.log("Native Minute production readiness preflight");
@@ -90,6 +91,11 @@ if (!strictProduction) {
 }
 
 for (const [envName, expectedValue] of Object.entries(REQUIRED_PRODUCTION_PROVIDERS)) {
+  if (envName === "SCRIPT_GENERATION_PROVIDER" && !scriptGenerationEnabled) {
+    printCheck(envName, true, "not required while AI script generation is disabled", "");
+    continue;
+  }
+
   const actualValue = providerValue(envName);
   const ok = actualValue === expectedValue;
   blocked = blocked || !ok;

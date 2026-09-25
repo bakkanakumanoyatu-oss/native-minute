@@ -10,6 +10,7 @@ type ScriptStudioEntryModesProps = {
   activeMode: ScriptStudioEntryMode | null;
   onModeChange: (mode: ScriptStudioEntryMode) => void;
   onUseTemplate: (template: ScriptStudioTemplate) => void;
+  aiScriptGenerationEnabled: boolean;
 };
 
 const ENTRY_MODES: Array<{
@@ -38,7 +39,7 @@ const ENTRY_MODES: Array<{
   }
 ];
 
-export function ScriptStudioEntryModes({ activeMode, onModeChange, onUseTemplate }: ScriptStudioEntryModesProps) {
+export function ScriptStudioEntryModes({ activeMode, onModeChange, onUseTemplate, aiScriptGenerationEnabled }: ScriptStudioEntryModesProps) {
   return (
     <section className="rounded-[1.75rem] border border-[var(--line-inset)] bg-[var(--surface-secondary)] px-4 py-5 shadow-[var(--shadow-studio-soft)]">
       <div>
@@ -46,8 +47,8 @@ export function ScriptStudioEntryModes({ activeMode, onModeChange, onUseTemplate
         <h2 className="mt-2 text-xl font-semibold text-ink-900">今日の1分をどう作る？</h2>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        {ENTRY_MODES.map((mode) => {
+      <div className={`mt-4 grid gap-3 ${aiScriptGenerationEnabled ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+        {ENTRY_MODES.filter((mode) => aiScriptGenerationEnabled || mode.id !== "ai").map((mode) => {
           const isActive = activeMode === mode.id;
 
           return (
@@ -73,7 +74,7 @@ export function ScriptStudioEntryModes({ activeMode, onModeChange, onUseTemplate
         <div className="mt-5">
           {activeMode === "template" ? <TemplateEntry onUseTemplate={onUseTemplate} /> : null}
           {activeMode === "freewriting" ? <FreewritingEntry /> : null}
-          {activeMode === "ai" ? (
+          {aiScriptGenerationEnabled && activeMode === "ai" ? (
             <div className="rounded-2xl border border-[var(--line-inset)] bg-[var(--coach-note)] px-4 py-4 text-sm leading-6 text-ink-700">
               <p className="font-semibold text-ink-900">AIに1分スクリプトを書かせる</p>
             </div>

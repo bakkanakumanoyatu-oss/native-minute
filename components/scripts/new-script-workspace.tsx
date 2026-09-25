@@ -9,9 +9,10 @@ import type { ScriptStudioTemplate } from "@/lib/script-studio/templates";
 type NewScriptWorkspaceProps = {
   initialValues?: ScriptFormInitialValues;
   sourceTitle?: string | null;
+  aiScriptGenerationEnabled: boolean;
 };
 
-export function NewScriptWorkspace({ initialValues, sourceTitle = null }: NewScriptWorkspaceProps) {
+export function NewScriptWorkspace({ initialValues, sourceTitle = null, aiScriptGenerationEnabled }: NewScriptWorkspaceProps) {
   const [draftCopy, setDraftCopy] = useState<ScriptFormDraftCopy | null>(null);
   const [entryMode, setEntryMode] = useState<ScriptStudioEntryMode | null>(initialValues ? "freewriting" : null);
   const formSectionRef = useRef<HTMLDivElement | null>(null);
@@ -54,9 +55,9 @@ export function NewScriptWorkspace({ initialValues, sourceTitle = null }: NewScr
   return (
     <>
       <div>
-        <ScriptStudioEntryModes activeMode={entryMode} onModeChange={setEntryMode} onUseTemplate={handleUseTemplate} />
+        <ScriptStudioEntryModes activeMode={entryMode} onModeChange={setEntryMode} onUseTemplate={handleUseTemplate} aiScriptGenerationEnabled={aiScriptGenerationEnabled} />
       </div>
-      {entryMode === "ai" ? (
+      {aiScriptGenerationEnabled && entryMode === "ai" ? (
         <div className="mt-8">
           <ScriptStudioMockPanel onCopyDraft={handleCopyDraft} />
         </div>
