@@ -6,6 +6,7 @@ import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { createVoiceRequestSchema } from "@/schemas/voice";
 import { createUserVoice } from "@/services/voice";
+import { BetaQuotaError } from "@/services/quota/beta-quota.service";
 
 export async function POST(request: NextRequest) {
   if (!hasSupabaseConfig()) {
@@ -26,6 +27,7 @@ export async function POST(request: NextRequest) {
     const voice = await createUserVoice(supabase, user.id, parsed.data);
     return supabase.applyToResponse(jsonOk({ voice }));
   } catch (error) {
-    return supabase.applyToResponse(jsonError(getErrorMessage(error, "voice の作成に失敗しました。"), getErrorStatus(error, 500)));
+    return supabase.applyToResponse(jsonError(getErrorMessage(error, "voice の作成に失敗しました。"), getErrorStatus(error, 500),
+      error instanceof BetaQuotaError ? { code: error.code, retryable: false } : undefined));
   }
 }

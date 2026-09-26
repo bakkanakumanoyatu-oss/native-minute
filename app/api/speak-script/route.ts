@@ -6,6 +6,7 @@ import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { speakScriptRequestSchema } from "@/schemas/voice";
 import { speakScript } from "@/services/voice";
+import { BetaQuotaError } from "@/services/quota/beta-quota.service";
 
 export async function POST(request: NextRequest) {
   if (!hasSupabaseConfig()) {
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (error) {
-    return jsonError(getErrorMessage(error, "お手本ボイスを生成できませんでした。"), getErrorStatus(error, 500));
+    return jsonError(getErrorMessage(error, "お手本ボイスを生成できませんでした。"), getErrorStatus(error, 500),
+      error instanceof BetaQuotaError ? { code: error.code, retryable: false } : undefined);
   }
 }

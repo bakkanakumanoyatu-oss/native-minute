@@ -105,7 +105,7 @@ export interface PracticeApi {
   advanceVoiceDeletion(): Promise<MobileVoiceDeletionRequestState>;
   acceptPronunciationConsent(): Promise<MobileProcessingConsentRequestState>;
   acceptVoiceConsent(): Promise<MobileVoiceSetupRequestState>;
-  createVoiceFromSample(sample: File): Promise<MobileVoiceSetupRequestState>;
+  createVoiceFromSample(sample: File, operationId?: string): Promise<MobileVoiceSetupRequestState>;
   downloadAudio(audioId: string): Promise<MobileAudioDownloadState>;
   downloadTakeAudio(takeId: string): Promise<MobileTakeAudioDownloadState>;
   uploadRecording(input: UploadMobileRecordingInput): Promise<MobileRecordingUploadState>;
@@ -180,7 +180,11 @@ export function getPracticeErrorCopy(state: PracticeRequestFailure | RequestStat
     case "forbidden":
       return "このデータを表示する権限を確認できませんでした。";
     case "conflict":
-      return state.reasonCode === "evaluation_in_progress"
+      return state.reasonCode === "quota_limit_reached"
+        ? "今はこの操作の利用上限に達しています。"
+        : state.reasonCode === "quota_operation_already_used"
+        ? "この操作は処理済みか確認中です。結果を確認してください。"
+        : state.reasonCode === "evaluation_in_progress"
         ? "同じTakeを評価中です。少し待ってから再試行してください。"
         : "この操作を完了できませんでした。内容を確認して再試行してください。";
     case "invalid-request":
@@ -466,8 +470,9 @@ export function createPracticeApi({
       return existing;
     }
 
+    const operationId = crypto.randomUUID();
     const pending = request((token) =>
-      requestMobileScriptListen(bffBaseUrl, token, scriptId, { onTiming, ...identity })
+      requestMobileScriptListen(bffBaseUrl, token, scriptId, { onTiming, ...identity, operationId })
     );
     listenRequests.set(requestKey, pending);
     const clearPending = () => {
@@ -517,7 +522,7 @@ export function createPracticeApi({
     acceptPronunciationConsent: () => request((token) => acceptMobilePronunciationConsent(bffBaseUrl, token, { onTiming })),
     getVoiceSetup: () => request((token) => fetchMobileVoiceSetup(bffBaseUrl, token, { onTiming })),
     acceptVoiceConsent: () => request((token) => acceptMobileVoiceConsent(bffBaseUrl, token, { onTiming })),
-    createVoiceFromSample: (sample) => request((token) => createMobileVoiceFromSample(bffBaseUrl, token, sample, { onTiming })),
+    createVoiceFromSample: (sample, operationId) => request((token) => createMobileVoiceFromSample(bffBaseUrl, token, sample, { onTiming, operationId })),
     downloadAudio: (audioId) => request((token) => downloadMobileScriptAudio(bffBaseUrl, token, audioId, { onTiming })),
     downloadTakeAudio: (takeId) => afterMetadataWrites(() => request((token) => downloadMobileTakeAudio(bffBaseUrl, token, takeId, { onTiming }))),
     uploadRecording: (input) => request((token) => uploadMobileRecording(bffBaseUrl, token, input, { onTiming })),

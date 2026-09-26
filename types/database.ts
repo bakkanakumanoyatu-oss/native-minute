@@ -1311,9 +1311,41 @@ export interface Database {
         };
         Relationships: [];
       };
+      beta_quota_global_usage: {
+        Row: { kind: string; period_id: string; used_count: number; created_at: string; updated_at: string };
+        Insert: { kind: string; period_id: string; used_count?: number; created_at?: string; updated_at?: string };
+        Update: { kind?: string; period_id?: string; used_count?: number; created_at?: string; updated_at?: string };
+        Relationships: [];
+      };
+      beta_quota_reservations: {
+        Row: {
+          id: string; operation_id: string; user_id: string; kind: string; period_id: string; reserved_expires_at: string;
+          status: string; provider_started_at: string | null; consumed_at: string | null;
+          released_at: string | null; created_at: string; updated_at: string;
+        };
+        Insert: {
+          id?: string; operation_id: string; user_id: string; kind: string; period_id: string; reserved_expires_at?: string;
+          status: string; provider_started_at?: string | null; consumed_at?: string | null;
+          released_at?: string | null; created_at?: string; updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["beta_quota_reservations"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      reserve_beta_provider_quota: {
+        Args: { p_user_id: string; p_kind: string; p_operation_id: string; p_period_kind: string; p_user_limit: number; p_global_limit: number };
+        Returns: Json;
+      };
+      transition_beta_provider_quota: {
+        Args: { p_user_id: string; p_reservation_id: string; p_transition: string };
+        Returns: string;
+      };
+      begin_voice_registration_with_beta_quota: {
+        Args: { p_user_id: string; p_reservation_id: string; p_intent_id: string; p_lease_token: string };
+        Returns: boolean;
+      };
       create_script: { Args: { p_title: string; p_content: string; p_locale: string; p_target_seconds: number }; Returns: Database["public"]["Tables"]["scripts"]["Row"] };
       edit_script: { Args: { p_script_id: string; p_expected_revision_id: string; p_expected_lock_version: number; p_patch: Json }; Returns: Database["public"]["Tables"]["scripts"]["Row"] };
       set_script_archived: { Args: { p_script_id: string; p_archived: boolean; p_expected_lock_version: number }; Returns: Database["public"]["Tables"]["scripts"]["Row"] };

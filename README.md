@@ -302,6 +302,8 @@ directな`simctl install` / `simctl launch`は、同checkerをPASSした`.app`�
 
 小人数βではAI台本生成を既定で停止しています。`/scripts/new` はテンプレと手動作成を表示し、生成APIへの直接POSTも403で拒否します。server側の `NATIVE_MINUTE_ENABLE_AI_SCRIPT_GENERATION=1` を明示した場合だけ、既存の生成経路を再公開できます。この設定はOpenAI transcriptionや保存済み台本に影響しません。production preflightは生成OFFなら `SCRIPT_GENERATION_PROVIDER` を要求せず、生成ONなら従来どおり `openai` を要求します。`OPENAI_API_KEY` はtranscriptionのため生成OFFでも必要です。
 
+β quota enforcementは`0036_beta_provider_quota_reservations.sql`を適用した環境で、server側の`NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT=1`を明示した場合だけ有効です。見本音声のcache miss、発音評価、声の作成に各々per-user/global上限とperiod（`calendar_month_utc`または`account_lifetime`）を設定します。9個のpolicy値のいずれかが欠けると、provider呼出し前に停止し、strict production preflightもBLOCKします。値は[.env.example](./.env.example)を参照してください。今回の実装では数値とperiodを決めず、live環境にも設定していません。既存`quota_events`は引き続き監査専用です。
+
 1. `login` する
 2. 必要なときだけ `/setup/voice` で同意と既定の voice を整える
 3. `/scripts` で固定1分台本を作る

@@ -1,5 +1,9 @@
 # 現在の状態
 
+2026-09-26 **DB-backed β quota enforcement LOCAL PASS**。0036とserver-only policyで見本音声cache miss・発音評価・声の作成のper-user/global atomic予約を実装。上限6値とperiod3値はHuman未決定で、enforcement既定OFF。isolated DB・focused tests、lint/typecheck/build PASS。Staging apply/env/deploy、provider、実Productionへの操作なし。
+
+2026-09-26 **brand Human actual-device CLOSED**。AppIcon、Native Minutes表示、Home/台本/成長/My Takes/設定のarrow、既存履歴はHuman PASS。Splashはsigned bundle内full-logoを確認済みでHuman目視は未観測、nonblocking。brandを再openしない。
+
 2026-09-26 **保存済み台本の新規お手本生成だけ長さguardをmainline commit**。所有・revision/epoch・cache identity確認後、正しい保存済み音声は長文でも再利用。cache missで200語またはtrim後2,000 JavaScript UTF-16 units超過ならwriter intent予約とprovider呼出し前に拒否し、本文編集を案内する。本文・履歴・revision/epoch・DB/provider契約は変更なし。`d2c7b521` の専用Staging BFF配備・canonical alias切替、Staging native build/sign・同iPhone上書きinstallはPASS。Human実機で起動・既存履歴、200語超過の入力保持＋保存拒否をPASS。voice recording guideのHuman確認はvoice-readyアカウントではN/Aで、確認目的で既存voiceを削除しない。actual Production projectは未変更。
 
 2026-09-25 **小人数βのAI台本生成をmainlineに統合**。`NATIVE_MINUTE_ENABLE_AI_SCRIPT_GENERATION` はserver側で既定OFF。WebのAI入口を隠し、生成APIとserviceはprovider選択前に403で拒否する。ONでは既存mock/local生成経路を維持。production preflightはOFF時に生成providerを要求せず、ON時だけ`SCRIPT_GENERATION_PROVIDER=openai`を要求する。OpenAI transcriptionのprovider・`OPENAI_API_KEY`と他のrelease guardは維持。テンプレ・手動作成編集・保存済み履歴には影響しない。DB・provider・native app・Productionは未変更。

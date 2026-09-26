@@ -24,6 +24,7 @@ export const voiceSampleReferenceSchema = z.object({
 });
 
 export const createVoiceRequestSchema = z.object({
+  operationId: z.string().uuid("操作 ID を確認してください。").optional(),
   consentId: z.string().uuid("consent ID を確認してください。"),
   label: z.string().trim().min(1, "voice 名を入力してください。").max(80),
   sampleAudio: voiceSampleReferenceSchema.optional(),
@@ -32,6 +33,7 @@ export const createVoiceRequestSchema = z.object({
 
 export const speakScriptRequestSchema = z.object({
   ...practiceIdentitySchema.shape,
+  operationId: z.string().uuid("操作 ID を確認してください。").optional(),
   scriptId: z.string().uuid("script ID を確認してください。"),
   voiceId: z.string().uuid("voice ID を確認してください。").optional(),
   // Current public listen API remains on the original four presets.

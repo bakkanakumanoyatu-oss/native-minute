@@ -1,4 +1,4 @@
-export const ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION = "script-revision.account-db.v2" as const;
+export const ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION = "beta-quota.account-db.v3" as const;
 
 export type AccountDeletionDatabaseDisposition =
   | "DELETE"
@@ -14,7 +14,7 @@ export type AccountDeletionDatabaseTableContract = {
   authority: string;
 };
 
-// v2 includes revision text and registered-source cascade children. v1 evidence is retained.
+// v3 includes owned quota reservations. Anonymous global usage has no account identity.
 export const ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT = [
   { table: "profiles", disposition: "DELETE", authority: "owned profile; delete explicitly before Auth" },
   { table: "scripts", disposition: "DELETE", authority: "owned scripts after Storage absence" },
@@ -60,6 +60,12 @@ export const ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT = [
     table: "quota_events",
     disposition: "ANONYMIZE_RETAIN",
     authority: "scrub identifiers and retain safe classifications until attempted_at + 90 days"
+  },
+  {
+    table: "beta_quota_reservations",
+    disposition: "BLOCKING_AUTHORITY",
+    resolvedDisposition: "DELETE",
+    authority: "active reservations block; terminal rows delete with exact inventory while global usage remains charged"
   },
   {
     table: "account_deletion_storage_targets",

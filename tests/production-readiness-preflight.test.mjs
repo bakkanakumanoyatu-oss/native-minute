@@ -98,3 +98,30 @@ test("other provider and release guards still block unsafe production settings",
     expectBlocked(runPreflight(overrides), expectedLine);
   }
 });
+
+test("quota enforcement OFF needs no allowance or period in dev and production", () => {
+  expectPass(runPreflight({ NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT: "0" }));
+  const dev = runPreflight({ VERCEL_ENV: "development", NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT: "1" });
+  assert.equal(dev.status, 0);
+});
+
+test("quota enforcement ON blocks an incomplete small cohort policy", () => {
+  expectBlocked(runPreflight({ NATIVE_MINUTE_LAUNCH_MODE: "small_cohort", NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT: "1" }),
+    /\[BLOCKED\] NATIVE_MINUTE_QUOTA_REFERENCE_AUDIO_PER_USER_LIMIT/);
+});
+
+test("quota enforcement ON accepts a complete injected test policy", () => {
+  expectPass(runPreflight({
+    NATIVE_MINUTE_LAUNCH_MODE: "small_cohort",
+    NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT: "1",
+    NATIVE_MINUTE_QUOTA_REFERENCE_AUDIO_PER_USER_LIMIT: "2",
+    NATIVE_MINUTE_QUOTA_REFERENCE_AUDIO_GLOBAL_LIMIT: "3",
+    NATIVE_MINUTE_QUOTA_REFERENCE_AUDIO_PERIOD: "calendar_month_utc",
+    NATIVE_MINUTE_QUOTA_EVALUATION_PER_USER_LIMIT: "2",
+    NATIVE_MINUTE_QUOTA_EVALUATION_GLOBAL_LIMIT: "3",
+    NATIVE_MINUTE_QUOTA_EVALUATION_PERIOD: "account_lifetime",
+    NATIVE_MINUTE_QUOTA_VOICE_CREATION_PER_USER_LIMIT: "2",
+    NATIVE_MINUTE_QUOTA_VOICE_CREATION_GLOBAL_LIMIT: "3",
+    NATIVE_MINUTE_QUOTA_VOICE_CREATION_PERIOD: "account_lifetime"
+  }));
+});

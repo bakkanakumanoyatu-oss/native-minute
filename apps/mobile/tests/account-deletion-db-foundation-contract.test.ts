@@ -28,10 +28,10 @@ const databaseTypes = readFileSync(
 );
 
 describe("G5D-2H exact current DB contract", () => {
-  it("fixes the current public inventory at exactly 20 unique tables", () => {
-    expect(ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION).toBe("script-revision.account-db.v2");
-    expect(ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT).toHaveLength(20);
-    expect(new Set(ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT.map(({ table }) => table)).size).toBe(20);
+  it("fixes the current owned inventory at exactly 21 unique tables", () => {
+    expect(ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION).toBe("beta-quota.account-db.v3");
+    expect(ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT).toHaveLength(21);
+    expect(new Set(ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT.map(({ table }) => table)).size).toBe(21);
     expect(ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT.map(({ table }) => table)).toEqual([
       "profiles",
       "scripts",
@@ -52,6 +52,7 @@ describe("G5D-2H exact current DB contract", () => {
       "account_deletion_requests",
       "account_deletion_provider_targets",
       "quota_events",
+      "beta_quota_reservations",
       "account_deletion_storage_targets"
     ]);
   });

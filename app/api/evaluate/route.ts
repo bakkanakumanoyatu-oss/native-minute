@@ -7,6 +7,7 @@ import { getErrorMessage, getErrorStatus } from "@/lib/errors";
 import { evaluateRequestSchema } from "@/schemas/evaluate";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import { createPersistedReview } from "@/services/review/review.service";
+import { BetaQuotaError } from "@/services/quota/beta-quota.service";
 
 export async function POST(request: NextRequest) {
   if (!hasSupabaseConfig()) {
@@ -33,6 +34,7 @@ export async function POST(request: NextRequest) {
       coach: review.coach
     });
   } catch (error) {
-    return jsonError(getErrorMessage(error, "評価に失敗しました。"), getErrorStatus(error, 500));
+    return jsonError(getErrorMessage(error, "評価に失敗しました。"), getErrorStatus(error, 500),
+      error instanceof BetaQuotaError ? { code: error.code, retryable: false } : undefined);
   }
 }

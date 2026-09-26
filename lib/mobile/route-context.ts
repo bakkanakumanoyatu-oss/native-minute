@@ -2,6 +2,7 @@ import { ScriptStateError } from "@/services/scripts/scripts.service";
 import type { User } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { AppError } from "@/lib/errors";
+import { BetaQuotaError } from "@/services/quota/beta-quota.service";
 import { timeAsync } from "@/lib/performance/timing";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
@@ -183,6 +184,10 @@ export function mapMobileServiceError(
   }
 ) {
   const status = error instanceof AppError ? error.status : 500;
+
+  if (error instanceof BetaQuotaError) {
+    return mobileApiError(origin, error.status, error.code as MobileApiReasonCode);
+  }
 
   if (error instanceof ScriptStateError) return mobileApiError(origin, error.status, error.reasonCode === "account_deletion_active" ? "account_deletion_in_progress" : error.reasonCode as MobileApiReasonCode);
   if (status === 400 || status === 422) {

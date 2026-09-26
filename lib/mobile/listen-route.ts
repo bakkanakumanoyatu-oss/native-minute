@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { timeAsync } from "@/lib/performance/timing";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import { parseScriptAudioPlaybackPath } from "@/lib/voice-playback-path";
@@ -56,7 +57,8 @@ export async function handleMobileListenPost(
     return mobileApiError(origin, 400, "request_invalid");
   }
 
-  const identity = practiceIdentitySchema.strict().safeParse(await request.json().catch(() => null));
+  const identity = practiceIdentitySchema.extend({ operationId: z.string().uuid().optional() })
+    .strict().safeParse(await request.json().catch(() => null));
   if (!identity.success) return mobileApiError(origin, 400, "request_invalid");
   try {
     const script = await timeAsync("mobile.listen.ownership", () =>

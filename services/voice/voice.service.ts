@@ -40,8 +40,9 @@ import {
   type QuotaEventRef,
   type VoiceGenerationQuotaKeys
 } from "@/services/quota";
+import { reserveBetaQuota } from "@/services/quota/beta-quota.service";
 import { buildScriptAudioCacheKey } from "./cache";
-import { createVoiceAssetWriteIntentRepository } from "./voice-asset-write-intent.repository";
+import { createVoiceAssetWriteIntentRepository, type VoiceAssetWriteReservation } from "./voice-asset-write-intent.repository";
 import {
   decodeStoredAssetMetadata,
   encodeStoredAssetMetadata,
@@ -546,24 +547,54 @@ export async function createUserVoice(client: AppSupabaseClient, userId: string,
   }
 
   const provider = createConfiguredVoiceProvider();
-  const writeIntents = createVoiceAssetWriteIntentRepository();
-  const reservation = await writeIntents.reserveRegistration({
-    userId, kind: "voice_create", leaseToken: randomUUID(), consentId: consent.id,
-    provider: providerStatus.provider, samplePath: resolvedSampleAudio?.audioPath ?? null
+  const quota = await reserveBetaQuota({
+    userId, kind: "voice_creation", operationId: input.operationId ?? ""
   });
-  await writeIntents.beginRegistration({ ...reservation, userId });
+  const writeIntents = createVoiceAssetWriteIntentRepository();
+  let reservation: VoiceAssetWriteReservation | undefined;
+  try {
+    reservation = await writeIntents.reserveRegistration({
+      userId, kind: "voice_create", leaseToken: randomUUID(), consentId: consent.id,
+      provider: providerStatus.provider, samplePath: resolvedSampleAudio?.audioPath ?? null
+    });
+    const admittedReservation = reservation;
+    await quota.startVoiceRegistration({
+      ...admittedReservation,
+      beginWithoutQuota: () => writeIntents.beginRegistration({ ...admittedReservation, userId })
+    });
+  } catch (error) {
+    if (reservation) {
+      try {
+        await writeIntents.cancelKnownNoSideEffect({ ...reservation, userId });
+      } catch {
+        // A lost dispatch response may have committed; keep the intent and
+        // charged quota for reconciliation in that case.
+      }
+    }
+    await quota.releaseIfUnreached();
+    throw error;
+  }
   // Fixed boundary:
   // - service resolves owned sample references before provider calls
   // - provider adapter handles multipart/provider-specific createVoice details
   // - persisted voices row remains the canonical default-voice source for listen/cache flows
-  const created = await provider.createVoice({
-    userId,
-    consentId: consent.id,
-    providerConsentId: providerConsentId || undefined,
-    label: input.label,
-    sampleAudio: resolvedSampleAudio ?? undefined,
-    sampleAudioPath: resolvedSampleAudio?.audioPath
-  });
+  const created = await (async () => {
+    try {
+      const result = await provider.createVoice({
+        userId,
+        consentId: consent.id,
+        providerConsentId: providerConsentId || undefined,
+        label: input.label,
+        sampleAudio: resolvedSampleAudio ?? undefined,
+        sampleAudioPath: resolvedSampleAudio?.audioPath
+      });
+      await quota.consume();
+      return result;
+    } catch (error) {
+      await quota.failAfterProviderStart();
+      throw error;
+    }
+  })();
 
   return writeIntents.finalizeVoice({
     ...reservation,
@@ -914,6 +945,7 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   }
 
   await assertAuthenticatedVoiceMutationUser(client, userId);
+  const quota = await reserveBetaQuota({ userId, kind: "reference_audio_generation", operationId: input.operationId ?? "" });
   const reservedStorageObjectKey = buildScriptAudioStorageObjectKey({
     userId,
     scriptId: script.id,
@@ -923,20 +955,26 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   });
   const scriptAudioWriterClient = createSupabaseAdminClient();
   const writeIntents = createVoiceAssetWriteIntentRepository(scriptAudioWriterClient);
-  const reservation = await writeIntents.reserve({
-    userId,
-    kind: "script_audio_create",
-    scriptRevisionId: script.currentRevisionId,
-    scriptPracticeEpoch: script.practiceEpoch,
-    generationPreset: voiceStylePreset,
-    leaseToken: randomUUID(),
-    leaseSeconds: 900,
-    scriptId: script.id,
-    voiceId: selectedVoice.id,
-    cacheKey,
-    storageBucket: SCRIPT_AUDIO_STORAGE_BUCKET,
-    storageObjectKey: reservedStorageObjectKey
-  });
+  let reservation;
+  try {
+    reservation = await writeIntents.reserve({
+      userId,
+      kind: "script_audio_create",
+      scriptRevisionId: script.currentRevisionId,
+      scriptPracticeEpoch: script.practiceEpoch,
+      generationPreset: voiceStylePreset,
+      leaseToken: randomUUID(),
+      leaseSeconds: 900,
+      scriptId: script.id,
+      voiceId: selectedVoice.id,
+      cacheKey,
+      storageBucket: SCRIPT_AUDIO_STORAGE_BUCKET,
+      storageObjectKey: reservedStorageObjectKey
+    });
+  } catch (error) {
+    await quota.releaseIfUnreached();
+    throw error;
+  }
   const provider = createConfiguredVoiceProvider();
   const quotaEvent: QuotaEventRef | null = await withNonBlockingQuotaEventWrite("record voice generation quota attempt", () =>
     recordVoiceQuotaEventAttempt({
@@ -958,13 +996,18 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
   // script_audios points at the replay route reference.
   const synthesized = await (async () => {
     try {
-      return await timeAsync("voice.speakScript.providerSynthesize", () => provider.synthesize({
+      await quota.startProvider();
+      const result = await timeAsync("voice.speakScript.providerSynthesize", () => provider.synthesize({
         providerVoiceId: selectedVoice.provider_voice_id,
         text: script.content,
         locale: script.locale,
         voiceStylePreset
       }));
+      await quota.consume();
+      return result;
     } catch (error) {
+      await quota.failAfterProviderStart();
+      await quota.releaseIfUnreached();
       await markFailedVoiceQuotaEvent(quotaEvent, quotaContext, "provider_request");
       throw error;
     }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { NextRequest } from "next/server";
 import { assertCostGuardEnabled } from "@/lib/cost-guard";
+import { BetaQuotaError } from "@/services/quota/beta-quota.service";
 import { timeAsync } from "@/lib/performance/timing";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import { uploadOwnedVoiceSample } from "@/services/storage";
@@ -58,6 +59,7 @@ export interface MobileVoiceSetupRouteDependencies extends MobileRouteAuthDepend
       consentId: string;
       label: string;
       sampleAudio: { audioPath: string; contentType: string; byteLength: number };
+      operationId?: string;
     }
   ): Promise<{ created: boolean }>;
 }
@@ -89,7 +91,8 @@ function toSafeResponse(state: MobileVoiceSetupSnapshot, created = false) {
 function hasOnlyVoiceSampleField(formData: FormData) {
   const keys = Array.from(formData.keys());
 
-  return keys.length === 1 && keys[0] === "file" && formData.getAll("file").length === 1;
+  return keys.includes("file") && formData.getAll("file").length === 1
+    && (keys.length === 1 || (keys.length === 2 && keys.includes("operationId") && formData.getAll("operationId").length === 1));
 }
 
 async function loadSetupState(
@@ -172,8 +175,11 @@ async function handleSamplePost(
   }
 
   const file = formData.get("file");
+  const operationId = formData.has("operationId")
+    ? z.string().uuid().safeParse(formData.get("operationId"))
+    : { success: true as const, data: undefined };
 
-  if (!(file instanceof File) || file.size === 0) {
+  if (!(file instanceof File) || file.size === 0 || !operationId.success) {
     return mobileApiError(context.origin, 400, "voice_sample_invalid");
   }
 
@@ -205,7 +211,8 @@ async function handleSamplePost(
       dependencies.createDefaultVoiceIfMissing(context.client, context.userId, {
         consentId: current.consent!.id,
         label: "My voice",
-        sampleAudio: sample
+        sampleAudio: sample,
+        operationId: operationId.data
       })
     );
     const resolved = await loadSetupState(context.client, context.userId, dependencies);
@@ -214,6 +221,9 @@ async function handleSamplePost(
       ? mobileApiOk(context.origin, toSafeResponse(resolved, result.created))
       : unavailable(context.origin);
   } catch (error) {
+    if (error instanceof BetaQuotaError) {
+      return mobileApiError(context.origin, error.status, error.code as "quota_limit_reached" | "quota_operation_already_used" | "quota_operation_required");
+    }
     const status = typeof error === "object" && error !== null && "status" in error
       ? (error as { status?: unknown }).status
       : undefined;

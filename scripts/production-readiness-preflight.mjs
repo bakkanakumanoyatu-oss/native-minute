@@ -50,6 +50,12 @@ const COST_GUARD_KILL_SWITCHES = [
   }
 ];
 const DESTRUCTIVE_ACCOUNT_DELETION_ENV = "NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE";
+const BETA_QUOTA_ENABLE_ENV = "NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT";
+const BETA_QUOTA_POLICY_ENV = [
+  ["NATIVE_MINUTE_QUOTA_REFERENCE_AUDIO_PER_USER_LIMIT", "NATIVE_MINUTE_QUOTA_REFERENCE_AUDIO_GLOBAL_LIMIT", "NATIVE_MINUTE_QUOTA_REFERENCE_AUDIO_PERIOD"],
+  ["NATIVE_MINUTE_QUOTA_EVALUATION_PER_USER_LIMIT", "NATIVE_MINUTE_QUOTA_EVALUATION_GLOBAL_LIMIT", "NATIVE_MINUTE_QUOTA_EVALUATION_PERIOD"],
+  ["NATIVE_MINUTE_QUOTA_VOICE_CREATION_PER_USER_LIMIT", "NATIVE_MINUTE_QUOTA_VOICE_CREATION_GLOBAL_LIMIT", "NATIVE_MINUTE_QUOTA_VOICE_CREATION_PERIOD"]
+];
 
 function isSet(value) {
   return Boolean(value?.trim());
@@ -125,6 +131,27 @@ printCheck(
     ? "public_free requires DB-backed quota enforcement before production"
     : "set to private_beta or small_cohort before production"
 );
+
+const quotaSwitch = (process.env[BETA_QUOTA_ENABLE_ENV] ?? "").trim().toLowerCase();
+const quotaEnabled = isTruthy(quotaSwitch);
+const quotaSwitchValid = quotaEnabled || ["", "0", "false", "no", "off"].includes(quotaSwitch);
+blocked = blocked || !quotaSwitchValid;
+printCheck(BETA_QUOTA_ENABLE_ENV, quotaSwitchValid, quotaEnabled ? "enabled" : "disabled", "invalid value");
+if (quotaEnabled) {
+  for (const [userName, globalName, periodName] of BETA_QUOTA_POLICY_ENV) {
+    for (const limitName of [userName, globalName]) {
+      const value = (process.env[limitName] ?? "").trim();
+      const parsed = Number(value);
+      const ok = /^[1-9]\d*$/.test(value) && Number.isSafeInteger(parsed) && parsed <= 2_147_483_647;
+      blocked = blocked || !ok;
+      printCheck(limitName, ok, "valid positive limit", "positive integer limit required");
+    }
+    const period = (process.env[periodName] ?? "").trim();
+    const ok = period === "calendar_month_utc" || period === "account_lifetime";
+    blocked = blocked || !ok;
+    printCheck(periodName, ok, period, "calendar_month_utc or account_lifetime required");
+  }
+}
 
 for (const { envNames, label } of COST_GUARD_KILL_SWITCHES) {
   const enabledEnvName = envNames.find((envName) => isTruthy(process.env[envName]));

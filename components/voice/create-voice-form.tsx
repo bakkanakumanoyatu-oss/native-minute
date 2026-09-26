@@ -89,6 +89,7 @@ export function CreateVoiceForm({
   const router = useRouter();
   const [label, setLabel] = useState("自分の声");
   const [sampleAudioFile, setSampleAudioFile] = useState<File | null>(null);
+  const voiceOperationIdRef = useRef<string | null>(null);
   const [sampleAudioSource, setSampleAudioSource] = useState<VoiceSampleSource>(null);
   const [loading, setLoading] = useState(false);
   const submittingRef = useRef(false);
@@ -133,6 +134,7 @@ export function CreateVoiceForm({
     }
 
     submittingRef.current = true;
+    voiceOperationIdRef.current ??= crypto.randomUUID();
     setLoading(true);
     setMessage(null);
 
@@ -188,6 +190,7 @@ export function CreateVoiceForm({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
+          operationId: voiceOperationIdRef.current,
           consentId,
           label: trimmedLabel,
           sampleAudio
@@ -202,6 +205,7 @@ export function CreateVoiceForm({
       }
 
       setMessage(successMessage);
+      voiceOperationIdRef.current = null;
       router.refresh();
     } catch {
       setMessage("通信に失敗しました。少し待ってからお試しください。");
@@ -248,6 +252,7 @@ export function CreateVoiceForm({
             }
             onUseRecording={(file) => {
               setSampleAudioFile(file);
+              voiceOperationIdRef.current = null;
               setSampleAudioSource(file ? "recording" : null);
             }}
           />
@@ -263,6 +268,7 @@ export function CreateVoiceForm({
               sampleAudioFile={sampleAudioSource === "file" ? sampleAudioFile : null}
               onSelectFile={(file) => {
                 setSampleAudioFile(file);
+                voiceOperationIdRef.current = null;
                 setSampleAudioSource(file ? "file" : null);
               }}
             />
@@ -274,6 +280,7 @@ export function CreateVoiceForm({
               sampleAudioFile={sampleAudioSource === "file" ? sampleAudioFile : null}
               onSelectFile={(file) => {
                 setSampleAudioFile(file);
+                voiceOperationIdRef.current = null;
                 setSampleAudioSource(file ? "file" : null);
               }}
             />

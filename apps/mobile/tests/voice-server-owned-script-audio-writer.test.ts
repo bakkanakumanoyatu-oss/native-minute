@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import { getScriptLength, getScriptLengthError, SCRIPT_LENGTH_EDIT_GUIDANCE } from "@/lib/script-length";
 import { buildScriptAudioCacheKey } from "@/services/voice/cache";
@@ -174,6 +174,7 @@ describe("G5C-B4 server-owned Listen cache writer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+  afterEach(() => vi.unstubAllEnvs());
 
   it("re-authenticates, validates owned script/voice/cache identity, and writes through the server client", async () => {
     const { client, rpc } = configureHappyPath();
@@ -209,6 +210,7 @@ describe("G5C-B4 server-owned Listen cache writer", () => {
     ["2,001 UTF-16 units", "a".repeat(2001)],
     ["surrogate pair crossing 2,000 units", `${"a".repeat(1999)}😀`]
   ])("rejects an over-limit saved script on cache miss before reservation or synthesis (%s)", async (_case, content) => {
+    vi.stubEnv("NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT", "1");
     const { client, rpc, finalAudio } = configureHappyPath();
     const savedScript = { ...script, content };
     mocks.getScript.mockResolvedValue(savedScript);
@@ -247,6 +249,7 @@ describe("G5C-B4 server-owned Listen cache writer", () => {
   });
 
   it("reuses an owned revision-matched cache hit for an existing long body", async () => {
+    vi.stubEnv("NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT", "1");
     const content = words(201);
     const cacheKey = buildScriptAudioCacheKey({
       revisionId: script.currentRevisionId,

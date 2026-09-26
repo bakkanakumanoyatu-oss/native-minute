@@ -11,6 +11,8 @@ import { getScript, assertPracticeScript, mapScriptStateError, ScriptStateError 
 import { assertCurrentProcessingConsent } from "@/services/consent";
 import { createTranscriptionProvider } from "@/services/transcription";
 import { createRecordingAudioPath, loadOwnedRecordingForEvaluation } from "@/services/storage";
+import { BetaQuotaError, QUOTA_OPERATION_REQUIRED, reserveBetaQuota } from "@/services/quota/beta-quota.service";
+import { readBetaQuotaPolicy } from "@/services/quota/beta-quota-policy";
 import type { HydratedTakeReview, ReviewArtifacts, StoredTakeReview, StoredWeakWord } from "./types";
 
 type PersistReviewBundleArgs = Database["public"]["Functions"]["persist_review_bundle"]["Args"];
@@ -147,9 +149,16 @@ export async function createReviewArtifacts(
       })
     );
     const durationSeconds = recording?.durationSeconds ?? input.durationSeconds ?? null;
+    const quota = await reserveBetaQuota({
+      userId, kind: "pronunciation_evaluation", operationId: input.takeId ?? ""
+    });
 
-    const transcriptionResult = await timeAsync("evaluate.transcription", () =>
-      transcription.transcribe({
+    let transcriptionResult: Awaited<ReturnType<typeof transcription.transcribe>>;
+    let evaluation: Awaited<ReturnType<typeof evaluator.evaluate>>;
+    try {
+      await quota.startProvider();
+      transcriptionResult = await timeAsync("evaluate.transcription", () =>
+        transcription.transcribe({
         audioFile: recording
           ? {
               filename: recording.filename,
@@ -161,11 +170,11 @@ export async function createReviewArtifacts(
         audioStorageKey: recording?.audioStorageKey ?? input.audioStorageKey,
         transcriptText: input.transcriptText,
         locale: script.locale
-      })
-    );
+        })
+      );
 
-    const evaluation = await timeAsync("evaluate.pronunciation", () =>
-      evaluator.evaluate({
+      evaluation = await timeAsync("evaluate.pronunciation", () =>
+        evaluator.evaluate({
         scriptText: script.content,
         transcript: transcriptionResult.transcriptText,
         durationSeconds: durationSeconds ?? undefined,
@@ -182,8 +191,14 @@ export async function createReviewArtifacts(
           : undefined,
         audioPath: recording?.audioPath ?? input.audioPath,
         audioStorageKey: recording?.audioStorageKey ?? input.audioStorageKey
-      })
-    );
+        })
+      );
+      await quota.consume();
+    } catch (error) {
+      await quota.failAfterProviderStart();
+      await quota.releaseIfUnreached();
+      throw error;
+    }
 
     const coach = timeSync("evaluate.coach", () =>
       createMockCoachFeedback({
@@ -285,6 +300,9 @@ export async function getReviewScriptSnapshot(client: AppSupabaseClient, take: T
 
 export async function createPersistedReview(client: AppSupabaseClient, userId: string, input: EvaluateRequestInput, alreadyClaimed = false) {
   return timeAsync("evaluate.persistedReview", async () => {
+    if (!input.takeId && readBetaQuotaPolicy()) {
+      throw new BetaQuotaError(QUOTA_OPERATION_REQUIRED, 400, "操作を確認できませんでした。もう一度録音してください。");
+    }
     input = { ...input, takeId: input.takeId ?? randomUUID() };
     const claimInput = { takeId: input.takeId!, scriptId: input.scriptId, audioPath: toAudioPath(input, input.takeId!), expectedRevisionId: input.expectedRevisionId, expectedPracticeEpoch: input.expectedPracticeEpoch };
     if (!alreadyClaimed) {

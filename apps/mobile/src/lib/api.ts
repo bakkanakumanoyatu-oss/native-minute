@@ -1154,13 +1154,13 @@ export async function requestMobileScriptListen(
   bffBaseUrl: string,
   accessToken: string,
   scriptId: string,
-  options: MobileApiRequestOptions & Partial<PracticeIdentity> = {}
+  options: MobileApiRequestOptions & Partial<PracticeIdentity> & { operationId?: string } = {}
 ): Promise<MobileListenRequestState> {
   const attempt = await requestJson(
     bffBaseUrl,
     MOBILE_API_PATHS.listen(scriptId),
     accessToken,
-    { method: "POST", body: JSON.stringify({ expectedRevisionId: options.expectedRevisionId, expectedPracticeEpoch: options.expectedPracticeEpoch }) },
+    { method: "POST", body: JSON.stringify({ expectedRevisionId: options.expectedRevisionId, expectedPracticeEpoch: options.expectedPracticeEpoch, operationId: options.operationId }) },
     options,
     DEFAULT_LISTEN_TIMEOUT_MS
   );
@@ -1417,7 +1417,7 @@ export async function createMobileVoiceFromSample(
   bffBaseUrl: string,
   accessToken: string,
   sample: File,
-  options: MobileApiRequestOptions = {}
+  options: MobileApiRequestOptions & { operationId?: string } = {}
 ): Promise<MobileVoiceSetupRequestState> {
   if (!isAudioContentType(sample.type) || sample.size === 0 || sample.size > 10 * 1024 * 1024) {
     return invalidInput("voice_sample_invalid");
@@ -1425,6 +1425,7 @@ export async function createMobileVoiceFromSample(
 
   const formData = new FormData();
   formData.append("file", sample, sample.name || "voice-sample.audio");
+  formData.append("operationId", options.operationId ?? crypto.randomUUID());
   const attempt = await requestJson(
     bffBaseUrl,
     MOBILE_API_PATHS.voiceSetup,

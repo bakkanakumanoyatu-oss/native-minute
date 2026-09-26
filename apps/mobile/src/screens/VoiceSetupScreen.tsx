@@ -81,6 +81,7 @@ export function VoiceSetupScreen({
   const [localError, setLocalError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const creatingVoiceRef = useRef(false);
+  const voiceOperationIdRef = useRef<string | null>(null);
   const recorder = useRef<MobileAudioRecorder | null>(null);
   const previewElement = useRef<HTMLAudioElement | null>(null);
   const retainedPreviewElement = useRef<HTMLAudioElement | null>(null);
@@ -135,6 +136,7 @@ export function VoiceSetupScreen({
 
         releasePreview();
         setSample(recording.file);
+        voiceOperationIdRef.current = crypto.randomUUID();
         setSampleSeconds(recording.durationSeconds);
         setPreviewConfirmed(false);
         setLocalError(null);
@@ -148,6 +150,7 @@ export function VoiceSetupScreen({
       setPreviewConfirmed(false);
       releasePreview();
       setSample(null);
+      voiceOperationIdRef.current = null;
       setSampleSeconds(0);
     };
     const onVisibilityChange = () => {
@@ -189,6 +192,7 @@ export function VoiceSetupScreen({
     recorder.current?.cancel();
     releasePreview();
     setSample(null);
+    voiceOperationIdRef.current = null;
     setSampleSeconds(0);
     setPreviewConfirmed(false);
     setLocalError(null);
@@ -226,7 +230,8 @@ export function VoiceSetupScreen({
     creatingVoiceRef.current = true;
     setActionState({ kind: "creating_voice" });
     try {
-      const result = await api.createVoiceFromSample(sample);
+      voiceOperationIdRef.current ??= crypto.randomUUID();
+      const result = await api.createVoiceFromSample(sample, voiceOperationIdRef.current);
       setSetupState(toSetupState(result));
 
       if (result.kind !== "success") {

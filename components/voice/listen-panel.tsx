@@ -122,6 +122,7 @@ export function ListenPanel({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
+          operationId: crypto.randomUUID(),
           scriptId,
           expectedRevisionId,
           expectedPracticeEpoch,
