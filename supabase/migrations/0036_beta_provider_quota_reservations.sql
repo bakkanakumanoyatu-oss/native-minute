@@ -247,6 +247,10 @@ begin
   if not found or v_row.status <> 'reserved' or v_row.reserved_expires_at <= clock_timestamp() then
     raise exception using errcode = 'object_not_in_prerequisite_state', message = 'quota_voice_registration_rejected';
   end if;
+  if not exists (select 1 from public.voice_asset_write_intents
+    where id = p_intent_id and user_id = p_user_id and kind = 'voice_create') then
+    raise exception using errcode = 'object_not_in_prerequisite_state', message = 'quota_voice_registration_rejected';
+  end if;
   perform public.begin_voice_source_registration(p_intent_id, p_user_id, p_lease_token);
   perform public.transition_beta_provider_quota(p_user_id, p_reservation_id, 'provider_started');
   return true;
