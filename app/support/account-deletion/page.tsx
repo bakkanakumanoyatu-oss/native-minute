@@ -3,8 +3,8 @@ import Link from "next/link";
 import { LegalPageShell, LegalSection } from "@/components/legal/beta-legal-page";
 
 export const metadata: Metadata = {
-  title: "Account Deletion | Native Minute",
-  description: "Native Minute account deletion request"
+  title: "Account Deletion | Native Minutes",
+  description: "Native Minutes account deletion request"
 };
 
 export default function AccountDeletionSupportPage() {

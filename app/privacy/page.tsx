@@ -3,16 +3,16 @@ import Link from "next/link";
 import { LegalPageShell, LegalSection } from "@/components/legal/beta-legal-page";
 
 export const metadata: Metadata = {
-  title: "Privacy | Native Minute",
-  description: "Native Minute privacy and data handling"
+  title: "Privacy | Native Minutes",
+  description: "Native Minutes privacy and data handling"
 };
 
 export default function PrivacyPage() {
   return (
     <LegalPageShell
       eyebrow="Privacy"
-      title="Native Minute Privacy"
-      summary="Native Minute は、固定1分スクリプトを聞く、録る、評価するための練習アプリです。このページでは、扱うデータ、外部サービス、削除リクエストの範囲を説明します。"
+      title="Native Minutes Privacy"
+      summary="Native Minutes は、固定1分スクリプトを聞く、録る、評価するための練習アプリです。このページでは、扱うデータ、外部サービス、削除リクエストの範囲を説明します。"
     >
       <LegalSection
         title="収集・保存する情報"
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
 
       <LegalSection
         title="外部サービス"
-        summary="Native Minute は、文字起こし、発音評価、お手本音声などに外部サービスを使う場合があります。"
+        summary="Native Minutes は、文字起こし、発音評価、お手本音声などに外部サービスを使う場合があります。"
         items={[
           "Supabase: ログイン、データベース、非公開 Storage、アプリ管理の再生に使います。",
           "OpenAI: 録音の文字起こし、スクリプト作成補助、コーチング補助に使います。",

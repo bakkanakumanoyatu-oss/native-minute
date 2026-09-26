@@ -32,7 +32,7 @@ export const SCRIPT_STUDIO_DIFFICULTY_OPTIONS = [
 
 export const SCRIPT_STUDIO_LENGTH_OPTIONS = [
   { id: "short_45", labelJa: "短め", targetLengthSeconds: 45, descriptionJa: "まず言い切る練習に向く長さ" },
-  { id: "standard_60", labelJa: "1分", targetLengthSeconds: 60, descriptionJa: "Native Minute の標準" },
+  { id: "standard_60", labelJa: "1分", targetLengthSeconds: 60, descriptionJa: "Native Minutes の標準" },
   { id: "extended_75", labelJa: "少し長め", targetLengthSeconds: 75, descriptionJa: "内容を少し足したいときの目安" }
 ] as const satisfies readonly ScriptStudioLengthTarget[];
 

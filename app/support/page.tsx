@@ -3,15 +3,15 @@ import Link from "next/link";
 import { LegalPageShell, LegalSection } from "@/components/legal/beta-legal-page";
 
 export const metadata: Metadata = {
-  title: "Support | Native Minute",
-  description: "Native Minute support"
+  title: "Support | Native Minutes",
+  description: "Native Minutes support"
 };
 
 export default function SupportPage() {
   return (
     <LegalPageShell
       eyebrow="Support"
-      title="Native Minute Support"
+      title="Native Minutes Support"
       summary="困ったときの連絡先と、ログイン、録音、評価、データ削除の確認方法をまとめています。Store 提出前に、サポートURLと運営者情報を最終確認します。"
     >
       <LegalSection

@@ -84,7 +84,7 @@ const MAX_FOCUS_WORDS = 3;
 export const SCRIPT_GENERATION_GUARDRAILS: ScriptGenerationGuardrail[] = [
   {
     id: "native-minute-script",
-    labelJa: "Native Minute Script",
+    labelJa: "Native Minutes Script",
     instruction: "Output must be a one-minute English practice script, not a generic translation."
   },
   {

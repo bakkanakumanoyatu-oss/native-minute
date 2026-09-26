@@ -165,7 +165,7 @@ html[data-accessibility-text] .listen-seek-label>span { white-space:normal; over
 .mobile-theme :is(.text-button,.secondary-button),
 .mobile-theme .intro-card :is(.text-button,.secondary-button) { background:transparent; color:var(--nm-ink); border-color:var(--nm-line); box-shadow:none; }
 .mobile-theme .text-button { text-decoration:underline; text-underline-offset:4px; }
-.mobile-theme :is(.brand-mark,.status-dot) { background:var(--nm-ink); box-shadow:none; }
+.mobile-theme .status-dot { background:var(--nm-ink); box-shadow:none; }
 .mobile-theme :is(.product-name,.profile-badge,.eyebrow,footer,footer a) { color:var(--nm-muted); }
 .mobile-theme .profile-badge { background:var(--nm-cream); border-color:var(--nm-line); }
 .mobile-theme :is(.intro-card,.status-card) { box-shadow:none; border:0; border-radius:12px; background:var(--nm-cream); }

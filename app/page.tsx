@@ -45,7 +45,7 @@ export default async function HomePage() {
       <div className="relative overflow-hidden rounded-[2rem] border border-[var(--line-dark)] bg-[radial-gradient(circle_at_20%_10%,rgba(200,121,63,0.22),transparent_34%),linear-gradient(135deg,#181722,#272a3d_62%,#34384d)] p-6 shadow-[var(--shadow-studio-soft)] sm:p-8 lg:p-10">
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
           <div>
-            <p className="text-sm font-semibold text-white/80">Native Minute</p>
+            <p className="text-sm font-semibold text-white/80">Native Minutes</p>
             <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
               今日の1分スタジオに入る。
             </h1>

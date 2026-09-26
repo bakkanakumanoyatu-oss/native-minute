@@ -101,7 +101,7 @@ type SubmitState =
 
 const RECORDER_ERROR_COPY: Record<MobileRecorderReason, string> = {
   unsupported: "この端末ではマイク録音を開始できません。iOSとアプリを更新して再試行してください。",
-  permission_denied: "マイクの使用が許可されていません。iPhoneの設定でNative Minuteのマイクを許可してください。",
+  permission_denied: "マイクの使用が許可されていません。iPhoneの設定でNative Minutesのマイクを許可してください。",
   device_unavailable: "マイクを利用できません。ほかの録音アプリを閉じて再試行してください。",
   capture_unavailable: "マイクの音声を取得できませんでした。マイク設定を確認して録り直してください。",
   empty_recording: "音声を保存できませんでした。マイクに向かって録り直してください。",

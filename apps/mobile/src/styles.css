@@ -97,17 +97,11 @@ button:disabled {
 }
 
 .brand-mark {
-  display: grid;
+  display: block;
   width: 3.25rem;
   height: 3.25rem;
-  place-items: center;
   border-radius: 1.1rem;
-  color: #fffdf8;
-  background: #204f3b;
-  box-shadow: 0 0.7rem 1.8rem rgba(32, 79, 59, 0.2);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.05rem;
-  font-weight: 700;
+  object-fit: cover;
 }
 
 .product-name {

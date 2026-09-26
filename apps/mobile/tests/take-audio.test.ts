@@ -73,7 +73,7 @@ describe('export format and filename',()=>{
  it('uses display name then script then safe fallback, not system identifiers',()=>{
   expect(takeExportFilename('  朝の声  ','Script','wav')).toBe('朝の声.wav');
   expect(takeExportFilename(null,'A small pause','wav')).toBe('A small pause.wav');
-  expect(takeExportFilename('../<>:\\"|?*','  ','wav')).toBe('Native Minute recording.wav');
+  expect(takeExportFilename('../<>:\\"|?*','  ','wav')).toBe('Native Minutes recording.wav');
   expect(takeExportFilename(user+' test@example.com sk-secret123 https://private.invalid/a','fallback','wav')).toBe('fallback.wav');
   expect(takeExportFilename('Name.m4a','Script','wav')).toBe('Name.wav');
   expect(() => encodeURIComponent(takeExportFilename('𠮷'.repeat(61),'Script','wav'))).not.toThrow();

@@ -19,5 +19,5 @@ export function takeExportFilename(displayName: string | null, scriptTitle: stri
     .replace(/\.(wav|m4a|mp3|mp4|ogg|webm)$/i, "")
     .replace(/[^\p{L}\p{N} _-]/gu, " ").replace(/\s+/g, " ").trim())
     .slice(0, 60).join("").trim();
-  return `${clean(displayName ?? "") || clean(scriptTitle) || "Native Minute recording"}.${extension}`;
+  return `${clean(displayName ?? "") || clean(scriptTitle) || "Native Minutes recording"}.${extension}`;
 }

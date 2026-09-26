@@ -21,6 +21,7 @@ import { bindSavedTakeAudioMemory } from "./audio/saved-take-memory-lifecycle";
 import { PracticeApp } from "./practice/PracticeApp";
 import { isPracticePath } from "./practice/routes";
 import { takeShareController } from "./audio/take-share";
+import brandMark from "./assets/native-minutes-mark-icon.png";
 
 type ConnectionPanelProps = {
   state: HealthConnectionState;
@@ -443,9 +444,7 @@ export function App({ authController }: AppProps = {}) {
 
   return (
     <main className="app-shell" data-mobile-profile={mobileEnvironment.profile}>
-      <div className="brand-mark" aria-hidden="true">
-        NM
-      </div>
+      <img className="brand-mark" src={brandMark} alt="" aria-hidden="true" />
       <p className="product-name">Native Minutes</p>
       <p className="profile-badge">Local bundle · {mobileEnvironment.profile}</p>
 

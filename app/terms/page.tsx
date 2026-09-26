@@ -3,21 +3,21 @@ import Link from "next/link";
 import { LegalPageShell, LegalSection } from "@/components/legal/beta-legal-page";
 
 export const metadata: Metadata = {
-  title: "Terms | Native Minute",
-  description: "Native Minute terms"
+  title: "Terms | Native Minutes",
+  description: "Native Minutes terms"
 };
 
 export default function TermsPage() {
   return (
     <LegalPageShell
       eyebrow="Terms"
-      title="Native Minute Terms"
-      summary="Native Minute を安心して使うための基本的な利用条件です。Store 提出前に、運営者情報と法務観点の最終確認を行います。"
+      title="Native Minutes Terms"
+      summary="Native Minutes を安心して使うための基本的な利用条件です。Store 提出前に、運営者情報と法務観点の最終確認を行います。"
     >
       <LegalSection
         title="サービスの位置づけ"
         items={[
-          "Native Minute は英語練習を支援するアプリです。発音能力、語学力、試験結果を完全または公式に判定するものではありません。",
+          "Native Minutes は英語練習を支援するアプリです。発音能力、語学力、試験結果を完全または公式に判定するものではありません。",
           "現在は無料公開を前提にしています。ただし外部サービス側の障害、利用制限、メンテナンスにより一時的に使えない場合があります。",
           "スコアやコーチングは練習の目安です。録音環境、マイク、発話内容、外部サービスの状態によって結果が変わることがあります。"
         ]}
@@ -37,7 +37,7 @@ export default function TermsPage() {
 
       <LegalSection
         title="外部サービスと結果の変動"
-        summary="Native Minute は、お手本ボイス、文字起こし、スクリプト作成補助、コーチング補助、発音評価に外部サービスを使う場合があります。"
+        summary="Native Minutes は、お手本ボイス、文字起こし、スクリプト作成補助、コーチング補助、発音評価に外部サービスを使う場合があります。"
         items={[
           "外部サービスの障害、利用制限、地域やネットワークの状態により、お手本ボイス生成、文字起こし、発音評価が失敗することがあります。",
           "同じ録音でも、外部サービスや録音環境の変化によりスコアや弱点語が変わることがあります。",
