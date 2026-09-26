@@ -22,6 +22,8 @@ import { TakeSummarySnapshot } from "@/components/guidance/take-summary-snapshot
 import { StateActionSection, StateStepSection } from "@/components/guidance/state-sections";
 import { BestResultExportActions } from "@/components/export/best-result-export-actions";
 import { ConsentNotice } from "@/components/legal/consent-notice";
+import { BrushUpControl } from "@/components/brush-up/brush-up-control";
+import { isScriptBrushUpEnabled } from "@/lib/brush-up/capability";
 
 type PageParams = {
   params:
@@ -328,6 +330,12 @@ export default async function ReviewPage({ params }: PageParams) {
           )}
         </section>
       </div>
+
+      {isScriptBrushUpEnabled() && canPlaybackRecording && review.take.script_revision_id ? (
+          <BrushUpControl scriptId={script.id} takeId={review.take.id}
+            revisionId={review.take.script_revision_id}
+            currentRevision={!script.archivedAt && review.take.script_revision_id === script.currentRevisionId} />
+        ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--control-panel)] p-6 text-[var(--cta-primary-text)] shadow-[var(--shadow-studio-soft)]">

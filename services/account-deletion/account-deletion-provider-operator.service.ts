@@ -1,6 +1,7 @@
 import { accountDeletionLegalHoldBlocks } from "./account-deletion-legal-hold";
 import { createElevenLabsVoiceDeletionProviderAdapter, type VoiceDeletionProviderAdapter } from "@/providers/voice-deletion";
 import { ACCOUNT_DELETION_DESTRUCTIVE_GUARD_ENV } from "./account-deletion.service";
+import type { advanceAccountDeletionBrushUpProviderCleanup } from "@/services/brush-up/brush-up.service";
 import {
   runAccountDeletionProviderDurableStep,
   type AccountDeletionProviderStepResult
@@ -98,6 +99,7 @@ type ProviderStageOptions = {
   runDurableStep?: ProviderDurableStep;
   createRepository?: () => AccountDeletionProviderDurableRepository;
   createProviderAdapter?: () => VoiceDeletionProviderAdapter;
+  advanceBrushUpCleanup?: typeof advanceAccountDeletionBrushUpProviderCleanup;
 };
 
 const PROVIDER_OPERATOR_REQUEST_STATUSES = new Set(["confirmed", "provider_cleanup_failed"]);
@@ -407,6 +409,21 @@ export async function runAccountDeletionProviderOperatorStage(
         request.provider_snapshot_sealed_at !== null
       ) {
         return stageResult({ status: "blocked", safeReasonCode: "provider_cleanup_not_runnable", marker: "not_runnable" });
+      }
+      if (request.db_inventory_version === "script-brush-up.account-db.v4") {
+        const advanceBrushUpCleanup = options.advanceBrushUpCleanup ??
+          (await import("@/services/brush-up/brush-up.service")).advanceAccountDeletionBrushUpProviderCleanup;
+        const brushCleanup = await advanceBrushUpCleanup(userId, {
+          deletion: options.providerAdapter ?? options.createProviderAdapter?.()
+        });
+        if (brushCleanup.kind === "manual_required") {
+          return stageResult({ status: "manual_required", safeReasonCode: "brush_up_provider_cleanup_manual_required",
+            marker: "manual_required", manualReviewRequired: true });
+        }
+        if (brushCleanup.kind !== "none") {
+          return stageResult({ status: "blocked", safeReasonCode: "brush_up_provider_cleanup_continue_required",
+            marker: "progressed", retryable: true, providerExternalActions: brushCleanup.externalActions });
+        }
       }
       await repository.sealProviderSnapshot(deletionRequestId, userId);
       return stageResult({

@@ -24,6 +24,8 @@ export type BetaQuotaRpcClient = {
 };
 
 export type BetaQuotaReservation = {
+  reservationId: string | null;
+  acknowledgeAtomicProviderStart(): void;
   startProvider(): Promise<void>;
   startVoiceRegistration(input: { intentId: string; leaseToken: string; beginWithoutQuota(): Promise<void> }): Promise<void>;
   consume(): Promise<void>;
@@ -32,6 +34,8 @@ export type BetaQuotaReservation = {
 };
 
 const disabledReservation: BetaQuotaReservation = {
+  reservationId: null,
+  acknowledgeAtomicProviderStart: () => undefined,
   startProvider: async () => undefined,
   startVoiceRegistration: (input) => input.beginWithoutQuota(),
   consume: async () => undefined,
@@ -51,6 +55,7 @@ export async function reserveBetaQuota(input: {
   }
   const client = options.client ?? createSupabaseAdminClient() as unknown as BetaQuotaRpcClient;
   const limit = policy[input.kind];
+  if (!limit) throw new AppError(503, "この操作の利用上限設定を確認できません。");
   const { data, error } = await client.rpc("reserve_beta_provider_quota", {
     p_user_id: input.userId,
     p_kind: input.kind,
@@ -92,6 +97,11 @@ export async function reserveBetaQuota(input: {
     }
   }
   return {
+    reservationId,
+    acknowledgeAtomicProviderStart() {
+      if (state !== "reserved") throw new AppError(409, "操作の状態を確認できませんでした。");
+      state = "provider_started";
+    },
     async startProvider() {
       if (state !== "reserved") throw new AppError(409, "操作の状態を確認できませんでした。");
       await transition("provider_started");

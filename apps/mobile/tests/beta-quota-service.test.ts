@@ -17,6 +17,35 @@ function client(reserveResult: Record<string, unknown>) {
 }
 
 describe("beta quota server policy and provider lifecycle", () => {
+  it("requires a separate fourth bucket only when brush-up is enabled", async () => {
+    const core = {
+      NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT: "1",
+      NATIVE_MINUTE_QUOTA_REFERENCE_AUDIO_PER_USER_LIMIT: "2",
+      NATIVE_MINUTE_QUOTA_REFERENCE_AUDIO_GLOBAL_LIMIT: "4",
+      NATIVE_MINUTE_QUOTA_REFERENCE_AUDIO_PERIOD: "calendar_month_utc",
+      NATIVE_MINUTE_QUOTA_EVALUATION_PER_USER_LIMIT: "3",
+      NATIVE_MINUTE_QUOTA_EVALUATION_GLOBAL_LIMIT: "5",
+      NATIVE_MINUTE_QUOTA_EVALUATION_PERIOD: "account_lifetime",
+      NATIVE_MINUTE_QUOTA_VOICE_CREATION_PER_USER_LIMIT: "1",
+      NATIVE_MINUTE_QUOTA_VOICE_CREATION_GLOBAL_LIMIT: "2",
+      NATIVE_MINUTE_QUOTA_VOICE_CREATION_PERIOD: "account_lifetime"
+    };
+    expect(readBetaQuotaPolicy(core)).toEqual(policy);
+    expect(() => readBetaQuotaPolicy({ ...core, NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP: "1" })).toThrow();
+    const withBrush = readBetaQuotaPolicy({ ...core, NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP: "1",
+      NATIVE_MINUTE_QUOTA_BRUSH_UP_PER_USER_LIMIT: "1",
+      NATIVE_MINUTE_QUOTA_BRUSH_UP_GLOBAL_LIMIT: "2",
+      NATIVE_MINUTE_QUOTA_BRUSH_UP_PERIOD: "account_lifetime" });
+    expect(withBrush?.script_brush_up_candidate_generation).toEqual({ perUser: 1, global: 2, periodKind: "account_lifetime" });
+    const fake = client({ result: "reserved", reservation_id: "brush-1", status: "reserved", period_id: "account_lifetime" });
+    const reservation = await reserveBetaQuota({ ...input, kind: "script_brush_up_candidate_generation" },
+      { policy: withBrush, client: fake.client });
+    reservation.acknowledgeAtomicProviderStart();
+    await reservation.consume();
+    expect(fake.rpc.mock.calls.map(([name, args]) => name === "transition_beta_provider_quota" ? args.p_transition : name))
+      .toEqual(["reserve_beta_provider_quota", "consumed"]);
+  });
+
   it("requires all six limits and three explicit periods only when enabled", () => {
     expect(readBetaQuotaPolicy({ NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT: "0" })).toBeNull();
     expect(() => readBetaQuotaPolicy({ NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT: "1" })).toThrow();

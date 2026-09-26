@@ -39,6 +39,8 @@ export interface CreateVoiceInput {
   // Adapters should convert this into provider-specific multipart/upload calls
   // without widening the app contract.
   sampleAudio?: CreateVoiceSampleInput;
+  // Server-only saved-Take path. Never accept these bytes from a client request.
+  sampleAudioBytes?: { bytes: Buffer; contentType: string; filename: string };
   // Deprecated fallback for mock / older callers.
   sampleAudioPath?: string;
 }

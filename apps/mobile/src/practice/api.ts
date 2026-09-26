@@ -6,6 +6,10 @@ import type { DisplayMemory } from "./display-memory";
 import { ProgressMemory } from "./progress-memory";
 import { SavedTakeAudioMemory, type SavedTakeAudioVisit } from "../audio/saved-take-memory";
 import {
+  acceptMobileBrushUpConsent,
+  decideMobileBrushUpCandidate,
+  fetchMobileBrushUpView,
+  generateMobileBrushUpCandidate,
   acceptMobilePronunciationConsent,
   acceptMobileVoiceConsent,
   createMobileAccountDeletionRequest,
@@ -49,6 +53,9 @@ import {
   type MobileRecordingUploadState,
   type MobileReview,
   type MobileReviewRequestState,
+  type MobileBrushUpRequestState,
+  type MobileBrushUpConsentState,
+  type MobileBrushUpMutationState,
   type MobileScript,
   type MobileScriptRequestState,
   type MobileVoiceSetupRequestState,
@@ -111,6 +118,10 @@ export interface PracticeApi {
   uploadRecording(input: UploadMobileRecordingInput): Promise<MobileRecordingUploadState>;
   evaluateRecording(input: EvaluateMobileRecordingInput): Promise<MobileReviewRequestState>;
   getReview(scriptId: string, takeId: string, signal?: AbortSignal): Promise<MobileReviewRequestState>;
+  getBrushUpView?(scriptId: string, takeId: string): Promise<MobileBrushUpRequestState>;
+  acceptBrushUpConsent?(input: { scriptId: string; takeId: string; revisionId: string }): Promise<MobileBrushUpConsentState>;
+  generateBrushUpCandidate?(input: { scriptId: string; takeId: string; revisionId: string; consentId: string; operationId: string }): Promise<MobileBrushUpMutationState>;
+  decideBrushUpCandidate?(candidateId: string, decision: "adopt" | "reject" | "rollback" | "retry_cleanup"): Promise<MobileBrushUpMutationState>;
   updateTakeMetadata(takeId: string, input: TakeMetadataPatch): Promise<TakeMetadataRequestState>;
   getProgress(): Promise<MobileProgressRequestState>;
 }
@@ -533,6 +544,10 @@ export function createPracticeApi({
       reviewMemory.seed(`${input.scriptId}/${input.takeId}`, { review: result.review, scriptTitle: result.review.scriptSnapshot?.title ?? script?.title ?? progressScript?.title ?? "" });
     }),
     getReview,
+    getBrushUpView: (scriptId, takeId) => request(token => fetchMobileBrushUpView(bffBaseUrl, token, scriptId, takeId, { onTiming })),
+    acceptBrushUpConsent: input => request(token => acceptMobileBrushUpConsent(bffBaseUrl, token, input, { onTiming })),
+    generateBrushUpCandidate: input => request(token => generateMobileBrushUpCandidate(bffBaseUrl, token, input, { onTiming })),
+    decideBrushUpCandidate: (candidateId, decision) => request(token => decideMobileBrushUpCandidate(bffBaseUrl, token, candidateId, decision, { onTiming })),
     updateTakeMetadata,
     getProgress: () => afterMetadataWrites(() => request((token) => fetchMobileProgress(bffBaseUrl, token, { onTiming })))
   };

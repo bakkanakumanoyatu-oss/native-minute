@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
 import { getScriptLengthError, SCRIPT_LENGTH_EDIT_GUIDANCE } from "@/lib/script-length";
+import { isScriptBrushUpEnabled } from "@/lib/brush-up/capability";
 import { timeAsync } from "@/lib/performance/timing";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireCurrentUser } from "@/lib/supabase/auth";
@@ -41,6 +42,7 @@ import {
   type VoiceGenerationQuotaKeys
 } from "@/services/quota";
 import { reserveBetaQuota } from "@/services/quota/beta-quota.service";
+import { getAdoptedBrushUpAudio } from "@/services/brush-up/override";
 import { buildScriptAudioCacheKey } from "./cache";
 import { createVoiceAssetWriteIntentRepository, type VoiceAssetWriteReservation } from "./voice-asset-write-intent.repository";
 import {
@@ -778,6 +780,15 @@ export async function getCachedListenAudio(client: AppSupabaseClient, userId: st
 
     if (expected && (script.archivedAt || script.currentRevisionId !== expected.expectedRevisionId || script.practiceEpoch !== expected.expectedPracticeEpoch)) return null;
     assertPracticeScript(script, expected);
+    if (isScriptBrushUpEnabled()) {
+      const adopted = await getAdoptedBrushUpAudio(client, userId, script.id, script.currentRevisionId);
+      if (adopted) return {
+        audioUrl: adopted.storage_path,
+        cached: true,
+        cacheKey: adopted.cache_key,
+        voice: { ...voice, label: "台本専用のお手本" }
+      };
+    }
     const cacheKey = buildScriptAudioCacheKey({
     revisionId: script.currentRevisionId,
       provider: voice.provider,
@@ -871,6 +882,16 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
     );
 
     throw new AppError(409, "現在の voice provider と保存済み voice の provider が一致しません。`/setup/voice` で作り直してください。");
+  }
+
+  if (isScriptBrushUpEnabled()) {
+    const adopted = await getAdoptedBrushUpAudio(client, userId, script.id, script.currentRevisionId);
+    if (adopted) return {
+      audioUrl: adopted.storage_path,
+      cached: true,
+      cacheKey: adopted.cache_key,
+      voice: { ...selectedVoice, label: "台本専用のお手本" }
+    };
   }
 
   const cacheKey = buildScriptAudioCacheKey({

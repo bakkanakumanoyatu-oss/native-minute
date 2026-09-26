@@ -42,14 +42,15 @@ describe("G5D-2J atomic database finalizer contract", () => {
     expect(recordedMigrationSha256).toBe(computedMigrationSha256);
   });
 
-  it("keeps one exact static 21-table inventory and version", () => {
-    expect(ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION).toBe("beta-quota.account-db.v3");
-    expect(ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT).toHaveLength(21);
+  it("keeps one exact static 23-table inventory and version", () => {
+    expect(ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION).toBe("script-brush-up.account-db.v4");
+    expect(ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT).toHaveLength(23);
 
     const revisionMigration = readFileSync(fileURLToPath(new URL("../../../supabase/migrations/0034_script_revision_deletion_inventory.sql", import.meta.url)), "utf8");
     const quotaMigration = readFileSync(fileURLToPath(new URL("../../../supabase/migrations/0036_beta_provider_quota_reservations.sql", import.meta.url)), "utf8");
+    const brushUpMigration = readFileSync(fileURLToPath(new URL("../../../supabase/migrations/0037_script_brush_up_foundation.sql", import.meta.url)), "utf8");
     for (const { table } of ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT) {
-      expect(revisionMigration + quotaMigration).toContain(`from public.${table}`);
+      expect(revisionMigration + quotaMigration + brushUpMigration).toContain(`from public.${table}`);
     }
 
     expect(migration).not.toMatch(/\bexecute\s+(format\s*\(|v_)/i);
@@ -61,7 +62,7 @@ describe("G5D-2J atomic database finalizer contract", () => {
   it("exposes only the focused service-role RPC with generated-compatible types", () => {
     expect(ACCOUNT_DELETION_DATABASE_FINALIZER_RPC).toEqual({
       name: "finalize_account_deletion_database_stage",
-      inventoryVersion: "beta-quota.account-db.v3",
+      inventoryVersion: "script-brush-up.account-db.v4",
       arguments: [
         "p_deletion_request_id",
         "p_expected_user_id",

@@ -1,4 +1,4 @@
-export const ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION = "beta-quota.account-db.v3" as const;
+export const ACCOUNT_DELETION_DATABASE_INVENTORY_VERSION = "script-brush-up.account-db.v4" as const;
 
 export type AccountDeletionDatabaseDisposition =
   | "DELETE"
@@ -14,7 +14,7 @@ export type AccountDeletionDatabaseTableContract = {
   authority: string;
 };
 
-// v3 includes owned quota reservations. Anonymous global usage has no account identity.
+// v4 includes owned brush-up provenance and candidates. Anonymous quota usage remains charged.
 export const ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT = [
   { table: "profiles", disposition: "DELETE", authority: "owned profile; delete explicitly before Auth" },
   { table: "scripts", disposition: "DELETE", authority: "owned scripts after Storage absence" },
@@ -26,6 +26,8 @@ export const ACCOUNT_DELETION_DATABASE_TABLE_CONTRACT = [
   { table: "coach_feedback", disposition: "CASCADE", authority: "cascade from classified take deletion" },
   { table: "script_saved_model_audios", disposition: "CASCADE", authority: "dependent saved library state" },
   { table: "script_saved_best_takes", disposition: "CASCADE", authority: "dependent saved take state" },
+  { table: "script_brush_up_candidates", disposition: "DELETE", authority: "provider absence verified before Provider seal; delete exact owned candidate rows before scripts" },
+  { table: "script_brush_up_consents", disposition: "DELETE", authority: "delete exact owned dedicated consent rows before scripts" },
   { table: "voices", disposition: "DELETE", authority: "delete after Provider and Storage terminality" },
   { table: "voice_consents", disposition: "DELETE", authority: "delete after consent recording absence" },
   { table: "processing_consents", disposition: "DELETE", authority: "owned processing consent history" },

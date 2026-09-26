@@ -10,6 +10,8 @@ import {
 import { mobileApiError, mobileApiOk } from "./api-response";
 import { toMobileReviewDto } from "./dto";
 import { getOwnedTakeAudioIdentity } from "@/services/takes/take-audio-identity";
+import { isScriptBrushUpEnabled } from "@/lib/brush-up/capability";
+import { getScript } from "@/services/scripts/scripts.service";
 import {
   authenticateMobileRequest,
   defaultMobileRouteAuthDependencies,
@@ -72,7 +74,16 @@ export async function handleMobileReviewGet(
     }
 
     const audioIdentity = await dependencies.getOwnedTakeAudioIdentity(client, userId, stored.take);
-    return mobileApiOk(origin, { review: { ...toMobileReviewDto(hydrateStoredReview(stored)), audioIdentity } });
+    const dto = toMobileReviewDto(hydrateStoredReview(stored));
+    let brushUpAvailable = false;
+    let brushUpCurrentRevision = false;
+    if (isScriptBrushUpEnabled() && audioIdentity && dto.scriptSnapshot?.revisionId) {
+      const script = await getScript(client, userId, parsedScriptId.data);
+      brushUpAvailable = Boolean(script && ["reviewed", "completed"].includes(stored.take.status));
+      brushUpCurrentRevision = Boolean(script && !script.archivedAt &&
+        script.currentRevisionId === dto.scriptSnapshot.revisionId);
+    }
+    return mobileApiOk(origin, { review: { ...dto, audioIdentity, brushUpAvailable, brushUpCurrentRevision } });
   } catch (error) {
     return mapMobileServiceError(origin, error, {
       unavailable: "evaluation_unavailable",

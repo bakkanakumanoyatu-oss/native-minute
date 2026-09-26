@@ -165,7 +165,7 @@ export function hasAccountDeletionAuthPriorStageAuthority(row: AccountDeletionAu
     row.storage_verified_absent_count === row.storage_snapshot_target_count &&
     row.storage_runner_lease_token === null &&
     row.storage_runner_lease_expires_at === null &&
-    ["g5d-2h.account-db.v1", "script-revision.account-db.v2", "beta-quota.account-db.v3"].includes(row.db_inventory_version) &&
+    ["g5d-2h.account-db.v1", "script-revision.account-db.v2", "beta-quota.account-db.v3", "script-brush-up.account-db.v4"].includes(row.db_inventory_version) &&
     hasTimestamp(row.db_sub_finalized_at) &&
     dbEquation &&
     dbPolarity &&

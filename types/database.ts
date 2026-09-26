@@ -1331,9 +1331,54 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["beta_quota_reservations"]["Insert"]>;
         Relationships: [];
       };
+      script_brush_up_consents: {
+        Row: {
+          id: string; user_id: string; script_id: string; script_revision_id: string; source_take_id: string;
+          source_recording_identity: string; purpose_version: string; provider: string; status: "active" | "withdrawn";
+          accepted_at: string; withdrawn_at: string | null;
+        };
+        Insert: { id?: string; user_id: string; script_id: string; script_revision_id: string; source_take_id: string;
+          source_recording_identity: string; purpose_version?: string; provider?: string; status?: "active" | "withdrawn";
+          accepted_at?: string; withdrawn_at?: string | null };
+        Update: Partial<Database["public"]["Tables"]["script_brush_up_consents"]["Insert"]>;
+        Relationships: [];
+      };
+      script_brush_up_candidates: {
+        Row: {
+          id: string; user_id: string; script_id: string; script_revision_id: string; source_take_id: string;
+          source_recording_identity: string; consent_id: string; quota_reservation_id: string;
+          baseline_script_audio_id: string | null; candidate_script_audio_id: string | null;
+          candidate_storage_object_key: string | null;
+          provider: string; provider_operation_label: string; provider_candidate_voice_id: string | null;
+          provider_cleanup_state: "not_created" | "create_unknown" | "present" | "delete_pending" | "delete_failed" | "verified_absent";
+          asset_cleanup_state: "not_needed" | "pending" | "failed" | "complete";
+          status: "preparing" | "audio_staged" | "ready" | "adopted" | "rejected" | "rolled_back" | "failed";
+          created_at: string; adopted_at: string | null; rejected_at: string | null;
+          rolled_back_at: string | null; provider_verified_absent_at: string | null;
+        };
+        Insert: { id?: string; user_id: string; script_id: string; script_revision_id: string; source_take_id: string;
+          source_recording_identity: string; consent_id: string; quota_reservation_id: string;
+          baseline_script_audio_id: string; candidate_script_audio_id?: string | null;
+          candidate_storage_object_key?: string | null;
+          provider?: string; provider_operation_label: string; provider_candidate_voice_id?: string | null;
+          provider_cleanup_state?: Database["public"]["Tables"]["script_brush_up_candidates"]["Row"]["provider_cleanup_state"];
+          asset_cleanup_state?: Database["public"]["Tables"]["script_brush_up_candidates"]["Row"]["asset_cleanup_state"];
+          status?: Database["public"]["Tables"]["script_brush_up_candidates"]["Row"]["status"];
+          created_at?: string; adopted_at?: string | null; rejected_at?: string | null;
+          rolled_back_at?: string | null; provider_verified_absent_at?: string | null };
+        Update: Partial<Database["public"]["Tables"]["script_brush_up_candidates"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      accept_script_brush_up_consent: { Args: { p_user_id: string; p_script_id: string; p_take_id: string; p_revision_id: string; p_recording_identity: string }; Returns: Database["public"]["Tables"]["script_brush_up_consents"]["Row"] };
+      withdraw_script_brush_up_consent: { Args: { p_consent_id: string }; Returns: boolean };
+      begin_script_brush_up_candidate: { Args: { p_user_id: string; p_consent_id: string; p_baseline_audio_id: string; p_quota_reservation_id: string }; Returns: Database["public"]["Tables"]["script_brush_up_candidates"]["Row"] };
+      transition_script_brush_up_candidate: { Args: { p_user_id: string; p_candidate_id: string; p_action: string; p_provider_voice_id?: string | null }; Returns: Database["public"]["Tables"]["script_brush_up_candidates"]["Row"] };
+      finalize_script_brush_up_audio: { Args: { p_user_id: string; p_candidate_id: string; p_storage_path: string; p_stored_asset: Json }; Returns: Database["public"]["Tables"]["script_brush_up_candidates"]["Row"] };
+      reserve_script_brush_up_asset: { Args: { p_user_id: string; p_candidate_id: string; p_object_key: string }; Returns: Database["public"]["Tables"]["script_brush_up_candidates"]["Row"] };
+      finish_script_brush_up_asset_cleanup: { Args: { p_user_id: string; p_candidate_id: string }; Returns: Database["public"]["Tables"]["script_brush_up_candidates"]["Row"] };
       reserve_beta_provider_quota: {
         Args: { p_user_id: string; p_kind: string; p_operation_id: string; p_period_kind: string; p_user_limit: number; p_global_limit: number };
         Returns: Json;

@@ -56,6 +56,11 @@ const BETA_QUOTA_POLICY_ENV = [
   ["NATIVE_MINUTE_QUOTA_EVALUATION_PER_USER_LIMIT", "NATIVE_MINUTE_QUOTA_EVALUATION_GLOBAL_LIMIT", "NATIVE_MINUTE_QUOTA_EVALUATION_PERIOD"],
   ["NATIVE_MINUTE_QUOTA_VOICE_CREATION_PER_USER_LIMIT", "NATIVE_MINUTE_QUOTA_VOICE_CREATION_GLOBAL_LIMIT", "NATIVE_MINUTE_QUOTA_VOICE_CREATION_PERIOD"]
 ];
+const BRUSH_UP_POLICY_ENV = [
+  "NATIVE_MINUTE_QUOTA_BRUSH_UP_PER_USER_LIMIT",
+  "NATIVE_MINUTE_QUOTA_BRUSH_UP_GLOBAL_LIMIT",
+  "NATIVE_MINUTE_QUOTA_BRUSH_UP_PERIOD"
+];
 
 function isSet(value) {
   return Boolean(value?.trim());
@@ -85,6 +90,8 @@ function printCheck(label, ok, okMessage, failMessage) {
 
 const strictProduction = isStrictProductionRuntime();
 const scriptGenerationEnabled = isTruthy(process.env.NATIVE_MINUTE_ENABLE_AI_SCRIPT_GENERATION);
+const brushUpSwitch = (process.env.NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP ?? "").trim().toLowerCase();
+const brushUpEnabled = isTruthy(brushUpSwitch);
 let blocked = false;
 
 console.log("Native Minute production readiness preflight");
@@ -137,8 +144,15 @@ const quotaEnabled = isTruthy(quotaSwitch);
 const quotaSwitchValid = quotaEnabled || ["", "0", "false", "no", "off"].includes(quotaSwitch);
 blocked = blocked || !quotaSwitchValid;
 printCheck(BETA_QUOTA_ENABLE_ENV, quotaSwitchValid, quotaEnabled ? "enabled" : "disabled", "invalid value");
+const brushUpSwitchValid = brushUpEnabled || ["", "0", "false", "no", "off"].includes(brushUpSwitch);
+blocked = blocked || !brushUpSwitchValid;
+printCheck("NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP", brushUpSwitchValid, brushUpEnabled ? "enabled" : "disabled", "invalid value");
+if (brushUpEnabled && !quotaEnabled) {
+  blocked = true;
+  printCheck("brush-up quota enforcement", false, "", "NATIVE_MINUTE_ENABLE_BETA_QUOTA_ENFORCEMENT must be enabled");
+}
 if (quotaEnabled) {
-  for (const [userName, globalName, periodName] of BETA_QUOTA_POLICY_ENV) {
+  for (const [userName, globalName, periodName] of [...BETA_QUOTA_POLICY_ENV, ...(brushUpEnabled ? [BRUSH_UP_POLICY_ENV] : [])]) {
     for (const limitName of [userName, globalName]) {
       const value = (process.env[limitName] ?? "").trim();
       const parsed = Number(value);

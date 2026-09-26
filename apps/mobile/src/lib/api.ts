@@ -185,6 +185,8 @@ export type MobileCoachFeedback = {
 };
 
 export type MobileReview = {
+  brushUpAvailable?: boolean;
+  brushUpCurrentRevision?: boolean;
   recordStatus?: string;
   historyStatus?: "VERSIONED" | "UNVERIFIED_LEGACY";
   scriptSnapshot?: { revisionId: string; revisionNo: number; title: string; content: string; locale: string; targetSeconds: number } | null;
@@ -314,6 +316,28 @@ export type MobileReviewRequestState =
   | { kind: "success"; review: MobileReview }
   | MobileApiFailure;
 
+export type MobileBrushUpView = {
+  candidateId: string;
+  status: "preparing" | "audio_staged" | "ready" | "adopted" | "rejected" | "rolled_back" | "failed";
+  isCurrentRevision: boolean;
+  baselineAudioId: string | null;
+  candidateAudioId: string | null;
+  cleanupPending: boolean;
+  manualCleanupRequired: boolean;
+};
+
+export type MobileBrushUpRequestState =
+  | { kind: "success"; view: MobileBrushUpView | null }
+  | MobileApiFailure;
+
+export type MobileBrushUpMutationState =
+  | { kind: "success"; candidateId: string | null }
+  | MobileApiFailure;
+
+export type MobileBrushUpConsentState =
+  | { kind: "success"; consentId: string }
+  | MobileApiFailure;
+
 export type MobileProgressRequestState =
   | { kind: "success"; progress: MobileProgress }
   | MobileApiFailure;
@@ -366,6 +390,7 @@ const MOBILE_API_PATHS = {
   voiceSetup: "/api/mobile/voice-setup",
   review: (scriptId: string, takeId: string) =>
     `/api/mobile/scripts/${encodeURIComponent(scriptId)}/reviews/${encodeURIComponent(takeId)}`,
+  brushUp: "/api/mobile/script-brush-up",
   progress: "/api/mobile/progress"
 } as const;
 
@@ -480,6 +505,8 @@ function isMobileCoachFeedback(value: unknown): value is MobileCoachFeedback {
 function isMobileReview(value: unknown): value is MobileReview {
   return (
     isObject(value) &&
+    (value.brushUpAvailable === undefined || typeof value.brushUpAvailable === "boolean") &&
+    (value.brushUpCurrentRevision === undefined || typeof value.brushUpCurrentRevision === "boolean") &&
     (value.historyStatus === undefined || (
       value.historyStatus === "UNVERIFIED_LEGACY" ? value.scriptSnapshot === null && value.scriptTitleSnapshot === null :
       value.historyStatus === "VERSIONED" && isObject(value.scriptSnapshot) &&
@@ -1692,6 +1719,79 @@ export async function fetchMobileReview(
   const review = parseReviewPayload(attempt.body);
   return review && review.takeId === takeId && review.scriptId === scriptId
     ? { kind: "success", review }
+    : { kind: "invalid-response" };
+}
+
+function parseMobileBrushUpView(value: unknown): MobileBrushUpView | null | undefined {
+  if (value === null) return null;
+  if (!isObject(value) || !isUuid(value.candidateId) ||
+    !["preparing", "audio_staged", "ready", "adopted", "rejected", "rolled_back", "failed"].includes(String(value.status)) ||
+    typeof value.isCurrentRevision !== "boolean" ||
+    (value.baselineAudioId !== null && !isUuid(value.baselineAudioId)) ||
+    (value.candidateAudioId !== null && !isUuid(value.candidateAudioId)) ||
+    typeof value.cleanupPending !== "boolean" ||
+    typeof value.manualCleanupRequired !== "boolean") return undefined;
+  return value as MobileBrushUpView;
+}
+
+export async function fetchMobileBrushUpView(
+  bffBaseUrl: string, accessToken: string, scriptId: string, takeId: string,
+  options: MobileApiRequestOptions = {}
+): Promise<MobileBrushUpRequestState> {
+  const query = new URLSearchParams({ scriptId, takeId });
+  const attempt = await requestJson(bffBaseUrl, `${MOBILE_API_PATHS.brushUp}?${query}`, accessToken,
+    { method: "GET" }, options);
+  if (attempt.kind !== "response") return mapAttemptFailure(attempt);
+  if (!attempt.response.ok) return mapFailure(attempt.response, attempt.body);
+  const data = getSuccessData(attempt.body);
+  const view = data ? parseMobileBrushUpView(data.view) : undefined;
+  return view !== undefined ? { kind: "success", view } : { kind: "invalid-response" };
+}
+
+async function postMobileBrushUp(
+  bffBaseUrl: string, accessToken: string, body: Record<string, string>,
+  options: MobileApiRequestOptions = {}, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS
+) {
+  const attempt = await requestJson(bffBaseUrl, MOBILE_API_PATHS.brushUp, accessToken,
+    { method: "POST", body: JSON.stringify(body) }, options, timeoutMs);
+  if (attempt.kind !== "response") return { failure: mapAttemptFailure(attempt) } as const;
+  if (!attempt.response.ok) return { failure: mapFailure(attempt.response, attempt.body) } as const;
+  return { data: getSuccessData(attempt.body) } as const;
+}
+
+export async function acceptMobileBrushUpConsent(
+  bffBaseUrl: string, accessToken: string,
+  input: { scriptId: string; takeId: string; revisionId: string },
+  options: MobileApiRequestOptions = {}
+): Promise<MobileBrushUpConsentState> {
+  const result = await postMobileBrushUp(bffBaseUrl, accessToken, { action: "consent", ...input }, options);
+  if (result.failure) return result.failure;
+  return result.data && isUuid(result.data.consentId)
+    ? { kind: "success", consentId: result.data.consentId }
+    : { kind: "invalid-response" };
+}
+
+export async function generateMobileBrushUpCandidate(
+  bffBaseUrl: string, accessToken: string,
+  input: { scriptId: string; takeId: string; revisionId: string; consentId: string; operationId: string },
+  options: MobileApiRequestOptions = {}
+): Promise<MobileBrushUpMutationState> {
+  const result = await postMobileBrushUp(bffBaseUrl, accessToken, { action: "generate", ...input }, options, DEFAULT_EVALUATE_TIMEOUT_MS);
+  if (result.failure) return result.failure;
+  return result.data && isUuid(result.data.candidateId)
+    ? { kind: "success", candidateId: result.data.candidateId }
+    : { kind: "invalid-response" };
+}
+
+export async function decideMobileBrushUpCandidate(
+  bffBaseUrl: string, accessToken: string,
+  candidateId: string, decision: "adopt" | "reject" | "rollback" | "retry_cleanup",
+  options: MobileApiRequestOptions = {}
+): Promise<MobileBrushUpMutationState> {
+  const result = await postMobileBrushUp(bffBaseUrl, accessToken, { action: "decide", candidateId, decision }, options);
+  if (result.failure) return result.failure;
+  return result.data && isUuid(result.data.candidateId)
+    ? { kind: "success", candidateId: result.data.candidateId }
     : { kind: "invalid-response" };
 }
 

@@ -21,7 +21,7 @@ const REQUEST_ID = "33333333-3333-4333-8333-333333333333";
 const OTHER_REQUEST_ID = "44444444-4444-4444-8444-444444444444";
 const ANONYMIZED_REF = `adr_${"a".repeat(32)}`;
 const NOW = "2026-09-03T00:00:00.000Z";
-const INVENTORY_VERSION = "g5d-2h.account-db.v1";
+const INVENTORY_VERSION = "script-brush-up.account-db.v4";
 const FAKE_EXECUTE_ENV = { NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE: "1" };
 
 const forbiddenOutput = [

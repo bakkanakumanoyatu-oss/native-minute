@@ -21,6 +21,7 @@ export type MobileApiReasonCode =
   | "recording_revision_conflict"
   | "review_claim_conflict"
   | "listen_unavailable"
+  | "brush_up_unavailable"
   | "voice_setup_required"
   | "voice_setup_unavailable"
   | "voice_sample_invalid"

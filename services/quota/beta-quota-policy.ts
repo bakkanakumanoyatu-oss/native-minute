@@ -1,9 +1,11 @@
 import { AppError } from "@/lib/errors";
+import { isScriptBrushUpEnabled } from "@/lib/brush-up/capability";
 
-export type BetaQuotaKind = "reference_audio_generation" | "pronunciation_evaluation" | "voice_creation";
+export type CoreBetaQuotaKind = "reference_audio_generation" | "pronunciation_evaluation" | "voice_creation";
+export type BetaQuotaKind = CoreBetaQuotaKind | "script_brush_up_candidate_generation";
 export type BetaQuotaPeriodKind = "calendar_month_utc" | "account_lifetime";
 export type BetaQuotaLimit = { perUser: number; global: number; periodKind: BetaQuotaPeriodKind };
-export type BetaQuotaPolicy = Record<BetaQuotaKind, BetaQuotaLimit>;
+export type BetaQuotaPolicy = Record<CoreBetaQuotaKind, BetaQuotaLimit> & Partial<Record<"script_brush_up_candidate_generation", BetaQuotaLimit>>;
 
 export const BETA_QUOTA_ENV = {
   reference_audio_generation: {
@@ -20,6 +22,11 @@ export const BETA_QUOTA_ENV = {
     perUser: "NATIVE_MINUTE_QUOTA_VOICE_CREATION_PER_USER_LIMIT",
     global: "NATIVE_MINUTE_QUOTA_VOICE_CREATION_GLOBAL_LIMIT",
     periodKind: "NATIVE_MINUTE_QUOTA_VOICE_CREATION_PERIOD"
+  },
+  script_brush_up_candidate_generation: {
+    perUser: "NATIVE_MINUTE_QUOTA_BRUSH_UP_PER_USER_LIMIT",
+    global: "NATIVE_MINUTE_QUOTA_BRUSH_UP_GLOBAL_LIMIT",
+    periodKind: "NATIVE_MINUTE_QUOTA_BRUSH_UP_PERIOD"
   }
 } as const;
 
@@ -38,11 +45,15 @@ export function readBetaQuotaPolicy(
   source: Record<string, string | undefined> = process.env
 ): BetaQuotaPolicy | null {
   const enabled = (source[ENABLE_ENV] ?? "").trim().toLowerCase();
-  if (DISABLED_VALUES.has(enabled)) return null;
+  if (DISABLED_VALUES.has(enabled)) {
+    if (isScriptBrushUpEnabled(source)) throw new AppError(503, "台本専用のお手本候補の利用上限設定を確認できません。");
+    return null;
+  }
   if (!ENABLED_VALUES.has(enabled)) throw new AppError(503, "利用上限の設定を確認できません。");
 
   const policy = {} as BetaQuotaPolicy;
   for (const kind of Object.keys(BETA_QUOTA_ENV) as BetaQuotaKind[]) {
+    if (kind === "script_brush_up_candidate_generation" && !isScriptBrushUpEnabled(source)) continue;
     const names = BETA_QUOTA_ENV[kind];
     const perUser = parsePositiveLimit(source[names.perUser]);
     const global = parsePositiveLimit(source[names.global]);

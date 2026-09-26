@@ -9,6 +9,7 @@ import type {
 import type { PracticeRoute } from "../practice/routes";
 import { TakeMetadataEditor } from "./TakeMetadataEditor";
 import { SavedTakeAudio } from "./SavedTakeAudio";
+import { BrushUpControl } from "./BrushUpControl";
 import { LoadingState, RequestError, formatReviewDate } from "./ScreenParts";
 function Score({ label, value }: { label: string; value: number }) {
   return (
@@ -157,14 +158,15 @@ export function ReviewScreen({
             <h1 className={visibleState.data.review.displayName ? "take-name" : "take-script-title"}>{visibleState.data.review.displayName ?? (visibleState.data.scriptTitle || "練習結果")}</h1>
             {visibleState.data.review.displayName ? <p className="review-meta">{titleLabel}: <span lang="en">{visibleState.data.scriptTitle}</span></p> : null}
           </div>
-          <ReviewContent scriptArchived={visibleState.data.scriptArchived} review={visibleState.data.review} onNavigate={onNavigate} metadataActions={<TakeMetadataEditor key={takeId} api={api} review={visibleState.data.review} onReload={reload}
+          <ReviewContent scriptArchived={visibleState.data.scriptArchived} review={visibleState.data.review} onNavigate={onNavigate} metadataActions={<><TakeMetadataEditor key={takeId} api={api} review={visibleState.data.review} onReload={reload}
             disabled={!isOnline} onSaved={metadata => memory.update((_key, data) => data.review.takeId === metadata.takeId &&
               (data.review.favorite !== metadata.favorite || data.review.displayName !== metadata.displayName), data => ({ ...data, review: { ...data.review, ...metadata } }))}>
               <p className="saved-take-name">{visibleState.data.review.displayName ? `録音名: ${visibleState.data.review.displayName}` : `${titleLabel}: ${visibleState.data.scriptTitle}`}</p>
               {visibleState.data.review.displayName ? <p className="review-meta">{titleLabel}: {visibleState.data.scriptTitle}</p> : null}
               <p className="review-meta">{formatReviewDate(visibleState.data.review.reviewedAt ?? visibleState.data.review.createdAt)} · スコア {visibleState.data.review.evaluation.score}</p>
               <SavedTakeAudio key={takeId} api={api} takeId={takeId} review={visibleState.data.review} isOnline={isOnline && (!visibleState.refreshing || !!visibleState.data.review.audioVisit)} prefetchEnabled={visibleState.prefetchAllowed} />
-            </TakeMetadataEditor>} />
+            </TakeMetadataEditor>
+            {visibleState.data.review.brushUpAvailable ? <BrushUpControl key={`brush-${takeId}`} api={api} review={visibleState.data.review} isOnline={isOnline} /> : null}</>} />
         </>
       ) : (
         <button type="button" className="review-primary" disabled>

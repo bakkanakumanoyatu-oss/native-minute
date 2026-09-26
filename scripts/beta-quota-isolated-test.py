@@ -159,6 +159,12 @@ try:
     helper_source = (ROOT / "scripts/g5d-2j-isolated-postgres-runtime-proof.sql").read_text()
     helpers = helper_source[helper_source.index("create or replace function pg_temp.create_provider_terminal_request"):
                             helper_source.index("-- Clean migration history")]
+    # This proof intentionally exercises an existing v3 request after v4 becomes
+    # the default for new requests.
+    helpers = helpers.replace(
+        "insert into public.account_deletion_requests(id, user_id, status, confirmed_at)\n  values (p_request_id, p_user_id, 'confirmed', transaction_timestamp());",
+        "insert into public.account_deletion_requests(id, user_id, status, confirmed_at, db_inventory_version)\n  values (p_request_id, p_user_id, 'confirmed', transaction_timestamp(), 'beta-quota.account-db.v3');"
+    )
     request_id = "70000000-0000-4000-8000-0000000000d4"
     sql(f"insert into auth.users(id,email) values ('{USER_D}','quota-delete@example.invalid');")
     deletion_reservation = reserve(USER_D, "reference_audio_generation", "delete-d1")

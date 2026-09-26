@@ -133,6 +133,13 @@ function getElevenLabsVoiceSampleReference(input: CreateVoiceInput) {
 }
 
 async function downloadElevenLabsVoiceSample(input: CreateVoiceInput) {
+  if (input.sampleAudioBytes) {
+    const { bytes, contentType, filename } = input.sampleAudioBytes;
+    if (!bytes.length || !contentType.startsWith("audio/") || !filename.trim()) {
+      throw new AppError(400, "保存済みTakeの音声を確認できませんでした。");
+    }
+    return { blob: new Blob([new Uint8Array(bytes)], { type: contentType }), contentType, filename };
+  }
   requireEnv("SUPABASE_SERVICE_ROLE_KEY");
 
   const reference = getElevenLabsVoiceSampleReference(input);

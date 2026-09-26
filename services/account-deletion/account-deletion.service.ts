@@ -109,6 +109,8 @@ export type DatabaseCleanupTableName =
   | "coachFeedback"
   | "scriptSavedBestTakes"
   | "scriptSavedModelAudios"
+  | "scriptBrushUpCandidates"
+  | "scriptBrushUpConsents"
   | "scriptAudios"
   | "voiceConsents"
   | "voices"
@@ -177,6 +179,8 @@ export type AccountDeletionInventorySummary = {
     coachFeedback: number;
     savedBestTakes: number;
     savedModelAudios: number;
+    brushUpCandidates?: number;
+    brushUpConsents?: number;
     scriptAudios: number;
     voiceConsents: number;
     voices: number;
@@ -190,6 +194,7 @@ export type AccountDeletionInventorySummary = {
   };
   provider: {
     elevenLabsVoiceCandidates: number;
+    brushUpUnresolvedVoices?: number;
   };
   notes: string[];
 };
@@ -590,7 +595,7 @@ function isAuthDeletionStageRunnable(status: AccountDeletionCleanupStatus) {
 }
 
 function getDatabaseInventoryCount(inventory: AccountDeletionInventorySummary) {
-  return Object.values(inventory.database).reduce((total, count) => total + count, 0);
+  return Object.values(inventory.database).reduce((total: number, count) => total + (count ?? 0), 0);
 }
 
 function getStorageInventoryCount(inventory: AccountDeletionInventorySummary) {
@@ -1060,6 +1065,13 @@ function buildAccountDeletionDryRunSummary(input: {
       notes: ["Script audio rows and app-owned audio objects are counted; stored asset references are not returned."]
     },
     {
+      category: "script brush-up provenance",
+      status: coverageStatusFromCount((input.inventory.database.brushUpCandidates ?? 0) + (input.inventory.database.brushUpConsents ?? 0)),
+      source: "database_cleanup",
+      count: (input.inventory.database.brushUpCandidates ?? 0) + (input.inventory.database.brushUpConsents ?? 0),
+      notes: ["Dedicated consent and candidate rows are counted; recording and provider identities are not returned."]
+    },
+    {
       category: "voice-samples",
       status: input.inventory.storage.voiceSamples.status === "unavailable" ? "blocked" : coverageStatusFromCount(input.inventory.storage.voiceSamples.count),
       source: "storage_cleanup",
@@ -1100,6 +1112,13 @@ function buildAccountDeletionDryRunSummary(input: {
       source: "provider_cleanup",
       count: input.providerCleanup.cleanup.required,
       notes: ["Normal v1 ElevenLabs voice cleanup candidates are counted without exposing provider voice ids."]
+    },
+    {
+      category: "script brush-up provider resources",
+      status: coverageStatusFromCount(input.inventory.provider.brushUpUnresolvedVoices ?? 0),
+      source: "provider_cleanup",
+      count: input.inventory.provider.brushUpUnresolvedVoices ?? 0,
+      notes: ["Unresolved transient candidate voices are counted and must be reconciled before Provider seal."]
     },
     {
       category: "request tracking",
@@ -1587,6 +1606,8 @@ export async function collectAccountDeletionInventory(userId: string): Promise<A
     takes,
     savedBestTakes,
     savedModelAudios,
+    brushUpCandidates,
+    brushUpConsents,
     voiceConsents,
     voices,
     quotaEvents,
@@ -1597,7 +1618,8 @@ export async function collectAccountDeletionInventory(userId: string): Promise<A
     scriptAudioObjects,
     voiceSampleObjects,
     voiceConsentObjects,
-    elevenLabsVoiceCandidates
+    elevenLabsVoiceCandidates,
+    brushUpUnresolvedVoices
   ] = await Promise.all([
     getExactCount(
       admin
@@ -1634,6 +1656,10 @@ export async function collectAccountDeletionInventory(userId: string): Promise<A
         .eq("user_id", userId),
       "saved model audio inventory の取得"
     ),
+    getExactCount(admin.from("script_brush_up_candidates").select("id", { count: "exact", head: true })
+      .eq("user_id", userId), "brush-up candidate inventory の取得"),
+    getExactCount(admin.from("script_brush_up_consents").select("id", { count: "exact", head: true })
+      .eq("user_id", userId), "brush-up consent inventory の取得"),
     getExactCount(
       admin
         .from("voice_consents")
@@ -1693,6 +1719,10 @@ export async function collectAccountDeletionInventory(userId: string): Promise<A
         .eq("user_id", userId)
         .eq("provider", "elevenlabs"),
       "ElevenLabs voice candidate inventory の取得"
+    ),
+    getExactCount(admin.from("script_brush_up_candidates").select("id", { count: "exact", head: true })
+      .eq("user_id", userId).in("provider_cleanup_state", ["create_unknown", "present", "delete_pending", "delete_failed"]),
+      "brush-up provider resource inventory の取得"
     )
   ]);
 
@@ -1706,6 +1736,8 @@ export async function collectAccountDeletionInventory(userId: string): Promise<A
       coachFeedback,
       savedBestTakes,
       savedModelAudios,
+      brushUpCandidates,
+      brushUpConsents,
       scriptAudios,
       voiceConsents,
       voices,
@@ -1718,7 +1750,8 @@ export async function collectAccountDeletionInventory(userId: string): Promise<A
       voiceConsents: voiceConsentObjects
     },
     provider: {
-      elevenLabsVoiceCandidates
+      elevenLabsVoiceCandidates,
+      brushUpUnresolvedVoices
     },
     notes: [
       "dry-run only: no storage object, database row, provider voice, quota event, consent recording, or auth user is deleted.",
@@ -2785,6 +2818,8 @@ export async function planDatabaseCleanupDryRun(userId: string): Promise<Databas
     takes,
     savedBestTakes,
     savedModelAudios,
+    brushUpCandidates,
+    brushUpConsents,
     voiceConsents,
     voices,
     quotaEvents,
@@ -2828,6 +2863,10 @@ export async function planDatabaseCleanupDryRun(userId: string): Promise<Databas
         .eq("user_id", userId),
       "saved model audio DB cleanup dry-run の取得"
     ),
+    getExactCount(admin.from("script_brush_up_candidates").select("id", { count: "exact", head: true })
+      .eq("user_id", userId), "brush-up candidate DB cleanup dry-run の取得"),
+    getExactCount(admin.from("script_brush_up_consents").select("id", { count: "exact", head: true })
+      .eq("user_id", userId), "brush-up consent DB cleanup dry-run の取得"),
     getExactCount(
       admin
         .from("voice_consents")
@@ -2909,6 +2948,18 @@ export async function planDatabaseCleanupDryRun(userId: string): Promise<Databas
       action: "cascade_dependent",
       candidateCount: savedModelAudios,
       notes: ["Expected to be removed through user/script/script_audio cleanup."]
+    }),
+    buildDatabaseTableSummary({
+      table: "scriptBrushUpCandidates",
+      action: "explicit_delete",
+      candidateCount: brushUpCandidates,
+      notes: ["Provider absence and candidate Storage cleanup must be verified before exact row deletion."]
+    }),
+    buildDatabaseTableSummary({
+      table: "scriptBrushUpConsents",
+      action: "explicit_delete",
+      candidateCount: brushUpConsents,
+      notes: ["Dedicated consent provenance is deleted after candidate rows."]
     }),
     buildDatabaseTableSummary({
       table: "scriptAudios",
@@ -3228,6 +3279,18 @@ async function executeOwnedDatabaseCleanupForAccountDeletion(input: {
       action: "explicit_delete",
       expectedCount: getDatabaseTableCount(input.dryRun, "quotaEvents"),
       execute: () => admin.from("quota_events").delete().eq("user_id", input.userId)
+    },
+    {
+      table: "scriptBrushUpCandidates",
+      action: "explicit_delete",
+      expectedCount: getDatabaseTableCount(input.dryRun, "scriptBrushUpCandidates"),
+      execute: () => admin.from("script_brush_up_candidates").delete().eq("user_id", input.userId)
+    },
+    {
+      table: "scriptBrushUpConsents",
+      action: "explicit_delete",
+      expectedCount: getDatabaseTableCount(input.dryRun, "scriptBrushUpConsents"),
+      execute: () => admin.from("script_brush_up_consents").delete().eq("user_id", input.userId)
     },
     {
       table: "takes",

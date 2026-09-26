@@ -1,6 +1,6 @@
 # 現在の状態
 
-2026-09-26 **DB-backed β quota enforcement LOCAL PASS**。0036とserver-only policyで見本音声cache miss・発音評価・声の作成のper-user/global atomic予約を実装。上限6値とperiod3値はHuman未決定で、enforcement既定OFF。isolated DB・focused tests、lint/typecheck/build PASS。Staging apply/env/deploy、provider、実Productionへの操作なし。
+2026-09-26 **β quota Staging cutoverはHuman確認を含めCLOSED**。同じiPhoneのquota版で起動・履歴・brandを確認済み。追加のprovider確認呼出しは0。今回の台本専用ブラッシュアップはfeature OFFのlocal foundationで、0037 Staging未適用・実provider未呼出し・native installなし。専用quotaの具体値とperiodはHuman未決定。
 
 2026-09-26 **brand Human actual-device CLOSED**。AppIcon、Native Minutes表示、Home/台本/成長/My Takes/設定のarrow、既存履歴はHuman PASS。Splashはsigned bundle内full-logoを確認済みでHuman目視は未観測、nonblocking。brandを再openしない。
 
