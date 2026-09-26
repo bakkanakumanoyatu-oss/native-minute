@@ -1,5 +1,7 @@
 # 現在の状態
 
+2026-09-26 **保存済み台本の新規お手本生成だけ長さguardをmainline commit**。所有・revision/epoch・cache identity確認後、正しい保存済み音声は長文でも再利用。cache missで200語またはtrim後2,000 JavaScript UTF-16 units超過ならwriter intent予約とprovider呼出し前に拒否し、本文編集を案内する。本文・履歴・revision/epoch・DB/provider契約は変更なし。Vercel配備は未実施。
+
 2026-09-25 **小人数βのAI台本生成をmainlineに統合**。`NATIVE_MINUTE_ENABLE_AI_SCRIPT_GENERATION` はserver側で既定OFF。WebのAI入口を隠し、生成APIとserviceはprovider選択前に403で拒否する。ONでは既存mock/local生成経路を維持。production preflightはOFF時に生成providerを要求せず、ON時だけ`SCRIPT_GENERATION_PROVIDER=openai`を要求する。OpenAI transcriptionのprovider・`OPENAI_API_KEY`と他のrelease guardは維持。テンプレ・手動作成編集・保存済み履歴には影響しない。DB・provider・native app・Productionは未変更。
 
 2026-09-25 **Web/Mobile元声収録ガイドをmainlineに統合**。clone sampleの録音前に静かな場所・安定した距離/音量・自然な声・他人/TV/音楽の回避と品質への影響を案内。同意録音とは分け、録音後の試聴・録り直し・採用を明確化。古い未確定録音の採用と連続送信を防ぎ、Mobileの本人確認、Webの試聴任意、既存voiceを維持。DB/provider/Storage/retention/deletion、script-length、AI生成停止、native app、Productionは変更なし。canonical Staging aliasは今回push後の新deploymentへ未切替で、後続で一度だけ反映する。

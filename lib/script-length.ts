@@ -1,5 +1,6 @@
 export const MAX_SCRIPT_WORDS = 200;
 export const MAX_SCRIPT_CHARACTERS = 2_000;
+export const SCRIPT_LENGTH_EDIT_GUIDANCE = `台本本文を${MAX_SCRIPT_WORDS}語・${MAX_SCRIPT_CHARACTERS.toLocaleString("en-US")}文字以内に編集してください。`;
 
 // Match the existing script UI/readiness rule: trim, then count whitespace-separated tokens.
 // String.length matches the existing Zod character limit (UTF-16 code units).

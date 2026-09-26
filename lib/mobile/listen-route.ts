@@ -6,7 +6,7 @@ import { scriptIdSchema, practiceIdentitySchema } from "@/schemas/script";
 import type { SpeakScriptRequestInput } from "@/schemas/voice";
 import { getScript } from "@/services/scripts/scripts.service";
 import type { ScriptListItem } from "@/services/scripts/types";
-import { speakScript } from "@/services/voice";
+import { ScriptAudioLengthError, speakScript } from "@/services/voice";
 import { mobileApiError, mobileApiOk } from "./api-response";
 import {
   authenticateMobileRequest,
@@ -78,6 +78,9 @@ export async function handleMobileListenPost(
 
     return mobileApiOk(origin, { audioId, cached: result.cached });
   } catch (error) {
+    if (error instanceof ScriptAudioLengthError) {
+      return mobileApiError(origin, 400, "script_length_exceeded");
+    }
     return mapMobileServiceError(origin, error, {
       unavailable: "listen_unavailable",
       notFound: "script_not_found",

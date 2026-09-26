@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { vi } from "vitest";
 import type { MobileAuthController } from "../auth/mobile-auth";
+import { SCRIPT_LENGTH_EDIT_GUIDANCE } from "../../../../lib/script-length";
 import {
   createPracticeApi,
   getPracticeErrorCopy,
@@ -27,6 +28,11 @@ describe("practice request state", () => {
     expect(copy).toContain("もう一度録音");
     expect(copy).not.toContain("ElevenLabs");
     expect(copy).not.toContain("storage://");
+  });
+
+  it("shows the script edit action for an over-limit Listen request", () => {
+    expect(getPracticeErrorCopy({ kind: "invalid-request", reasonCode: "script_length_exceeded" }))
+      .toBe(SCRIPT_LENGTH_EDIT_GUIDANCE);
   });
 
   it("keeps the frozen owner valid only during authenticated refresh lifecycle state", () => {

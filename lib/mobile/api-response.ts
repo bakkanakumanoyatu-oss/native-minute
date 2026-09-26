@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { SCRIPT_LENGTH_EDIT_GUIDANCE } from "@/lib/script-length";
 import { buildMobileApiHeaders } from "./api-cors";
 import type { MobileApiErrorBody, MobileApiReasonCode, MobileApiSuccessBody } from "./contracts";
 
@@ -20,6 +21,7 @@ const MOBILE_API_ERROR_COPY: Record<MobileApiReasonCode, { message: string; retr
   recording_revision_conflict: { message: "台本が変更または削除されました。最新の台本を確認してください。", retryable: false },
   review_claim_conflict: { message: "台本が変更または削除されました。最新の台本を確認してください。", retryable: false },
   script_limit_reached: { message: "台本の保存上限に達しています。", retryable: false },
+  script_length_exceeded: { message: SCRIPT_LENGTH_EDIT_GUIDANCE, retryable: false },
   listen_unavailable: { message: "お手本音声を準備できませんでした。", retryable: true },
   voice_setup_required: { message: "お手本音声の準備が必要です。", retryable: false },
   voice_setup_unavailable: { message: "お手本ボイスを準備できませんでした。少し待ってから再試行してください。", retryable: true },

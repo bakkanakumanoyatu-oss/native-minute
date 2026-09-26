@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
+import { getScriptLength, getScriptLengthError, SCRIPT_LENGTH_EDIT_GUIDANCE } from "@/lib/script-length";
+import { buildScriptAudioCacheKey } from "@/services/voice/cache";
 
 const USER_ID = "11111111-1111-4111-8111-111111111111";
 const SCRIPT_ID = "22222222-2222-4222-8222-222222222222";
 const VOICE_ID = "33333333-3333-4333-8333-333333333333";
 const AUDIO_ID = "44444444-4444-4444-8444-444444444444";
+const words = (count: number) => Array.from({ length: count }, () => "word").join(" ");
+const identity = { expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1, scriptId: SCRIPT_ID };
 
 const mocks = vi.hoisted(() => ({
   createSupabaseAdminClient: vi.fn(),
@@ -13,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   getScript: vi.fn(),
   createConfiguredVoiceProvider: vi.fn(),
   getVoiceProviderStatus: vi.fn(),
+  synthesize: vi.fn(async () => ({ audio: new Uint8Array([1, 2, 3]) })),
   stageScriptAudioForReplay: vi.fn(),
   quota: {
     buildVoiceGenerationAttemptMetadata: vi.fn(() => ({})),
@@ -96,17 +101,20 @@ function createClient(finalAudio: { current: Record<string, unknown> | null }) {
   audio.eq.mockReturnValue(audio);
 
   return {
-    auth: { getUser: vi.fn(async () => ({ data: { user: { id: USER_ID } }, error: null })) },
-    from: vi.fn((table: string) => {
-      if (table === "voices") return voices;
-      if (table === "script_audios") return audio;
-      throw new Error(`unexpected request table: ${table}`);
-    })
-  } as unknown as AppSupabaseClient;
+    client: {
+      auth: { getUser: vi.fn(async () => ({ data: { user: { id: USER_ID } }, error: null })) },
+      from: vi.fn((table: string) => {
+        if (table === "voices") return voices;
+        if (table === "script_audios") return audio;
+        throw new Error(`unexpected request table: ${table}`);
+      })
+    } as unknown as AppSupabaseClient,
+    audioLookup: audio
+  };
 }
 
-function configureHappyPath(input: { reservationError?: { message: string } | null } = {}) {
-  const finalAudio = { current: null as Record<string, unknown> | null };
+function configureHappyPath(input: { reservationError?: { message: string } | null; initialAudio?: Record<string, unknown> } = {}) {
+  const finalAudio = { current: input.initialAudio ?? null as Record<string, unknown> | null };
   const inserted = {script_revision_id: "60000000-0000-4000-8000-000000000001", generation_key_version: 2, generation_preset: "natural", revision_binding: "generated",
     id: AUDIO_ID,
     script_id: SCRIPT_ID,
@@ -149,7 +157,7 @@ function configureHappyPath(input: { reservationError?: { message: string } | nu
   });
   mocks.getScript.mockResolvedValue(script);
   mocks.getVoiceProviderStatus.mockReturnValue({ provider: "elevenlabs", supported: true });
-  mocks.createConfiguredVoiceProvider.mockReturnValue({ synthesize: vi.fn(async () => ({ audio: new Uint8Array([1, 2, 3]) })) });
+  mocks.createConfiguredVoiceProvider.mockReturnValue({ synthesize: mocks.synthesize });
   mocks.stageScriptAudioForReplay.mockImplementation(async (stageInput: { reservedStorageObjectKey: string }) => ({
     storagePath: `/api/script-audio/${AUDIO_ID}`,
     storedAsset: {
@@ -159,7 +167,7 @@ function configureHappyPath(input: { reservationError?: { message: string } | nu
       byteLength: 3
     }
   }));
-  return { client: createClient(finalAudio), rpc };
+  return { ...createClient(finalAudio), rpc, finalAudio };
 }
 
 describe("G5C-B4 server-owned Listen cache writer", () => {
@@ -194,5 +202,97 @@ describe("G5C-B4 server-owned Listen cache writer", () => {
     await expect(speakScript(client, USER_ID, { expectedRevisionId: "60000000-0000-4000-8000-000000000001", expectedPracticeEpoch: 1, scriptId: SCRIPT_ID })).rejects.toMatchObject({ status: 409 });
     expect(mocks.createConfiguredVoiceProvider).not.toHaveBeenCalled();
     expect(mocks.stageScriptAudioForReplay).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["201 words", words(201)],
+    ["2,001 UTF-16 units", "a".repeat(2001)],
+    ["surrogate pair crossing 2,000 units", `${"a".repeat(1999)}😀`]
+  ])("rejects an over-limit saved script on cache miss before reservation or synthesis (%s)", async (_case, content) => {
+    const { client, rpc, finalAudio } = configureHappyPath();
+    const savedScript = { ...script, content };
+    mocks.getScript.mockResolvedValue(savedScript);
+    const before = structuredClone(savedScript);
+    expect(getScriptLength(content).exceedsLimit).toBe(true);
+
+    await expect(speakScript(client, USER_ID, identity)).rejects.toMatchObject({
+      status: 400,
+      message: `${getScriptLengthError(content)} ${SCRIPT_LENGTH_EDIT_GUIDANCE}`
+    });
+
+    expect(rpc).not.toHaveBeenCalled();
+    expect(mocks.createConfiguredVoiceProvider).not.toHaveBeenCalled();
+    expect(mocks.synthesize).not.toHaveBeenCalled();
+    expect(mocks.stageScriptAudioForReplay).not.toHaveBeenCalled();
+    expect(finalAudio.current).toBeNull();
+    expect(savedScript).toEqual(before);
+    if (_case === "surrogate pair crossing 2,000 units") {
+      expect(getScriptLength(content).characterCount).toBe(2001);
+    }
+  });
+
+  it.each([
+    ["200 words", words(200)],
+    ["2,000 UTF-16 units", "a".repeat(2000)]
+  ])("generates normally for a saved script at the exact limit (%s)", async (_case, content) => {
+    const { client, rpc } = configureHappyPath();
+    mocks.getScript.mockResolvedValue({ ...script, content });
+    expect(getScriptLength(content).exceedsLimit).toBe(false);
+
+    await expect(speakScript(client, USER_ID, identity)).resolves.toMatchObject({ cached: false });
+
+    expect(rpc).toHaveBeenCalledWith("reserve_voice_asset_write_intent", expect.anything());
+    expect(mocks.createConfiguredVoiceProvider).toHaveBeenCalledOnce();
+    expect(mocks.synthesize).toHaveBeenCalledOnce();
+  });
+
+  it("reuses an owned revision-matched cache hit for an existing long body", async () => {
+    const content = words(201);
+    const cacheKey = buildScriptAudioCacheKey({
+      revisionId: script.currentRevisionId,
+      provider: voice.provider,
+      voiceId: voice.id,
+      scriptLocale: script.locale,
+      voiceStylePreset: "natural",
+      scriptContent: content
+    });
+    const { client, rpc, audioLookup } = configureHappyPath({ initialAudio: {
+      id: AUDIO_ID,
+      script_id: SCRIPT_ID,
+      voice_id: VOICE_ID,
+      provider: voice.provider,
+      cache_key: cacheKey,
+      script_revision_id: script.currentRevisionId,
+      storage_path: `/api/script-audio/${AUDIO_ID}`,
+      stored_asset: {
+        storageBucket: "script-audios",
+        storageObjectKey: `${USER_ID}/${SCRIPT_ID}/${AUDIO_ID}.mp3`,
+        contentType: "audio/mpeg",
+        byteLength: 3
+      }
+    } });
+    mocks.getScript.mockResolvedValue({ ...script, content });
+
+    await expect(speakScript(client, USER_ID, identity)).resolves.toMatchObject({ cached: true, cacheKey });
+
+    expect(audioLookup.eq).toHaveBeenCalledWith("script_revision_id", script.currentRevisionId);
+    expect(audioLookup.eq).toHaveBeenCalledWith("cache_key", cacheKey);
+    expect(rpc).not.toHaveBeenCalled();
+    expect(mocks.createConfiguredVoiceProvider).not.toHaveBeenCalled();
+    expect(mocks.synthesize).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["archived", { archivedAt: "2026-09-25T00:00:00.000Z" }, identity],
+    ["stale revision", {}, { ...identity, expectedRevisionId: "60000000-0000-4000-8000-000000000002" }]
+  ])("retains practice identity rejection before the length guard (%s)", async (_case, change, requestIdentity) => {
+    const { client, rpc, audioLookup } = configureHappyPath();
+    mocks.getScript.mockResolvedValue({ ...script, content: words(201), ...change });
+
+    await expect(speakScript(client, USER_ID, requestIdentity)).rejects.toMatchObject({ status: 409 });
+
+    expect(audioLookup.maybeSingle).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+    expect(mocks.createConfiguredVoiceProvider).not.toHaveBeenCalled();
   });
 });

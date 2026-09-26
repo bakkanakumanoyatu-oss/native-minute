@@ -1,4 +1,5 @@
 import type { MobileAuthController } from "../auth/mobile-auth";
+import { SCRIPT_LENGTH_EDIT_GUIDANCE } from "../../../../lib/script-length";
 import type { MobileAuthState } from "../auth/state-machine";
 import { scriptsDisplayMemory, reviewDisplayMemory, type ReviewDisplay } from "./display-loaders";
 import type { DisplayMemory } from "./display-memory";
@@ -183,7 +184,9 @@ export function getPracticeErrorCopy(state: PracticeRequestFailure | RequestStat
         ? "同じTakeを評価中です。少し待ってから再試行してください。"
         : "この操作を完了できませんでした。内容を確認して再試行してください。";
     case "invalid-request":
-      return state.reasonCode === "voice_sample_invalid"
+      return state.reasonCode === "script_length_exceeded"
+        ? SCRIPT_LENGTH_EDIT_GUIDANCE
+        : state.reasonCode === "voice_sample_invalid"
         ? "声の録音を確認して、もう一度録音してください。"
         : "この操作を完了できませんでした。内容を確認して再試行してください。";
     case "server-error":

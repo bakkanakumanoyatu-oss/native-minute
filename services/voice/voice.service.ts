@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "@/lib/errors";
+import { getScriptLengthError, SCRIPT_LENGTH_EDIT_GUIDANCE } from "@/lib/script-length";
 import { timeAsync } from "@/lib/performance/timing";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireCurrentUser } from "@/lib/supabase/auth";
@@ -66,6 +67,12 @@ type VoiceQuotaContext = {
   cacheKey?: string | null;
   keys: VoiceGenerationQuotaKeys;
 };
+
+export class ScriptAudioLengthError extends AppError {
+  constructor(lengthError: string) {
+    super(400, `${lengthError} ${SCRIPT_LENGTH_EDIT_GUIDANCE}`);
+  }
+}
 
 export type EnsureDefaultVoiceResult = {
   voice: VoiceRow;
@@ -889,6 +896,11 @@ export async function speakScript(client: AppSupabaseClient, userId: string, inp
       cacheKey,
       voice: selectedVoice
     };
+  }
+
+  const lengthError = getScriptLengthError(script.content);
+  if (lengthError) {
+    throw new ScriptAudioLengthError(lengthError);
   }
 
   // A persisted, owned cache entry remains playable when the provider is

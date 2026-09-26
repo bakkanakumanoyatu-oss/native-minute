@@ -10,6 +10,7 @@ export type MobileApiReasonCode =
   | "scripts_unavailable"
   | "script_not_found"
   | "script_limit_reached"
+  | "script_length_exceeded"
   | "script_archived"
   | "script_edit_conflict"
   | "script_revision_conflict"

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSupabaseClient } from "../../../lib/supabase/client";
+import { SCRIPT_LENGTH_EDIT_GUIDANCE } from "../../../lib/script-length";
 import { handleMobileListenPost } from "../../../lib/mobile/listen-route";
 import type { ScriptListItem } from "../../../services/scripts/types";
 import { speakScript } from "../../../services/voice/voice.service";
@@ -238,6 +239,26 @@ describe("mobile listen cache before provider availability", () => {
     expect(voiceProviderMocks.createConfiguredVoiceProvider).not.toHaveBeenCalled();
     expect(voiceProviderMocks.synthesize).not.toHaveBeenCalled();
     expect(quotaMocks.recordVoiceQuotaEventSkipped).toHaveBeenCalledOnce();
+  });
+
+  it("explains the edit needed for an over-limit saved script on Mobile cache miss", async () => {
+    const savedScript = { ...script, content: Array.from({ length: 201 }, () => "word").join(" ") };
+    const { client, audioLookup } = createVoiceCacheClient({ defaultVoice: voice, cachedAudio: null });
+    scriptServiceMocks.getScript.mockResolvedValue(savedScript);
+
+    const response = await handleMobileListenPost(
+      mobileRequest(`/api/mobile/scripts/${SCRIPT_ID}/listen`), SCRIPT_ID,
+      { ...mobileAuthDependencies(client), getOwnedScript: async () => savedScript, speakOwnedScript: speakScript }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: { reasonCode: "script_length_exceeded", message: SCRIPT_LENGTH_EDIT_GUIDANCE, retryable: false }
+    });
+    expect(audioLookup).toHaveBeenCalledOnce();
+    expect(voiceProviderMocks.createConfiguredVoiceProvider).not.toHaveBeenCalled();
+    expect(voiceProviderMocks.synthesize).not.toHaveBeenCalled();
   });
 
   it("does not look up cached audio for a missing or foreign script", async () => {
