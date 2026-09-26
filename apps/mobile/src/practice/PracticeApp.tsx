@@ -10,6 +10,7 @@ import { SettingsScreen } from "../screens/SettingsScreen";
 import { VoiceSetupScreen } from "../screens/VoiceSetupScreen";
 import { AccountDeletionScreen } from "../screens/AccountDeletionScreen";
 import { VoiceDeletionScreen } from "../screens/VoiceDeletionScreen";
+import brandMark from "../assets/native-minutes-mark-icon.png";
 import type { PracticeApi } from "./api";
 import { isFocusedPractice, safePracticeOrigin, practiceBackRoute, parsePracticeRoute, practiceRoutePath, type PracticeRoute, type ReviewReturnOrigin } from "./routes";
 
@@ -194,7 +195,7 @@ export function PracticeApp({
           <span aria-label="練習のステップ">{route.name === "listen" ? "1 / 3" : route.name === "record" ? "2 / 3" : "3 / 3"}</span>
           <button type="button" onClick={() => navigate({ name: "home" })}>練習を終了（Home）</button>
         </header>
-      ) : <header className="space-header"><div><strong>Native Minutes</strong><span>YOUR QUIET SPEAKING SPACE</span></div><button type="button" onClick={() => navigate({ name: "settings" })}>設定</button></header>}
+      ) : <header className="space-header"><div><img className="brand-mark" src={brandMark} alt="Native Minutes" /><span>YOUR QUIET SPEAKING SPACE</span></div><button type="button" onClick={() => navigate({ name: "settings" })}>設定</button></header>}
       <div key={practiceRoutePath(route)}>{screen}</div>
       {route.name === "settings" ? <button type="button" className="space-logout" onClick={onLogout}>ログアウト</button> : null}
       {!isFocusedPractice(route) ? <nav className="space-bottom-nav" aria-label="メインナビゲーション">
