@@ -6,13 +6,14 @@
 - Use `README.md` as setup/reference, not as the freshest implementation log.
 
 ## Workspace guard
-- The correct working directory is `/Users/karasawatakahiro/Developer/native-minute`.
+- The main checkout is `/Users/karasawatakahiro/Developer/native-minute`; isolated sibling worktrees registered to that checkout are also allowed by `check:workspace`.
 - Do not edit `/Users/karasawatakahiro/Desktop/native-minute` or the quarantined Desktop checkout.
 - Run `npm run check:workspace` before meaningful verification; it fails outside the Developer checkout.
 
 ## Product focus
 - Native Minute is a fixed 1-minute English practice MVP.
 - Prioritize the main loop: `setup/voice -> scripts -> listen -> record -> review -> progress`.
+- Gallery is a versioned curated content layer. Keep editorial rights/provenance out of the public bundle; only an explicitly approved PRACTICE item may enter canonical user script creation. An empty Gallery is valid until the exact First Collection package arrives.
 - E2E expansion is not the main goal. Keep the current minimum smoke coverage unless the task explicitly asks for more.
 
 ## Working style

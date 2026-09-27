@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { label: "Home", href: "/", match: (pathname: string) => pathname === "/" },
-  { label: "Practice", href: "/scripts", match: (pathname: string) => pathname.startsWith("/scripts") },
+  { label: "Scripts", href: "/scripts", match: (pathname: string) => pathname.startsWith("/scripts") },
+  { label: "Gallery", href: "/gallery", match: (pathname: string) => pathname.startsWith("/gallery") },
   { label: "Progress", href: "/progress", match: (pathname: string) => pathname.startsWith("/progress") },
   { label: "Voice", href: "/setup/voice", match: (pathname: string) => pathname.startsWith("/setup/voice") },
   { label: "Settings", href: "/settings", match: (pathname: string) => pathname.startsWith("/settings") }

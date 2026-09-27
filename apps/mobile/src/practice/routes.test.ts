@@ -11,6 +11,9 @@ describe("practice routes", () => {
     { name: "takes" },
     { name: "takes", scriptId: "script-1" },
     { name: "scripts" },
+    { name: "scripts", create: true },
+    { name: "gallery" },
+    { name: "gallery", itemId: "synthetic-one" },
     { name: "settings" },
     { name: "account_deletion" },
     { name: "voice_deletion" },
@@ -36,6 +39,7 @@ describe("practice routes", () => {
     expect(isPracticePath("/scripts/example/listen")).toBe(true);
     expect(isPracticePath("/setup/voice")).toBe(true);
     expect(isPracticePath("/progress")).toBe(true);
+    expect(isPracticePath("/gallery")).toBe(true);
     expect(isPracticePath("/settings")).toBe(true);
     expect(isPracticePath("/settings/account-deletion")).toBe(true);
     expect(isPracticePath("/settings/voice-data")).toBe(true);

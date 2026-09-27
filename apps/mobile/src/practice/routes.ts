@@ -1,7 +1,8 @@
 export type PracticeRoute =
   | { name: "home" }
   | { name: "takes"; scriptId?: string; favorites?: boolean }
-  | { name: "scripts" }
+  | { name: "scripts"; create?: boolean }
+  | { name: "gallery"; itemId?: string }
   | { name: "settings" }
   | { name: "account_deletion" }
   | { name: "voice_deletion" }
@@ -36,7 +37,13 @@ export function parsePracticeRoute(location: Pick<Location, "pathname" | "search
   }
 
   if (segments.length === 1 && segments[0] === "scripts") {
-    return { name: "scripts" };
+    return new URLSearchParams(location.search).get("create") === "1" ? { name: "scripts", create: true } : { name: "scripts" };
+  }
+
+  if (segments.length === 1 && segments[0] === "gallery") return { name: "gallery" };
+  if (segments.length === 2 && segments[0] === "gallery") {
+    const itemId = safeSegment(segments[1]);
+    return itemId ? { name: "gallery", itemId } : { name: "gallery" };
   }
 
   if (segments.length === 1 && segments[0] === "settings") {
@@ -95,7 +102,9 @@ export function practiceRoutePath(route: PracticeRoute) {
       return `/takes${query.size ? `?${query}` : ""}`;
     }
     case "scripts":
-      return "/scripts";
+      return route.create ? "/scripts?create=1" : "/scripts";
+    case "gallery":
+      return route.itemId ? `/gallery/${encodeURIComponent(route.itemId)}` : "/gallery";
     case "settings":
       return "/settings";
     case "account_deletion":
@@ -120,12 +129,12 @@ export function practiceRoutePath(route: PracticeRoute) {
 }
 
 export function isPracticePath(pathname: string) {
-  if (pathname === "/" || pathname === "/takes" || pathname === "/scripts" || pathname === "/progress" || pathname === "/setup/voice" || pathname === "/settings" || pathname === "/settings/account-deletion" || pathname === "/settings/voice-data") {
+  if (pathname === "/" || pathname === "/takes" || pathname === "/scripts" || pathname === "/gallery" || pathname === "/progress" || pathname === "/setup/voice" || pathname === "/settings" || pathname === "/settings/account-deletion" || pathname === "/settings/voice-data") {
     return true;
   }
 
   const route = parsePracticeRoute({ pathname, search: "" });
-  return isFocusedPractice(route);
+  return isFocusedPractice(route) || (route.name === "gallery" && Boolean(route.itemId));
 }
 
 export function isFocusedPractice(route: PracticeRoute) {
@@ -134,7 +143,7 @@ export function isFocusedPractice(route: PracticeRoute) {
 
 // Only explicit app destinations can become the practice origin; never a URL or browser history.
 export function safePracticeOrigin(route: PracticeRoute): PracticeRoute {
-  return ["home", "scripts", "progress", "takes"].includes(route.name) ? route : { name: "home" };
+  return ["home", "scripts", "gallery", "progress", "takes"].includes(route.name) ? route : { name: "home" };
 }
 
 export type ReviewReturnOrigin = {

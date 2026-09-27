@@ -20,10 +20,11 @@ export type ScriptFormDraftCopy = ScriptFormInitialValues & {
 type CreateScriptFormProps = {
   initialValues?: ScriptFormInitialValues;
   sourceTitle?: string | null;
+  galleryTitle?: string | null;
   draftCopy?: ScriptFormDraftCopy | null;
 };
 
-export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy = null }: CreateScriptFormProps) {
+export function CreateScriptForm({ initialValues, sourceTitle = null, galleryTitle = null, draftCopy = null }: CreateScriptFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [content, setContent] = useState(initialValues?.content ?? "");
@@ -105,6 +106,9 @@ export function CreateScriptForm({ initialValues, sourceTitle = null, draftCopy 
           「{sourceTitle}」をもとに、新しい1分として保存します。元の Take はそのまま残ります。
         </div>
       ) : null}
+      {galleryTitle ? <div className="rounded-2xl border border-[var(--line-inset)] bg-[var(--coach-note)] px-4 py-4 text-sm leading-6 text-ink-700">
+        Gallery の「{galleryTitle}」を自分の台本として保存します。保存後の本文と Take は自分の記録として残ります。
+      </div> : null}
 
       <div className="rounded-2xl border border-[var(--line-inset)] bg-[var(--coach-note)] px-4 py-4 text-sm leading-6 text-ink-700">
         <p className="text-xs font-semibold text-ink-500">最後に整える</p>

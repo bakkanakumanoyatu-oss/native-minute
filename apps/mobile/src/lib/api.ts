@@ -60,8 +60,8 @@ export type MobileScript = {
 export type CreateMobileScriptInput = {
   title: string;
   content: string;
-  targetSeconds?: 60;
-  locale?: "en-US";
+  targetSeconds?: number;
+  locale?: string;
 };
 
 export type MobileListenAudio = {

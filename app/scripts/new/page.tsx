@@ -8,10 +8,12 @@ import { NewScriptWorkspace } from "@/components/scripts/new-script-workspace";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getScript, listScripts, MAX_PRACTICE_SLOTS } from "@/services/scripts/scripts.service";
 import { scriptIdSchema } from "@/schemas/script";
+import { getGalleryItem } from "@/lib/gallery/public";
 
 type PageProps = {
   searchParams?: {
     from?: string;
+    gallery?: string;
   };
 };
 
@@ -19,10 +21,15 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect(buildLoginHref("/scripts/new", "login_required", "/scripts"));
+    const galleryPath = typeof searchParams?.gallery === "string" && getGalleryItem(searchParams.gallery)?.publicationMode === "PRACTICE"
+      ? `/scripts/new?gallery=${encodeURIComponent(searchParams.gallery)}`
+      : "/scripts/new";
+    redirect(buildLoginHref(galleryPath, "login_required", "/scripts"));
   }
 
   const sourceScriptId = typeof searchParams?.from === "string" ? searchParams.from : null;
+  const galleryItem = typeof searchParams?.gallery === "string" ? getGalleryItem(searchParams.gallery) : undefined;
+  const practiceItem = galleryItem?.publicationMode === "PRACTICE" ? galleryItem : undefined;
   const parsedSourceId = sourceScriptId ? scriptIdSchema.safeParse(sourceScriptId) : null;
   const supabase = createSupabaseServerClient();
   const [sourceScript, scripts] = await Promise.all([
@@ -32,7 +39,9 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
   const sourceScriptMissing = Boolean(sourceScriptId) && !sourceScript;
   const aiScriptGenerationEnabled = isAiScriptGenerationEnabled();
   const isFull = scripts.length >= MAX_PRACTICE_SLOTS;
-  const initialValues = sourceScript
+  const initialValues = practiceItem
+    ? { title: practiceItem.title, content: practiceItem.practiceTextEn, targetSeconds: practiceItem.targetSeconds, locale: practiceItem.locale }
+    : sourceScript
     ? {
         title: `${sourceScript.title} の複製`,
         content: sourceScript.content,
@@ -48,8 +57,8 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">1分スタジオに置く台本を用意する</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-700">
           {aiScriptGenerationEnabled
-            ? "テンプレート、自分の言葉、AI下書きから選んで、最後は自分が話す1分に整えます。"
-            : "テンプレートか自分の言葉から選んで、最後は自分が話す1分に整えます。"}
+            ? "Galleryで見つけた言葉、自分の言葉、AI下書きから選んで、最後は自分が話す1分に整えます。"
+            : "Galleryで見つけた言葉か自分の言葉から選んで、最後は自分が話す1分に整えます。"}
         </p>
         <div className="mt-5 grid gap-2 text-sm font-semibold sm:max-w-xs">
           <Link href="/scripts" className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-inset)] px-4 py-3 text-ink-800 transition hover:bg-[var(--surface-inset-strong)]">
@@ -80,7 +89,7 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
             </Link>
           </div>
         ) : (
-          <NewScriptWorkspace initialValues={initialValues} sourceTitle={sourceScript?.title ?? null} aiScriptGenerationEnabled={aiScriptGenerationEnabled} />
+          <NewScriptWorkspace initialValues={initialValues} sourceTitle={practiceItem ? null : sourceScript?.title ?? null} galleryTitle={practiceItem?.title} aiScriptGenerationEnabled={aiScriptGenerationEnabled} />
         )}
       </div>
     </section>

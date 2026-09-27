@@ -15,6 +15,7 @@ import {
 import { handleMobileReviewGet } from "../../../lib/mobile/review-route";
 import { handleMobileScriptAudioGet } from "../../../lib/mobile/script-audio-route";
 import { handleMobileScriptDetailGet } from "../../../lib/mobile/script-detail-route";
+import { ScriptStateError } from "../../../services/scripts/scripts.service";
 import {
   handleMobileScriptsOptions,
   handleMobileScriptsPost
@@ -210,7 +211,7 @@ function createProgressTake(id = TAKE_ID, createdAt = "2026-08-13T00:02:00.000Z"
 }
 
 describe("mobile script create/detail/listen adapters", () => {
-  it("creates only the fixed 60-second en-US contract and returns the canonical row", async () => {
+  it("defaults to 60-second en-US and returns the canonical row", async () => {
     const createOwnedScript = vi.fn(async () => script);
     const response = await handleMobileScriptsPost(
       jsonRequest("/api/mobile/scripts", {
@@ -252,10 +253,11 @@ describe("mobile script create/detail/listen adapters", () => {
   });
 
   it.each([
-    {title: "Title", content: "Content", targetSeconds: 90 },
+    {title: "Title", content: "Content", targetSeconds: 121 },
+    {title: "Title", content: "Content", targetSeconds: 14 },
     { title: "Title", content: "Content", locale: "ja-JP" },
     { title: "Title", content: "Content", extra: "not-allowed" }
-  ])("rejects non-fixed or extra script creation fields", async (body) => {
+  ])("rejects out-of-range or extra script creation fields", async (body) => {
     const createOwnedScript = vi.fn();
     const response = await handleMobileScriptsPost(
       jsonRequest("/api/mobile/scripts", body),
@@ -268,6 +270,28 @@ describe("mobile script create/detail/listen adapters", () => {
 
     expect(response.status).toBe(400);
     expect(createOwnedScript).not.toHaveBeenCalled();
+  });
+
+  it("passes a Gallery duration through the existing canonical create service", async () => {
+    const createOwnedScript = vi.fn(async () => script);
+    const response = await handleMobileScriptsPost(
+      jsonRequest("/api/mobile/scripts", { title: "A real moment", content: "A synthetic line.", targetSeconds: 72, locale: "en-GB" }),
+      { ...authDependencies(), listOwnedScripts: async () => [], createOwnedScript }
+    );
+    expect(response.status).toBe(201);
+    expect(createOwnedScript).toHaveBeenCalledWith(expect.anything(), USER_ID, {
+      title: "A real moment", content: "A synthetic line.", targetSeconds: 72, locale: "en-GB"
+    });
+  });
+
+  it("keeps the active-10 rejection on Gallery creation", async () => {
+    const createOwnedScript = vi.fn(async () => { throw new ScriptStateError("script_limit_reached"); });
+    const response = await handleMobileScriptsPost(
+      jsonRequest("/api/mobile/scripts", { title: "Synthetic Gallery item", content: "I will speak clearly.", targetSeconds: 60, locale: "en-US" }),
+      { ...authDependencies(), listOwnedScripts: async () => [], createOwnedScript }
+    );
+    expect(response.status).toBe(409);
+    expect((await response.json()).error.reasonCode).toBe("script_limit_reached");
   });
 
   it.each([

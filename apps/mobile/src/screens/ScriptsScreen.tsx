@@ -63,10 +63,12 @@ export function ScriptsList({
 export function ScriptsScreen({
   api,
   isOnline,
+  initialShowCreate = false,
   onNavigate
 }: {
   api: PracticeApi;
   isOnline: boolean;
+  initialShowCreate?: boolean;
   onNavigate: (route: PracticeRoute) => void;
 }) {
   const memory = useMemo(() => api.scriptsMemory ?? scriptsDisplayMemory(api), [api]);
@@ -74,7 +76,7 @@ export function ScriptsScreen({
   const [editing, setEditing] = useState<MobileScript | null>(null);
   const [managementKey, setManagementKey] = useState(0);
   const [archiveKey, setArchiveKey] = useState(0);
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useState(initialShowCreate);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [createState, setCreateState] = useState<
@@ -165,7 +167,8 @@ export function ScriptsScreen({
           </button>
         ) : null}
       </div>
-      <p className="scripts-intro">練習する1分を選ぶ</p>
+      <p className="scripts-intro">自分の台本から練習する1分を選ぶ</p>
+      <button type="button" className="scripts-text-action" onClick={() => onNavigate({ name: "gallery" })}>Galleryで話したい言葉を探す →</button>
       {visibleState.kind === "ready" ? <p className="scripts-capacity">保存済み {visibleState.data.length}件 <span>/ 上限{MAX_PRACTICE_SLOTS}件</span></p> : null}
 
       {showCreate ? (

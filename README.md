@@ -1,5 +1,7 @@
 # Native Minute
 
+現在の新規コンテンツ入口は [Gallery](./docs/gallery-intake-contract.md) と手動台本作成です。First Collection 完成 package は未受領のため公開 manifest は空です。旧自作テンプレは履歴資産として残しますが runtime 入口には表示しません。実装の最新状態は [docs/current-state.md](./docs/current-state.md) を参照してください。
+
 固定1分の英語練習に絞った MVP です。
 
 Revision/archive foundation は **local実装のみ**（0033/0034 未適用・未deploy）です。本文・locale・目標秒数の編集は不変のrevisionを作り、titleのみの変更はrevisionを増やしません。通常の削除はarchiveで、録音・結果・Favoriteを保持します。作成と復元はDBの同一ownerロック内でactive最大10本です。Reviewと比較は保存時のrevision、全期間件数には旧版・削除済みの評価済みTakeも含みます。従来7件はrevision=NULLのUNVERIFIED_LEGACY（reviewed 6 / completed 1）で保持します。
@@ -124,7 +126,7 @@ npm run typecheck
 - `scripts` で固定1分台本を作る
 - `scripts` を Practice library として、まず今日の練習を 1 本選び、`listen / record / script 複製 / 最新結果` を script ごとに選ぶ
 - `/scripts/new?from=<scriptId>` で script を安全に複製する
-- `/scripts/new` で「新しい練習を追加」し、テンプレ、フリーライティング、AI draft、文章ガイドの4入口から始める
+- `/scripts/new` で Gallery または手動入力から自分の台本を作る。AI draft は feature gate が ON の場合だけ表示
 - AI draft では、短い seed 例から候補を作れる。候補は完成品ではなく、フォームへコピーして編集する前提
 - `setup/voice` で、listen に見本音声が必要なときだけ同意と既定の voice を 1 つ整える
 - `setup/voice` の完了後、そのまま候補の script で `listen` に入る

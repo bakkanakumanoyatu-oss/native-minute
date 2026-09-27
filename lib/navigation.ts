@@ -2,11 +2,12 @@ import { getScriptListenPath } from "@/lib/script-routes";
 
 export const LOGIN_CONTINUITY_COOKIE = "nm-login-next";
 
-const KNOWN_INTERNAL_ROUTE_PREFIXES = new Set(["scripts", "setup", "progress", "settings", "login"]);
+const KNOWN_INTERNAL_ROUTE_PREFIXES = new Set(["scripts", "gallery", "setup", "progress", "settings", "login"]);
 const ALLOWED_EXACT_RETURN_PATHS = new Set([
   "/",
   "/scripts",
   "/scripts/new",
+  "/gallery",
   "/setup/voice",
   "/progress",
   "/settings",
@@ -46,6 +47,7 @@ function isAllowedLoginReturnPath(path: string) {
     }
 
     const segments = pathname.split("/").filter(Boolean);
+    if (segments.length === 2 && segments[0] === "gallery" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(segments[1] ?? "")) return true;
     return isAllowedScriptReturnPath(segments);
   } catch {
     return false;

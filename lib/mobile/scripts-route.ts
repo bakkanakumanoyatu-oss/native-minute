@@ -35,8 +35,8 @@ const mobileCreateScriptPayloadSchema = z
   .object({
     title: z.string(),
     content: z.string(),
-    targetSeconds: z.literal(60).optional(),
-    locale: z.literal("en-US").optional()
+    targetSeconds: z.number().int().min(15).max(120).optional(),
+    locale: z.string().regex(/^en-[A-Za-z]{2}$/u).optional()
   })
   .strict();
 
