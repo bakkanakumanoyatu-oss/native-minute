@@ -32,8 +32,7 @@ export function buildPublicGalleryManifest(input: unknown): PublicGallery {
     items.push({
       ...common,
       publicationMode: "PRACTICE" as const,
-      practiceTextEn: item.practice.practiceTextEn!,
-      translationJa: item.practice.translationJa,
+      practiceAvailable: true as const,
       targetSeconds: item.practice.targetSeconds!,
       locale: item.practice.locale,
       wordCount: getScriptLength(item.practice.practiceTextEn!).wordCount,

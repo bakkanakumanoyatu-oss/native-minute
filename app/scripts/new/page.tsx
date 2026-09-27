@@ -8,12 +8,10 @@ import { NewScriptWorkspace } from "@/components/scripts/new-script-workspace";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getScript, listScripts, MAX_PRACTICE_SLOTS } from "@/services/scripts/scripts.service";
 import { scriptIdSchema } from "@/schemas/script";
-import { getGalleryItem } from "@/lib/gallery/public";
 
 type PageProps = {
   searchParams?: {
     from?: string;
-    gallery?: string;
   };
 };
 
@@ -21,15 +19,10 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
   const user = await getCurrentUser();
 
   if (!user) {
-    const galleryPath = typeof searchParams?.gallery === "string" && getGalleryItem(searchParams.gallery)?.publicationMode === "PRACTICE"
-      ? `/scripts/new?gallery=${encodeURIComponent(searchParams.gallery)}`
-      : "/scripts/new";
-    redirect(buildLoginHref(galleryPath, "login_required", "/scripts"));
+    redirect(buildLoginHref("/scripts/new", "login_required", "/scripts"));
   }
 
   const sourceScriptId = typeof searchParams?.from === "string" ? searchParams.from : null;
-  const galleryItem = typeof searchParams?.gallery === "string" ? getGalleryItem(searchParams.gallery) : undefined;
-  const practiceItem = galleryItem?.publicationMode === "PRACTICE" ? galleryItem : undefined;
   const parsedSourceId = sourceScriptId ? scriptIdSchema.safeParse(sourceScriptId) : null;
   const supabase = createSupabaseServerClient();
   const [sourceScript, scripts] = await Promise.all([
@@ -39,9 +32,7 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
   const sourceScriptMissing = Boolean(sourceScriptId) && !sourceScript;
   const aiScriptGenerationEnabled = isAiScriptGenerationEnabled();
   const isFull = scripts.length >= MAX_PRACTICE_SLOTS;
-  const initialValues = practiceItem
-    ? { title: practiceItem.title, content: practiceItem.practiceTextEn, targetSeconds: practiceItem.targetSeconds, locale: practiceItem.locale }
-    : sourceScript
+  const initialValues = sourceScript
     ? {
         title: `${sourceScript.title} の複製`,
         content: sourceScript.content,
@@ -89,7 +80,7 @@ export default async function NewScriptPage({ searchParams }: PageProps) {
             </Link>
           </div>
         ) : (
-          <NewScriptWorkspace initialValues={initialValues} sourceTitle={practiceItem ? null : sourceScript?.title ?? null} galleryTitle={practiceItem?.title} aiScriptGenerationEnabled={aiScriptGenerationEnabled} />
+          <NewScriptWorkspace initialValues={initialValues} sourceTitle={sourceScript?.title ?? null} aiScriptGenerationEnabled={aiScriptGenerationEnabled} />
         )}
       </div>
     </section>

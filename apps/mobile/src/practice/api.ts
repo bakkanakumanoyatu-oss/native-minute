@@ -15,6 +15,8 @@ import {
   createMobileAccountDeletionRequest,
   createMobileVoiceDeletionRequest,
   createMobileScript,
+  createMobileGalleryScript,
+  fetchMobileGalleryPractice,
   mutateMobileScript,
   type ScriptMutationInput,
   type PracticeIdentity,
@@ -58,6 +60,7 @@ import {
   type MobileBrushUpMutationState,
   type MobileScript,
   type MobileScriptRequestState,
+  type MobileGalleryPracticeRequestState,
   type MobileVoiceSetupRequestState,
   type ScriptsRequestState,
   type UploadMobileRecordingInput,
@@ -98,6 +101,8 @@ export interface PracticeApi {
   prefetchSavedTakeAudio?(review: MobileReview): Promise<void>;
   listScripts(signal?: AbortSignal): Promise<ScriptsRequestState>;
   createScript(input: CreateMobileScriptInput): Promise<MobileScriptRequestState>;
+  getGalleryPractice(id: string, signal?: AbortSignal): Promise<MobileGalleryPracticeRequestState>;
+  createGalleryScript(id: string): Promise<MobileScriptRequestState>;
   mutateScript?(scriptId: string, input: ScriptMutationInput): Promise<MobileScriptRequestState>;
   listArchivedScripts?(): Promise<ScriptsRequestState>;
   getScript(scriptId: string, signal?: AbortSignal): Promise<MobileScriptRequestState>;
@@ -518,6 +523,11 @@ export function createPracticeApi({
     });
     },
     createScript: (input) => mutate(() => request((token) => createMobileScript(bffBaseUrl, token, input, { onTiming })), "script", undefined, result => {
+      if (result.kind === "success") scriptsMemory.update(() => true, scripts => [result.script, ...scripts.filter(script => script.id !== result.script.id)]
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+    }),
+    getGalleryPractice: (id, signal) => request(token => fetchMobileGalleryPractice(bffBaseUrl, token, id, { onTiming, signal })),
+    createGalleryScript: (id) => mutate(() => request(token => createMobileGalleryScript(bffBaseUrl, token, id, { onTiming })), "script", undefined, result => {
       if (result.kind === "success") scriptsMemory.update(() => true, scripts => [result.script, ...scripts.filter(script => script.id !== result.script.id)]
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
     }),

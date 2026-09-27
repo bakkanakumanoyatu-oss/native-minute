@@ -13,7 +13,7 @@ const base = {
 };
 const catalog: PublicGallery = {
   schemaVersion: "gallery-public/v1", collectionVersion: "synthetic-v1", themes: ["Choice"], items: [
-    { ...base, publicationMode: "PRACTICE", practiceTextEn: "I will speak clearly.", translationJa: null, targetSeconds: 72, locale: "en-US", wordCount: 4, characterCount: 21 },
+    { ...base, publicationMode: "PRACTICE", practiceAvailable: true, targetSeconds: 72, locale: "en-US", wordCount: 4, characterCount: 21 },
     { ...base, id: "synthetic-two", title: "A discovery", publicationMode: "DISCOVERY" }
   ]
 };
@@ -38,23 +38,27 @@ describe("mobile Gallery", () => {
   });
 
   it("creates only after an explicit practice tap through the canonical API", async () => {
-    const createScript = vi.fn(async () => ({ kind: "success" as const, script: { id: "owned-script" } }));
+    const createGalleryScript = vi.fn(async () => ({ kind: "success" as const, script: { id: "owned-script" } }));
+    const getGalleryPractice = vi.fn(async () => ({ kind: "success" as const, practice: { id: "synthetic-one", practiceTextEn: "I will speak clearly.", translationJa: null, targetSeconds: 72, locale: "en-US", contentHash: "0".repeat(64) } }));
     const onNavigate = vi.fn();
     let view!: ReactTestRenderer;
-    act(() => { view = create(<GalleryScreen api={{ createScript } as unknown as PracticeApi} isOnline catalog={catalog} itemId="synthetic-one" onNavigate={onNavigate} />); });
-    expect(createScript).not.toHaveBeenCalled();
+    await act(async () => { view = create(<GalleryScreen api={{ createGalleryScript, getGalleryPractice } as unknown as PracticeApi} isOnline catalog={catalog} itemId="synthetic-one" onNavigate={onNavigate} />); });
+    expect(getGalleryPractice).toHaveBeenCalledWith("synthetic-one", expect.any(AbortSignal));
+    expect(view.root.findAllByType("p").some(entry => entry.props.children === "I will speak clearly.")).toBe(true);
+    expect(createGalleryScript).not.toHaveBeenCalled();
     const button = view.root.findAllByType("button").find(entry => entry.props.children === "この一節で練習する");
     await act(async () => { await button!.props.onClick(); });
-    expect(createScript).toHaveBeenCalledWith({ title: "An invented moment", content: "I will speak clearly.", targetSeconds: 72, locale: "en-US" });
+    expect(createGalleryScript).toHaveBeenCalledWith("synthetic-one");
     expect(onNavigate).toHaveBeenCalledWith({ name: "listen", scriptId: "owned-script" });
   });
 
   it("does not navigate after leaving while a create request is pending", async () => {
     let resolve!: (value: { kind: "success"; script: { id: string } }) => void;
-    const createScript = vi.fn(() => new Promise<{ kind: "success"; script: { id: string } }>(done => { resolve = done; }));
+    const createGalleryScript = vi.fn(() => new Promise<{ kind: "success"; script: { id: string } }>(done => { resolve = done; }));
+    const getGalleryPractice = vi.fn(async () => ({ kind: "success" as const, practice: { id: "synthetic-one", practiceTextEn: "I will speak clearly.", translationJa: null, targetSeconds: 72, locale: "en-US", contentHash: "0".repeat(64) } }));
     const onNavigate = vi.fn();
     let view!: ReactTestRenderer;
-    act(() => { view = create(<GalleryScreen api={{ createScript } as unknown as PracticeApi} isOnline catalog={catalog} itemId="synthetic-one" onNavigate={onNavigate} />); });
+    await act(async () => { view = create(<GalleryScreen api={{ createGalleryScript, getGalleryPractice } as unknown as PracticeApi} isOnline catalog={catalog} itemId="synthetic-one" onNavigate={onNavigate} />); });
     const button = view.root.findAllByType("button").find(entry => entry.props.children === "この一節で練習する");
     let pending!: Promise<void>;
     act(() => { pending = button!.props.onClick(); });
@@ -62,5 +66,36 @@ describe("mobile Gallery", () => {
     resolve({ kind: "success", script: { id: "owned-script" } });
     await act(async () => { await pending; });
     expect(onNavigate).not.toHaveBeenCalled();
+  });
+
+  it("keeps a create response valid when connectivity changes during the request", async () => {
+    let resolve!: (value: { kind: "success"; script: { id: string } }) => void;
+    const createGalleryScript = vi.fn(() => new Promise<{ kind: "success"; script: { id: string } }>(done => { resolve = done; }));
+    const getGalleryPractice = vi.fn(async () => ({ kind: "success" as const, practice: { id: "synthetic-one", practiceTextEn: "I will speak clearly.", translationJa: null, targetSeconds: 72, locale: "en-US", contentHash: "0".repeat(64) } }));
+    const api = { createGalleryScript, getGalleryPractice } as unknown as PracticeApi;
+    const onNavigate = vi.fn();
+    let view!: ReactTestRenderer;
+    await act(async () => { view = create(<GalleryScreen api={api} isOnline catalog={catalog} itemId="synthetic-one" onNavigate={onNavigate} />); });
+    const button = view.root.findAllByType("button").find(entry => entry.props.children === "この一節で練習する");
+    let pending!: Promise<void>;
+    act(() => { pending = button!.props.onClick(); });
+    act(() => { view.update(<GalleryScreen api={api} isOnline={false} catalog={catalog} itemId="synthetic-one" onNavigate={onNavigate} />); });
+    await act(async () => { view.update(<GalleryScreen api={api} isOnline catalog={catalog} itemId="synthetic-one" onNavigate={onNavigate} />); });
+    resolve({ kind: "success", script: { id: "owned-script" } });
+    await act(async () => { await pending; });
+    expect(onNavigate).toHaveBeenCalledWith({ name: "listen", scriptId: "owned-script" });
+    expect(view.root.findAllByType("button").find(entry => entry.props.children === "この一節で練習する")!.props.disabled).toBe(false);
+  });
+
+  it("fences a late detail response after navigating to DISCOVERY", async () => {
+    type PracticeSuccess = { kind: "success"; practice: { id: string; practiceTextEn: string; translationJa: null; targetSeconds: number; locale: string; contentHash: string } };
+    let resolve!: (value: PracticeSuccess) => void;
+    const getGalleryPractice = vi.fn(() => new Promise<PracticeSuccess>(done => { resolve = done; }));
+    const api = { getGalleryPractice } as unknown as PracticeApi;
+    let view!: ReactTestRenderer;
+    act(() => { view = create(<GalleryScreen api={api} isOnline catalog={catalog} itemId="synthetic-one" onNavigate={() => undefined} />); });
+    act(() => { view.update(<GalleryScreen api={api} isOnline catalog={catalog} itemId="synthetic-two" onNavigate={() => undefined} />); });
+    await act(async () => { resolve({ kind: "success", practice: { id: "synthetic-one", practiceTextEn: "Late synthetic words.", translationJa: null, targetSeconds: 72, locale: "en-US", contentHash: "0".repeat(64) } }); });
+    expect(JSON.stringify(view.toJSON())).not.toContain("Late synthetic words.");
   });
 });

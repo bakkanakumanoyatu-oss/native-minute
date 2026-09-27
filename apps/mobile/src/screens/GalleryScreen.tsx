@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { filterGalleryItems, gallery } from "../../../../lib/gallery/public";
 import { GALLERY_SOURCE_TYPES, type PublicGallery } from "../../../../lib/gallery/schema";
 import type { PracticeApi, PracticeRequestFailure } from "../practice/api";
+import type { MobileGalleryPracticeRequestState } from "../lib/api";
 import type { PracticeRoute } from "../practice/routes";
 import { RequestError, ScreenHeading } from "./ScreenParts";
 
@@ -18,37 +19,52 @@ export function GalleryScreen({ api, isOnline, itemId, catalog = gallery, onNavi
   const [query, setQuery] = useState("");
   const [source, setSource] = useState("");
   const [theme, setTheme] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<PracticeRequestFailure | null>(null);
+  const [savingState, setSavingState] = useState<{ itemId: string; generation: number } | null>(null);
+  const [error, setError] = useState<{ itemId: string; failure: PracticeRequestFailure } | null>(null);
+  const [practiceState, setPracticeState] = useState<{ itemId: string; result: MobileGalleryPracticeRequestState } | null>(null);
   const [sourceError, setSourceError] = useState(false);
+  const fetchGeneration = useRef(0);
   const createGeneration = useRef(0);
-  useEffect(() => () => { createGeneration.current += 1; }, []);
   const item = itemId ? catalog.items.find(entry => entry.id === itemId) : undefined;
   const items = filterGalleryItems({ query, sourceType: source, theme }, catalog);
+  useEffect(() => {
+    const generation = ++fetchGeneration.current;
+    const controller = new AbortController();
+    if (item?.publicationMode === "PRACTICE" && isOnline) {
+      void api.getGalleryPractice(item.id, controller.signal).then(result => {
+        if (generation === fetchGeneration.current && !controller.signal.aborted) setPracticeState({ itemId: item.id, result });
+      }).catch(() => {
+        if (generation === fetchGeneration.current && !controller.signal.aborted) setPracticeState({ itemId: item.id, result: { kind: "invalid-response" } });
+      });
+    }
+    return () => { controller.abort(); fetchGeneration.current += 1; };
+  }, [api, isOnline, itemId, item?.id, item?.publicationMode]);
+  useEffect(() => () => {
+    createGeneration.current += 1;
+    queueMicrotask(() => setSavingState(current => current?.itemId === itemId ? null : current));
+  }, [itemId]);
+  const activePracticeState = !isOnline ? { kind: "offline" as const } : practiceState && practiceState.itemId === item?.id ? practiceState.result : null;
+  const practicePayload = activePracticeState?.kind === "success" && activePracticeState.practice.id === item?.id ? activePracticeState.practice : null;
+  const saving = Boolean(item && savingState?.itemId === item.id);
 
   async function practice() {
-    if (!item || item.publicationMode !== "PRACTICE" || saving) return;
-    if (!isOnline) { setError({ kind: "offline" }); return; }
-    setSaving(true);
-    setError(null);
+    if (!item || item.publicationMode !== "PRACTICE" || !practicePayload || saving) return;
+    if (!isOnline) { setError({ itemId: item.id, failure: { kind: "offline" } }); return; }
     const generation = ++createGeneration.current;
+    setSavingState({ itemId: item.id, generation });
+    setError(null);
     try {
-      const result = await api.createScript({
-        title: item.title,
-        content: item.practiceTextEn,
-        targetSeconds: item.targetSeconds,
-        locale: item.locale
-      });
+      const result = await api.createGalleryScript(item.id);
       if (generation !== createGeneration.current) return;
       if (result.kind === "success") {
         onNavigate({ name: "listen", scriptId: result.script.id });
         return;
       }
-      setError(result);
+      setError({ itemId: item.id, failure: result });
     } catch {
-      if (generation === createGeneration.current) setError({ kind: "invalid-response" });
+      if (generation === createGeneration.current) setError({ itemId: item.id, failure: { kind: "invalid-response" } });
     } finally {
-      if (generation === createGeneration.current) setSaving(false);
+      setSavingState(current => current?.generation === generation ? null : current);
     }
   }
 
@@ -69,11 +85,11 @@ export function GalleryScreen({ api, isOnline, itemId, catalog = gallery, onNavi
     <p>{item.workTitle} · {item.speaker}</p>
     <section><h2>What was happening?</h2><p>{item.moment}</p><p>{item.contextJa}</p></section>
     <section><h2>Why this moment matters</h2><p>{item.whyItMattersJa}</p></section>
-    {item.publicationMode === "PRACTICE" ? <section><h2>The words</h2><p lang={item.locale} className="gallery-words">{item.practiceTextEn}</p>{item.translationJa ? <p>{item.translationJa}</p> : null}</section> : null}
+    {item.publicationMode === "PRACTICE" ? <section><h2>The words</h2>{practicePayload ? <><p lang={practicePayload.locale} className="gallery-words">{practicePayload.practiceTextEn}</p>{practicePayload.translationJa ? <p>{practicePayload.translationJa}</p> : null}</> : activePracticeState && activePracticeState.kind !== "success" ? <RequestError error={activePracticeState} /> : <p role="status">練習文を読み込んでいます…</p>}</section> : null}
     <section><h2>Listen for</h2><ul>{item.speakingNotes.map(note => <li key={note}>{note}</li>)}</ul></section>
     <section><h2>Try it yourself</h2><p>{item.publicationMode === "PRACTICE" ? "自分の台本として保存してから練習します。お手本には現在の自分の声を使います。" : "原典を探し、使える英文を自分で確認してから台本を作ります。自動取り込みは行いません。"}</p>
-      {item.publicationMode === "PRACTICE" ? <button className="scripts-primary" type="button" disabled={saving} onClick={() => void practice()}>{saving ? "保存中…" : "この一節で練習する"}</button> : <button className="scripts-primary" type="button" onClick={() => onNavigate({ name: "scripts", create: true })}>自分の台本を作る</button>}
-      {error ? <RequestError error={error} /> : null}
+      {item.publicationMode === "PRACTICE" ? <button className="scripts-primary" type="button" disabled={saving || !practicePayload} onClick={() => void practice()}>{saving ? "保存中…" : "この一節で練習する"}</button> : <button className="scripts-primary" type="button" onClick={() => onNavigate({ name: "scripts", create: true })}>自分の台本を作る</button>}
+      {error?.itemId === item.id ? <RequestError error={error.failure} /> : null}
     </section>
     <section><h2>Original source</h2>{item.primarySourceUrl ? <button type="button" className="scripts-text-action" onClick={() => void openSource(item.primarySourceUrl!)}>原典を開く</button> : <p>出典の場所: {item.canonicalSourceLocator}</p>}{sourceError ? <p role="alert">原典を開けませんでした。後で試してください。</p> : null}</section>
     <section><h2>Source & Credits</h2><p>{item.workTitle} · {item.speaker}{item.year ? ` · ${item.year}` : ""}</p><p>{item.sourceKind} · {item.canonicalSourceLocator}</p></section>

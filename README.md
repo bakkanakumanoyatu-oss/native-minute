@@ -1,6 +1,6 @@
 # Native Minute
 
-現在の新規コンテンツ入口は [Gallery](./docs/gallery-intake-contract.md) と手動台本作成です。First Collection 完成 package は未受領のため公開 manifest は空です。旧自作テンプレは履歴資産として残しますが runtime 入口には表示しません。実装の最新状態は [docs/current-state.md](./docs/current-state.md) を参照してください。
+現在の新規コンテンツ入口は [Gallery](./docs/gallery-intake-contract.md) と手動台本作成です。First Collection 完成 package はprivate vaultに受領・検証済みで、全12件HOLDのため公開 manifest は空です。旧自作テンプレは履歴資産として残しますが runtime 入口には表示しません。実装の最新状態は [docs/current-state.md](./docs/current-state.md) を参照してください。
 
 固定1分の英語練習に絞った MVP です。
 

@@ -3,6 +3,8 @@ import { getScriptLength } from "../../../lib/script-length";
 import { buildPublicGalleryManifest, validateFirstCollection } from "../../../lib/gallery/manifest";
 import { filterGalleryItems } from "../../../lib/gallery/public";
 import { editorialGallerySchema, publicGallerySchema } from "../../../lib/gallery/schema";
+import { buildGalleryRuntimeArtifact, parseGalleryRuntimeBytes, selectGalleryRuntimeItem } from "../../../lib/gallery/runtime-schema";
+import { createHash } from "node:crypto";
 import { renderToStaticMarkup } from "react-dom/server";
 import GalleryPage from "../../../app/gallery/page";
 
@@ -49,8 +51,12 @@ describe("Gallery intake and public projection", () => {
     expect(output.items.map(entry => entry.id)).toEqual(["practice", "discovery"]);
     expect(JSON.stringify(output)).not.toContain("Restricted synthetic text");
     expect(JSON.stringify(output)).not.toContain("非公開の合成訳");
+    expect(JSON.stringify(output)).not.toContain("I chose to speak clearly.");
+    expect(JSON.stringify(output)).not.toContain("明確に話すと決めました。");
     expect(JSON.stringify(output)).not.toContain("hold");
+    expect(output.items[0]).toMatchObject({ publicationMode: "PRACTICE", practiceAvailable: true });
     expect(publicGallerySchema.safeParse({ ...output, items: [{ ...output.items[1], practiceTextEn: "leak" }] }).success).toBe(false);
+    expect(publicGallerySchema.safeParse({ ...output, items: [{ ...output.items[0], translationJa: "leak" }] }).success).toBe(false);
     expect(publicGallerySchema.safeParse({ ...output, items: [{ ...practice, publicationMode: "HOLD" }] }).success).toBe(false);
   });
 
@@ -135,7 +141,33 @@ describe("Gallery intake and public projection", () => {
     const savedUserScript = { title: candidate.identity.title, content: candidate.practice.practiceTextEn, targetSeconds: candidate.practice.targetSeconds, locale: candidate.practice.locale };
     candidate.practice.practiceTextEn = "The editorial source changed.";
     expect(savedUserScript.content).toBe("I chose to speak clearly.");
-    expect(buildPublicGalleryManifest(catalog([candidate])).items[0]).toMatchObject({ practiceTextEn: "The editorial source changed." });
+    expect(buildPublicGalleryManifest(catalog([candidate])).items[0]).toMatchObject({ practiceAvailable: true });
+    expect(JSON.stringify(buildPublicGalleryManifest(catalog([candidate])))).not.toContain("The editorial source changed.");
+  });
+
+  it("builds only approved PRACTICE runtime fields and verifies the exact release bytes", () => {
+    const discovery = item("discovery", "DISCOVERY");
+    const hold = item("hold", "HOLD");
+    const editorial = catalog([item("practice"), discovery, hold]);
+    const publicCatalog = buildPublicGalleryManifest(editorial);
+    const runtime = buildGalleryRuntimeArtifact(editorial, "synthetic-release-v1");
+    expect(runtime.items.map(entry => entry.id)).toEqual(["practice"]);
+    expect(runtime.items[0]).toMatchObject({ practiceTextEn: "I chose to speak clearly.", translationJa: "明確に話すと決めました。" });
+    expect(JSON.stringify(runtime)).not.toContain("editorial-review-1");
+    expect(JSON.stringify(runtime)).not.toContain("fictional moment");
+    const bytes = Buffer.from(JSON.stringify(runtime));
+    const hash = createHash("sha256").update(bytes).digest("hex");
+    const loaded = parseGalleryRuntimeBytes(bytes, hash, "synthetic-release-v1", publicCatalog);
+    expect(selectGalleryRuntimeItem(loaded, publicCatalog, "practice")?.practiceTextEn).toBe("I chose to speak clearly.");
+    expect(selectGalleryRuntimeItem(loaded, publicCatalog, "discovery")).toBeNull();
+    expect(selectGalleryRuntimeItem(loaded, publicCatalog, "hold")).toBeNull();
+    expect(selectGalleryRuntimeItem(loaded, publicCatalog, "unknown")).toBeNull();
+    expect(() => parseGalleryRuntimeBytes(bytes, "0".repeat(64), "synthetic-release-v1", publicCatalog)).toThrow();
+    const malformed = Buffer.from(JSON.stringify({ ...runtime, items: [{ ...runtime.items[0], rightsNote: "secret" }] }));
+    expect(() => parseGalleryRuntimeBytes(malformed, createHash("sha256").update(malformed).digest("hex"), "synthetic-release-v1", publicCatalog)).toThrow();
+    const wrongCollection = { ...runtime, sourceCollectionVersion: "other" };
+    const wrongBytes = Buffer.from(JSON.stringify(wrongCollection));
+    expect(() => parseGalleryRuntimeBytes(wrongBytes, createHash("sha256").update(wrongBytes).digest("hex"), "synthetic-release-v1", publicCatalog)).toThrow();
   });
 
   it("checks each First Collection status and movie speaker, beyond aggregate counts", () => {

@@ -64,6 +64,16 @@ export type CreateMobileScriptInput = {
   locale?: string;
 };
 
+export type MobileGalleryPractice = {
+  id: string;
+  practiceTextEn: string;
+  translationJa: string | null;
+  targetSeconds: number;
+  locale: string;
+  contentHash: string;
+};
+export type MobileGalleryPracticeRequestState = { kind: "success"; practice: MobileGalleryPractice } | MobileApiFailure;
+
 export type MobileListenAudio = {
   audioId: string;
   cached: boolean;
@@ -373,6 +383,7 @@ const MAX_TIMING_SAMPLES = 100;
 const MOBILE_API_PATHS = {
   health: "/api/mobile/health",
   scripts: "/api/mobile/scripts",
+  galleryPractice: (id: string) => `/api/mobile/gallery/${encodeURIComponent(id)}/practice`,
   script: (scriptId: string) => `/api/mobile/scripts/${encodeURIComponent(scriptId)}`,
   listen: (scriptId: string) =>
     `/api/mobile/scripts/${encodeURIComponent(scriptId)}/listen`,
@@ -644,6 +655,16 @@ function parseScriptsPayload(value: unknown) {
 function parseScriptPayload(value: unknown) {
   const data = getSuccessData(value);
   return data && isMobileScript(data.script) ? data.script : null;
+}
+
+function parseGalleryPracticePayload(value: unknown, id: string): MobileGalleryPractice | null {
+  const data = getSuccessData(value);
+  const practice = data?.practice;
+  return isObject(practice) && practice.id === id && typeof practice.practiceTextEn === "string" && practice.practiceTextEn.length > 0 &&
+    (practice.translationJa === null || typeof practice.translationJa === "string") &&
+    Number.isInteger(practice.targetSeconds) && typeof practice.locale === "string" &&
+    typeof practice.contentHash === "string" && /^[a-f0-9]{64}$/u.test(practice.contentHash)
+    ? practice as MobileGalleryPractice : null;
 }
 
 function parseListenPayload(value: unknown): MobileListenAudio | null {
@@ -1118,6 +1139,26 @@ export async function createMobileScript(
     return mapFailure(attempt.response, attempt.body);
   }
 
+  const script = parseScriptPayload(attempt.body);
+  return script ? { kind: "success", script } : { kind: "invalid-response" };
+}
+
+export async function fetchMobileGalleryPractice(
+  bffBaseUrl: string, accessToken: string, id: string, options: MobileApiRequestOptions = {}
+): Promise<MobileGalleryPracticeRequestState> {
+  const attempt = await requestJson(bffBaseUrl, MOBILE_API_PATHS.galleryPractice(id), accessToken, { method: "GET" }, options);
+  if (attempt.kind !== "response") return mapAttemptFailure(attempt);
+  if (!attempt.response.ok) return mapFailure(attempt.response, attempt.body);
+  const practice = parseGalleryPracticePayload(attempt.body, id);
+  return practice ? { kind: "success", practice } : { kind: "invalid-response" };
+}
+
+export async function createMobileGalleryScript(
+  bffBaseUrl: string, accessToken: string, id: string, options: MobileApiRequestOptions = {}
+): Promise<MobileScriptRequestState> {
+  const attempt = await requestJson(bffBaseUrl, MOBILE_API_PATHS.galleryPractice(id), accessToken, { method: "POST" }, options);
+  if (attempt.kind !== "response") return mapAttemptFailure(attempt);
+  if (!attempt.response.ok) return mapFailure(attempt.response, attempt.body);
   const script = parseScriptPayload(attempt.body);
   return script ? { kind: "success", script } : { kind: "invalid-response" };
 }

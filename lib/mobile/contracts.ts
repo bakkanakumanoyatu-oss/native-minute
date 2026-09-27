@@ -11,6 +11,8 @@ export type MobileApiReasonCode =
   | "quota_operation_already_used"
   | "quota_operation_required"
   | "scripts_unavailable"
+  | "gallery_not_found"
+  | "gallery_unavailable"
   | "script_not_found"
   | "script_limit_reached"
   | "script_length_exceeded"

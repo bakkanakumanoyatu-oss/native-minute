@@ -149,10 +149,9 @@ export const publicGalleryItemSchema = z.discriminatedUnion("publicationMode", [
   publicBase.extend({ publicationMode: z.literal("DISCOVERY") }).strict(),
   publicBase.extend({
     publicationMode: z.literal("PRACTICE"),
-    practiceTextEn: z.string().min(1),
-    translationJa: z.string().nullable(),
+    practiceAvailable: z.literal(true),
     targetSeconds: z.number().int().min(15).max(120),
-    locale: z.string(),
+    locale: z.string().regex(/^en-[A-Za-z]{2}$/u),
     wordCount: z.number().int().nonnegative(),
     characterCount: z.number().int().nonnegative()
   }).strict()
@@ -171,8 +170,7 @@ export const publicGallerySchema = z.object({
     ids.add(item.id);
     if (item.collectionVersion !== catalog.collectionVersion) context.addIssue({ code: "custom", path: ["items", index], message: "collection version mismatch" });
     for (const theme of item.themes) if (!themes.has(theme)) context.addIssue({ code: "custom", path: ["items", index, "themes"], message: "unknown public theme" });
-    if (item.publicationMode === "PRACTICE" && (getScriptLength(item.practiceTextEn).exceedsLimit || item.title.length > 120 || !/^en-[A-Za-z]{2}$/u.test(item.locale)
-      || item.wordCount !== getScriptLength(item.practiceTextEn).wordCount || item.characterCount !== getScriptLength(item.practiceTextEn).characterCount)) {
+    if (item.publicationMode === "PRACTICE" && (item.title.length > 120 || item.wordCount > 200 || item.characterCount > 2000)) {
       context.addIssue({ code: "custom", path: ["items", index], message: "invalid public practice payload" });
     }
   }

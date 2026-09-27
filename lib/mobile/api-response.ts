@@ -16,6 +16,8 @@ const MOBILE_API_ERROR_COPY: Record<MobileApiReasonCode, { message: string; retr
   quota_operation_already_used: { message: "この操作は処理済みか確認中です。結果を確認してください。", retryable: false },
   quota_operation_required: { message: "操作を確認できませんでした。もう一度開始してください。", retryable: false },
   scripts_unavailable: { message: "台本一覧を取得できませんでした。", retryable: true },
+  gallery_not_found: { message: "この場面は公開されていません。", retryable: false },
+  gallery_unavailable: { message: "Gallery の練習文を取得できませんでした。後で試してください。", retryable: true },
   script_not_found: { message: "台本が見つかりませんでした。", retryable: false },
   script_archived: { message: "台本が変更または削除されました。最新の台本を確認してください。", retryable: false },
   script_edit_conflict: { message: "台本が変更または削除されました。最新の台本を確認してください。", retryable: false },
