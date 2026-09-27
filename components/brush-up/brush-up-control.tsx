@@ -35,7 +35,7 @@ export function BrushUpControl({ scriptId, takeId, revisionId, currentRevision }
   }, [scriptId, takeId]);
 
   async function createCandidate() {
-    if (!consented || busy) return;
+    if (!currentRevision || !consented || busy) return;
     setBusy(true); setError(null);
     try {
       const consent = await api<{ consentId: string }>("/api/script-brush-up/consent", {
@@ -66,13 +66,17 @@ export function BrushUpControl({ scriptId, takeId, revisionId, currentRevision }
   }
 
   const canCreate = currentRevision && (!view || (["rejected", "rolled_back", "failed"].includes(view.status) && !view.cleanupPending));
+  const terminalWithoutCleanup = view && ["rejected", "rolled_back", "failed"].includes(view.status) &&
+    !view.cleanupPending && !view.manualCleanupRequired;
+  if (!currentRevision && (!view || terminalWithoutCleanup)) return null;
+
+  const showCreation = canCreate && !loading;
   return (
     <section className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-5 text-ink-900" aria-label="台本専用のお手本候補">
-      <h3 className="text-base font-semibold">このTakeから台本専用のお手本候補を作る</h3>
-      <p className="mt-2 text-sm leading-6">選んだTakeを元に、同じ版の台本だけで使う別のお手本候補を作ります。聞き比べてから採用を選べます。</p>
+      <h3 className="text-base font-semibold">{showCreation ? "このTakeから台本専用のお手本候補を作る" : "この版のお手本候補"}</h3>
+      {showCreation ? <p className="mt-2 text-sm leading-6">選んだTakeを元に、同じ版の台本だけで使う別のお手本候補を作ります。聞き比べてから採用を選べます。</p> : null}
       {loading ? <p className="mt-3 text-sm">候補を確認しています…</p> : null}
-      {!currentRevision ? <p className="mt-3 text-sm">これは以前の台本の版です。新しい候補は現在の版のTakeから作れます。</p> : null}
-      {canCreate && !loading ? (
+      {showCreation ? (
         <div className="mt-4 space-y-3">
           <label className="flex items-start gap-3 text-sm leading-6">
             <input type="checkbox" checked={consented} onChange={event => setConsented(event.target.checked)} className="mt-1" />

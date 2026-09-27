@@ -79,7 +79,7 @@ export function BrushUpControl({ api, review, isOnline }: { api: PracticeApi; re
   }, [api, review.scriptId, review.takeId]);
 
   async function create() {
-    if (!revisionId || !consented || busy || !isOnline) return;
+    if (!review.brushUpCurrentRevision || !revisionId || !consented || busy || !isOnline) return;
     setBusy(true); setError(null);
     try {
       const consent = await api.acceptBrushUpConsent?.({ scriptId: review.scriptId, takeId: review.takeId, revisionId });
@@ -104,12 +104,16 @@ export function BrushUpControl({ api, review, isOnline }: { api: PracticeApi; re
   }
 
   const canCreate = review.brushUpCurrentRevision && (!view || (["rejected", "rolled_back", "failed"].includes(view.status) && !view.cleanupPending));
+  const terminalWithoutCleanup = view && ["rejected", "rolled_back", "failed"].includes(view.status) &&
+    !view.cleanupPending && !view.manualCleanupRequired;
+  if (!review.brushUpCurrentRevision && (!view || terminalWithoutCleanup)) return null;
+
+  const showCreation = canCreate && !loading;
   return <section className="review-section brush-up-control" aria-label="台本専用のお手本候補">
-    <h2>このTakeから台本専用のお手本候補を作る</h2>
-    <p>選んだTakeを元に、同じ版の台本だけで使う別のお手本候補を作ります。聞き比べてから自分で選べます。</p>
-    {!review.brushUpCurrentRevision ? <p>これは以前の台本の版です。新しい候補は現在の版のTakeから作れます。</p> : null}
+    <h2>{showCreation ? "このTakeから台本専用のお手本候補を作る" : "この版のお手本候補"}</h2>
+    {showCreation ? <p>選んだTakeを元に、同じ版の台本だけで使う別のお手本候補を作ります。聞き比べてから自分で選べます。</p> : null}
     {loading ? <p>候補を確認しています…</p> : null}
-    {canCreate && !loading ? <>
+    {showCreation ? <>
       <label><input type="checkbox" checked={consented} onChange={event => setConsented(event.target.checked)} /> この保存済みTakeの録音を外部音声サービスへ送り、一時的なvoiceと同じ台本のお手本候補を作ることに同意します。</label>
       <button type="button" className="review-primary" disabled={!isOnline || !consented || busy} onClick={() => void create()}>
         <span>{busy ? "候補を準備しています…" : "同意して候補を作る"}</span>

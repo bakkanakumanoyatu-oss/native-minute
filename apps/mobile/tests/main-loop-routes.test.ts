@@ -745,25 +745,58 @@ describe("mobile evaluation, review, and progress adapters", () => {
     expect(serialized).toContain(TAKE_ID);
     expect(serialized).not.toContain("audio_path");
     expect(serialized).not.toContain("must-not-leak");
+    expect(serialized).toContain('"brushUpAvailable":false');
+  });
+
+  it("keeps old revision candidate lookup available while disabling its creation entry", async () => {
+    const previous = process.env.NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP;
+    process.env.NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP = "1";
+    try {
+      const stored = createStoredReview();
+      stored.scriptSnapshot = { revisionId: stored.take.script_revision_id!, revisionNo: 1,
+        title: "Saved title", content: script.content, locale: "en-US", targetSeconds: 60 };
+      const client = { from: () => ({ select() { return this; }, eq() { return this; },
+        maybeSingle: async () => ({ data: { ...script, current_revision_id: "another-revision",
+          archived_at: null, target_seconds: 60 }, error: null }) }) } as unknown as AppSupabaseClient;
+      const response = await handleMobileReviewGet(
+        mobileRequest(`/api/mobile/scripts/${SCRIPT_ID}/reviews/${TAKE_ID}`), SCRIPT_ID, TAKE_ID,
+        { ...authDependencies(), createClient: () => client, getStoredReview: async () => stored,
+          getOwnedTakeAudioIdentity: async () => "a".repeat(64) }
+      );
+      expect(response.status).toBe(200);
+      const payload = await response.json();
+      expect(payload.data.review).toMatchObject({ brushUpAvailable: true, brushUpCurrentRevision: false });
+    } finally {
+      if (previous === undefined) delete process.env.NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP;
+      else process.env.NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP = previous;
+    }
   });
 
   it("returns a legacy saved Review without a fabricated snapshot", async () => {
-    const stored = createStoredReview();
-    stored.take.script_revision_id = null;
-    stored.take.script_title_snapshot = null;
-    stored.take.script_practice_epoch = null;
-    stored.scriptSnapshot = null;
-    const getStoredReview = vi.fn(async () => stored);
-    const response = await handleMobileReviewGet(
-      mobileRequest(`/api/mobile/scripts/${SCRIPT_ID}/reviews/${TAKE_ID}`), SCRIPT_ID, TAKE_ID,
-      { ...authDependencies(), getStoredReview, getOwnedTakeAudioIdentity: async () => "a".repeat(64) }
-    );
-    const payload = await response.json();
-    expect(response.status).toBe(200);
-    expect(getStoredReview).toHaveBeenCalledWith(expect.anything(), USER_ID, SCRIPT_ID, TAKE_ID);
-    expect(payload.data.review).toMatchObject({ takeId: TAKE_ID, historyStatus: "UNVERIFIED_LEGACY",
-      scriptSnapshot: null, scriptTitleSnapshot: null, audioIdentity: "a".repeat(64) });
-    expect(JSON.stringify(payload)).not.toContain(script.content);
+    const previous = process.env.NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP;
+    process.env.NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP = "1";
+    try {
+      const stored = createStoredReview();
+      stored.take.script_revision_id = null;
+      stored.take.script_title_snapshot = null;
+      stored.take.script_practice_epoch = null;
+      stored.scriptSnapshot = null;
+      const getStoredReview = vi.fn(async () => stored);
+      const response = await handleMobileReviewGet(
+        mobileRequest(`/api/mobile/scripts/${SCRIPT_ID}/reviews/${TAKE_ID}`), SCRIPT_ID, TAKE_ID,
+        { ...authDependencies(), getStoredReview, getOwnedTakeAudioIdentity: async () => "a".repeat(64) }
+      );
+      const payload = await response.json();
+      expect(response.status).toBe(200);
+      expect(getStoredReview).toHaveBeenCalledWith(expect.anything(), USER_ID, SCRIPT_ID, TAKE_ID);
+      expect(payload.data.review).toMatchObject({ takeId: TAKE_ID, historyStatus: "UNVERIFIED_LEGACY",
+        scriptSnapshot: null, scriptTitleSnapshot: null, audioIdentity: "a".repeat(64),
+        brushUpAvailable: false, brushUpCurrentRevision: false });
+      expect(JSON.stringify(payload)).not.toContain(script.content);
+    } finally {
+      if (previous === undefined) delete process.env.NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP;
+      else process.env.NATIVE_MINUTE_ENABLE_SCRIPT_BRUSH_UP = previous;
+    }
   });
 
   it("returns the server-canonical overview with attached newest-first take history", async () => {
