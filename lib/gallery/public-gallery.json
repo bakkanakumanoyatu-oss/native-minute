@@ -1,6 +1,369 @@
 {
   "schemaVersion": "gallery-public/v1",
-  "collectionVersion": "foundation-empty-v1",
-  "themes": [],
-  "items": []
+  "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+  "themes": [
+    "Love & Attachment",
+    "Failure & Starting Again",
+    "Courage & Fear",
+    "Identity & Belonging",
+    "Work & Ambition",
+    "Change & Choice",
+    "Family & Friendship",
+    "Loss & Letting Go",
+    "Time & Mortality",
+    "Freedom & Responsibility",
+    "Hope & Meaning",
+    "Wonder & Discovery"
+  ],
+  "items": [
+    {
+      "id": "nm-fc-gwh-your-move-chief",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "Your Move, Chief",
+      "workTitle": "Good Will Hunting",
+      "sourceType": "Movies",
+      "speaker": "Sean Maguire",
+      "year": 1997,
+      "moment": "知識で相手を言い負かす青年に、セラピストは本人の経験を問いかける。",
+      "contextJa": "公園のベンチでSeanがWillへ語る場面。読んだ知識だけでは分からない愛と喪失を持ち出し、最後はWill自身が話すかどうかに選択を返す。映画の登場人物による発話であり、俳優本人の人生の告白としては表示しない。",
+      "whyItMattersJa": "大声や難しい単語ではなく、相手に向けた静かな言葉で場面を変える。",
+      "speakingNotes": [],
+      "themes": [
+        "Love & Attachment",
+        "Loss & Letting Go",
+        "Family & Friendship"
+      ],
+      "moreLikeThis": [
+        "nm-fc-shackleton-endurance",
+        "nm-fc-jacobs-retreat",
+        "nm-fc-conan-worst-fear"
+      ],
+      "primarySourceUrl": "https://www.miramax.com/movie/good-will-hunting/",
+      "canonicalSourceLocator": "Good Will Hunting",
+      "sourceKind": "source link",
+      "publicationMode": "DISCOVERY"
+    },
+    {
+      "id": "nm-fc-prada-sweater-chosen",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "The Sweater Was Chosen for You",
+      "workTitle": "The Devil Wears Prada",
+      "sourceType": "Movies",
+      "speaker": "Miranda Priestly",
+      "year": 2006,
+      "moment": "自分には関係ないと思っていた服が、誰かの仕事と選択の積み重ねだと示される。",
+      "contextJa": "編集部の服選びでAndyが示した無関心に、Mirandaが青いセーターの来歴を説明する。語られるデザイナー史を、独立に検証した実話として教えない。",
+      "whyItMattersJa": "感情を爆発させず、具体例の連鎖で相手の見方を変える話し方を試せる。",
+      "speakingNotes": [],
+      "themes": [
+        "Work & Ambition",
+        "Change & Choice",
+        "Identity & Belonging"
+      ],
+      "moreLikeThis": [
+        "nm-fc-bly-work",
+        "nm-fc-conan-worst-fear",
+        "nm-fc-roosevelt-arena"
+      ],
+      "primarySourceUrl": "https://www.20thcenturystudios.com/movies/the-devil-wears-prada",
+      "canonicalSourceLocator": "The Devil Wears Prada",
+      "sourceKind": "source link",
+      "publicationMode": "DISCOVERY"
+    },
+    {
+      "id": "nm-fc-hidden-bathroom",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "There Is No Bathroom for Me Here",
+      "workTitle": "Hidden Figures",
+      "sourceType": "Movies",
+      "speaker": "Katherine Johnson (film character)",
+      "year": 2016,
+      "moment": "仕事場から姿を消す理由を責められ、彼女は日々の具体的な負担を初めて説明する。",
+      "contextJa": "映画中のKatherineが、利用できるトイレまでの距離、服装規定、コーヒーの扱いを上司と同僚へ訴える場面。これは脚色を含む映画の台詞で、実在のKatherine Johnsonが史実上そのまま述べた逐語引用ではない。最初の短い答えには上司の返答が入るため、その返答後の単独発話から始める。",
+      "whyItMattersJa": "感情の強さを、抽象的な怒りではなく具体的な生活上の事実で伝える。",
+      "speakingNotes": [],
+      "themes": [
+        "Identity & Belonging",
+        "Freedom & Responsibility",
+        "Work & Ambition"
+      ],
+      "moreLikeThis": [
+        "nm-fc-douglass-struggle",
+        "nm-fc-bly-work",
+        "nm-fc-jacobs-retreat"
+      ],
+      "primarySourceUrl": "https://www.20thcenturystudios.jp/movies/dreammovie",
+      "canonicalSourceLocator": "Hidden Figures",
+      "sourceKind": "source link",
+      "publicationMode": "DISCOVERY"
+    },
+    {
+      "id": "nm-fc-network-get-mad",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "First, You’ve Got to Get Mad",
+      "workTitle": "Network",
+      "sourceType": "Movies",
+      "speaker": "Howard Beale",
+      "year": 1976,
+      "moment": "テレビ越しにただ眺めていた不満を、自分の存在価値を叫ぶ声へ変えていく。",
+      "contextJa": "放送中のニュースキャスターHoward Bealeが、視聴者へ怒りを言葉にするよう呼びかける独白。本作はテレビをめぐる風刺であり、この台詞を作者からの単純な自己啓発メッセージとしては扱わない。窓から叫ばせる後続部分までは取らず、自分の人生には価値があるという箇所で終える。",
+      "whyItMattersJa": "短い命令や反復で熱量を上げる構造を、元の映画の文脈の中で試せる。",
+      "speakingNotes": [],
+      "themes": [
+        "Freedom & Responsibility",
+        "Identity & Belonging",
+        "Hope & Meaning"
+      ],
+      "moreLikeThis": [
+        "nm-fc-douglass-struggle",
+        "nm-fc-hidden-bathroom",
+        "nm-fc-conan-worst-fear"
+      ],
+      "primarySourceUrl": "https://catalog.afi.com/Film/54924-NETWORK",
+      "canonicalSourceLocator": "Network",
+      "sourceKind": "source link",
+      "publicationMode": "DISCOVERY"
+    },
+    {
+      "id": "nm-fc-conan-worst-fear",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "Your Worst Fear, Realized",
+      "workTitle": "Dartmouth College Commencement Address",
+      "sourceType": "Speeches",
+      "speaker": "Conan O’Brien",
+      "year": 2011,
+      "moment": "望んだ仕事を失った翌年、彼は夢が変わってもよいと卒業生に話す。",
+      "contextJa": "2011年6月12日のDartmouth卒業式。Conanは前年の公の挫折を振り返り、進路が変わることについて話す。",
+      "whyItMattersJa": "真面目な話と冗談を切り替えながら、断定しすぎない現代の話し言葉を試せる。",
+      "speakingNotes": [],
+      "themes": [
+        "Failure & Starting Again",
+        "Work & Ambition",
+        "Change & Choice"
+      ],
+      "moreLikeThis": [
+        "nm-fc-shackleton-endurance",
+        "nm-fc-roosevelt-arena",
+        "nm-fc-prada-sweater-chosen"
+      ],
+      "primarySourceUrl": "https://home.dartmouth.edu/news/2011/06/conan-obrien-failure-and-conviction",
+      "canonicalSourceLocator": "Dartmouth College Commencement Address",
+      "sourceKind": "source link",
+      "publicationMode": "DISCOVERY"
+    },
+    {
+      "id": "nm-fc-roosevelt-arena",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "The Person in the Arena",
+      "workTitle": "Citizenship in a Republic",
+      "sourceType": "Speeches",
+      "speaker": "Theodore Roosevelt",
+      "year": 1910,
+      "moment": "外から批評する人ではなく、失敗を引き受けて行動する人へ称賛を向ける。",
+      "contextJa": "1910年4月23日、パリのソルボンヌでのCitizenship in a Republicの一節。市民の責任についての長い議論の中で、行動を避ける冷笑を批判する。The Person in the Arenaは本コレクションの編集タイトルで、原題や原文のmanを書き換えたものではない。",
+      "whyItMattersJa": "批評と行動の対比から始まり、長い反復を経て、挑戦する人の居場所へ着地する。",
+      "speakingNotes": [],
+      "themes": [
+        "Courage & Fear",
+        "Work & Ambition",
+        "Failure & Starting Again"
+      ],
+      "moreLikeThis": [
+        "nm-fc-douglass-struggle",
+        "nm-fc-shackleton-endurance",
+        "nm-fc-conan-worst-fear"
+      ],
+      "primarySourceUrl": "https://www.theodorerooseveltcenter.org/encyclopedia/culture-and-society/man-in-the-arena/",
+      "canonicalSourceLocator": "Citizenship in a Republic",
+      "sourceKind": "source link",
+      "publicationMode": "PRACTICE",
+      "practiceAvailable": true,
+      "targetSeconds": 60,
+      "locale": "en-US",
+      "wordCount": 141,
+      "characterCount": 756
+    },
+    {
+      "id": "nm-fc-jfk-hard",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "Because They Are Hard",
+      "workTitle": "Address at Rice University on the Nation’s Space Effort",
+      "sourceType": "Speeches",
+      "speaker": "John F. Kennedy",
+      "year": 1962,
+      "moment": "まだ月面着陸を実現していない時、難しい目標へ進む理由を公に宣言する。",
+      "contextJa": "1962年9月12日、Rice Universityでの宇宙開発演説。月へ向かう選択を、力と技術を結集して試す挑戦として述べた。",
+      "whyItMattersJa": "同じ文の反復とbecauseの積み上げで、目標と決意が声になる。",
+      "speakingNotes": [],
+      "themes": [
+        "Wonder & Discovery",
+        "Work & Ambition",
+        "Hope & Meaning"
+      ],
+      "moreLikeThis": [
+        "nm-fc-keller-language",
+        "nm-fc-shackleton-endurance",
+        "nm-fc-roosevelt-arena"
+      ],
+      "primarySourceUrl": "https://www.jfklibrary.org/learn/about-jfk/historic-speeches/address-at-rice-university-on-the-nations-space-effort",
+      "canonicalSourceLocator": "Address at Rice University on the Nation’s Space Effort",
+      "sourceKind": "source link",
+      "publicationMode": "DISCOVERY"
+    },
+    {
+      "id": "nm-fc-douglass-struggle",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "No Progress Without Struggle",
+      "workTitle": "West India Emancipation",
+      "sourceType": "Speeches",
+      "speaker": "Frederick Douglass",
+      "year": 1857,
+      "moment": "自由という結果を望むなら、変化を求める働きかけも引き受けなければならない。",
+      "contextJa": "1857年、ニューヨーク州Canandaiguaでの西インド諸島奴隷解放を記念する演説の一節。作物・雷雨・海という比喩を重ね、要求と抵抗の必要を説く。NPSは8月4日、Douglass Papersを引く学術書誌は8月3日としているため、表示本文では日を断定しない。",
+      "whyItMattersJa": "引用だけでは失われがちな奴隷解放の文脈と、比喩の連続した論理を読む。",
+      "speakingNotes": [],
+      "themes": [
+        "Freedom & Responsibility",
+        "Courage & Fear",
+        "Hope & Meaning"
+      ],
+      "moreLikeThis": [
+        "nm-fc-hidden-bathroom",
+        "nm-fc-jacobs-retreat",
+        "nm-fc-roosevelt-arena"
+      ],
+      "primarySourceUrl": "https://www.nps.gov/frdo/learn/historyculture/thoughts-for-all-time.htm",
+      "canonicalSourceLocator": "West India Emancipation",
+      "sourceKind": "source link",
+      "publicationMode": "PRACTICE",
+      "practiceAvailable": true,
+      "targetSeconds": 40,
+      "locale": "en-US",
+      "wordCount": 90,
+      "characterCount": 481
+    },
+    {
+      "id": "nm-fc-shackleton-endurance",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "The End of the Endurance",
+      "workTitle": "South",
+      "sourceType": "Books, Essays & Letters",
+      "speaker": "Ernest Shackleton",
+      "year": 1919,
+      "moment": "船を失っても、次の仕事は「全員で陸へ着くこと」だと定め直す。",
+      "contextJa": "South第IV章に、1915年10月27日の出来事として収録された一節。船を放棄するほかなくなった状況で、生存と物資を確かめ、探検隊全員を陸へ導くことを課題として記す。著書に収録された文章の朗読であり、当日の肉声録音ではない。",
+      "whyItMattersJa": "悲しみを消さずに事実を見直し、目の前の仕事へ言葉を進める。",
+      "speakingNotes": [],
+      "themes": [
+        "Failure & Starting Again",
+        "Courage & Fear",
+        "Family & Friendship"
+      ],
+      "moreLikeThis": [
+        "nm-fc-conan-worst-fear",
+        "nm-fc-jacobs-retreat",
+        "nm-fc-jfk-hard"
+      ],
+      "primarySourceUrl": "https://www.gutenberg.org/cache/epub/5199/pg5199-images.html",
+      "canonicalSourceLocator": "South",
+      "sourceKind": "source link",
+      "publicationMode": "PRACTICE",
+      "practiceAvailable": true,
+      "targetSeconds": 35,
+      "locale": "en-US",
+      "wordCount": 80,
+      "characterCount": 429
+    },
+    {
+      "id": "nm-fc-bly-work",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "Because of My Work",
+      "workTitle": "Ten Days in a Mad-House",
+      "sourceType": "Books, Essays & Letters",
+      "speaker": "Nellie Bly",
+      "year": 1887,
+      "moment": "取材を終えた彼女は、記事の反響と、人々のケアに起きた変化を書き残す。",
+      "contextJa": "著書の序文。施設への潜入取材を記事にした後、読者からの反響と、ケア予算の増額を著者自身が報告する。増額の因果関係は独立に会計資料と照合していないため、著者の報告として扱う。",
+      "whyItMattersJa": "勇気を抽象的に語るのではなく、自分の仕事が他者にどう届いたかを振り返る。",
+      "speakingNotes": [],
+      "themes": [
+        "Work & Ambition",
+        "Freedom & Responsibility",
+        "Hope & Meaning"
+      ],
+      "moreLikeThis": [
+        "nm-fc-hidden-bathroom",
+        "nm-fc-douglass-struggle",
+        "nm-fc-shackleton-endurance"
+      ],
+      "primarySourceUrl": "https://www.gutenberg.org/files/59899/59899-h/59899-h.htm",
+      "canonicalSourceLocator": "Ten Days in a Mad-House",
+      "sourceKind": "source link",
+      "publicationMode": "PRACTICE",
+      "practiceAvailable": true,
+      "targetSeconds": 50,
+      "locale": "en-US",
+      "wordCount": 122,
+      "characterCount": 662
+    },
+    {
+      "id": "nm-fc-keller-language",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "The Mystery of Language",
+      "workTitle": "The Story of My Life",
+      "sourceType": "Books, Essays & Letters",
+      "speaker": "Helen Keller",
+      "year": 1903,
+      "moment": "手に流れる水と、もう一方の手に綴られた名前が結びついた。",
+      "contextJa": "The Story of My Life、第I部Chapter IVの井戸小屋の場面。水に触れながら言葉の意味が開けた瞬間を、著者が後年振り返る。今回の対象はOptimismではない。本文区間は特定済みだが、地域別の利用条件確認と正規の本文取込を残す。",
+      "whyItMattersJa": "言葉を音や記号として追うことから、意味のある経験として知ることへの転換を読む。",
+      "speakingNotes": [],
+      "themes": [
+        "Wonder & Discovery",
+        "Change & Choice",
+        "Hope & Meaning"
+      ],
+      "moreLikeThis": [
+        "nm-fc-jfk-hard",
+        "nm-fc-bly-work",
+        "nm-fc-jacobs-retreat"
+      ],
+      "primarySourceUrl": "https://www.gutenberg.org/ebooks/2397",
+      "canonicalSourceLocator": "The Story of My Life",
+      "sourceKind": "source link",
+      "publicationMode": "DISCOVERY"
+    },
+    {
+      "id": "nm-fc-jacobs-retreat",
+      "collectionVersion": "2026-09-27-first-collection-editorial-v1",
+      "title": "The Loophole of Retreat",
+      "workTitle": "Incidents in the Life of a Slave Girl, Written by Herself",
+      "sourceType": "Books, Essays & Letters",
+      "speaker": "Harriet Jacobs",
+      "year": 1861,
+      "moment": "光も空気も乏しい隠れ場所で、子どもの声だけは届いた。",
+      "contextJa": "Chapter XXI The Loophole Of Retreat。祖母の家にある狭い屋根裏へ隠れた著者が、息苦しさ、眠り、昼夜の区別のなさを記す。その中で子どもの声が慰めになる。書かれた一人称の朗読であり、別話者の台詞は含めない。",
+      "whyItMattersJa": "身体の具体的な感覚から、家族へのつながりへ静かに移る一節。",
+      "speakingNotes": [],
+      "themes": [
+        "Family & Friendship",
+        "Freedom & Responsibility",
+        "Love & Attachment"
+      ],
+      "moreLikeThis": [
+        "nm-fc-gwh-your-move-chief",
+        "nm-fc-hidden-bathroom",
+        "nm-fc-shackleton-endurance"
+      ],
+      "primarySourceUrl": "https://www.gutenberg.org/cache/epub/11030/pg11030-images.html",
+      "canonicalSourceLocator": "Incidents in the Life of a Slave Girl, Written by Herself",
+      "sourceKind": "source link",
+      "publicationMode": "PRACTICE",
+      "practiceAvailable": true,
+      "targetSeconds": 55,
+      "locale": "en-US",
+      "wordCount": 126,
+      "characterCount": 616
+    }
+  ]
 }

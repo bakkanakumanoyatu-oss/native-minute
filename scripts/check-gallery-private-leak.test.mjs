@@ -22,6 +22,20 @@ test("the public repo guard detects package names and renamed private bytes", as
   }
 });
 
+test("the guard rejects private runtime files and actual protected text in source or build output", async () => {
+  const root = await mkdtemp(join(tmpdir(), "gallery-private-runtime-test-"));
+  try {
+    await mkdir(join(root, ".next", "server"), { recursive: true });
+    await writeFile(join(root, "gallery-runtime.json"), "synthetic only");
+    await writeFile(join(root, "renamed.txt"), "Synthetic protected practice line for a test.");
+    await writeFile(join(root, ".next", "server", "chunk.js"), "Synthetic protected practice line for a test.");
+    assert.deepEqual((await findPrivateGalleryLeaks(root, new Set(), ["Synthetic protected practice line for a test."])).sort(),
+      ["gallery-runtime.json", "renamed.txt", ".next/server/chunk.js"].sort());
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("the guard scans source, Web output and Mobile output for a synthetic practice sentinel", async () => {
   const root = await mkdtemp(join(tmpdir(), "gallery-private-artifact-test-"));
   try {

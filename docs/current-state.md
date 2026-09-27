@@ -1,5 +1,7 @@
 # 現在の状態
 
+2026-09-27 **First Collection worldwide beta release artifact はLOCAL生成・未配備**。Humanの別release decisionをhash固定でcanonical private sourceへメモリ上で適用し、12件の公開metadata候補と5件だけのprivate PRACTICE runtime、source/decision/output hash manifest、validation reportを生成。source本体は不変。DISCOVERY映画のnull master timecodeはmetadata-onlyなら許可し、PRACTICE gateは維持。公開projectionから本文・訳・raw speaking notes・excerpt付きsource locatorを除外。Humanが公開metadataを確認した後のStaging cutoverが次の一手。DB/Storage/provider/実機/Productionは今回変更なし。[Gallery運用契約](gallery-intake-contract.md)。
+
 2026-09-27 **Gallery private runtime delivery foundation はLOCAL実装**。First Collection完成packageはpublic repo外のcanonical private vaultで受領・検証済み。12件すべてHOLD、公開manifestは0件のまま。公開PRACTICE schemaから本文・訳を除外し、承認済みPRACTICEだけを抽出するprivate `gallery-runtime/v1` artifact契約、hash-pinned private Storage server loader、認証済みWeb detail／Mobile Bearer BFF、ID指定のcanonical script作成を追加。release config未設定ならfail closed。private本文upload、bucket作成、DB migration、Staging/Production変更、provider call、権利承認は0。[運用契約](gallery-intake-contract.md)。
 
 2026-09-27 **Practice Take → IVC brush-up は初回β NO-GO／Human final closeout PASS**。0037は専用Stagingへ適用済み。実provider A/B候補2回はいずれも元のreference voiceよりnative-likeでなくHumanが却下し、provider・Storage候補をcleanup済み。featureはOFF、元reference音声は保持。追加実験はdeferし、brush-upを再openしない。実Production不変。

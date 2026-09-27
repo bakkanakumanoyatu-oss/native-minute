@@ -90,7 +90,7 @@ export const editorialGallerySchema = z.object({
     for (const theme of item.editorial.themes) {
       if (!themes.has(theme)) context.addIssue({ code: "custom", path: [...path, "editorial", "themes"], message: `unknown theme: ${theme}` });
     }
-    if (item.identity.sourceType === "Movies" && item.source.releasedMasterTimecodeRequired && !item.source.releasedMasterTimecode && item.publicationMode !== "HOLD") {
+    if (item.identity.sourceType === "Movies" && item.source.releasedMasterTimecodeRequired && !item.source.releasedMasterTimecode && item.publicationMode === "PRACTICE") {
       context.addIssue({ code: "custom", path: [...path, "source", "releasedMasterTimecode"], message: "licensed master timecode unresolved" });
     }
     if (item.publicationMode === "PRACTICE") {

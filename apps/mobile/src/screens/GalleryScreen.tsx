@@ -86,7 +86,7 @@ export function GalleryScreen({ api, isOnline, itemId, catalog = gallery, onNavi
     <section><h2>What was happening?</h2><p>{item.moment}</p><p>{item.contextJa}</p></section>
     <section><h2>Why this moment matters</h2><p>{item.whyItMattersJa}</p></section>
     {item.publicationMode === "PRACTICE" ? <section><h2>The words</h2>{practicePayload ? <><p lang={practicePayload.locale} className="gallery-words">{practicePayload.practiceTextEn}</p>{practicePayload.translationJa ? <p>{practicePayload.translationJa}</p> : null}</> : activePracticeState && activePracticeState.kind !== "success" ? <RequestError error={activePracticeState} /> : <p role="status">練習文を読み込んでいます…</p>}</section> : null}
-    <section><h2>Listen for</h2><ul>{item.speakingNotes.map(note => <li key={note}>{note}</li>)}</ul></section>
+    {item.speakingNotes.length ? <section><h2>Listen for</h2><ul>{item.speakingNotes.map(note => <li key={note}>{note}</li>)}</ul></section> : null}
     <section><h2>Try it yourself</h2><p>{item.publicationMode === "PRACTICE" ? "自分の台本として保存してから練習します。お手本には現在の自分の声を使います。" : "原典を探し、使える英文を自分で確認してから台本を作ります。自動取り込みは行いません。"}</p>
       {item.publicationMode === "PRACTICE" ? <button className="scripts-primary" type="button" disabled={saving || !practicePayload} onClick={() => void practice()}>{saving ? "保存中…" : "この一節で練習する"}</button> : <button className="scripts-primary" type="button" onClick={() => onNavigate({ name: "scripts", create: true })}>自分の台本を作る</button>}
       {error?.itemId === item.id ? <RequestError error={error.failure} /> : null}

@@ -18,12 +18,16 @@ export function buildPublicGalleryManifest(input: unknown): PublicGallery {
       moment: item.editorial.moment,
       contextJa: item.editorial.contextJa,
       whyItMattersJa: item.editorial.whyItMattersJa,
-      speakingNotes: item.editorial.speakingNotes,
+      // Editorial notes can contain exact phrases from the private practice
+      // payload. Keep them out of the public metadata for every mode.
+      speakingNotes: [],
       themes: item.editorial.themes,
       moreLikeThis: item.editorial.moreLikeThis,
       primarySourceUrl: item.source.primarySourceUrl,
-      canonicalSourceLocator: item.source.canonicalSourceLocator,
-      sourceKind: item.source.sourceKind
+      // Private locators can contain excerpt or subtitle cues. The public
+      // card uses the work identity and an original-source link instead.
+      canonicalSourceLocator: item.identity.workTitle,
+      sourceKind: item.source.primarySourceUrl ? "source link" : item.source.sourceKind
     };
     if (item.publicationMode === "DISCOVERY") {
       items.push({ ...common, publicationMode: "DISCOVERY" });

@@ -31,9 +31,10 @@ function catalog(items: unknown[] = []) {
 }
 
 describe("Gallery intake and public projection", () => {
-  it("renders the Web empty state and manual creation path", () => {
+  it("renders the Web release catalog and manual creation path", () => {
     const html = renderToStaticMarkup(GalleryPage({}));
-    expect(html).toContain("公開できる場面を準備中です");
+    expect(html).toContain("/gallery/nm-fc-roosevelt-arena");
+    expect(html).toContain("/gallery/nm-fc-gwh-your-move-chief");
     expect(html).toContain("/scripts/new");
     expect(html).not.toContain("I chose to speak clearly.");
   });
@@ -55,6 +56,7 @@ describe("Gallery intake and public projection", () => {
     expect(JSON.stringify(output)).not.toContain("明確に話すと決めました。");
     expect(JSON.stringify(output)).not.toContain("hold");
     expect(output.items[0]).toMatchObject({ publicationMode: "PRACTICE", practiceAvailable: true });
+    expect(output.items[0]).toMatchObject({ speakingNotes: [], canonicalSourceLocator: "Invented work", sourceKind: "source link" });
     expect(publicGallerySchema.safeParse({ ...output, items: [{ ...output.items[1], practiceTextEn: "leak" }] }).success).toBe(false);
     expect(publicGallerySchema.safeParse({ ...output, items: [{ ...output.items[0], translationJa: "leak" }] }).success).toBe(false);
     expect(publicGallerySchema.safeParse({ ...output, items: [{ ...practice, publicationMode: "HOLD" }] }).success).toBe(false);
@@ -100,6 +102,21 @@ describe("Gallery intake and public projection", () => {
     candidate.identity.sourceType = "Movies" as "Speeches";
     candidate.source.releasedMasterTimecodeRequired = true;
     expect(editorialGallerySchema.safeParse(catalog([candidate])).success).toBe(false);
+    candidate.publicationMode = "DISCOVERY";
+    candidate.editorial.speakingNotes = ["A private excerpt cue for editors only."];
+    candidate.source.canonicalSourceLocator = "A private subtitle locator for editors only.";
+    expect(editorialGallerySchema.safeParse(catalog([candidate])).success).toBe(true);
+    const discovery = buildPublicGalleryManifest(catalog([candidate])).items[0];
+    expect(discovery).toMatchObject({
+      publicationMode: "DISCOVERY",
+      speakingNotes: [],
+      canonicalSourceLocator: "Invented work",
+      sourceKind: "source link"
+    });
+    expect(JSON.stringify(discovery)).not.toContain("private excerpt");
+    expect(JSON.stringify(discovery)).not.toContain("private subtitle");
+    candidate.publicationMode = "HOLD";
+    expect(editorialGallerySchema.safeParse(catalog([candidate])).success).toBe(true);
     expect(editorialGallerySchema.safeParse({ ...catalog(), schemaVersion: "gallery-editorial/v0" }).success).toBe(false);
   });
 
