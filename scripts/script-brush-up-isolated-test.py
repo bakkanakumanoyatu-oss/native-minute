@@ -12,6 +12,20 @@ NAME = "nm-brush-up-" + uuid.uuid4().hex[:10]
 source = ast.parse((ROOT / "scripts/script-revision-isolated-test.py").read_text())
 BOOTSTRAP = next(ast.literal_eval(node.value) for node in source.body
                  if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "BOOTSTRAP" for t in node.targets))
+BUILDER_TEMPLATE = subprocess.check_output([
+    "node", "--import", "tsx", "--input-type=module", "-e",
+    "import { buildScriptAudioStorageObjectKey } from './services/voice/replay-storage.ts'; "
+    "process.stdout.write(buildScriptAudioStorageObjectKey({userId:'__USER__',scriptId:'__SCRIPT__',"
+    "voiceId:'__CANDIDATE__',cacheKey:'__CANDIDATE__',contentType:'audio/mpeg'}));"
+], cwd=ROOT, text=True).strip()
+assert BUILDER_TEMPLATE.count("__USER__") == 1
+assert BUILDER_TEMPLATE.count("__SCRIPT__") == 1
+assert BUILDER_TEMPLATE.count("__CANDIDATE__") == 2
+key_expression = ("replace(replace(replace('" + BUILDER_TEMPLATE.replace("'", "''") +
+                  "','__USER__',p_user_id::text),'__SCRIPT__',p_script_id::text),"
+                  "'__CANDIDATE__',p_candidate_id::text)")
+KEY_FIXTURE = ("create function pg_temp.candidate_key(p_user_id uuid,p_script_id uuid,p_candidate_id uuid) "
+               f"returns text language sql as $$ select {key_expression} $$;\n")
 
 def sql(statement):
     result = subprocess.run(
@@ -34,9 +48,13 @@ try:
     sql(BOOTSTRAP)
     for migration in sorted((ROOT / "supabase/migrations").glob("*.sql")):
         sql(migration.read_text())
-    output = sql((ROOT / "scripts/script-brush-up-isolated-test.sql").read_text())
+    output = sql(KEY_FIXTURE + (ROOT / "scripts/script-brush-up-isolated-test.sql").read_text())
     assert "BRUSH_UP_RPC_ELIGIBILITY_STATE_CLEANUP_PASS" in output, output[-4000:]
     print("BRUSH_UP_RPC_ELIGIBILITY_STATE_CLEANUP_PASS", flush=True)
+    candidate_user, candidate_script, candidate_id = sql(
+        "select user_id,script_id,id from public.script_brush_up_candidates "
+        "where user_id='81000000-0000-4000-8000-000000000001' limit 1;"
+    ).strip().split("|")
     helper_source = (ROOT / "scripts/g5d-2j-isolated-postgres-runtime-proof.sql").read_text()
     helpers = helper_source[helper_source.index("create or replace function pg_temp.create_provider_terminal_request"):
                             helper_source.index("-- Clean migration history")]
@@ -49,6 +67,16 @@ try:
     assert observed == deleted + anonymized + retained and deleted >= 2, result[-2000:]
     assert sql(f"select count(*) from public.script_brush_up_candidates where user_id='{user_id}';").strip() == "0"
     assert sql(f"select count(*) from public.script_brush_up_consents where user_id='{user_id}';").strip() == "0"
+    deleted_candidate_key = (BUILDER_TEMPLATE.replace("__USER__", candidate_user)
+                             .replace("__SCRIPT__", candidate_script)
+                             .replace("__CANDIDATE__", candidate_id))
+    try:
+        sql("insert into storage.objects(bucket_id,name) values "
+            f"('script-audios','{deleted_candidate_key}');")
+    except RuntimeError as error:
+        assert "account_deletion_active" in str(error) or "brush_up_storage_insert_invalid" in str(error), str(error)
+    else:
+        raise AssertionError("late admin upload succeeded after account deletion")
     print("BRUSH_UP_ACCOUNT_DELETION_V4_ROWS_PASS", flush=True)
 finally:
     subprocess.run(["docker", "rm", "-f", "-v", NAME], capture_output=True)

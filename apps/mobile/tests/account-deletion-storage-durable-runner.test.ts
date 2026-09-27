@@ -11,6 +11,7 @@ import type {
   AccountDeletionStorageTargetKind
 } from "@/services/account-deletion/account-deletion-storage-adapter";
 import { createAccountDeletionStorageAdapter } from "@/services/account-deletion/account-deletion-storage-adapter";
+import { buildScriptAudioStorageObjectKey } from "@/services/voice/replay-storage";
 import type {
   AccountDeletionStorageDeleteAttempt,
   AccountDeletionStorageDeleteResult,
@@ -37,6 +38,12 @@ const voiceService = readFileSync(fileURLToPath(new URL("../../../services/voice
 const REQUEST_ID = "11111111-1111-4111-8111-111111111111";
 const USER_A = "22222222-2222-4222-8222-222222222222";
 const USER_B = "33333333-3333-4333-8333-333333333333";
+const SCRIPT_ID = "55555555-5555-4555-8555-555555555555";
+const CANDIDATE_ID = "66666666-6666-4666-8666-666666666666";
+const CANDIDATE_KEY = buildScriptAudioStorageObjectKey({
+  userId: USER_A, scriptId: SCRIPT_ID, voiceId: CANDIDATE_ID,
+  cacheKey: CANDIDATE_ID, contentType: "audio/mpeg"
+});
 const LEASE = "44444444-4444-4444-8444-444444444444";
 const NOW = new Date("2026-09-02T00:00:00.000Z");
 
@@ -343,9 +350,10 @@ describe("G5D-2E Storage seal and writer fence", () => {
     const objects = new Map<string, Array<{ name: string; id: string | null; metadata: object | null }>>([
       [`recordings:${USER_A}`, [{ name: "script", id: null, metadata: null }]],
       [`recordings:${USER_A}/script`, [{ name: "take.wav", id: "recording-id", metadata: {} }]],
-      [`script-audios:${USER_A}`, [{ name: "script", id: null, metadata: null }]],
-      [`script-audios:${USER_A}/script`, [{ name: "voice", id: null, metadata: null }]],
-      [`script-audios:${USER_A}/script/voice`, [{ name: "model.mp3", id: "audio-id", metadata: {} }]],
+      [`script-audios:${USER_A}`, [{ name: SCRIPT_ID, id: null, metadata: null }]],
+      [`script-audios:${USER_A}/${SCRIPT_ID}`, [{ name: CANDIDATE_ID, id: null, metadata: null }]],
+      [`script-audios:${USER_A}/${SCRIPT_ID}/${CANDIDATE_ID}`,
+        [{ name: `${CANDIDATE_ID}.mp3`, id: "candidate-audio-id", metadata: {} }]],
       [`voice-samples:${USER_A}`, [{ name: "consent", id: null, metadata: null }]],
       [`voice-samples:${USER_A}/consent`, [{ name: "sample.wav", id: "sample-id", metadata: {} }]],
       [`voice-consents:${USER_A}`, [{ name: "consent.wav", id: "consent-id", metadata: {} }]]
@@ -366,7 +374,7 @@ describe("G5D-2E Storage seal and writer fence", () => {
 
     await expect(adapter.listOwnedInventory(USER_A)).resolves.toEqual(inventory({
       recordings: [`${USER_A}/script/take.wav`],
-      "script-audios": [`${USER_A}/script/voice/model.mp3`],
+      "script-audios": [CANDIDATE_KEY],
       "voice-samples": [`${USER_A}/consent/sample.wav`],
       "voice-consents": [`${USER_A}/consent.wav`]
     }));
@@ -512,6 +520,19 @@ describe("G5D-2E one-step execution, recovery, lease/CAS, and finalizer", () => 
       objectKey: `${USER_B}/cross-user.wav`
     })).resolves.toEqual({ kind: "invalid_target" });
     expect(info).toHaveBeenCalledTimes(3);
+  });
+
+  it("deletes and verifies a builder-derived candidate key through the admin script-audio adapter", async () => {
+    const remove = vi.fn(async () => ({ data: [], error: null }));
+    const info = vi.fn(async () => ({ data: null, error: { status: 404, message: "not found" } }));
+    const from = vi.fn(() => ({ remove, info, list: vi.fn() }));
+    const adapter = createAccountDeletionStorageAdapter({ storage: { from } } as never);
+    const target = { userId: USER_A, targetKind: "script_audio" as const, objectKey: CANDIDATE_KEY };
+    await expect(adapter.deleteObject(target)).resolves.toEqual({ kind: "request_succeeded" });
+    await expect(adapter.verifyObjectAbsence(target)).resolves.toEqual({ kind: "absent" });
+    expect(from).toHaveBeenCalledWith("script-audios");
+    expect(remove).toHaveBeenCalledWith([CANDIDATE_KEY]);
+    expect(info).toHaveBeenCalledWith(CANDIDATE_KEY);
   });
 
   it("persists generation-1 intent before exactly one DELETE and makes later progress durable", async () => {

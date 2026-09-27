@@ -1,5 +1,7 @@
 # 現在の状態
 
+2026-09-27 **brush-up Storage remediation は local-only 候補**。0037は未適用のまま、候補音声を既存admin writerへ統一し、候補キー予約・確定と遅延Storage INSERTのDB fenceを強化。authenticated Storage INSERT policyは追加しない。quota Human Decision は2 / 12 / account_lifetimeを維持。実HTTP Storage試験はlocal stack不在で未実施。次の専用Staging cutoverでは、feature ON前にprovider不要の合成candidateでadmin upload／authenticated拒否／取得／削除／absenceとHuman data不変を確認する。[cutover gate](brush-up-storage-cutover-gate-20260927.md)。
+
 2026-09-26 **β quota Staging cutoverはHuman確認を含めCLOSED**。同じiPhoneのquota版で起動・履歴・brandを確認済み。追加のprovider確認呼出しは0。今回の台本専用ブラッシュアップはfeature OFFのlocal foundationで、0037 Staging未適用・実provider未呼出し・native installなし。専用quotaの具体値とperiodはHuman未決定。
 
 2026-09-26 **brand Human actual-device CLOSED**。AppIcon、Native Minutes表示、Home/台本/成長/My Takes/設定のarrow、既存履歴はHuman PASS。Splashはsigned bundle内full-logoを確認済みでHuman目視は未観測、nonblocking。brandを再openしない。

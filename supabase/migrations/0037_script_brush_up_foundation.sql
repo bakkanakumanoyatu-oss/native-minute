@@ -64,28 +64,31 @@ create unique index brush_candidate_one_active_revision on public.script_brush_u
     or asset_cleanup_state in ('pending','failed');
 create index brush_candidate_owner_cleanup on public.script_brush_up_candidates(user_id,provider_cleanup_state);
 
--- Candidate uploads use the owner's Storage client. A restrictive policy
--- fences their distinctive key shape against account deletion and cleanup,
--- including a delayed upload after a candidate has become terminal.
-create function public.brush_up_candidate_storage_insert_allowed(p_key text) returns boolean
+-- Service-role Storage uploads bypass RLS. Fence the final object INSERT so a
+-- delayed upload cannot recreate a candidate asset after cleanup or deletion.
+-- Normal reference-audio filenames are hash cache keys, not candidate UUIDs.
+create function public.guard_brush_up_candidate_storage_insert() returns trigger
 language plpgsql security definer set search_path=pg_catalog,public as $$
-declare u uuid:=auth.uid(); parts text[]:=storage.foldername(p_key);
+declare parts text[]:=string_to_array(new.name,'/'); c public.script_brush_up_candidates;
 begin
-  if u is null or cardinality(parts)<>4 or parts[1]<>u::text then return false; end if;
-  perform public.script_owner_write_lock(u);
-  return exists(select 1 from public.script_brush_up_candidates c
-    where c.user_id=u and c.script_id::text=parts[2] and c.id::text=parts[3]
-      and c.candidate_storage_object_key=p_key and c.asset_cleanup_state='pending'
-      and c.status='preparing' and c.provider_cleanup_state='present');
+  if new.bucket_id<>'script-audios' or cardinality(parts)<>4
+    or parts[3] !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    or parts[4]<>parts[3]||'.mp3' then return new; end if;
+  if parts[1] !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    or parts[2] !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
+    raise exception using errcode='check_violation',message='brush_up_storage_insert_invalid'; end if;
+  perform public.script_owner_write_lock(parts[1]::uuid);
+  select * into c from public.script_brush_up_candidates where id=parts[3]::uuid
+    and user_id=parts[1]::uuid and script_id=parts[2]::uuid for update;
+  if not found or c.candidate_storage_object_key is distinct from new.name
+    or c.status<>'preparing' or c.asset_cleanup_state<>'pending'
+    or c.provider_cleanup_state<>'present' then
+    raise exception using errcode='check_violation',message='brush_up_storage_insert_invalid'; end if;
+  return new;
 end $$;
-revoke all on function public.brush_up_candidate_storage_insert_allowed(text) from public,anon,service_role;
-grant execute on function public.brush_up_candidate_storage_insert_allowed(text) to authenticated;
-create policy brush_up_candidate_storage_insert_fence on storage.objects as restrictive for insert to authenticated
-with check (bucket_id<>'script-audios' or not (
-  cardinality(storage.foldername(name))=4
-  and (storage.foldername(name))[3] ~ '^[0-9a-f-]{36}$'
-  and (storage.foldername(name))[4]=(storage.foldername(name))[3]||'.mp3'
-) or public.brush_up_candidate_storage_insert_allowed(name));
+create trigger guard_brush_up_candidate_storage_insert before insert on storage.objects
+  for each row execute function public.guard_brush_up_candidate_storage_insert();
+revoke all on function public.guard_brush_up_candidate_storage_insert() from public,anon,authenticated,service_role;
 
 alter table public.script_brush_up_consents enable row level security;
 alter table public.script_brush_up_candidates enable row level security;
@@ -210,7 +213,7 @@ begin
   select * into c from public.script_brush_up_candidates where id=p_candidate_id and user_id=p_user_id for update;
   if not found or c.status<>'preparing' or c.provider_cleanup_state<>'present'
     or c.candidate_storage_object_key is not null
-    or p_object_key not like p_user_id::text||'/'||c.script_id::text||'/'||c.id::text||'/%' then
+    or p_object_key is distinct from p_user_id::text||'/'||c.script_id::text||'/'||c.id::text||'/'||c.id::text||'.mp3' then
     raise exception using errcode='check_violation',message='brush_up_asset_reservation_invalid'; end if;
   update public.script_brush_up_candidates set candidate_storage_object_key=p_object_key,
     asset_cleanup_state='pending' where id=c.id returning * into c;
@@ -284,9 +287,10 @@ begin
   select * into c from public.script_brush_up_candidates where id=p_candidate_id and user_id=p_user_id for update;
   select * into s from public.scripts where id=c.script_id and user_id=p_user_id for update;
   if c.id is null or c.status<>'preparing' or c.provider_cleanup_state not in ('present','delete_pending')
+    or c.candidate_storage_object_key is null or c.asset_cleanup_state<>'pending'
     or c.candidate_script_audio_id is not null or s.archived_at is not null or s.current_revision_id<>c.script_revision_id
     or p_storage_path is null or p_storage_path !~ '^/api/script-audio/[0-9a-f-]{36}$'
-    or p_stored_asset->>'storageBucket'<>'script-audios'
+    or p_stored_asset->>'storageBucket' is distinct from 'script-audios'
     or p_stored_asset->>'storageObjectKey' is distinct from c.candidate_storage_object_key then
     raise exception using errcode='check_violation',message='brush_up_audio_finalization_invalid'; end if;
   perform set_config('native_minute.brush_up_audio_candidate',c.id::text,true);

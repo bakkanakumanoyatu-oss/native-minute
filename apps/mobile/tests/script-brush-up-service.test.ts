@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSupabaseClient } from "@/lib/supabase/client";
 import type { VoiceProvider } from "@/providers/voice";
 import type { VoiceDeletionProviderAdapter } from "@/providers/voice-deletion";
+import { buildScriptAudioStorageObjectKey } from "@/services/voice/replay-storage";
 
 vi.mock("server-only", () => ({}));
 
@@ -64,7 +65,13 @@ function query(row: () => unknown) {
 
 function harness(options: { synthesizeFails?: boolean; storageFails?: boolean; deleteFails?: boolean;
   providerPersistFails?: boolean; absenceUncertain?: boolean;
-  takeRevisionId?: string | null; consentMissing?: boolean } = {}) {
+  takeRevisionId?: string | null; consentMissing?: boolean; realStorage?: boolean } = {}) {
+  const events: string[] = [];
+  const userUpload = vi.fn(async () => { throw new Error("authenticated Storage upload must not run"); });
+  const adminUpload = vi.fn(async (key: string) => {
+    events.push("admin upload");
+    return { data: { path: key }, error: null };
+  });
   const candidate = {
     id: CANDIDATE, user_id: USER, script_id: SCRIPT, script_revision_id: REVISION,
     source_take_id: TAKE, consent_id: CONSENT, provider_operation_label: `nm-brush-${CANDIDATE}`,
@@ -75,6 +82,7 @@ function harness(options: { synthesizeFails?: boolean; storageFails?: boolean; d
   };
   const baseline = { id: BASELINE, generation_preset: "default", storage_path: AUDIO_PATH };
   const client = {
+    storage: { from: vi.fn(() => ({ upload: userUpload })) },
     from: vi.fn((table: string) => query(() => ({
       takes: { id: TAKE, user_id: USER, script_id: SCRIPT, script_revision_id: options.takeRevisionId === undefined ? REVISION : options.takeRevisionId,
         status: "reviewed", audio_path: `storage://recordings/${USER}/${SCRIPT}/take.wav` },
@@ -91,7 +99,7 @@ function harness(options: { synthesizeFails?: boolean; storageFails?: boolean; d
   mocks.createAccountDeletionStorageAdapter.mockReturnValue(storage);
   const admin = {
     from: vi.fn((table: string) => query(() => table === "script_brush_up_candidates" ? candidate : null)),
-    storage: { from: vi.fn() },
+    storage: { from: vi.fn(() => ({ upload: adminUpload })) },
     rpc: vi.fn(async (name: string, args: Record<string, unknown>) => {
       if (name === "begin_script_brush_up_candidate") return { data: { ...candidate }, error: null };
       if (name === "transition_script_brush_up_candidate") {
@@ -122,6 +130,7 @@ function harness(options: { synthesizeFails?: boolean; storageFails?: boolean; d
         return { data: { ...candidate }, error: null };
       }
       if (name === "finalize_script_brush_up_audio") {
+        events.push("finalize");
         candidate.candidate_script_audio_id = CANDIDATE_AUDIO;
         candidate.asset_cleanup_state = "not_needed";
         candidate.status = "audio_staged";
@@ -136,14 +145,21 @@ function harness(options: { synthesizeFails?: boolean; storageFails?: boolean; d
     })
   };
   const provider = {
-    createVoice: vi.fn(async () => ({ providerVoiceId: "tempVoice123" })),
+    createVoice: vi.fn(async () => {
+      events.push("create voice");
+      return { providerVoiceId: "tempVoice123" };
+    }),
     synthesize: vi.fn(async () => {
+      events.push("synthesize");
       if (options.synthesizeFails) throw new Error("tts failed");
       return { providerRequestId: "request-1", audioSource: { kind: "inline-bytes", bytesBase64: "YQ==", contentType: "audio/mpeg" } };
     })
   };
   const deletion = {
-    deleteVoice: vi.fn(async () => ({ kind: options.deleteFails ? "provider_unavailable" : "deleted" })),
+    deleteVoice: vi.fn(async () => {
+      events.push("provider cleanup");
+      return { kind: options.deleteFails ? "provider_unavailable" : "deleted" };
+    }),
     reconcileVoiceAbsence: vi.fn(async () => ({ kind: options.deleteFails ? "present" : "verified_absent" }))
   };
   const quota = {
@@ -152,14 +168,18 @@ function harness(options: { synthesizeFails?: boolean; storageFails?: boolean; d
     failAfterProviderStart: vi.fn(async () => undefined), releaseIfUnreached: vi.fn(async () => undefined)
   };
   mocks.reserveBetaQuota.mockResolvedValue(quota);
-  mocks.stageScriptAudioForReplay.mockImplementation(async () => {
+  mocks.stageScriptAudioForReplay.mockImplementation(async (stageInput) => {
     if (options.storageFails) throw new Error("storage failed");
+    if (options.realStorage) {
+      const actual = await vi.importActual<typeof import("@/services/voice/replay.service")>("@/services/voice/replay.service");
+      return actual.stageScriptAudioForReplay(stageInput);
+    }
     return { storagePath: "/api/script-audio/90000000-0000-4000-8000-000000000002",
       storedAsset: { storageBucket: "script-audios", storageObjectKey: candidate.candidate_storage_object_key,
         contentType: "audio/mpeg", byteLength: 1 } };
   });
   mocks.createSupabaseAdminClient.mockReturnValue(admin);
-  return { client, admin, storage, candidate, provider, deletion, quota };
+  return { client, admin, storage, candidate, provider, deletion, quota, userUpload, adminUpload, events };
 }
 
 beforeEach(() => {
@@ -235,9 +255,29 @@ describe("limited brush-up provider orchestration", () => {
     expect(state.provider.synthesize).toHaveBeenCalledWith(expect.objectContaining({
       providerVoiceId: "tempVoice123", text: "A calm one minute practice script.", locale: "en-US"
     }));
-    expect(mocks.stageScriptAudioForReplay).toHaveBeenCalledWith(expect.objectContaining({ storageClient: state.client }));
+    expect(mocks.stageScriptAudioForReplay).toHaveBeenCalledWith(expect.objectContaining({ storageClient: state.admin }));
     expect(state.deletion.deleteVoice).toHaveBeenCalledOnce();
     expect(state.deletion.reconcileVoiceAbsence).toHaveBeenCalledOnce();
+    expect(state.quota.consume).toHaveBeenCalledOnce();
+  });
+
+  it("uploads the builder's exact reserved key once through the admin writer before finalize and cleanup", async () => {
+    const state = harness({ realStorage: true });
+    await expect(generateScriptBrushUpCandidate(state.client, USER, input, {
+      admin: state.admin as never, provider: state.provider as unknown as VoiceProvider,
+      deletion: state.deletion as unknown as VoiceDeletionProviderAdapter
+    })).resolves.toMatchObject({ candidateId: CANDIDATE, status: "ready" });
+    const key = buildScriptAudioStorageObjectKey({
+      userId: USER, scriptId: SCRIPT, voiceId: CANDIDATE, cacheKey: CANDIDATE, contentType: "audio/mpeg"
+    });
+    expect(state.admin.rpc).toHaveBeenCalledWith("reserve_script_brush_up_asset", expect.objectContaining({
+      p_user_id: USER, p_candidate_id: CANDIDATE, p_object_key: key
+    }));
+    expect(state.adminUpload).toHaveBeenCalledExactlyOnceWith(key, Buffer.from("a"), expect.objectContaining({
+      contentType: "audio/mpeg", upsert: false
+    }));
+    expect(state.userUpload).not.toHaveBeenCalled();
+    expect(state.events).toEqual(["create voice", "synthesize", "admin upload", "finalize", "provider cleanup"]);
     expect(state.quota.consume).toHaveBeenCalledOnce();
   });
 

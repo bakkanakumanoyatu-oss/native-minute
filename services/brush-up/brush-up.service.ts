@@ -260,7 +260,7 @@ export async function generateScriptBrushUpCandidate(client: AppSupabaseClient, 
     if (reserved.error || !reserved.data) failed("候補音声の保存を予約できませんでした。");
     candidate = reserved.data as Candidate;
     const staged = await stageScriptAudioForReplay({
-      storageClient: client, userId, scriptId: input.scriptId, voiceId: candidate.id,
+      storageClient: admin, userId, scriptId: input.scriptId, voiceId: candidate.id,
       cacheKey: candidate.id,
       synthesized: { ...synthesized, playbackPath: buildScriptAudioPlaybackPath(randomUUID()) },
       reservedStorageObjectKey: storageKey

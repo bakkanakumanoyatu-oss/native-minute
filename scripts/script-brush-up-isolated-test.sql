@@ -41,10 +41,22 @@ insert into public.takes(id,user_id,script_id,audio_path,status,script_revision_
 alter table public.takes enable trigger guard_take_revision_identity;
 select pg_temp.assert_true(not has_function_privilege('authenticated',
   'public.accept_script_brush_up_consent(uuid,uuid,uuid,uuid,text)','execute'),'direct consent forged denied');
+select pg_temp.assert_true(not exists(select 1 from pg_policies where schemaname='storage'
+  and tablename='objects' and cmd in ('INSERT','UPDATE','ALL')),'no authenticated Storage mutation policy');
+select pg_temp.assert_true(not has_function_privilege('authenticated',
+  'public.reserve_script_brush_up_asset(uuid,uuid,text)','execute'),'direct reserve denied');
+select pg_temp.assert_true(not has_function_privilege('authenticated',
+  'public.finalize_script_brush_up_audio(uuid,uuid,text,jsonb)','execute'),'direct finalize denied');
+-- The isolated Storage table has no built-in service role grants. Emulate its
+-- privileged metadata writer without granting any authenticated mutation.
+grant insert on storage.objects to service_role;
 set role authenticated;
 select pg_temp.reject('select public.accept_script_brush_up_consent(''81000000-0000-4000-8000-000000000001'',
   ''82000000-0000-4000-8000-000000000001'',''82000000-0000-4000-8000-000000000001'',
   ''82000000-0000-4000-8000-000000000001'','''||repeat('a',64)||''')','permission denied');
+select pg_temp.reject('insert into storage.objects(bucket_id,name) values
+  (''script-audios'',''81000000-0000-4000-8000-000000000001/denied.mp3'')','permission denied');
+select pg_temp.reject('update public.script_brush_up_candidates set status=''ready''','permission denied');
 reset role;
 select pg_temp.assert_true(has_function_privilege('service_role',
   'public.accept_script_brush_up_consent(uuid,uuid,uuid,uuid,text)','execute'),'service consent grant');
@@ -87,13 +99,76 @@ select pg_temp.reject(format('select public.transition_script_brush_up_candidate
   'brush_up_candidate_missing') from brush_candidate c;
 select public.transition_script_brush_up_candidate('81000000-0000-4000-8000-000000000001',
   (row).id,'provider_created','tempVoice123') from brush_candidate;
+select pg_temp.reject(format('select public.finalize_script_brush_up_audio(%L,%L,%L,%L::jsonb)',
+  '81000000-0000-4000-8000-000000000001',(row).id,
+  '/api/script-audio/84000000-0000-4000-8000-000000000002',
+  '{"storageBucket":"script-audios"}'),'brush_up_audio_finalization_invalid') from brush_candidate;
+select pg_temp.reject(format('insert into storage.objects(bucket_id,name) values (%L,%L)',
+  'script-audios',pg_temp.candidate_key('81000000-0000-4000-8000-000000000001',
+    (row).script_id,(row).id)),'brush_up_storage_insert_invalid') from brush_candidate;
+select pg_temp.reject(format('select public.reserve_script_brush_up_asset(%L,%L,NULL)',
+  '81000000-0000-4000-8000-000000000001',(row).id),
+  'brush_up_asset_reservation_invalid') from brush_candidate;
+select pg_temp.reject(format('select public.reserve_script_brush_up_asset(%L,%L,%L)',
+  '81000000-0000-4000-8000-000000000001',(row).id,
+  pg_temp.candidate_key('81000000-0000-4000-8000-000000000002',(row).script_id,(row).id)),
+  'brush_up_asset_reservation_invalid') from brush_candidate;
+select pg_temp.reject(format('select public.reserve_script_brush_up_asset(%L,%L,%L)',
+  '81000000-0000-4000-8000-000000000001',(row).id,
+  pg_temp.candidate_key('81000000-0000-4000-8000-000000000001',gen_random_uuid(),(row).id)),
+  'brush_up_asset_reservation_invalid') from brush_candidate;
+select pg_temp.reject(format('select public.reserve_script_brush_up_asset(%L,%L,%L)',
+  '81000000-0000-4000-8000-000000000001',(row).id,
+  pg_temp.candidate_key('81000000-0000-4000-8000-000000000001',(row).script_id,gen_random_uuid())),
+  'brush_up_asset_reservation_invalid') from brush_candidate;
+select pg_temp.reject(format('select public.reserve_script_brush_up_asset(%L,%L,%L)',
+  '81000000-0000-4000-8000-000000000001',(row).id,
+  pg_temp.candidate_key('81000000-0000-4000-8000-000000000001',(row).script_id,(row).id)||'.other'),
+  'brush_up_asset_reservation_invalid') from brush_candidate;
+select pg_temp.reject(format('select public.reserve_script_brush_up_asset(%L,%L,%L)',
+  '81000000-0000-4000-8000-000000000002',(row).id,
+  pg_temp.candidate_key('81000000-0000-4000-8000-000000000002',(row).script_id,(row).id)),
+  'brush_up_asset_reservation_invalid') from brush_candidate;
+select pg_temp.reject(format('select public.reserve_script_brush_up_asset(%L,%L,%L)',
+  '81000000-0000-4000-8000-000000000001',gen_random_uuid(),
+  pg_temp.candidate_key('81000000-0000-4000-8000-000000000001',(row).script_id,(row).id)),
+  'brush_up_asset_reservation_invalid') from brush_candidate;
 select public.reserve_script_brush_up_asset('81000000-0000-4000-8000-000000000001',
-  (row).id,'81000000-0000-4000-8000-000000000001/'||(row).script_id||'/'||(row).id||'/'||(row).id||'.mp3')
+  (row).id,pg_temp.candidate_key('81000000-0000-4000-8000-000000000001',(row).script_id,(row).id))
   from brush_candidate;
+select pg_temp.assert_true((select candidate_storage_object_key=pg_temp.candidate_key(user_id,script_id,id)
+  and asset_cleanup_state='pending' from public.script_brush_up_candidates
+  where id=(select (row).id from brush_candidate)),'exact builder key reserved');
+insert into public.account_deletion_requests(id,user_id,status) values
+  ('85000000-0000-4000-8000-000000000002','81000000-0000-4000-8000-000000000001','requested');
+select pg_temp.reject(format('insert into storage.objects(bucket_id,name) values (%L,%L)',
+  'script-audios',pg_temp.candidate_key('81000000-0000-4000-8000-000000000001',
+    (row).script_id,(row).id)),'account_deletion_active') from brush_candidate;
+delete from public.account_deletion_requests where id='85000000-0000-4000-8000-000000000002';
+select set_config('brush.test.key',pg_temp.candidate_key('81000000-0000-4000-8000-000000000001',
+  (row).script_id,(row).id),false) from brush_candidate;
+set role service_role;
+insert into storage.objects(bucket_id,name) values('script-audios',current_setting('brush.test.key'));
+reset role;
+select pg_temp.assert_true((select count(*)=1 from storage.objects where bucket_id='script-audios'
+  and name=(select candidate_storage_object_key from public.script_brush_up_candidates
+    where id=(select (row).id from brush_candidate))),'admin candidate metadata insert');
+select pg_temp.reject(format('select public.finalize_script_brush_up_audio(%L,%L,%L,%L::jsonb)',
+  '81000000-0000-4000-8000-000000000001',(row).id,
+  '/api/script-audio/84000000-0000-4000-8000-000000000002',
+  jsonb_build_object('storageBucket','script-audios','storageObjectKey',
+    pg_temp.candidate_key('81000000-0000-4000-8000-000000000001',(row).script_id,(row).id)||'.other')::text),
+  'brush_up_audio_finalization_invalid') from brush_candidate;
+select pg_temp.reject(format('select public.finalize_script_brush_up_audio(%L,%L,%L,%L::jsonb)',
+  '81000000-0000-4000-8000-000000000001',gen_random_uuid(),
+  '/api/script-audio/84000000-0000-4000-8000-000000000002',
+  jsonb_build_object('storageBucket','script-audios','storageObjectKey',
+    pg_temp.candidate_key('81000000-0000-4000-8000-000000000001',(row).script_id,(row).id))::text),
+  'brush_up_audio_finalization_invalid') from brush_candidate;
 select public.finalize_script_brush_up_audio('81000000-0000-4000-8000-000000000001',
   (row).id,'/api/script-audio/84000000-0000-4000-8000-000000000002',
   jsonb_build_object('storageBucket','script-audios','storageObjectKey',
-    '81000000-0000-4000-8000-000000000001/'||(row).script_id||'/'||(row).id||'/'||(row).id||'.mp3',
+    pg_temp.candidate_key('81000000-0000-4000-8000-000000000001',(row).script_id,(row).id),
     'contentType','audio/mpeg','byteLength',42)) from brush_candidate;
 select public.transition_script_brush_up_candidate('81000000-0000-4000-8000-000000000001',
   (row).id,'provider_absent') from brush_candidate;
@@ -113,8 +188,19 @@ select pg_temp.assert_true((select status='adopted' from public.script_brush_up_
   where id=(select (row).id from brush_candidate)),'adopt revision');
 select public.transition_script_brush_up_candidate('81000000-0000-4000-8000-000000000001',
   (row).id,'rollback') from brush_candidate;
+delete from storage.objects where bucket_id='script-audios' and name in
+  (select candidate_storage_object_key from public.script_brush_up_candidates
+    where id=(select (row).id from brush_candidate));
 select public.finish_script_brush_up_asset_cleanup('81000000-0000-4000-8000-000000000001',
   (row).id) from brush_candidate;
+set role service_role;
+select pg_temp.reject('insert into storage.objects(bucket_id,name) values
+  (''script-audios'',current_setting(''brush.test.key''))',
+  'brush_up_storage_insert_invalid');
+reset role;
+insert into storage.objects(bucket_id,name) select 'script-audios',
+  '81000000-0000-4000-8000-000000000001/'||(row).script_id||
+  '/83000000-0000-4000-8000-000000000001/'||repeat('a',32)||'.mp3' from brush_candidate;
 select pg_temp.assert_true((select status='rolled_back' and asset_cleanup_state='complete'
   and candidate_script_audio_id is null from public.script_brush_up_candidates
   where id=(select (row).id from brush_candidate)),'rollback cleanup');

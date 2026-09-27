@@ -1,0 +1,13 @@
+# Brush-up Storage cutover gate (0037)
+
+0037 is still unapplied. The local fix makes candidate audio use the existing server-owned admin Storage writer. Its exact key is reserved by `reserve_script_brush_up_asset`, checked by `finalize_script_brush_up_audio`, and fenced at the final `storage.objects` INSERT against delayed privileged uploads. It adds no authenticated Storage mutation policy.
+
+The isolated PostgreSQL test exercises the reservation, finalization, and Storage metadata trigger. Local Supabase Storage HTTP was unavailable, so a mocked upload or direct SQL INSERT is **not** an HTTP Storage proof. Before turning the feature on during the next dedicated Staging cutover:
+
+1. Confirm dedicated Staging only, ledger 0001–0036, feature OFF, no provider calls, and a before snapshot of Human-owned rows and Storage inventory/digests. Apply 0037 through the normal linked migration path only after the separate cutover decision.
+2. Create one disposable synthetic owner, script/revision, eligible Take, consent, quota reservation, and candidate in the dedicated Staging DB. Use synthetic audio and a synthetic provider state; do not call a paid provider. Derive the candidate object key with `buildScriptAudioStorageObjectKey` using that owner, script, candidate ID twice, and `audio/mpeg`.
+3. Reserve that exact key through the service-role RPC. Upload one small synthetic MP3 test payload to `script-audios` through the server-owned admin client. Confirm the returned key, Storage `info`, and downloaded bytes match. Confirm an authenticated client cannot upload to the candidate key or another `script-audios` key.
+4. Prove the delayed-write fence: after terminal cleanup clears the reservation, an admin upload to that candidate key must fail. Use synthetic bytes and an ordinary reference-audio reservation to confirm its admin Storage write still works, without a provider call. Do not allow the canary to mutate Human-owned objects.
+5. Delete the synthetic object through the service-role Storage adapter, verify exact absence, clean up the scoped synthetic DB rows and Auth user, then compare the Human-owned snapshots/digests and Storage inventory with the before snapshot. Record all cleanup and absence results before considering feature ON.
+
+Account deletion must remain blocked while a candidate asset is pending or failed. The current account-deletion Storage operator does not automatically settle that candidate state; use the candidate cleanup/reconciliation path and verify absence before retrying the Storage seal. Never bypass the seal guard or treat an uncertain absence as success.
