@@ -1,6 +1,6 @@
 # 現在の状態
 
-2026-09-27 **Gallery foundation active / CONTENT_PACKAGE_NOT_RECEIVED**。実在の言葉と文脈を探す静的Gallery、編集用schemaと7軸rights fail-closed validator、空の公開manifest、Web/Mobile入口をlocal実装。First Collection完成packageの実bytesは未受領のため、本文・訳・12件importなし。旧自作テンプレはruntime入口から外した。PRACTICEは既存canonical script作成、DISCOVERYは原典と手動台本作成。DB/provider/live変更なし。brush-up初回βはHuman NO-GO、feature OFFを維持。詳細は [Gallery intake contract](gallery-intake-contract.md)。
+2026-09-27 **Gallery foundation / CONTENT_PACKAGE_RECEIVED_VALIDATED**。First Collection完成packageをpublic repo外のlocal private vaultに固定。12件のidentity、COMPLETE 6 / 要本文挿入6、全件HOLD・7権利軸UNRESOLVEDを再確認。公開manifestは0件のまま。CLIは明示されたprivate JSON pathと期待SHA-256を照合し、新規指定先だけにprojectionを出す。private vaultはGit管理外のためbackupが必要。Web/Mobile入口・DB/provider/liveは変更なし。詳細は [Gallery intake contract](gallery-intake-contract.md)。
 
 2026-09-27 **brush-up Storage remediation は local-only 候補**。0037は未適用のまま、候補音声を既存admin writerへ統一し、候補キー予約・確定と遅延Storage INSERTのDB fenceを強化。authenticated Storage INSERT policyは追加しない。quota Human Decision は2 / 12 / account_lifetimeを維持。実HTTP Storage試験はlocal stack不在で未実施。次の専用Staging cutoverでは、feature ON前にprovider不要の合成candidateでadmin upload／authenticated拒否／取得／削除／absenceとHuman data不変を確認する。[cutover gate](brush-up-storage-cutover-gate-20260927.md)。
 

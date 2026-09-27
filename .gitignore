@@ -18,6 +18,14 @@ tests/e2e/.auth/
 **/trace.zip
 *.swp
 
+# First Collection editorial package must live outside this public repository.
+**/native_minute_first_collection/
+**/native_minute_first_collection_complete.zip
+**/first_collection_complete.json
+**/first_collection_editorial.md
+**/first_collection_status.csv
+**/mainline_handoff.md
+
 # Xcode / Simulator generated state
 DerivedData/
 **/xcuserdata/

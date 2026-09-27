@@ -8,6 +8,7 @@
   "scripts": {
     "check:workspace": "python3 scripts/check_workspace_root.py",
     "gallery:manifest": "tsx scripts/build-gallery-manifest.ts",
+    "check:gallery-private-leak": "node scripts/check-gallery-private-leak.mjs",
     "dev": "NEXT_DIST_DIR=.next-dev next dev",
     "build": "next build",
     "start": "next start",

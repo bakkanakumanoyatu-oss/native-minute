@@ -1,6 +1,8 @@
 # Gallery foundation and First Collection intake
 
-Status: `CONTENT_PACKAGE_NOT_RECEIVED`. The public catalog is intentionally empty. No First Collection text, translation, or old draft has been imported.
+Status: `CONTENT_PACKAGE_RECEIVED_VALIDATED`. The public catalog is intentionally empty. No First Collection text or translation has been imported into the public repository.
+
+Canonical local private vault: `/Users/karasawatakahiro/Developer/native-minute-private-content/first-collection/2026-09-27-first-collection-editorial-v1/` (outside every public Git worktree). Collection version: `2026-09-27-first-collection-editorial-v1`. ZIP SHA-256: `92808ca7894c23e88389e9373b7ab05147f661a6b642a916101daf0251754f41`. Main JSON SHA-256: `2d65bd56968e88c993b97f563b4d93af40bb5f504698b078d921409cc37788e4`. This local vault requires a private backup; it is not a Git repository. A private version-controlled repository can be considered when content grows, but is not a publication prerequisite.
 
 ## Product boundary
 
@@ -35,9 +37,9 @@ Practice text is the **only** TTS/script payload. It excludes speaker/character 
 
 ## Intake procedure
 
-1. Receive the exact `first_collection_complete.json`, `first_collection_editorial.md`, `first_collection_status.csv`, and `mainline_handoff.md` or the named zip. Record SHA-256 of the original bytes and an explicit collection version. Never substitute an older draft, infer missing text from the summary, search for copyrighted lines, or regenerate translations.
-2. Compare all four files for the same 12 identities, statuses, source locators, rights review values, text/translation presence, and version. Report discrepancies to editorial without changing them. Map the received JSON into the canonical editorial schema while retaining any extra metadata. The current CLI expects canonical editorial JSON; its adapter is intentionally pending until the actual package format is known.
-3. Run the schema/relationship/rights/length validator. The CLI `npm run gallery:manifest -- <canonical-editorial.json> <new-public-output.json>` checks the 12 identities and counts, computes the input hash, and writes a **new** public manifest (`wx`, never overwrite). Review the output for text and translation leakage, then replace `lib/gallery/public-gallery.json` only with an approved projection. Re-run Web and Mobile checks. The app never reads the editorial source at runtime.
+1. The received ZIP and its main JSON match the SHA-256 values above; all ten entries in `SHA256SUMS.txt` match the copied files. The source JSON already uses the canonical `gallery-editorial/v1` schema, so no adapter is needed. Keep all private package files in the vault, never in this repository.
+2. Compare the same 12 identities, statuses, source locators, rights review values, text/translation presence, and version before a later editorial revision. Report discrepancies without changing the received source. New content or release decisions require a new version and expected hash.
+3. Run `npm run check:gallery-private-leak`, then `npm run gallery:manifest -- <private-editorial.json> <new-public-output.json> <expected-source-sha256>`. The CLI reads the source outside this repository, verifies the expected hash and known First Collection identity, validates schema/rights/length, and writes only the explicit new output (`wx`, never overwrite). All 12 current items are HOLD, so the output has zero items; do not replace `lib/gallery/public-gallery.json` in this intake. Review any future nonempty output for text and translation leakage before publication. The app never reads the editorial source at runtime.
 4. A PRACTICE tap uses the existing `create_script` path and its active-10 and length guards, then opens Listen with the user's existing reference voice. A saved user script and its history remain unchanged if a Gallery item later changes. DISCOVERY opens an approved original URL, if any, and manual script creation; no scraping, clipboard monitor, background fetch, or AI text completion.
 
 Reject duplicate IDs, invalid source/theme/status/mode/locale/target, missing provenance, malformed or non-HTTPS URL, placeholder values, broken/self relations, unresolved required movie timecode, practice text without gates, translation without its gate, public HOLD, public DISCOVERY text leakage, and length overflow. Run synthetic contract/UI tests without copying real lines.
