@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { editorialGallerySchema, type EditorialGallery, type PublicGallery } from "./schema";
 import type { GalleryRuntime } from "./runtime-schema";
+import { assertDiscoveryPayloadAbsentFromRuntime, assertPublicGalleryPayloadSeparation } from "./payload-separation";
 
 export const FIRST_COLLECTION_SOURCE_SHA256 = "2d65bd56968e88c993b97f563b4d93af40bb5f504698b078d921409cc37788e4";
 export const FIRST_COLLECTION_DECISION_SHA256 = "71f565f613fa46342ea5acaab322eaa7598174beab6ea4706f6d1cda6bc52402";
@@ -104,10 +105,17 @@ function assertRightsDecision(decision: FirstWorldBetaDecision) {
 // editorial package remains byte-for-byte intact outside the public repository.
 const releaseEditorialOverrides: Record<string, { moment?: string; contextJa?: string }> = {
   "nm-fc-gwh-your-move-chief": {
-    moment: "知識で相手を言い負かす青年に、セラピストは本人の経験を問いかける。"
+    moment: "知識で相手を言い負かす青年に、セラピストはWill自身の経験を問いかける。",
+    contextJa: "公園のベンチでSeanがWillへ語る場面。読んだ知識だけでは分からない愛や喪失について話し、最後はWill自身が何を語るかに選択を返す。"
   },
   "nm-fc-prada-sweater-chosen": {
-    contextJa: "編集部の服選びでAndyが示した無関心に、Mirandaが青いセーターの来歴を説明する。語られるデザイナー史を、独立に検証した実話として教えない。"
+    contextJa: "編集部の服選びでAndyが示した無関心に、Mirandaが青いセーターの来歴を説明する。ひとつの色がデザイナーや流通を経て、本人が無関係だと思っていた選択にまでつながっていることを示す。"
+  },
+  "nm-fc-hidden-bathroom": {
+    contextJa: "実在人物をもとにした映画上のKatherineが、利用できるトイレまでの距離、服装規定、コーヒーの扱いなど、職場で抱えていた具体的な負担を上司と同僚へ言葉にする場面。"
+  },
+  "nm-fc-network-get-mad": {
+    contextJa: "放送中のニュースキャスターHoward Bealeが、視聴者へ怒りを言葉にするよう呼びかける独白。テレビをめぐる風刺の中で、受け身の不満を、自分の人生には価値があるという主張へ変えていく。"
   },
   "nm-fc-conan-worst-fear": {
     contextJa: "2011年6月12日のDartmouth卒業式。Conanは前年の公の挫折を振り返り、進路が変わることについて話す。"
@@ -115,8 +123,14 @@ const releaseEditorialOverrides: Record<string, { moment?: string; contextJa?: s
   "nm-fc-jfk-hard": {
     contextJa: "1962年9月12日、Rice Universityでの宇宙開発演説。月へ向かう選択を、力と技術を結集して試す挑戦として述べた。"
   },
+  "nm-fc-douglass-struggle": {
+    contextJa: "1857年、ニューヨーク州Canandaiguaで西インド諸島の奴隷解放を記念して行われた演説の一節。作物・雷雨・海の比喩を重ねながら、自由を求めるには要求と抵抗が伴うと説く。"
+  },
   "nm-fc-bly-work": {
-    contextJa: "著書の序文。施設への潜入取材を記事にした後、読者からの反響と、ケア予算の増額を著者自身が報告する。増額の因果関係は独立に会計資料と照合していないため、著者の報告として扱う。"
+    contextJa: "『Ten Days in a Mad-House』の序文。施設への潜入取材を記事にした後、読者からの反響と、その後のケア予算の増額を本人が振り返っている。"
+  },
+  "nm-fc-keller-language": {
+    contextJa: "『The Story of My Life』第I部Chapter IV。井戸小屋で、水に触れながら手のひらに綴られた言葉とその意味が結びついた瞬間を、著者が後年振り返る。"
   }
 };
 
@@ -161,60 +175,7 @@ export function buildFirstWorldBetaOverlay(sourceInput: unknown, decisionInput: 
   return { editorial: editorialGallerySchema.parse(overlay), decision };
 }
 
-function publicStrings(value: unknown): string[] {
-  if (typeof value === "string") return [value];
-  if (Array.isArray(value)) return value.flatMap(publicStrings);
-  if (value && typeof value === "object") return Object.values(value).flatMap(publicStrings);
-  return [];
-}
-
-function normalizedCharacters(value: string) {
-  return value.normalize("NFKC").toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
-}
-
-function protectedNeedles(value: string, language: "en" | "ja") {
-  const normalized = normalizedCharacters(value);
-  const needles = new Set([normalized]);
-  if (language === "en") {
-    const words = value.normalize("NFKC").toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
-    for (let index = 0; index + 8 <= words.length; index++) {
-      needles.add(words.slice(index, index + 8).join(""));
-    }
-  } else {
-    const characters = Array.from(normalized);
-    for (let index = 0; index + 24 <= characters.length; index++) {
-      needles.add(characters.slice(index, index + 24).join(""));
-    }
-  }
-  return [...needles].filter(Boolean);
-}
-
-function containsProtectedFragment(payload: string, publicValues: string[], language: "en" | "ja") {
-  const candidates = publicValues.map(normalizedCharacters);
-  return protectedNeedles(payload, language).some(needle => candidates.some(value => value.includes(needle)));
-}
-
-// Compare values, not serialized JSON, so escaped newlines and punctuation do
-// not conceal substantial source fragments in a public metadata field.
 export function assertReleasePayloadSeparation(source: EditorialGallery, catalog: PublicGallery, runtime: GalleryRuntime) {
-  const publicValues = publicStrings(catalog);
-  const runtimeValues = publicStrings(runtime);
-  for (const item of catalog.items) {
-    if ("practiceTextEn" in item || "translationJa" in item) {
-      throw new Error(`Protected fields reached public metadata for ${item.id}`);
-    }
-  }
-  for (const sourceItem of source.items) {
-    for (const [field, language] of [["practiceTextEn", "en"], ["translationJa", "ja"]] as const) {
-      const payload = sourceItem.practice[field];
-      if (!payload) continue;
-      if (containsProtectedFragment(payload, publicValues, language)) {
-        throw new Error(`Protected ${field} fragment reached public metadata for ${sourceItem.id}`);
-      }
-      if (runtime.items.some(item => item.id === sourceItem.id)) continue;
-      if (containsProtectedFragment(payload, runtimeValues, language)) {
-        throw new Error(`DISCOVERY ${field} fragment reached private runtime for ${sourceItem.id}`);
-      }
-    }
-  }
+  assertPublicGalleryPayloadSeparation(source, catalog);
+  assertDiscoveryPayloadAbsentFromRuntime(source, runtime);
 }

@@ -8,7 +8,7 @@ vi.mock("@/lib/gallery/public", () => ({
     id, title: "Invented title", workTitle: "Invented work", speaker: "Test speaker", year: 2026,
     sourceType: "Speeches", themes: ["Choice"], moment: "A fictional scene.", contextJa: "架空の場面です。",
     whyItMattersJa: "テスト用です。", speakingNotes: ["Pause."], publicationMode: "PRACTICE",
-    primarySourceUrl: null, canonicalSourceLocator: "Invented source", sourceKind: "official", moreLikeThis: []
+    primarySourceUrl: null, canonicalSourceLocator: "Invented source", sourceKind: "source link", moreLikeThis: []
   } : undefined
 }));
 vi.mock("@/lib/supabase/auth", () => ({ getCurrentUser: mocks.getCurrentUser }));
@@ -27,6 +27,10 @@ describe("Web Gallery private detail", () => {
     expect(html).toContain("Synthetic spoken words.");
     expect(html).toContain("架空の訳です。");
     expect(html).toContain("この一節で練習する");
+    expect(html).toContain("Listen for");
+    expect(html).toContain("Invented work · Test speaker · 2026");
+    expect(html).toContain("出典: Invented source");
+    expect(html).not.toContain("source link ·");
   });
 
   it("fails closed when the private release cannot be loaded", async () => {

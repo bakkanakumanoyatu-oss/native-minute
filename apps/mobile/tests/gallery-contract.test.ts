@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getScriptLength } from "../../../lib/script-length";
 import { buildPublicGalleryManifest, validateFirstCollection } from "../../../lib/gallery/manifest";
-import { filterGalleryItems } from "../../../lib/gallery/public";
+import { filterGalleryItems, getGalleryFilterOptions } from "../../../lib/gallery/public";
 import { editorialGallerySchema, publicGallerySchema } from "../../../lib/gallery/schema";
 import { buildGalleryRuntimeArtifact, parseGalleryRuntimeBytes, selectGalleryRuntimeItem } from "../../../lib/gallery/runtime-schema";
 import { createHash } from "node:crypto";
@@ -36,6 +36,10 @@ describe("Gallery intake and public projection", () => {
     expect(html).toContain("/gallery/nm-fc-roosevelt-arena");
     expect(html).toContain("/gallery/nm-fc-gwh-your-move-chief");
     expect(html).toContain("/scripts/new");
+    expect(html).toContain("自分で見つける / Your Story");
+    expect(html).not.toContain('<option value="Conversations">');
+    expect(html).not.toContain('<option value="Your Story">');
+    expect(html).not.toContain('<option value="Time &amp; Mortality">');
     expect(html).not.toContain("I chose to speak clearly.");
   });
   it("supports empty, one, and mixed catalogs without inventing content", () => {
@@ -56,7 +60,7 @@ describe("Gallery intake and public projection", () => {
     expect(JSON.stringify(output)).not.toContain("明確に話すと決めました。");
     expect(JSON.stringify(output)).not.toContain("hold");
     expect(output.items[0]).toMatchObject({ publicationMode: "PRACTICE", practiceAvailable: true });
-    expect(output.items[0]).toMatchObject({ speakingNotes: [], canonicalSourceLocator: "Invented work", sourceKind: "source link" });
+    expect(output.items[0]).toMatchObject({ speakingNotes: ["Pause clearly."], canonicalSourceLocator: "Invented work", sourceKind: "source link" });
     expect(publicGallerySchema.safeParse({ ...output, items: [{ ...output.items[1], practiceTextEn: "leak" }] }).success).toBe(false);
     expect(publicGallerySchema.safeParse({ ...output, items: [{ ...output.items[0], translationJa: "leak" }] }).success).toBe(false);
     expect(publicGallerySchema.safeParse({ ...output, items: [{ ...practice, publicationMode: "HOLD" }] }).success).toBe(false);
@@ -64,10 +68,22 @@ describe("Gallery intake and public projection", () => {
 
   it("keeps source and theme filtering data driven, including zero item categories", () => {
     const output = buildPublicGalleryManifest(catalog([item("one"), item("two")]));
+    expect(getGalleryFilterOptions(output)).toEqual({ sources: ["Speeches"], themes: ["Choice"] });
     expect(filterGalleryItems({ query: "fictional" }, output)).toHaveLength(2);
     expect(filterGalleryItems({ sourceType: "Movies" }, output)).toHaveLength(0);
     expect(filterGalleryItems({ theme: "Choice" }, output)).toHaveLength(2);
     expect(filterGalleryItems({ query: "missing" }, output)).toHaveLength(0);
+  });
+
+  it("rejects protected fragments in editorial notes before any manifest can be written", () => {
+    const candidate = item("note-leak");
+    candidate.practice.practiceTextEn = words(10);
+    candidate.editorial.speakingNotes = [words(8)];
+    expect(() => buildPublicGalleryManifest(catalog([candidate]))).toThrow(/Protected practiceTextEn fragment/);
+    candidate.editorial.speakingNotes = ["Pause clearly."];
+    candidate.practice.translationJa = "一".repeat(30);
+    candidate.editorial.speakingNotes = ["一".repeat(24)];
+    expect(() => buildPublicGalleryManifest(catalog([candidate]))).toThrow(/Protected translationJa fragment/);
   });
 
   it("rejects duplicate IDs, unknown themes and broken or self relations", () => {
@@ -103,17 +119,16 @@ describe("Gallery intake and public projection", () => {
     candidate.source.releasedMasterTimecodeRequired = true;
     expect(editorialGallerySchema.safeParse(catalog([candidate])).success).toBe(false);
     candidate.publicationMode = "DISCOVERY";
-    candidate.editorial.speakingNotes = ["A private excerpt cue for editors only."];
+    candidate.editorial.speakingNotes = ["Pause before the final sentence."];
     candidate.source.canonicalSourceLocator = "A private subtitle locator for editors only.";
     expect(editorialGallerySchema.safeParse(catalog([candidate])).success).toBe(true);
     const discovery = buildPublicGalleryManifest(catalog([candidate])).items[0];
     expect(discovery).toMatchObject({
       publicationMode: "DISCOVERY",
-      speakingNotes: [],
+      speakingNotes: ["Pause before the final sentence."],
       canonicalSourceLocator: "Invented work",
       sourceKind: "source link"
     });
-    expect(JSON.stringify(discovery)).not.toContain("private excerpt");
     expect(JSON.stringify(discovery)).not.toContain("private subtitle");
     candidate.publicationMode = "HOLD";
     expect(editorialGallerySchema.safeParse(catalog([candidate])).success).toBe(true);

@@ -1,7 +1,7 @@
 import { Browser } from "@capacitor/browser";
 import { useEffect, useRef, useState } from "react";
-import { filterGalleryItems, gallery } from "../../../../lib/gallery/public";
-import { GALLERY_SOURCE_TYPES, type PublicGallery } from "../../../../lib/gallery/schema";
+import { filterGalleryItems, gallery, getGalleryFilterOptions } from "../../../../lib/gallery/public";
+import type { PublicGallery } from "../../../../lib/gallery/schema";
 import type { PracticeApi, PracticeRequestFailure } from "../practice/api";
 import type { MobileGalleryPracticeRequestState } from "../lib/api";
 import type { PracticeRoute } from "../practice/routes";
@@ -27,6 +27,7 @@ export function GalleryScreen({ api, isOnline, itemId, catalog = gallery, onNavi
   const createGeneration = useRef(0);
   const item = itemId ? catalog.items.find(entry => entry.id === itemId) : undefined;
   const items = filterGalleryItems({ query, sourceType: source, theme }, catalog);
+  const filters = getGalleryFilterOptions(catalog);
   useEffect(() => {
     const generation = ++fetchGeneration.current;
     const controller = new AbortController();
@@ -92,7 +93,7 @@ export function GalleryScreen({ api, isOnline, itemId, catalog = gallery, onNavi
       {error?.itemId === item.id ? <RequestError error={error.failure} /> : null}
     </section>
     <section><h2>Original source</h2>{item.primarySourceUrl ? <button type="button" className="scripts-text-action" onClick={() => void openSource(item.primarySourceUrl!)}>原典を開く</button> : <p>出典の場所: {item.canonicalSourceLocator}</p>}{sourceError ? <p role="alert">原典を開けませんでした。後で試してください。</p> : null}</section>
-    <section><h2>Source & Credits</h2><p>{item.workTitle} · {item.speaker}{item.year ? ` · ${item.year}` : ""}</p><p>{item.sourceKind} · {item.canonicalSourceLocator}</p></section>
+    <section><h2>Source & Credits</h2><p>{item.workTitle} · {item.speaker}{item.year ? ` · ${item.year}` : ""}</p><p>出典: {item.canonicalSourceLocator}</p></section>
     {item.moreLikeThis.length ? <section><h2>More like this</h2><ul>{item.moreLikeThis.map(id => { const related = catalog.items.find(entry => entry.id === id); return related ? <li key={id}><button type="button" className="scripts-text-action" onClick={() => onNavigate({ name: "gallery", itemId: id })}>{related.title}</button></li> : null; })}</ul></section> : null}
   </article>;
 
@@ -102,8 +103,8 @@ export function GalleryScreen({ api, isOnline, itemId, catalog = gallery, onNavi
     <p>誰が、どんな場面で、なぜその言葉を使ったのかを知る。</p>
     <div className="gallery-filters">
       <label>検索<input value={query} onChange={event => setQuery(event.target.value)} placeholder="作品・話者・場面" /></label>
-      <label>Source<select value={source} onChange={event => setSource(event.target.value)}><option value="">すべて</option>{GALLERY_SOURCE_TYPES.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
-      <label>Theme<select value={theme} onChange={event => setTheme(event.target.value)}><option value="">すべて</option>{catalog.themes.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+      <label>Source<select value={source} onChange={event => setSource(event.target.value)}><option value="">すべて</option>{filters.sources.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+      <label>Theme<select value={theme} onChange={event => setTheme(event.target.value)}><option value="">すべて</option>{filters.themes.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
     </div>
     {items.length ? <ul className="gallery-list">{items.map(entry => <li key={entry.id}>
       <p className="script-meta">{entry.sourceType} · {entry.themes.join(" / ")}</p>

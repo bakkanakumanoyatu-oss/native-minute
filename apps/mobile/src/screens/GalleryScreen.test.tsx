@@ -9,7 +9,7 @@ const base = {
   id: "synthetic-one", collectionVersion: "synthetic-v1", title: "An invented moment", workTitle: "Imaginary work",
   sourceType: "Speeches" as const, speaker: "Test speaker", year: 2026, moment: "A fictional choice.",
   contextJa: "架空の場面です。", whyItMattersJa: "テスト用です。", speakingNotes: ["Pause here."],
-  themes: ["Choice"], moreLikeThis: [], primarySourceUrl: null, canonicalSourceLocator: "Imaginary source, page 1", sourceKind: "official"
+  themes: ["Choice"], moreLikeThis: [], primarySourceUrl: null, canonicalSourceLocator: "Imaginary source, page 1", sourceKind: "source link"
 };
 const catalog: PublicGallery = {
   schemaVersion: "gallery-public/v1", collectionVersion: "synthetic-v1", themes: ["Choice"], items: [
@@ -23,6 +23,19 @@ describe("mobile Gallery", () => {
     const html = renderToStaticMarkup(<GalleryScreen api={{} as PracticeApi} isOnline catalog={{ ...catalog, items: [] }} onNavigate={() => undefined} />);
     expect(html).toContain("公開できる場面を準備中です");
     expect(html).toContain("自分の台本を作る");
+  });
+
+  it("shows only used filters and keeps Your Story as a separate action", () => {
+    const html = renderToStaticMarkup(<GalleryScreen api={{} as PracticeApi} isOnline onNavigate={() => undefined} />);
+    expect(html).toContain("自分で見つける / Your Story");
+    expect(html).not.toContain('<option value="Conversations">');
+    expect(html).not.toContain('<option value="Your Story">');
+    expect(html).not.toContain('<option value="Time &amp; Mortality">');
+    const detail = renderToStaticMarkup(<GalleryScreen api={{} as PracticeApi} isOnline catalog={catalog} itemId="synthetic-two" onNavigate={() => undefined} />);
+    expect(detail).toContain("Listen for");
+    expect(detail).toContain("Imaginary work · Test speaker · 2026");
+    expect(detail).toContain("出典: Imaginary source, page 1");
+    expect(detail).not.toContain("source link ·");
   });
 
   it("keeps discovery textless and routes to manual creation", () => {

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { filterGalleryItems, gallery } from "@/lib/gallery/public";
-import { GALLERY_SOURCE_TYPES } from "@/lib/gallery/schema";
+import { filterGalleryItems, gallery, getGalleryFilterOptions } from "@/lib/gallery/public";
 
 export default function GalleryPage({ searchParams }: { searchParams?: { q?: string; source?: string; theme?: string } }) {
+  const filters = getGalleryFilterOptions();
   const query = typeof searchParams?.q === "string" ? searchParams.q.slice(0, 120) : "";
-  const source = typeof searchParams?.source === "string" && GALLERY_SOURCE_TYPES.some(value => value === searchParams.source) ? searchParams.source : "";
-  const theme = typeof searchParams?.theme === "string" && gallery.themes.includes(searchParams.theme) ? searchParams.theme : "";
+  const source = typeof searchParams?.source === "string" && filters.sources.some(value => value === searchParams.source) ? searchParams.source : "";
+  const theme = typeof searchParams?.theme === "string" && filters.themes.includes(searchParams.theme) ? searchParams.theme : "";
   const items = filterGalleryItems({ query, sourceType: source, theme });
   return <section className="space-y-6" lang="ja">
     <header className="rounded-[2rem] border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-6 sm:p-8">
@@ -15,8 +15,8 @@ export default function GalleryPage({ searchParams }: { searchParams?: { q?: str
     </header>
     <form className="grid gap-3 rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-4 sm:grid-cols-3" action="/gallery">
       <label className="text-sm text-ink-700">検索<input name="q" defaultValue={query} className="mt-1 w-full rounded-xl border border-[var(--line-inset)] bg-[var(--script-paper)] p-3" placeholder="作品・話者・場面" /></label>
-      <label className="text-sm text-ink-700">Source<select name="source" defaultValue={source} className="mt-1 w-full rounded-xl border border-[var(--line-inset)] bg-[var(--script-paper)] p-3"><option value="">すべて</option>{GALLERY_SOURCE_TYPES.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
-      <label className="text-sm text-ink-700">Theme<select name="theme" defaultValue={theme} className="mt-1 w-full rounded-xl border border-[var(--line-inset)] bg-[var(--script-paper)] p-3"><option value="">すべて</option>{gallery.themes.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+      <label className="text-sm text-ink-700">Source<select name="source" defaultValue={source} className="mt-1 w-full rounded-xl border border-[var(--line-inset)] bg-[var(--script-paper)] p-3"><option value="">すべて</option>{filters.sources.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+      <label className="text-sm text-ink-700">Theme<select name="theme" defaultValue={theme} className="mt-1 w-full rounded-xl border border-[var(--line-inset)] bg-[var(--script-paper)] p-3"><option value="">すべて</option>{filters.themes.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
       <button className="rounded-xl bg-[var(--cta-primary-bg)] px-4 py-3 text-sm font-semibold text-[var(--cta-primary-text)] sm:col-span-3" type="submit">探す</button>
     </form>
     {items.length ? <ul className="grid gap-4 sm:grid-cols-2">{items.map(item => <li key={item.id} className="rounded-2xl border border-[var(--line-inset)] bg-[var(--surface-secondary)] p-5">

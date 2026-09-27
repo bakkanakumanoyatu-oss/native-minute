@@ -1,6 +1,7 @@
 import type { EditorialGallery, PublicGallery, PublicGalleryItem } from "./schema";
 import { editorialGallerySchema, publicGallerySchema, PUBLIC_GALLERY_SCHEMA_VERSION } from "./schema";
 import { getScriptLength } from "../script-length";
+import { assertPublicGalleryPayloadSeparation } from "./payload-separation";
 
 export function buildPublicGalleryManifest(input: unknown): PublicGallery {
   const editorial = editorialGallerySchema.parse(input);
@@ -18,9 +19,9 @@ export function buildPublicGalleryManifest(input: unknown): PublicGallery {
       moment: item.editorial.moment,
       contextJa: item.editorial.contextJa,
       whyItMattersJa: item.editorial.whyItMattersJa,
-      // Editorial notes can contain exact phrases from the private practice
-      // payload. Keep them out of the public metadata for every mode.
-      speakingNotes: [],
+      // Native Minutes editorial listening guidance is public metadata.
+      // The release builder checks it against protected text fragments.
+      speakingNotes: item.editorial.speakingNotes,
       themes: item.editorial.themes,
       moreLikeThis: item.editorial.moreLikeThis,
       primarySourceUrl: item.source.primarySourceUrl,
@@ -49,12 +50,14 @@ export function buildPublicGalleryManifest(input: unknown): PublicGallery {
     ...item,
     moreLikeThis: item.moreLikeThis.filter(id => publicIds.has(id))
   }));
-  return publicGallerySchema.parse({
+  const catalog = publicGallerySchema.parse({
     schemaVersion: PUBLIC_GALLERY_SCHEMA_VERSION,
     collectionVersion: editorial.collectionVersion,
     themes: editorial.themes,
     items: publicItems
   });
+  assertPublicGalleryPayloadSeparation(editorial, catalog);
+  return catalog;
 }
 
 export function validateFirstCollection(editorial: EditorialGallery) {

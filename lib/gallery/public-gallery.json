@@ -24,10 +24,14 @@
       "sourceType": "Movies",
       "speaker": "Sean Maguire",
       "year": 1997,
-      "moment": "知識で相手を言い負かす青年に、セラピストは本人の経験を問いかける。",
-      "contextJa": "公園のベンチでSeanがWillへ語る場面。読んだ知識だけでは分からない愛と喪失を持ち出し、最後はWill自身が話すかどうかに選択を返す。映画の登場人物による発話であり、俳優本人の人生の告白としては表示しない。",
+      "moment": "知識で相手を言い負かす青年に、セラピストはWill自身の経験を問いかける。",
+      "contextJa": "公園のベンチでSeanがWillへ語る場面。読んだ知識だけでは分からない愛や喪失について話し、最後はWill自身が何を語るかに選択を返す。",
       "whyItMattersJa": "大声や難しい単語ではなく、相手に向けた静かな言葉で場面を変える。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "一人の相手へ話す距離感を保ち、演説のように声を張りすぎない。",
+        "love／lossなどの核語の前後に短い間を置く。",
+        "最後は勝ち誇らず、相手へ選択を渡すように語尾を落とす。"
+      ],
       "themes": [
         "Love & Attachment",
         "Loss & Letting Go",
@@ -52,9 +56,13 @@
       "speaker": "Miranda Priestly",
       "year": 2006,
       "moment": "自分には関係ないと思っていた服が、誰かの仕事と選択の積み重ねだと示される。",
-      "contextJa": "編集部の服選びでAndyが示した無関心に、Mirandaが青いセーターの来歴を説明する。語られるデザイナー史を、独立に検証した実話として教えない。",
+      "contextJa": "編集部の服選びでAndyが示した無関心に、Mirandaが青いセーターの来歴を説明する。ひとつの色がデザイナーや流通を経て、本人が無関係だと思っていた選択にまでつながっていることを示す。",
       "whyItMattersJa": "感情を爆発させず、具体例の連鎖で相手の見方を変える話し方を試せる。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "列挙を急がず、色が流通していく順番を聞き手に見せる。",
+        "howeverの転換をはっきりさせ、その後を一息で押し切らない。",
+        "最後の短い結論は声量を上げず、静かに着地する。"
+      ],
       "themes": [
         "Work & Ambition",
         "Change & Choice",
@@ -79,9 +87,13 @@
       "speaker": "Katherine Johnson (film character)",
       "year": 2016,
       "moment": "仕事場から姿を消す理由を責められ、彼女は日々の具体的な負担を初めて説明する。",
-      "contextJa": "映画中のKatherineが、利用できるトイレまでの距離、服装規定、コーヒーの扱いを上司と同僚へ訴える場面。これは脚色を含む映画の台詞で、実在のKatherine Johnsonが史実上そのまま述べた逐語引用ではない。最初の短い答えには上司の返答が入るため、その返答後の単独発話から始める。",
+      "contextJa": "実在人物をもとにした映画上のKatherineが、利用できるトイレまでの距離、服装規定、コーヒーの扱いなど、職場で抱えていた具体的な負担を上司と同僚へ言葉にする場面。",
       "whyItMattersJa": "感情の強さを、抽象的な怒りではなく具体的な生活上の事実で伝える。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "距離や服装などの具体例を、一項目ずつ相手へ渡す。",
+        "怒りを出す時も喉を無理に絞らず、語の強調と間で変化をつける。",
+        "最後の説明に入る前に一度落ち着き、語尾まで言い切る。"
+      ],
       "themes": [
         "Identity & Belonging",
         "Freedom & Responsibility",
@@ -106,9 +118,13 @@
       "speaker": "Howard Beale",
       "year": 1976,
       "moment": "テレビ越しにただ眺めていた不満を、自分の存在価値を叫ぶ声へ変えていく。",
-      "contextJa": "放送中のニュースキャスターHoward Bealeが、視聴者へ怒りを言葉にするよう呼びかける独白。本作はテレビをめぐる風刺であり、この台詞を作者からの単純な自己啓発メッセージとしては扱わない。窓から叫ばせる後続部分までは取らず、自分の人生には価値があるという箇所で終える。",
+      "contextJa": "放送中のニュースキャスターHoward Bealeが、視聴者へ怒りを言葉にするよう呼びかける独白。テレビをめぐる風刺の中で、受け身の不満を、自分の人生には価値があるという主張へ変えていく。",
       "whyItMattersJa": "短い命令や反復で熱量を上げる構造を、元の映画の文脈の中で試せる。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "冒頭は語りかけから入り、最初から最大音量にしない。",
+        "否定の反復は毎回同じ抑揚にせず、意味の単位で区切る。",
+        "強い表現を含む。叫び声を再現するより明瞭な発音を優先する。"
+      ],
       "themes": [
         "Freedom & Responsibility",
         "Identity & Belonging",
@@ -135,7 +151,11 @@
       "moment": "望んだ仕事を失った翌年、彼は夢が変わってもよいと卒業生に話す。",
       "contextJa": "2011年6月12日のDartmouth卒業式。Conanは前年の公の挫折を振り返り、進路が変わることについて話す。",
       "whyItMattersJa": "真面目な話と冗談を切り替えながら、断定しすぎない現代の話し言葉を試せる。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "核心を述べる最初の文は急がず、聞き手に届く間を置く。",
+        "途中の冗談は説明を足さず、文章の対比を利用する。",
+        "22・32・42という年齢の並びで、夢が変わる流れを見せる。"
+      ],
       "themes": [
         "Failure & Starting Again",
         "Work & Ambition",
@@ -162,7 +182,11 @@
       "moment": "外から批評する人ではなく、失敗を引き受けて行動する人へ称賛を向ける。",
       "contextJa": "1910年4月23日、パリのソルボンヌでのCitizenship in a Republicの一節。市民の責任についての長い議論の中で、行動を避ける冷笑を批判する。The Person in the Arenaは本コレクションの編集タイトルで、原題や原文のmanを書き換えたものではない。",
       "whyItMattersJa": "批評と行動の対比から始まり、長い反復を経て、挑戦する人の居場所へ着地する。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "criticからcreditへ移る箇所の対比を立てる。",
+        "whoで始まる節は意味のまとまりで息を継ぎ、最後まで速度を上げすぎない。",
+        "victoryとdefeatを同じ重さで発音して終える。"
+      ],
       "themes": [
         "Courage & Fear",
         "Work & Ambition",
@@ -194,7 +218,11 @@
       "moment": "まだ月面着陸を実現していない時、難しい目標へ進む理由を公に宣言する。",
       "contextJa": "1962年9月12日、Rice Universityでの宇宙開発演説。月へ向かう選択を、力と技術を結集して試す挑戦として述べた。",
       "whyItMattersJa": "同じ文の反復とbecauseの積み上げで、目標と決意が声になる。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "最初の短い宣言と、続く長い宣言の間に呼吸を置く。",
+        "easyとhardを対比させ、because以下は理由を一つずつ運ぶ。",
+        "末尾のand the others, too.まで落とさず、軽く付け加える。"
+      ],
       "themes": [
         "Wonder & Discovery",
         "Work & Ambition",
@@ -219,9 +247,13 @@
       "speaker": "Frederick Douglass",
       "year": 1857,
       "moment": "自由という結果を望むなら、変化を求める働きかけも引き受けなければならない。",
-      "contextJa": "1857年、ニューヨーク州Canandaiguaでの西インド諸島奴隷解放を記念する演説の一節。作物・雷雨・海という比喩を重ね、要求と抵抗の必要を説く。NPSは8月4日、Douglass Papersを引く学術書誌は8月3日としているため、表示本文では日を断定しない。",
+      "contextJa": "1857年、ニューヨーク州Canandaiguaで西インド諸島の奴隷解放を記念して行われた演説の一節。作物・雷雨・海の比喩を重ねながら、自由を求めるには要求と抵抗が伴うと説く。",
       "whyItMattersJa": "引用だけでは失われがちな奴隷解放の文脈と、比喩の連続した論理を読む。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "crops、rain、oceanの三つを一段ずつ積み上げる。",
+        "moralとphysicalの対比は勢いだけにせず、聞き取れる速度にする。",
+        "Powerからは文が短くなる。最後の二文を明瞭に区切る。"
+      ],
       "themes": [
         "Freedom & Responsibility",
         "Courage & Fear",
@@ -253,7 +285,11 @@
       "moment": "船を失っても、次の仕事は「全員で陸へ着くこと」だと定め直す。",
       "contextJa": "South第IV章に、1915年10月27日の出来事として収録された一節。船を放棄するほかなくなった状況で、生存と物資を確かめ、探検隊全員を陸へ導くことを課題として記す。著書に収録された文章の朗読であり、当日の肉声録音ではない。",
       "whyItMattersJa": "悲しみを消さずに事実を見直し、目の前の仕事へ言葉を進める。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "afterの反復でそれまでの長さを感じさせ、結論へ急がない。",
+        "But thoughからの転換で、生きているという事実をはっきり伝える。",
+        "The task isで間を置き、all the membersを大切に読む。"
+      ],
       "themes": [
         "Failure & Starting Again",
         "Courage & Fear",
@@ -283,9 +319,13 @@
       "speaker": "Nellie Bly",
       "year": 1887,
       "moment": "取材を終えた彼女は、記事の反響と、人々のケアに起きた変化を書き残す。",
-      "contextJa": "著書の序文。施設への潜入取材を記事にした後、読者からの反響と、ケア予算の増額を著者自身が報告する。増額の因果関係は独立に会計資料と照合していないため、著者の報告として扱う。",
+      "contextJa": "『Ten Days in a Mad-House』の序文。施設への潜入取材を記事にした後、読者からの反響と、その後のケア予算の増額を本人が振り返っている。",
       "whyItMattersJa": "勇気を抽象的に語るのではなく、自分の仕事が他者にどう届いたかを振り返る。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "最初の段落は事情の説明として自然に読む。",
+        "二段落目で報告の喜びが出るよう、声色を少し明るくする。",
+        "金額を急がず、最後のbecause of my workは自慢より静かな実感で終える。"
+      ],
       "themes": [
         "Work & Ambition",
         "Freedom & Responsibility",
@@ -315,9 +355,13 @@
       "speaker": "Helen Keller",
       "year": 1903,
       "moment": "手に流れる水と、もう一方の手に綴られた名前が結びついた。",
-      "contextJa": "The Story of My Life、第I部Chapter IVの井戸小屋の場面。水に触れながら言葉の意味が開けた瞬間を、著者が後年振り返る。今回の対象はOptimismではない。本文区間は特定済みだが、地域別の利用条件確認と正規の本文取込を残す。",
+      "contextJa": "『The Story of My Life』第I部Chapter IV。井戸小屋で、水に触れながら手のひらに綴られた言葉とその意味が結びついた瞬間を、著者が後年振り返る。",
       "whyItMattersJa": "言葉を音や記号として追うことから、意味のある経験として知ることへの転換を読む。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "最初は何かを思い出しかけるように、急がず始める。",
+        "感情の高まりを出す時も、列挙の一語一語を明瞭にする。",
+        "最後は障壁がすべて消えたと断言せず、可能性として落ち着いて終える。"
+      ],
       "themes": [
         "Wonder & Discovery",
         "Change & Choice",
@@ -344,7 +388,11 @@
       "moment": "光も空気も乏しい隠れ場所で、子どもの声だけは届いた。",
       "contextJa": "Chapter XXI The Loophole Of Retreat。祖母の家にある狭い屋根裏へ隠れた著者が、息苦しさ、眠り、昼夜の区別のなさを記す。その中で子どもの声が慰めになる。書かれた一人称の朗読であり、別話者の台詞は含めない。",
       "whyItMattersJa": "身体の具体的な感覚から、家族へのつながりへ静かに移る一節。",
-      "speakingNotes": [],
+      "speakingNotes": [
+        "屋根、寝床、暗さを淡々と描写し、最初から悲劇的に演じすぎない。",
+        "Morning came.を短く区切り、その後の説明との対比を出す。",
+        "最後のchildrenへ向かう二文は、わずかな温かさを残して読む。"
+      ],
       "themes": [
         "Family & Friendship",
         "Freedom & Responsibility",

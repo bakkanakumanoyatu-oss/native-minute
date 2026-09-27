@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import { buildPublicGalleryManifest } from "../lib/gallery/manifest.ts";
+import { getGalleryFilterOptions } from "../lib/gallery/public.ts";
 import { buildGalleryRuntimeArtifact, assertRuntimeMatchesPublic } from "../lib/gallery/runtime-schema.ts";
 import {
   assertReleasePayloadSeparation,
@@ -37,6 +39,38 @@ const sourceUrlOverrideIds = [
   "nm-fc-jfk-hard", "nm-fc-keller-language"
 ];
 const allIds = [...FIRST_WORLD_BETA_DISCOVERY_IDS, ...FIRST_WORLD_BETA_PRACTICE_IDS];
+
+const reviewedCopy = {
+  "nm-fc-gwh-your-move-chief": {
+    moment: "知識で相手を言い負かす青年に、セラピストはWill自身の経験を問いかける。",
+    contextJa: "公園のベンチでSeanがWillへ語る場面。読んだ知識だけでは分からない愛や喪失について話し、最後はWill自身が何を語るかに選択を返す。"
+  },
+  "nm-fc-prada-sweater-chosen": { contextJa: "編集部の服選びでAndyが示した無関心に、Mirandaが青いセーターの来歴を説明する。ひとつの色がデザイナーや流通を経て、本人が無関係だと思っていた選択にまでつながっていることを示す。" },
+  "nm-fc-hidden-bathroom": { contextJa: "実在人物をもとにした映画上のKatherineが、利用できるトイレまでの距離、服装規定、コーヒーの扱いなど、職場で抱えていた具体的な負担を上司と同僚へ言葉にする場面。" },
+  "nm-fc-network-get-mad": { contextJa: "放送中のニュースキャスターHoward Bealeが、視聴者へ怒りを言葉にするよう呼びかける独白。テレビをめぐる風刺の中で、受け身の不満を、自分の人生には価値があるという主張へ変えていく。" },
+  "nm-fc-douglass-struggle": { contextJa: "1857年、ニューヨーク州Canandaiguaで西インド諸島の奴隷解放を記念して行われた演説の一節。作物・雷雨・海の比喩を重ねながら、自由を求めるには要求と抵抗が伴うと説く。" },
+  "nm-fc-bly-work": { contextJa: "『Ten Days in a Mad-House』の序文。施設への潜入取材を記事にした後、読者からの反響と、その後のケア予算の増額を本人が振り返っている。" },
+  "nm-fc-keller-language": { contextJa: "『The Story of My Life』第I部Chapter IV。井戸小屋で、水に触れながら手のひらに綴られた言葉とその意味が結びついた瞬間を、著者が後年振り返る。" }
+};
+
+test("the checked-in public catalog has the exact reviewed metadata and only populated filters", () => {
+  const catalog = JSON.parse(readFileSync(new URL("../lib/gallery/public-gallery.json", import.meta.url), "utf8"));
+  assert.equal(catalog.items.length, 12);
+  assert.deepEqual(new Set(catalog.items.filter(item => item.publicationMode === "PRACTICE").map(item => item.id)), new Set(FIRST_WORLD_BETA_PRACTICE_IDS));
+  assert.deepEqual(new Set(catalog.items.filter(item => item.publicationMode === "DISCOVERY").map(item => item.id)), new Set(FIRST_WORLD_BETA_DISCOVERY_IDS));
+  assert.equal(catalog.items.every(item => item.speakingNotes.length > 0), true);
+  assert.equal(catalog.items.every(item => !("practiceTextEn" in item) && !("translationJa" in item)), true);
+  for (const [id, copy] of Object.entries(reviewedCopy)) {
+    const item = catalog.items.find(entry => entry.id === id);
+    assert.ok(item, `missing ${id}`);
+    for (const [field, expected] of Object.entries(copy)) assert.equal(item[field], expected, `${id}.${field}`);
+  }
+  const filters = getGalleryFilterOptions(catalog);
+  assert.deepEqual(filters.sources, ["Movies", "Speeches", "Books, Essays & Letters"]);
+  assert.deepEqual(filters.themes, catalog.themes.filter(theme => theme !== "Time & Mortality"));
+  assert.equal(filters.themes.includes("Time & Mortality"), false);
+  assert.equal(catalog.themes.length, 12);
+});
 
 function fixture() {
   const items = allIds.map(id => {
@@ -91,6 +125,7 @@ test("a synthetic world release keeps its source intact and separates public and
   const catalog = buildPublicGalleryManifest(editorial);
   const runtime = buildGalleryRuntimeArtifact(editorial, FIRST_WORLD_BETA_RELEASE_VERSION);
   assert.equal(catalog.items.length, 12);
+  assert.equal(catalog.items.every(item => item.speakingNotes.length > 0), true);
   assert.deepEqual(new Set(runtime.items.map(item => item.id)), new Set(FIRST_WORLD_BETA_PRACTICE_IDS));
   assertRuntimeMatchesPublic(runtime, catalog);
   assert.doesNotThrow(() => assertReleasePayloadSeparation(source, catalog, runtime));
@@ -115,4 +150,7 @@ test("decision drift and a protected metadata fragment fail closed", () => {
   const englishLeak = structuredClone(catalog);
   englishLeak.items[0].moment = source.items.find(item => item.id === FIRST_WORLD_BETA_PRACTICE_IDS[0]).practice.practiceTextEn.split(" ").slice(2, 10).join(" ");
   assert.throws(() => assertReleasePayloadSeparation(source, englishLeak, runtime), /Protected practiceTextEn fragment/);
+  const noteLeak = structuredClone(catalog);
+  noteLeak.items[0].speakingNotes = [source.items.find(item => item.id === FIRST_WORLD_BETA_PRACTICE_IDS[0]).practice.practiceTextEn.split(" ").slice(2, 10).join(" ")];
+  assert.throws(() => assertReleasePayloadSeparation(source, noteLeak, runtime), /Protected practiceTextEn fragment/);
 });

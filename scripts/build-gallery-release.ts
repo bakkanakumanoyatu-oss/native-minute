@@ -84,6 +84,9 @@ async function main() {
   if (catalog.items.length !== 12 || editorial.items.some(item => item.publicationMode === "HOLD")) {
     throw new Error("release item counts differ from the pinned decision");
   }
+  if (catalog.items.some(item => item.speakingNotes.length === 0)) {
+    throw new Error("First Collection listening guidance is missing");
+  }
   assertReleasePayloadSeparation(source, catalog, runtime);
 
   const publicBytes = jsonBytes(catalog);
