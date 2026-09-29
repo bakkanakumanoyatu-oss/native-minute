@@ -1,5 +1,7 @@
 # 現在の状態
 
+2026-09-29 **Personal GalleryのHuman受入方向をLOCAL実装**。0038（未適用）のprivate collection、owner-locked RPC、同一Web/Mobile service、Bearer BFF、見本IDのみの保存、owner内検索・ページング、保存英文の連続範囲からcanonical Scriptへの原子的・冪等作成を追加。英文なし保存は成功、台本・provider・quotaは作らない。Gallery編集は既存Script本文/revision/Takeを変えず、削除時はsource linkだけNULLにしてScript/historyを残す。First Collection dedicated Staging cutoverは12/5/7とHuman 5/5 PASSでCLOSED。PRACTICE直通を維持。prototypeは設計証拠として隔離し、通常bundleへ入れない。Staging/Production DB、Storage、provider、native installは変更していない。[実装契約と次の操作](personal-gallery-foundation.md)。
+
 2026-09-27 **First Collection public metadataのHuman reviewを反映・LOCAL未配備**。公開12件のListen forへNative Minutes作成のspeaking notesを復元し、指定7件のpublic contextとGood Will Huntingのmomentをrelease overlayだけで修正。Web/MobileのSource & Creditsと実使用Source/Theme filterを調整。本文・訳は公開0件、PRACTICE 5/ DISCOVERY 7、private runtime 5件とそのhashは前releaseから不変。canonical private sourceとdecisionは同じSHAを維持。次はHuman-reviewed exact metadataとprivate runtimeを専用Stagingへcutoverする。DB/Storage/provider/実機/Productionは今回変更なし。[Gallery運用契約](gallery-intake-contract.md)。
 
 2026-09-27 **Gallery private runtime delivery foundation はLOCAL実装**。First Collection完成packageはpublic repo外のcanonical private vaultで受領・検証済み。12件すべてHOLD、公開manifestは0件のまま。公開PRACTICE schemaから本文・訳を除外し、承認済みPRACTICEだけを抽出するprivate `gallery-runtime/v1` artifact契約、hash-pinned private Storage server loader、認証済みWeb detail／Mobile Bearer BFF、ID指定のcanonical script作成を追加。release config未設定ならfail closed。private本文upload、bucket作成、DB migration、Staging/Production変更、provider call、権利承認は0。[運用契約](gallery-intake-contract.md)。

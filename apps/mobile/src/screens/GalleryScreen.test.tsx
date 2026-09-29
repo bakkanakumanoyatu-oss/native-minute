@@ -19,15 +19,23 @@ const catalog: PublicGallery = {
 };
 
 describe("mobile Gallery", () => {
+  it("keeps public examples when the personal Gallery rollout is off", () => {
+    const list = renderToStaticMarkup(<GalleryScreen api={{} as PracticeApi} isOnline personalEnabled={false} onNavigate={() => undefined} />);
+    expect(list).toContain("話したい言葉を探す");
+    expect(list).not.toContain("自分のコレクションへ");
+    const detail = renderToStaticMarkup(<GalleryScreen api={{} as PracticeApi} isOnline personalEnabled={false} catalog={catalog} itemId="synthetic-two" onNavigate={() => undefined} />);
+    expect(detail).toContain("自分の台本を作る");
+    expect(detail).not.toContain("コレクションに保存");
+  });
   it("renders an empty catalog with a manual path", () => {
-    const html = renderToStaticMarkup(<GalleryScreen api={{} as PracticeApi} isOnline catalog={{ ...catalog, items: [] }} onNavigate={() => undefined} />);
+    const html = renderToStaticMarkup(<GalleryScreen api={{} as PracticeApi} isOnline view="examples" catalog={{ ...catalog, items: [] }} onNavigate={() => undefined} />);
     expect(html).toContain("公開できる場面を準備中です");
-    expect(html).toContain("自分の台本を作る");
+    expect(html).toContain("＋ 場面を追加");
   });
 
   it("shows only used filters and keeps Your Story as a separate action", () => {
-    const html = renderToStaticMarkup(<GalleryScreen api={{} as PracticeApi} isOnline onNavigate={() => undefined} />);
-    expect(html).toContain("自分で見つける / Your Story");
+    const html = renderToStaticMarkup(<GalleryScreen api={{} as PracticeApi} isOnline view="examples" onNavigate={() => undefined} />);
+    expect(html).toContain("自分で見つける");
     expect(html).not.toContain('<option value="Conversations">');
     expect(html).not.toContain('<option value="Your Story">');
     expect(html).not.toContain('<option value="Time &amp; Mortality">');
@@ -38,16 +46,18 @@ describe("mobile Gallery", () => {
     expect(detail).not.toContain("source link ·");
   });
 
-  it("keeps discovery textless and routes to manual creation", () => {
+  it("keeps discovery textless and saves it to the personal collection", async () => {
     const onNavigate = vi.fn();
+    const savePersonalGalleryExample = vi.fn(async () => ({ kind: "success" as const, value: { id: "personal-id" } }));
     let view!: ReactTestRenderer;
-    act(() => { view = create(<GalleryScreen api={{} as PracticeApi} isOnline catalog={catalog} itemId="synthetic-two" onNavigate={onNavigate} />); });
+    act(() => { view = create(<GalleryScreen api={{ savePersonalGalleryExample } as unknown as PracticeApi} isOnline catalog={catalog} itemId="synthetic-two" onNavigate={onNavigate} />); });
     const html = renderToStaticMarkup(<GalleryScreen api={{} as PracticeApi} isOnline catalog={catalog} itemId="synthetic-two" onNavigate={onNavigate} />);
     expect(html).not.toContain("The words");
     expect(html).not.toContain("I will speak clearly.");
-    const button = view.root.findAllByType("button").find(entry => entry.props.children === "自分の台本を作る");
-    act(() => { button!.props.onClick(); });
-    expect(onNavigate).toHaveBeenCalledWith({ name: "scripts", create: true });
+    const button = view.root.findAllByType("button").find(entry => entry.props.children === "＋ コレクションに保存");
+    await act(async () => { await button!.props.onClick(); });
+    expect(savePersonalGalleryExample).toHaveBeenCalledWith("synthetic-two");
+    expect(JSON.stringify(view.toJSON())).toContain("保存済み");
   });
 
   it("creates only after an explicit practice tap through the canonical API", async () => {

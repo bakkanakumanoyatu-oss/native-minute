@@ -7,6 +7,7 @@ import { RecordScreen } from "../screens/RecordScreen";
 import { ReviewScreen } from "../screens/ReviewScreen";
 import { ScriptsScreen } from "../screens/ScriptsScreen";
 import { GalleryScreen } from "../screens/GalleryScreen";
+import { initialGalleryViewState, type GalleryViewState } from "../screens/PersonalGalleryScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { VoiceSetupScreen } from "../screens/VoiceSetupScreen";
 import { AccountDeletionScreen } from "../screens/AccountDeletionScreen";
@@ -45,6 +46,8 @@ export function PracticeApp({
   onLogout: () => void;
 }) {
   const [route, setRoute] = useState<PracticeRoute>(() => parsePracticeRoute(window.location));
+  const [galleryViewState, setGalleryViewState] = useState<GalleryViewState>(initialGalleryViewState);
+  const updateGalleryViewState = useCallback((patch: Partial<GalleryViewState>) => setGalleryViewState(current => ({ ...current, ...patch })), []);
 
   const routeRef = useRef(route);
   const origin = useRef<PracticeRoute>({ name: "home" });
@@ -162,7 +165,7 @@ export function PracticeApp({
       screen = <ScriptsScreen api={api} isOnline={isOnline} initialShowCreate={route.create} onNavigate={navigate} />;
       break;
     case "gallery":
-      screen = <GalleryScreen api={api} isOnline={isOnline} itemId={route.itemId} onNavigate={navigate} />;
+      screen = <GalleryScreen api={api} isOnline={isOnline} itemId={route.itemId} personalId={route.personalId} view={route.view} viewState={galleryViewState} onViewStateChange={updateGalleryViewState} onNavigate={navigate} personalEnabled={__PERSONAL_GALLERY_ENABLED__} />;
       break;
     case "settings":
       screen = <SettingsScreen api={api} isOnline={isOnline} onNavigate={navigate} />;
@@ -202,7 +205,7 @@ export function PracticeApp({
       ) : <header className="space-header"><div><img className="brand-mark" src={brandMark} alt="Native Minutes" /><span>YOUR QUIET SPEAKING SPACE</span></div><button type="button" onClick={() => navigate({ name: "settings" })}>設定</button></header>}
       <div key={practiceRoutePath(route)}>{screen}</div>
       {route.name === "settings" ? <button type="button" className="space-logout" onClick={onLogout}>ログアウト</button> : null}
-      {!isFocusedPractice(route) ? <nav className="space-bottom-nav" aria-label="メインナビゲーション">
+      {!isFocusedPractice(route) && !(route.name === "gallery" && (route.view === "new" || route.view === "edit")) ? <nav className="space-bottom-nav" aria-label="メインナビゲーション">
         {([{ name: "home", label: "Home" }, { name: "gallery", label: "Gallery" }, { name: "scripts", label: "台本" }, { name: "progress", label: "成長" }] as const).map(item => <button key={item.name} type="button" aria-current={route.name === item.name ? "page" : undefined} onClick={() => navigate(item.name === "progress" ? progressSelection.current : { name: item.name })}>{item.label}</button>)}
       </nav> : null}
     </div>

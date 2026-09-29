@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { getScriptLength } from "../../../lib/script-length";
 import { buildPublicGalleryManifest, validateFirstCollection } from "../../../lib/gallery/manifest";
-import { filterGalleryItems, getGalleryFilterOptions } from "../../../lib/gallery/public";
+import { filterGalleryItems, gallery, getGalleryFilterOptions } from "../../../lib/gallery/public";
 import { editorialGallerySchema, publicGallerySchema } from "../../../lib/gallery/schema";
 import { buildGalleryRuntimeArtifact, parseGalleryRuntimeBytes, selectGalleryRuntimeItem } from "../../../lib/gallery/runtime-schema";
 import { createHash } from "node:crypto";
-import { renderToStaticMarkup } from "react-dom/server";
-import GalleryPage from "../../../app/gallery/page";
 
 const approved = () => ({ state: "APPROVED", evidenceRefs: ["editorial-review-1"] });
 const unresolved = () => ({ state: "UNRESOLVED", evidenceRefs: [] });
@@ -31,16 +29,12 @@ function catalog(items: unknown[] = []) {
 }
 
 describe("Gallery intake and public projection", () => {
-  it("renders the Web release catalog and manual creation path", () => {
-    const html = renderToStaticMarkup(GalleryPage({}));
-    expect(html).toContain("/gallery/nm-fc-roosevelt-arena");
-    expect(html).toContain("/gallery/nm-fc-gwh-your-move-chief");
-    expect(html).toContain("/scripts/new");
-    expect(html).toContain("自分で見つける / Your Story");
-    expect(html).not.toContain('<option value="Conversations">');
-    expect(html).not.toContain('<option value="Your Story">');
-    expect(html).not.toContain('<option value="Time &amp; Mortality">');
-    expect(html).not.toContain("I chose to speak clearly.");
+  it("keeps the public release catalog metadata-only", () => {
+    expect(gallery.items.map(item => item.id)).toContain("nm-fc-roosevelt-arena");
+    expect(gallery.items.map(item => item.id)).toContain("nm-fc-gwh-your-move-chief");
+    expect(getGalleryFilterOptions().sources).not.toContain("Your Story");
+    expect(JSON.stringify(gallery)).not.toContain("practiceTextEn");
+    expect(JSON.stringify(gallery)).not.toContain("translationJa");
   });
   it("supports empty, one, and mixed catalogs without inventing content", () => {
     expect(buildPublicGalleryManifest(catalog()).items).toEqual([]);

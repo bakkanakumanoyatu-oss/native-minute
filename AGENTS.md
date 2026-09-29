@@ -14,6 +14,7 @@
 - Native Minute is a fixed 1-minute English practice MVP.
 - Prioritize the main loop: `setup/voice -> scripts -> listen -> record -> review -> progress`.
 - Gallery is a versioned curated content layer. Public manifest and Mobile bundle contain metadata only. PRACTICE text/translation comes from a hash-pinned private Storage release through a server-only loader; ID-only selection creates an owned script through the canonical RPC. HOLD stays unavailable, and an empty Gallery is valid.
+- Human accepted the Personal Gallery prototype direction. The local implementation uses private `personal_gallery_items`, owner-locked writes, a shared Web/Mobile service, and canonical Script conversion. Keep the prototype under outputs/gallery-personal-prototype as design evidence only; production bundles must not import it. Migration 0038 remains unapplied until the dedicated Staging cutover.
 - E2E expansion is not the main goal. Keep the current minimum smoke coverage unless the task explicitly asks for more.
 
 ## Working style

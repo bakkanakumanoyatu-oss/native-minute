@@ -1,4 +1,5 @@
 import type { MobileAuthController } from "../auth/mobile-auth";
+import type { PersonalGalleryItem, PersonalGalleryList } from "../../../../lib/gallery/personal-types";
 import { SCRIPT_LENGTH_EDIT_GUIDANCE } from "../../../../lib/script-length";
 import type { MobileAuthState } from "../auth/state-machine";
 import { scriptsDisplayMemory, reviewDisplayMemory, type ReviewDisplay } from "./display-loaders";
@@ -16,6 +17,13 @@ import {
   createMobileVoiceDeletionRequest,
   createMobileScript,
   createMobileGalleryScript,
+  fetchMobilePersonalGallery,
+  fetchMobilePersonalItem,
+  createMobilePersonalItem,
+  updateMobilePersonalItem,
+  deleteMobilePersonalItem,
+  saveMobilePersonalExample,
+  createMobileScriptFromPersonal,
   fetchMobileGalleryPractice,
   mutateMobileScript,
   type ScriptMutationInput,
@@ -61,6 +69,7 @@ import {
   type MobileScript,
   type MobileScriptRequestState,
   type MobileGalleryPracticeRequestState,
+  type MobilePersonalGalleryState,
   type MobileVoiceSetupRequestState,
   type ScriptsRequestState,
   type UploadMobileRecordingInput,
@@ -103,6 +112,13 @@ export interface PracticeApi {
   createScript(input: CreateMobileScriptInput): Promise<MobileScriptRequestState>;
   getGalleryPractice(id: string, signal?: AbortSignal): Promise<MobileGalleryPracticeRequestState>;
   createGalleryScript(id: string): Promise<MobileScriptRequestState>;
+  listPersonalGallery?(filters: { query: string; sourceType: string; theme: string; sort: "recent" | "work"; offset: number; limit: number }, signal?: AbortSignal): Promise<MobilePersonalGalleryState<PersonalGalleryList>>;
+  getPersonalGalleryItem?(id: string, signal?: AbortSignal): Promise<MobilePersonalGalleryState<PersonalGalleryItem>>;
+  createPersonalGalleryItem?(input: Record<string, unknown>): Promise<MobilePersonalGalleryState<PersonalGalleryItem>>;
+  updatePersonalGalleryItem?(id: string, input: Record<string, unknown>): Promise<MobilePersonalGalleryState<PersonalGalleryItem>>;
+  deletePersonalGalleryItem?(id: string, expectedLockVersion: number): Promise<MobilePersonalGalleryState<boolean>>;
+  savePersonalGalleryExample?(id: string): Promise<MobilePersonalGalleryState<PersonalGalleryItem>>;
+  createPersonalGalleryScript?(id: string, input: { expectedLockVersion: number; scriptTitle: string; selectedText?: string | null }): Promise<MobileScriptRequestState>;
   mutateScript?(scriptId: string, input: ScriptMutationInput): Promise<MobileScriptRequestState>;
   listArchivedScripts?(): Promise<ScriptsRequestState>;
   getScript(scriptId: string, signal?: AbortSignal): Promise<MobileScriptRequestState>;
@@ -528,6 +544,16 @@ export function createPracticeApi({
     }),
     getGalleryPractice: (id, signal) => request(token => fetchMobileGalleryPractice(bffBaseUrl, token, id, { onTiming, signal })),
     createGalleryScript: (id) => mutate(() => request(token => createMobileGalleryScript(bffBaseUrl, token, id, { onTiming })), "script", undefined, result => {
+      if (result.kind === "success") scriptsMemory.update(() => true, scripts => [result.script, ...scripts.filter(script => script.id !== result.script.id)]
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+    }),
+    listPersonalGallery: (filters, signal) => request(token => fetchMobilePersonalGallery(bffBaseUrl, token, filters, { onTiming, signal })),
+    getPersonalGalleryItem: (id, signal) => request(token => fetchMobilePersonalItem(bffBaseUrl, token, id, { onTiming, signal })),
+    createPersonalGalleryItem: input => request(token => createMobilePersonalItem(bffBaseUrl, token, input, { onTiming })),
+    updatePersonalGalleryItem: (id, input) => request(token => updateMobilePersonalItem(bffBaseUrl, token, id, input, { onTiming })),
+    deletePersonalGalleryItem: (id, expectedLockVersion) => request(token => deleteMobilePersonalItem(bffBaseUrl, token, id, expectedLockVersion, { onTiming })),
+    savePersonalGalleryExample: id => request(token => saveMobilePersonalExample(bffBaseUrl, token, id, { onTiming })),
+    createPersonalGalleryScript: (id, input) => mutate(() => request(token => createMobileScriptFromPersonal(bffBaseUrl, token, id, input, { onTiming })), "script", undefined, result => {
       if (result.kind === "success") scriptsMemory.update(() => true, scripts => [result.script, ...scripts.filter(script => script.id !== result.script.id)]
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
     }),

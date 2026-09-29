@@ -150,6 +150,7 @@ export default defineConfig({
   base: "./",
   define: {
     __MOBILE_PROFILE__: JSON.stringify(profile),
+    __PERSONAL_GALLERY_ENABLED__: JSON.stringify(process.env.NATIVE_MINUTE_ENABLE_PERSONAL_GALLERY === "1"),
     __BFF_BASE_URL__: JSON.stringify(bffBaseUrl),
     __SUPABASE_URL__: JSON.stringify(supabaseUrl),
     __SUPABASE_PUBLISHABLE_KEY__: JSON.stringify(supabasePublishableKey),

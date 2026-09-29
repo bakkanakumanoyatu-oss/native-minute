@@ -8,6 +8,7 @@ const ALLOWED_EXACT_RETURN_PATHS = new Set([
   "/scripts",
   "/scripts/new",
   "/gallery",
+  "/gallery/new",
   "/setup/voice",
   "/progress",
   "/settings",
@@ -48,6 +49,8 @@ function isAllowedLoginReturnPath(path: string) {
 
     const segments = pathname.split("/").filter(Boolean);
     if (segments.length === 2 && segments[0] === "gallery" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(segments[1] ?? "")) return true;
+    if (segments[0] === "gallery" && segments[1] === "mine" && /^[0-9a-f-]{36}$/u.test(segments[2] ?? "")
+      && (segments.length === 3 || (segments.length === 4 && segments[3] === "edit"))) return true;
     return isAllowedScriptReturnPath(segments);
   } catch {
     return false;

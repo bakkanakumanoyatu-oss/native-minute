@@ -443,6 +443,7 @@ Mobile Personal Space P2（Favorite / 録音名 / My Takes）は `0031_take_pers
    - `SCRIPT_GENERATION_PROVIDER=mock`
    - `SCRIPT_GENERATION_PROVIDER=openai` (Script Studio live smoke 時だけ)
    - `NATIVE_MINUTE_ENABLE_AI_SCRIPT_GENERATION=0` (β既定。serverで明示的に `1` にした場合だけAI台本生成を有効化)
+   - `NATIVE_MINUTE_ENABLE_PERSONAL_GALLERY=0` (0038適用後の専用Staging cutoverでWeb serverとMobile buildの両方を `1` にする。未適用環境では公開Galleryを維持)
    - `TRANSCRIPTION_PROVIDER=mock`
    - `TRANSCRIPTION_PROVIDER=openai`
    - `PRONUNCIATION_PROVIDER=mock`

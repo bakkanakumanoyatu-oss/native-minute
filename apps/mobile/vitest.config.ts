@@ -7,6 +7,7 @@ export default defineConfig({
   oxc: { jsx: { runtime: "automatic" } },
   define: {
     __MOBILE_PROFILE__: JSON.stringify("local-spike"),
+    __PERSONAL_GALLERY_ENABLED__: JSON.stringify(true),
     __BFF_BASE_URL__: JSON.stringify("https://native-minute.vercel.app"),
     __SUPABASE_URL__: JSON.stringify("https://auth.example"),
     __SUPABASE_PUBLISHABLE_KEY__: JSON.stringify("sb_publishable_fixture_value_1234567890"),

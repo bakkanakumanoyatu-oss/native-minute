@@ -73,6 +73,8 @@ export type MobileGalleryPractice = {
   contentHash: string;
 };
 export type MobileGalleryPracticeRequestState = { kind: "success"; practice: MobileGalleryPractice } | MobileApiFailure;
+import type { PersonalGalleryItem, PersonalGalleryList } from "../../../../lib/gallery/personal-types";
+export type MobilePersonalGalleryState<T> = { kind: "success"; value: T } | MobileApiFailure;
 
 export type MobileListenAudio = {
   audioId: string;
@@ -1157,6 +1159,65 @@ export async function createMobileGalleryScript(
   bffBaseUrl: string, accessToken: string, id: string, options: MobileApiRequestOptions = {}
 ): Promise<MobileScriptRequestState> {
   const attempt = await requestJson(bffBaseUrl, MOBILE_API_PATHS.galleryPractice(id), accessToken, { method: "POST" }, options);
+  if (attempt.kind !== "response") return mapAttemptFailure(attempt);
+  if (!attempt.response.ok) return mapFailure(attempt.response, attempt.body);
+  const script = parseScriptPayload(attempt.body);
+  return script ? { kind: "success", script } : { kind: "invalid-response" };
+}
+
+function parsePersonalGalleryValue<T>(body: unknown, key: string, check: (value: unknown) => value is T): MobilePersonalGalleryState<T> {
+  const data = getSuccessData(body);
+  const value = data?.[key];
+  return check(value) ? { kind: "success", value } : { kind: "invalid-response" };
+}
+function isPersonalItem(value: unknown): value is PersonalGalleryItem {
+  return isObject(value) && isUuid(value.id) && typeof value.sceneTitle === "string" &&
+    isNonNegativeInteger(value.lockVersion) && (value.excerptText === null || typeof value.excerptText === "string") &&
+    (value.linkedScriptId === null || isUuid(value.linkedScriptId)) &&
+    (value.linkedScriptArchivedAt === null || typeof value.linkedScriptArchivedAt === "string");
+}
+function isPersonalList(value: unknown): value is PersonalGalleryList {
+  return isObject(value) && Array.isArray(value.items) && value.items.every(item => isObject(item) && isUuid(item.id) && typeof item.sceneTitle === "string") &&
+    (value.nextOffset === null || isNonNegativeInteger(value.nextOffset));
+}
+async function personalRequest<T>(bffBaseUrl: string, accessToken: string, path: string, method: string, body: unknown,
+  key: string, check: (value: unknown) => value is T, options: MobileApiRequestOptions = {}): Promise<MobilePersonalGalleryState<T>> {
+  const attempt = await requestJson(bffBaseUrl, path, accessToken,
+    { method, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }, options);
+  if (attempt.kind !== "response") return mapAttemptFailure(attempt);
+  if (!attempt.response.ok) return mapFailure(attempt.response, attempt.body);
+  return parsePersonalGalleryValue(attempt.body, key, check);
+}
+const personalPath = "/api/mobile/personal-gallery";
+export function fetchMobilePersonalGallery(bffBaseUrl: string, accessToken: string,
+  filters: { query: string; sourceType: string; theme: string; sort: "recent" | "work"; offset: number; limit: number }, options: MobileApiRequestOptions = {}) {
+  const query = new URLSearchParams({ ...filters, offset: String(filters.offset), limit: String(filters.limit) });
+  return personalRequest(bffBaseUrl, accessToken, `${personalPath}?${query}`, "GET", undefined, "collection", isPersonalList, options);
+}
+export function fetchMobilePersonalItem(bffBaseUrl: string, accessToken: string, id: string, options: MobileApiRequestOptions = {}) {
+  return personalRequest(bffBaseUrl, accessToken, `${personalPath}/${encodeURIComponent(id)}`, "GET", undefined, "item", isPersonalItem, options);
+}
+export function createMobilePersonalItem(bffBaseUrl: string, accessToken: string, input: Record<string, unknown>, options: MobileApiRequestOptions = {}) {
+  return personalRequest(bffBaseUrl, accessToken, personalPath, "POST", input, "item", isPersonalItem, options);
+}
+export function updateMobilePersonalItem(bffBaseUrl: string, accessToken: string, id: string, input: Record<string, unknown>, options: MobileApiRequestOptions = {}) {
+  return personalRequest(bffBaseUrl, accessToken, `${personalPath}/${encodeURIComponent(id)}`, "PATCH", input, "item", isPersonalItem, options);
+}
+export function saveMobilePersonalExample(bffBaseUrl: string, accessToken: string, id: string, options: MobileApiRequestOptions = {}) {
+  return personalRequest(bffBaseUrl, accessToken, `${personalPath}/examples/${encodeURIComponent(id)}`, "POST", undefined, "item", isPersonalItem, options);
+}
+export async function deleteMobilePersonalItem(bffBaseUrl: string, accessToken: string, id: string, expectedLockVersion: number, options: MobileApiRequestOptions = {}): Promise<MobilePersonalGalleryState<boolean>> {
+  const attempt = await requestJson(bffBaseUrl, `${personalPath}/${encodeURIComponent(id)}`, accessToken,
+    { method: "DELETE", body: JSON.stringify({ expectedLockVersion }) }, options);
+  if (attempt.kind !== "response") return mapAttemptFailure(attempt);
+  if (!attempt.response.ok) return mapFailure(attempt.response, attempt.body);
+  const data = getSuccessData(attempt.body);
+  return data?.deleted === true ? { kind: "success", value: true } : { kind: "invalid-response" };
+}
+export async function createMobileScriptFromPersonal(bffBaseUrl: string, accessToken: string, id: string,
+  input: { expectedLockVersion: number; scriptTitle: string; selectedText?: string | null }, options: MobileApiRequestOptions = {}): Promise<MobileScriptRequestState> {
+  const attempt = await requestJson(bffBaseUrl, `${personalPath}/${encodeURIComponent(id)}/create-script`, accessToken,
+    { method: "POST", body: JSON.stringify(input) }, options);
   if (attempt.kind !== "response") return mapAttemptFailure(attempt);
   if (!attempt.response.ok) return mapFailure(attempt.response, attempt.body);
   const script = parseScriptPayload(attempt.body);

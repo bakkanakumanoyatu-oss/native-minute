@@ -906,12 +906,37 @@ export interface Database {
         Update: { id?: string };
         Relationships: [];
       };
+      personal_gallery_items: {
+        Row: {
+          id: string; user_id: string; scene_title: string; source_example_id: string | null;
+          source_type: string | null; work_title: string | null; speaker: string | null;
+          context: string | null; personal_note: string | null; excerpt_text: string | null;
+          source_url: string | null; source_locator: string | null; speaking_notes: string[];
+          themes: string[]; locale: string; created_at: string; updated_at: string; lock_version: number;
+        };
+        Insert: {
+          id?: string; user_id: string; scene_title: string; source_example_id?: string | null;
+          source_type?: string | null; work_title?: string | null; speaker?: string | null;
+          context?: string | null; personal_note?: string | null; excerpt_text?: string | null;
+          source_url?: string | null; source_locator?: string | null; speaking_notes?: string[];
+          themes?: string[]; locale?: string; created_at?: string; updated_at?: string; lock_version?: number;
+        };
+        Update: {
+          id?: string; user_id?: string; scene_title?: string; source_example_id?: string | null;
+          source_type?: string | null; work_title?: string | null; speaker?: string | null;
+          context?: string | null; personal_note?: string | null; excerpt_text?: string | null;
+          source_url?: string | null; source_locator?: string | null; speaking_notes?: string[];
+          themes?: string[]; locale?: string; created_at?: string; updated_at?: string; lock_version?: number;
+        };
+        Relationships: [];
+      };
       scripts: {
         Row: {
           current_revision_id: string;
           archived_at: string | null;
           lock_version: number;
           practice_epoch: number;
+          source_gallery_item_id: string | null;
           id: string;
           user_id: string;
           title: string;
@@ -926,6 +951,7 @@ export interface Database {
           archived_at?: string | null;
           lock_version?: number;
           practice_epoch?: number;
+          source_gallery_item_id?: string | null;
           id?: string;
           user_id: string;
           title: string;
@@ -940,6 +966,7 @@ export interface Database {
           archived_at?: string | null;
           lock_version?: number;
           practice_epoch?: number;
+          source_gallery_item_id?: string | null;
           id?: string;
           user_id?: string;
           title?: string;
@@ -1372,6 +1399,12 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      create_personal_gallery_item: { Args: { p_patch: Json }; Returns: Database["public"]["Tables"]["personal_gallery_items"]["Row"] };
+      save_personal_gallery_example: { Args: { p_user_id: string; p_patch: Json }; Returns: Database["public"]["Tables"]["personal_gallery_items"]["Row"] };
+      update_personal_gallery_item: { Args: { p_item_id: string; p_expected_lock_version: number; p_patch: Json }; Returns: Database["public"]["Tables"]["personal_gallery_items"]["Row"] };
+      delete_personal_gallery_item: { Args: { p_item_id: string; p_expected_lock_version: number }; Returns: boolean };
+      create_script_from_personal_gallery: { Args: { p_item_id: string; p_expected_lock_version: number; p_script_title: string; p_selected_text?: string | null }; Returns: Database["public"]["Tables"]["scripts"]["Row"] };
+      search_personal_gallery_items: { Args: { p_query?: string | null; p_source_type?: string | null; p_theme?: string | null; p_sort?: string; p_limit?: number; p_offset?: number }; Returns: Database["public"]["Tables"]["personal_gallery_items"]["Row"][] };
       accept_script_brush_up_consent: { Args: { p_user_id: string; p_script_id: string; p_take_id: string; p_revision_id: string; p_recording_identity: string }; Returns: Database["public"]["Tables"]["script_brush_up_consents"]["Row"] };
       withdraw_script_brush_up_consent: { Args: { p_consent_id: string }; Returns: boolean };
       begin_script_brush_up_candidate: { Args: { p_user_id: string; p_consent_id: string; p_baseline_audio_id: string; p_quota_reservation_id: string }; Returns: Database["public"]["Tables"]["script_brush_up_candidates"]["Row"] };

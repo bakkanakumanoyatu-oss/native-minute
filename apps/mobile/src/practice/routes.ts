@@ -2,7 +2,7 @@ export type PracticeRoute =
   | { name: "home" }
   | { name: "takes"; scriptId?: string; favorites?: boolean }
   | { name: "scripts"; create?: boolean }
-  | { name: "gallery"; itemId?: string }
+  | { name: "gallery"; itemId?: string; personalId?: string; view?: "examples" | "new" | "personal" | "edit" }
   | { name: "settings" }
   | { name: "account_deletion" }
   | { name: "voice_deletion" }
@@ -41,6 +41,17 @@ export function parsePracticeRoute(location: Pick<Location, "pathname" | "search
   }
 
   if (segments.length === 1 && segments[0] === "gallery") return { name: "gallery" };
+  if (segments[0] === "gallery" && segments[1] === "new" && segments.length === 2) return { name: "gallery", view: "new" };
+  if (segments[0] === "gallery" && segments[1] === "examples") {
+    if (segments.length === 2) return { name: "gallery", view: "examples" };
+    const itemId = segments.length === 3 ? safeSegment(segments[2]) : null;
+    if (itemId) return { name: "gallery", view: "examples", itemId };
+  }
+  if (segments[0] === "gallery" && segments[1] === "mine") {
+    const personalId = safeSegment(segments[2]);
+    if (personalId && segments.length === 3) return { name: "gallery", view: "personal", personalId };
+    if (personalId && segments.length === 4 && segments[3] === "edit") return { name: "gallery", view: "edit", personalId };
+  }
   if (segments.length === 2 && segments[0] === "gallery") {
     const itemId = safeSegment(segments[1]);
     return itemId ? { name: "gallery", itemId } : { name: "gallery" };
@@ -104,6 +115,10 @@ export function practiceRoutePath(route: PracticeRoute) {
     case "scripts":
       return route.create ? "/scripts?create=1" : "/scripts";
     case "gallery":
+      if (route.view === "new") return "/gallery/new";
+      if (route.view === "personal" && route.personalId) return `/gallery/mine/${encodeURIComponent(route.personalId)}`;
+      if (route.view === "edit" && route.personalId) return `/gallery/mine/${encodeURIComponent(route.personalId)}/edit`;
+      if (route.view === "examples") return route.itemId ? `/gallery/examples/${encodeURIComponent(route.itemId)}` : "/gallery/examples";
       return route.itemId ? `/gallery/${encodeURIComponent(route.itemId)}` : "/gallery";
     case "settings":
       return "/settings";
