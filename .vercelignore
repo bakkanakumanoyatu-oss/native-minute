@@ -12,3 +12,4 @@ coverage
 *.swp
 node_modules
 .next*
+playwright.config.ts
