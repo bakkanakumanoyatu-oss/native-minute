@@ -1,5 +1,7 @@
 # 現在の状態
 
+2026-10-01 **Production cutover fence preparation LOCAL ONLY**。b0e61c を親にした隔離 source に共通 write fence を追加。未設定/空/`0` は既存動作、`1`・不正値は stateful HTTP と operator を入口で503/blockedへ止める。静的・legal/support・既存AASA配信は維持。BFF外のSupabase直Auth/Storage・旧URL・外部workerおよび既存in-flight結果は別guard/照合が必要で、global drain/Production切替のREADYではない。DB/ledger/provider/env/deploy変更なし。private operator packet がcutover準備authority。
+
 ## 現在の main flow
 1. login する。
 2. 必要なときだけ `/setup/voice` で同意と既定の voice を整える。
