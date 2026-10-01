@@ -25,7 +25,7 @@ function fakeProvider(pages, userPayload = user()) {
     assert.equal(init.body, undefined);
     assert.equal(init.headers["xi-api-key"], ENV.ELEVENLABS_API_KEY);
     assert.ok(init.signal instanceof AbortSignal);
-    if (new URL(url).pathname === "/v1/user") return json(userPayload);
+    if (new URL(url).pathname === "/v1/user") return userPayload instanceof Response ? userPayload : json(userPayload);
     const page = pages[pageIndex++];
     assert.notEqual(page, undefined, "unexpected extra page request");
     return page instanceof Response ? page : json(page);
@@ -161,12 +161,13 @@ test("repeated pagination tokens and duplicate IDs fail closed without claiming 
   }
 });
 
-test("malformed account, voice identities, schemas and pagination tokens fail closed", async () => {
+test("malformed optional account does not block inventory; malformed inventory fails closed", async () => {
   for (const userPayload of [{}, { user_id: "" }, { user_id: "fixture-user-with-space raw" }, { user_id: 42 }]) {
-    const fake = fakeProvider([], userPayload);
+    const fake = fakeProvider([{ voices: [], has_more: false }], userPayload);
     const result = await runProbe("inventory", ENV, fake.fetchImpl);
-    assert.equal(result.reasonCode, "provider_probe_account_identity_invalid");
-    assert.equal(fake.calls.length, 1);
+    assert.equal(result.account.status, "INVALID_RESPONSE");
+    assert.equal(result.status, "PASS");
+    assert.equal(fake.calls.length, 2);
     assertSanitized(result);
   }
   for (const [page, reason] of [
@@ -185,13 +186,16 @@ test("malformed account, voice identities, schemas and pagination tokens fail cl
   }
 });
 
-test("provider HTTP error bodies and thrown errors are never read or reflected", async () => {
+test("provider HTTP failures expose status diagnostics without reflecting private body or thrown errors", async () => {
   for (const [status, classification] of [[401, "AUTH_FAILED"], [403, "AUTH_FAILED"], [429, "RATE_LIMITED"], [500, "PROVIDER_UNAVAILABLE"], [422, "HTTP_REJECTED"], [302, "HTTP_REJECTED"]]) {
     const response = json({ raw: ENV.ELEVENLABS_API_KEY, user_id: USER_ID }, status);
     response.text = () => { throw new Error("must not read error body"); };
     const result = await runProbe("inventory", ENV, async () => response);
     assert.equal(result.status, "BLOCKED");
     assert.equal(result.account.status, classification);
+    assert.equal(result.inventoryDiagnostic.httpStatus, status);
+    assert.equal(result.inventoryDiagnostic.errorCode, null);
+    assert.equal(result.inventoryDiagnostic.errorType, null);
     assertSanitized(result);
   }
   const result = await runProbe("inventory", ENV, async () => { throw new Error(`${ENV.ELEVENLABS_API_KEY} ${USER_ID}`); });
@@ -247,4 +251,121 @@ test("overall snapshot budget returns an incomplete controlled result without st
   } finally {
     Date.now = originalNow;
   }
+});
+
+test("optional user HTTP failure never prevents direct complete voices pagination", async () => {
+  const fake = fakeProvider([
+    { voices: [voice("fixture-direct-page-one")], has_more: true, next_page_token: "fixture-direct-token" },
+    { voices: [voice("fixture-direct-page-two")], has_more: false }
+  ], json({ detail: { status: "missing_permissions", message: ENV.ELEVENLABS_API_KEY, user_id: USER_ID } }, 403));
+  const result = await runProbe("inventory", ENV, fake.fetchImpl);
+  assert.equal(result.status, "PASS");
+  assert.equal(result.account.status, "AUTH_FAILED");
+  assert.equal(result.account.diagnostic.httpStatus, 403);
+  assert.equal(result.account.diagnostic.errorCode, "missing_permissions");
+  assert.equal(result.inventory.paginationComplete, true);
+  assert.equal(result.inventory.pageCount, 2);
+  assert.equal(result.inventoryHttpStatus, 200);
+  assert.deepEqual(fake.calls.map(x => new URL(x.url).pathname), ["/v1/user", "/v2/voices", "/v2/voices"]);
+  assertSanitized(result, ["fixture-direct-page-one", "fixture-direct-page-two", "fixture-direct-token"]);
+});
+
+test("optional user timeout has a separate budget and cannot exhaust direct inventory", async () => {
+  const originalNow = Date.now;
+  let now = originalNow();
+  let voicesCalls = 0;
+  Date.now = () => now;
+  try {
+    const result = await runProbe("inventory", ENV, async url => {
+      if (new URL(url).pathname === "/v1/user") { now += 45_001; throw new Error(ENV.ELEVENLABS_API_KEY); }
+      voicesCalls++;
+      return json({ voices: [], has_more: false });
+    });
+    assert.equal(result.status, "PASS");
+    assert.equal(result.account.status, "NETWORK_FAILURE");
+    assert.equal(voicesCalls, 1);
+  } finally { Date.now = originalNow; }
+});
+
+test("voices HTTP rejection distinguishes status with safe structured code and request header", async () => {
+  for (const [status, classification] of [[401, "HTTP_401_AUTH_REJECTED"], [403, "HTTP_403_ACCESS_RESTRICTED"], [429, "HTTP_429_RATE_LIMITED"], [503, "HTTP_5XX_PROVIDER_ERROR"], [422, "HTTP_OTHER_REJECTED"]]) {
+    const response = new Response(JSON.stringify({ detail: { code: "missing_permissions", type: "authorization_error", message: `${ENV.ELEVENLABS_API_KEY} ${USER_ID}`, voice_id: "fixture-private-voice" } }), {
+      status, headers: { "content-type": "application/json; private=" + ENV.ELEVENLABS_API_KEY, "request-id": "11111111-2222-4333-8444-555555555555" }
+    });
+    const fake = fakeProvider([response]);
+    const result = await runProbe("inventory", ENV, fake.fetchImpl);
+    assert.equal(result.status, "BLOCKED");
+    assert.equal(fake.calls.length, 2);
+    assert.equal(result.inventory.paginationComplete, false);
+    assert.deepEqual(result.inventoryDiagnostic, { httpStatus: status, httpClassification: classification, contentType: "application/json", errorCode: "missing_permissions", errorType: "authorization_error", requestIdentifier: { header: "request-id", value: "11111111-2222-4333-8444-555555555555" }, safeErrorCategory: "authorization_error" });
+    assertSanitized(result, ["fixture-private-voice"]);
+  }
+});
+
+test("arbitrary structured fields, header values, MIME parameters and raw body never leak", async () => {
+  for (const privateValue of [ENV.ELEVENLABS_API_KEY, USER_ID, "fixture-private@example.com", "abcdefabcdefabcdefabcdefabcdefab"]) {
+    const response = new Response(JSON.stringify({ detail: { code: privateValue, status: privateValue, type: privateValue, message: privateValue, voice_id: privateValue, user_id: privateValue, request_id: privateValue } }), {
+      status: 403, headers: { "content-type": "application/json; label=" + privateValue, "request-id": privateValue, "x-request-id": privateValue, "x-trace-id": privateValue }
+    });
+    const fake = fakeProvider([response]);
+    const result = await runProbe("inventory", ENV, fake.fetchImpl);
+    assert.equal(result.inventoryDiagnostic.errorCode, null);
+    assert.equal(result.inventoryDiagnostic.errorType, null);
+    assert.equal(result.inventoryDiagnostic.requestIdentifier, null);
+    assertSanitized(result, [privateValue]);
+  }
+});
+
+test("malformed, oversized, non-JSON and throwing error bodies retain sanitized HTTP classification", async () => {
+  const throwing = new Response(new ReadableStream({ start(controller) { controller.error(new Error(ENV.ELEVENLABS_API_KEY)); } }), { status: 403, headers: { "content-type": "application/json" } });
+  for (const response of [
+    new Response(ENV.ELEVENLABS_API_KEY, { status: 403, headers: { "content-type": "application/json" } }),
+    new Response(ENV.ELEVENLABS_API_KEY, { status: 403, headers: { "content-type": "text/html" } }),
+    new Response(ENV.ELEVENLABS_API_KEY, { status: 403, headers: { "content-type": "application/" + ENV.ELEVENLABS_API_KEY } }),
+    new Response(JSON.stringify({ detail: { code: "missing_permissions" } }), { status: 403, headers: { "content-type": "application/json", "content-length": "70000" } }),
+    new Response("x".repeat(65537), { status: 403, headers: { "content-type": "application/json" } }),
+    throwing
+  ]) {
+    const fake = fakeProvider([response]);
+    const result = await runProbe("inventory", ENV, fake.fetchImpl);
+    assert.equal(result.inventoryDiagnostic.httpStatus, 403);
+    assert.equal(result.inventoryDiagnostic.httpClassification, "HTTP_403_ACCESS_RESTRICTED");
+    assert.equal(result.inventoryDiagnostic.errorCode, null);
+    assert.equal(result.inventoryDiagnostic.errorType, null);
+    assertSanitized(result);
+  }
+});
+
+test("later-page HTTP rejection preserves incomplete partial hashes and safe diagnostic", async () => {
+  const fake = fakeProvider([
+    { voices: [voice("fixture-partial-voice")], has_more: true, next_page_token: "fixture-private-token" },
+    json({ detail: { code: "rate_limit_exceeded", type: "rate_limit_error", message: ENV.ELEVENLABS_API_KEY } }, 429)
+  ]);
+  const result = await runProbe("inventory", ENV, fake.fetchImpl);
+  assert.equal(result.status, "BLOCKED");
+  assert.equal(result.inventory.pageCount, 1);
+  assert.equal(result.inventory.totalVoiceCount, 1);
+  assert.equal(result.inventory.paginationComplete, false);
+  assert.equal(result.inventoryDiagnostic.httpStatus, 429);
+  assert.equal(result.inventoryDiagnostic.errorCode, "rate_limit_exceeded");
+  assertSanitized(result, ["fixture-partial-voice", "fixture-private-token"]);
+});
+
+test("request identifiers cannot reflect credential fragments or known account/voice identities", async () => {
+  const hexId = "abcdefabcdefabcdefabcdefabcdefab";
+  const longKey = hexId + "0123456789abcdef0123456789abcdef";
+  const error = extra => new Response(JSON.stringify(extra), { status: 403, headers: { "content-type": "application/json", "request-id": hexId } });
+  const transport = await readOnlyProviderRequest({ url: "https://api.elevenlabs.io/v1/user", apiKey: longKey }, async () => error({}));
+  assert.equal(transport.diagnostic.requestIdentifier, null);
+  assert.ok(!JSON.stringify(transport).includes(hexId));
+  for (const payload of [{ user_id: hexId }, { nested: { voice_id: hexId } }, { detail: { user_id: hexId } }]) {
+    const result = await readOnlyProviderRequest({ url: "https://api.elevenlabs.io/v1/user", apiKey: ENV.ELEVENLABS_API_KEY }, async () => error(payload));
+    assert.equal(result.diagnostic.requestIdentifier, null);
+  }
+  const accountFake = fakeProvider([error({})], { user_id: hexId });
+  assert.equal((await runProbe("inventory", ENV, accountFake.fetchImpl)).inventoryDiagnostic.requestIdentifier, null);
+  const voiceFake = fakeProvider([{ voices: [voice(hexId)], has_more: true, next_page_token: "fixture-next" }, error({})]);
+  assert.equal((await runProbe("inventory", ENV, voiceFake.fetchImpl)).inventoryDiagnostic.requestIdentifier, null);
+  const otherCredential = await runProbe("inventory", { ...ENV, OPENAI_API_KEY: longKey }, async url => new URL(url).pathname === "/v1/user" ? json(user()) : error({}));
+  assert.equal(otherCredential.inventoryDiagnostic.requestIdentifier, null);
 });
