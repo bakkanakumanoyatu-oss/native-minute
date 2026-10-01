@@ -1,3 +1,4 @@
+import { assertWritesAllowed } from "../lib/operations/write-fence.mjs";
 import { readInvocationSnapshot, readInvocationAuthorization, atomicPublishPrivateFile } from "./g5d4-proof-private-state.mjs";
 import { assertFreshInvocation } from "./g5d4-invocation-evidence.mjs";
 // Proof-only guards around the unchanged canonical operator and its public factories.
@@ -67,6 +68,7 @@ export function guardInvocationExternal(adapter, snapshot) {
   }]));
 }
 export async function executeInvocationCanonicalOperator(runDirectory, proofPath, consumedPath) {
+  assertWritesAllowed();
   evidenceAssert(arguments.length === 3 && process.env.G5D4_INTERNAL_CHILD === "1" && process.env.NATIVE_MINUTE_ENABLE_ACCOUNT_DELETION_DESTRUCTIVE === "1", "internal invocation guard");
   const snapshot = readInvocationSnapshot(runDirectory, proofPath, "live");
   assertFreshInvocation(snapshot);

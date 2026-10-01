@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from "node:util";
 import dotenv from "dotenv";
-import { runRetentionPurgeOperator } from "../services/account-deletion/retention-purge-operator.service.ts";
+import { assertWritesAllowed, getWriteFenceState } from "../lib/operations/write-fence.mjs";
 
 // Existing operator env convention. No remote action occurs without execute + guard.
 dotenv.config({ path: ".env.local", quiet: true });
@@ -12,11 +12,14 @@ try {
   if (values.help) {
     console.log("retention:purge --mode execute --resource quota|voice|account [--after-id UUID]\nOne candidate per invocation. Independent table cursors; sweep quota, voice, then account.\nStart later sweeps at no cursor, including after hold release. Requires existing destructive guard.");
   } else {
+    assertWritesAllowed();
+    const { runRetentionPurgeOperator } = await import("../services/account-deletion/retention-purge-operator.service.ts");
     const result = await runRetentionPurgeOperator({ resource: values.resource, mode: values.mode, afterId: values["after-id"] });
     console.log(JSON.stringify(result, null, 2));
     if (result.status !== "succeeded") process.exitCode = 2;
   }
 } catch {
-  console.log(JSON.stringify({ status: "blocked", safeReasonCode: "retention_input_invalid", rpcCalls: 0 }));
+  const fence = getWriteFenceState();
+  console.log(JSON.stringify({ status: "blocked", safeReasonCode: fence.code ?? "retention_input_invalid", rpcCalls: 0 }));
   process.exitCode = 2;
 }

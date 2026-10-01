@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { getWriteFenceState } from "../lib/operations/write-fence.mjs";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 
@@ -1005,6 +1006,10 @@ function sanitizeStageServiceResult(result = {}, stage = "") {
 }
 
 async function runAccountDeletionOperator(argv = process.argv.slice(2), options = {}) {
+  const fence = getWriteFenceState(options.env ?? process.env);
+  if (!fence.writesAllowed) {
+    return { status: "blocked", safeReasonCode: fence.code, reason: fence.reason, destructiveOperationsAttempted: 0 };
+  }
   const parsed = Array.isArray(argv) ? parseArgs(argv) : argv;
   const stage = normalizeStage(parsed.stages);
   const stageServices = options.stageServices ?? {};

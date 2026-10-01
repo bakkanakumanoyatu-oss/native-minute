@@ -1,3 +1,4 @@
+import { createWriteFenceResponse } from "@/lib/operations/write-fence";
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import { buildLoginHref } from "@/lib/navigation";
@@ -46,6 +47,9 @@ function nextResponse(request: NextRequest) {
 }
 
 export async function middleware(request: NextRequest) {
+  const fenceResponse = createWriteFenceResponse(request.method, request.nextUrl.pathname);
+  if (fenceResponse) return fenceResponse;
+
   const pathname = request.nextUrl.pathname;
   const protectedPath = isProtectedPath(pathname);
 
@@ -106,5 +110,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/|favicon.ico).*)"]
+  matcher: ["/:path*"]
 };

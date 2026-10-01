@@ -1,5 +1,7 @@
 # 現在の状態
 
+2026-10-01 **Production cutover fence preparation LOCAL ONLY**。392700a を親にした隔離 source に共通 write fence を追加。未設定/空/`0` は既存動作、`1`・不正値は stateful HTTP と operator を入口で503/blockedへ止める。静的・legal/support・既存AASA配信は維持。BFF外のSupabase直Auth/Storage・旧URL・外部workerおよび既存in-flight結果は別guard/照合が必要で、global drain/Production切替のREADYではない。DB/ledger/provider/env/deploy変更なし。private operator packet がcutover準備authority。
+
 2026-09-22 **Review saved Take 1件foreground prefetch HUMAN ACTUAL-DEVICE PASS / CLOSED**。Humanが初回の待ち短縮・正しい録音と2回目以降の即時再生を受入。fresh Review表示後だけ既存30秒・1件memoryへ取得、Playとpending共有、退出/background/auth/error等でabort・自動retryなし。同iPhone/Wi-Fi各N5で2秒閲覧後tap→playing中央値4.310→2.365秒、TRUE fetch4.191→4.250秒。Immediate3.931→4.485秒（最大10.538秒）でnetwork高速化なし。Review全N15中央値2.252→2.252秒、duplicate GET0、No Play退出5件abort。231 tests・browser30条件・lint/typecheck/build/署名をsource一致で再利用し、今回差分のみcommit/normal pushでcloseout。追加build/install/deploy/測定なし。既知release guard3件NOT PASS・VP-01・R-INT-02・他WIP保持。[受入・検証・残件](review-single-take-foreground-prefetch-20260922.md)。以下は履歴。
 
 2026-09-22 **保存Takeの30秒・1件ephemeral audio reuse HUMAN ACTUAL-DEVICE PASS / CLOSED**。Humanが「正しい録音が短い待ちで聞こえました」と最小1往復を受入。fresh Review所有権＋Storage id/version・owner/session一致後だけmemory-only・downloadから30秒・1件reuse。再入場3.912秒(N4)→0.074秒(N5)、全5回GET0／0 bytes。167 tests・実画面26条件・lint/typecheck/build/署名をsource一致で再利用し、今回差分のみcommit/normal pushでcloseout。初回全量取得・Review待ち、既知release guard3件NOT PASS・VP-01・R-INT-02・他WIP保持。追加製品変更/build/install/deploy/測定なし。[受入・検証・残件](saved-take-ephemeral-audio-reuse-20260922.md)。以下は履歴。

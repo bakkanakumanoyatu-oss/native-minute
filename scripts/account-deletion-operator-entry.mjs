@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { assertWritesAllowed, getWriteFenceState } from "../lib/operations/write-fence.mjs";
 
 import {
   parseArgs,
@@ -6,17 +7,26 @@ import {
   resolveAccountDeletionRequestReadOnly,
   runAccountDeletionOperator
 } from "./account-deletion-operator-runner.mjs";
-import { createAccountDeletionProviderOperatorBridge } from "../services/account-deletion/account-deletion-provider-operator.service.ts";
-import { createAccountDeletionStorageOperatorBridge } from "../services/account-deletion/account-deletion-storage-operator.service.ts";
-import { createAccountDeletionDatabaseOperatorBridge } from "../services/account-deletion/account-deletion-database-operator.service.ts";
-import { createAccountDeletionAuthOperatorBridge } from "../services/account-deletion/account-deletion-auth-operator.service.ts";
-import { createAccountDeletionCompletionOperatorBridge } from "../services/account-deletion/account-deletion-completion-operator.service.ts";
 
 const parsed = parseArgs(process.argv.slice(2));
 
 if (parsed.help) {
   printHelp();
 }
+
+try {
+  assertWritesAllowed();
+} catch {
+  const fence = getWriteFenceState();
+  console.log(JSON.stringify({ status: "blocked", safeReasonCode: fence.code, reason: fence.reason, destructiveOperationsAttempted: 0 }));
+  process.exit(2);
+}
+
+const { createAccountDeletionProviderOperatorBridge } = await import("../services/account-deletion/account-deletion-provider-operator.service.ts");
+const { createAccountDeletionStorageOperatorBridge } = await import("../services/account-deletion/account-deletion-storage-operator.service.ts");
+const { createAccountDeletionDatabaseOperatorBridge } = await import("../services/account-deletion/account-deletion-database-operator.service.ts");
+const { createAccountDeletionAuthOperatorBridge } = await import("../services/account-deletion/account-deletion-auth-operator.service.ts");
+const { createAccountDeletionCompletionOperatorBridge } = await import("../services/account-deletion/account-deletion-completion-operator.service.ts");
 
 const providerBridge = createAccountDeletionProviderOperatorBridge({ env: process.env });
 const storageBridge = createAccountDeletionStorageOperatorBridge({ env: process.env });

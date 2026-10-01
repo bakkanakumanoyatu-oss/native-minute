@@ -574,3 +574,35 @@ Playwright は最小スモークを維持していますが、E2E 拡張は主�
   - いまの実装状態と残課題の短い要約
 - `AGENTS.md`
   - Codex に守らせる前提と作業方針
+
+## Cutover maintenance admission fence
+
+`NATIVE_MINUTE_WRITE_FENCE` is a server/process-only admission control. Unset,
+empty, or exactly `0` preserves the existing behavior; exactly `1` closes it.
+Any other nonempty value fails closed. `GET`/`HEAD /api/operations/write-fence`
+returns `writesAllowed`, `code`, and `reason` without touching Auth, DB, Storage
+or providers (200 open / 503 closed, `Cache-Control: no-store`). Closed dynamic
+requests return controlled Japanese maintenance feedback and `Retry-After: 30`.
+
+The middleware checks this authority first, including mobile/Auth bypasses,
+GET Listen repair, callback and `_next/data` requests. Only GET/HEAD immutable
+`/_next/static/` assets, favicon, the exact static Apple association file
+`/.well-known/apple-app-site-association`, and the source-proven static-copy pages
+`/privacy`, `/terms`, `/support`, `/support/account-deletion` remain available.
+Authenticated read pages also close because Auth refresh can write session
+state. Operator entrypoints consult the same authority before loading mutation
+services or configuring clients; no new queue or process-local drain counter exists.
+
+Run offline fence checks with `node --test tests/write-fence.test.mjs`. These
+checks use mocked middleware transport and credential-free local operator
+processes; they never send a request to Supabase or a provider.
+
+Activation requires a separately approved deployment/process start containing
+this source and `NATIVE_MINUTE_WRITE_FENCE=1`. Changing project env alone does
+not update existing immutable deployments or running operators. The status
+endpoint proves admission on that exact deployment only. A BFF-only fence
+does not stop direct Supabase Auth/PostgREST/Storage, old generated deployment
+URLs, separately running operators or work already admitted. Those controls
+and objective global drain receipts are required before a Production cutover.
+Reopening uses a separately approved artifact/process with exactly `0`; retain
+the old-deployment/direct-client guards until the compatibility switch is verified.
