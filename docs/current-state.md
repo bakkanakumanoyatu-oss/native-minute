@@ -1,5 +1,7 @@
 # 現在の状態
 
+2026-10-01 **Dedicated provider read-only probe artifact（専用branchのみ）**。ビルド対象を `.probe.ts/.probe.tsx` の拒否route・status・署名operator GETに限定し、製品route/DB/Auth/Storage/quota/provider mutation実装を生成artifactから除外。共通fenceはenvに関係なくclosed。provider GETはfixed ElevenLabs URL・完全pagination・hash/aggregateのみ、秘密値を出力しない。これはProduction切替やglobal drainの証明ではなく、canonicalへpromoteしない。実行結果はprivate operator packetのprovider-readiness節がauthority。
+
 2026-10-01 **Production cutover fence preparation LOCAL ONLY**。b0e61c を親にした隔離 source に共通 write fence を追加。未設定/空/`0` は既存動作、`1`・不正値は stateful HTTP と operator を入口で503/blockedへ止める。静的・legal/support・既存AASA配信は維持。BFF外のSupabase直Auth/Storage・旧URL・外部workerおよび既存in-flight結果は別guard/照合が必要で、global drain/Production切替のREADYではない。DB/ledger/provider/env/deploy変更なし。private operator packet がcutover準備authority。
 
 ## 現在の main flow

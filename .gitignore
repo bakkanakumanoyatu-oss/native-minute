@@ -1,6 +1,7 @@
 .next
 .next-*
 node_modules
+.vercel
 .env.local
 .DS_Store
 coverage

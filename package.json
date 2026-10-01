@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "NEXT_DIST_DIR=.next-dev next dev",
-    "build": "next build",
+    "build": "next build && node scripts/provider-probe-artifact-audit.mjs && node scripts/provider-probe-secret-scan.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit --incremental false",
@@ -26,7 +26,10 @@
     "home:css-smoke": "node scripts/home-css-smoke.mjs",
     "e2e:auth-guard": "npx playwright test tests/e2e/auth-guard.spec.ts",
     "e2e:smoke": "npx playwright test tests/e2e/auth-guard.spec.ts tests/e2e/smoke.spec.ts",
-    "e2e:setup-voice": "npx playwright test tests/e2e/smoke.spec.ts --grep \"minimal setup voice UI flow|setup voice|mock voice\""
+    "e2e:setup-voice": "npx playwright test tests/e2e/smoke.spec.ts --grep \"minimal setup voice UI flow|setup voice|mock voice\"",
+    "check:workspace": "node scripts/check-probe-workspace.mjs",
+    "probe:test": "node --test tests/write-fence.test.mjs tests/provider-readonly-probe.test.mjs tests/probe-operator-auth.test.mjs tests/provider-probe-route.test.mjs",
+    "probe:secret-scan": "node scripts/provider-probe-secret-scan.mjs"
   },
   "dependencies": {
     "@capacitor/core": "^8.4.0",

@@ -1,0 +1,14 @@
+.env*
+.vercel
+outputs
+docs
+tests
+apps
+ios
+artifacts
+test-results*
+playwright-report
+coverage
+*.swp
+node_modules
+.next*

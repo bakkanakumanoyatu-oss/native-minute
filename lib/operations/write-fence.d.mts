@@ -3,9 +3,9 @@ export const WRITE_FENCE_STATUS_PATH: "/api/operations/write-fence";
 export const WRITE_FENCE_MESSAGE: string;
 export type WriteFenceEnvironment = { NATIVE_MINUTE_WRITE_FENCE?: string };
 export type WriteFenceState = {
-  writesAllowed: boolean;
-  code: "production_write_fence_active" | null;
-  reason: "open" | "maintenance" | "configuration_invalid";
+  writesAllowed: false;
+  code: "production_write_fence_active";
+  reason: "source_hard_probe";
 };
 export function getWriteFenceState(env?: WriteFenceEnvironment): WriteFenceState;
 export function assertWritesAllowed(env?: WriteFenceEnvironment): void;
